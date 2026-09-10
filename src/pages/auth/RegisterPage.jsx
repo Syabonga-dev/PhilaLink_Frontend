@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
+import logo from "../../assets/logo.png";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
 import { useToast } from "../../components/ui/Toast.jsx";
 import { ApiError } from "../../services/api/client.js";
 import NavigationPage from "../../components/layout/NavigationBar.jsx";
+import "./RegisterPage.css";
 
 const initialForm = {
   fullName: "",
@@ -55,8 +57,7 @@ export default function RegisterPage() {
     }
 
     if (form.password.length < 8) {
-      next.password =
-        "Password must be at least 8 characters.";
+      next.password = "Password must be at least 8 characters.";
     }
 
     if (form.confirmPassword !== form.password) {
@@ -119,125 +120,149 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-surface-container-low">
-      {/* Shared Navigation */}
+    <>
       <NavigationPage />
 
-      {/* Registration Content */}
-      <div className="flex flex-col items-center px-4 py-10">
-        <div className="w-full max-w-lg rounded-xl border border-outline-variant/60 bg-white p-8 shadow-card">
-          
-          {/* Progress Steps */}
-          <div className="mb-6 flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-sm font-bold text-on-primary">
-              1
+      <div className="register-page" style={{marginTop: "70px"}}>
+        <div className="register-background" />
+        <div className="register-overlay" />
+
+        <main className="register-content">
+          <div className="register-card">
+            <div className="register-brand">
+              <img src={logo} alt="PhilaLink" />
+
+              <div>
+                <span>Phila</span>Link
+              </div>
             </div>
 
-            <div className="h-0.5 flex-1 bg-outline-variant" />
+            <div className="register-heading">
+              <p className="register-eyebrow">
+                PATIENT REGISTRATION
+              </p>
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-container-highest text-sm font-bold text-outline">
-              2
+              <h1>Create your account.</h1>
+
+              <p>
+                Join PhilaLink to manage your healthcare
+                information and stay connected with your care.
+              </p>
             </div>
 
-            <div className="h-0.5 flex-1 bg-outline-variant" />
+            <div className="register-progress">
+              <div className="progress-step active">
+                <span>1</span>
+                <p>Your details</p>
+              </div>
 
-            <div className="flex h-9 w-9 items-center justify-center rounded-full bg-surface-container-highest text-sm font-bold text-outline">
-              3
+              <div className="progress-line" />
+
+              <div className="progress-step">
+                <span>2</span>
+                <p>Verify phone</p>
+              </div>
+
+              <div className="progress-line" />
+
+              <div className="progress-step">
+                <span>3</span>
+                <p>Complete</p>
+              </div>
             </div>
+
+            <form
+              onSubmit={handleSubmit}
+              className="register-form"
+            >
+              <Input
+                label="Full name"
+                value={form.fullName}
+                onChange={set("fullName")}
+                error={errors.fullName}
+                placeholder="Thandiwe Synthia Nzimande"
+                autoComplete="name"
+              />
+
+              <Input
+                label="SA ID number"
+                value={form.idNumber}
+                onChange={set("idNumber")}
+                error={errors.idNumber}
+                placeholder="9001015800082"
+                inputMode="numeric"
+                maxLength={13}
+              />
+
+              <Input
+                label="Cellphone number"
+                value={form.phone}
+                onChange={set("phone")}
+                error={errors.phone}
+                placeholder="0821234567"
+                inputMode="tel"
+                autoComplete="tel"
+                hint="We'll text a verification code to this number."
+              />
+
+              <Input
+                label="Email"
+                type="email"
+                value={form.email}
+                onChange={set("email")}
+                error={errors.email}
+                placeholder="Thandiwe@gmail.com"
+                autoComplete="email"
+              />
+
+              <div className="register-passwords">
+                <Input
+                  label="Password"
+                  type="password"
+                  value={form.password}
+                  onChange={set("password")}
+                  error={errors.password}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+
+                <Input
+                  label="Confirm password"
+                  type="password"
+                  value={form.confirmPassword}
+                  onChange={set("confirmPassword")}
+                  error={errors.confirmPassword}
+                  placeholder="••••••••"
+                  autoComplete="new-password"
+                />
+              </div>
+
+              <Button
+                type="submit"
+                className="register-submit"
+                loading={loading}
+              >
+                {loading
+                  ? "Creating account…"
+                  : "Continue"}
+              </Button>
+            </form>
+
+            <div className="register-login">
+              <span>Already have an account?</span>
+
+              <Link to="/login">
+                Log in
+              </Link>
+            </div>
+
+            <p className="register-note">
+              Nurse and Proxy accounts are created by a
+              PhilaLink administrator.
+            </p>
           </div>
-
-          <h1 className="text-2xl font-bold text-on-surface">
-            Create your patient account
-          </h1>
-
-          <p className="mt-1 text-sm text-on-surface-variant">
-            Only patients can self-register. Nurse and Proxy
-            accounts are created for you by a PhilaLink
-            administrator.
-          </p>
-
-          {/* Registration Form */}
-          <form
-            onSubmit={handleSubmit}
-            className="mt-6 space-y-4"
-          >
-            <Input
-              label="Full name"
-              value={form.fullName}
-              onChange={set("fullName")}
-              error={errors.fullName}
-              placeholder="Thabo Nkosi"
-            />
-
-            <Input
-              label="SA ID number"
-              value={form.idNumber}
-              onChange={set("idNumber")}
-              error={errors.idNumber}
-              placeholder="9001015800082"
-              inputMode="numeric"
-              maxLength={13}
-            />
-
-            <Input
-              label="Cellphone number"
-              value={form.phone}
-              onChange={set("phone")}
-              error={errors.phone}
-              placeholder="0821234567"
-              inputMode="tel"
-              hint="We'll text a verification code to this number."
-            />
-
-            <Input
-              label="Email (optional)"
-              type="email"
-              value={form.email}
-              onChange={set("email")}
-              error={errors.email}
-              placeholder="you@example.com"
-            />
-
-            <div className="grid grid-cols-2 gap-4">
-              <Input
-                label="Password"
-                type="password"
-                value={form.password}
-                onChange={set("password")}
-                error={errors.password}
-                placeholder="••••••••"
-              />
-
-              <Input
-                label="Confirm password"
-                type="password"
-                value={form.confirmPassword}
-                onChange={set("confirmPassword")}
-                error={errors.confirmPassword}
-                placeholder="••••••••"
-              />
-            </div>
-
-            <Button
-              type="submit"
-              className="w-full"
-              loading={loading}
-            >
-              {loading ? "Creating account…" : "Continue"}
-            </Button>
-          </form>
-
-          <p className="mt-6 text-center text-sm text-on-surface-variant">
-            Already have an account?{" "}
-            <Link
-              to="/login"
-              className="font-semibold text-primary hover:underline"
-            >
-              Log in
-            </Link>
-          </p>
-        </div>
+        </main>
       </div>
-    </div>
+    </>
   );
 }

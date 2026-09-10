@@ -19,11 +19,12 @@ const NAV_BY_ROLE = {
     { to: "/proxy", label: "Dashboard", icon: "space_dashboard", end: true },
     { to: "/proxy/patients", label: "Patients Under Care", icon: "family_restroom" },
   ],
-  Admin: [
-    { to: "/admin", label: "Overview", icon: "space_dashboard", end: true },
-    { to: "/admin/register-staff", label: "Register Staff", icon: "person_add" },
-    { to: "/admin/staff", label: "Manage Staff", icon: "badge" },
-  ],
+Admin: [
+  { to: "/admin", label: "Overview", icon: "space_dashboard", end: true },
+  { to: "/admin/register-staff", label: "Register Staff", icon: "person_add" },
+  { to: "/admin/staff", label: "Manage Staff", icon: "badge" },
+  { to: "/admin/analytics", label: "View Analytics", icon: "analytics" },
+],
 };
 
 export default function Sidebar({ role, open, onClose }) {
