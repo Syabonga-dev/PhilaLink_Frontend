@@ -77,10 +77,11 @@ export default function RegisterPage() {
     setLoading(true);
 
     try {
+
       const result = await registerPatient({
         fullName: form.fullName,
         idNumber: form.idNumber,
-        phone: form.phone,
+        phoneNumber: form.phone,
         email: form.email || undefined,
         password: form.password,
       });

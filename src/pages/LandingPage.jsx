@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
+
 import {
   CircleMarker,
   MapContainer,
@@ -186,12 +187,6 @@ async function fetchHealthcareFacilities(
   );
 }
 
-/*
-|--------------------------------------------------------------------------
-| Leaflet marker icons
-|--------------------------------------------------------------------------
-*/
-
 const hospitalIcon = L.divIcon({
   className: "custom-healthcare-marker",
   html: `
@@ -219,12 +214,6 @@ const clinicIcon = L.divIcon({
   iconAnchor: [22, 44],
   popupAnchor: [0, -42],
 });
-
-/*
-|--------------------------------------------------------------------------
-| Map recenter
-|--------------------------------------------------------------------------
-*/
 
 function RecenterMap({
   latitude,
@@ -258,13 +247,9 @@ function RecenterMap({
   return null;
 }
 
-/*
-|--------------------------------------------------------------------------
-| Landing Page
-|--------------------------------------------------------------------------
-*/
-
 export default function LandingPage() {
+  const location = useLocation();
+
   const [userLocation, setUserLocation] =
     useState(null);
 
@@ -293,12 +278,6 @@ export default function LandingPage() {
     DEFAULT_LOCATION.longitude,
   ]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Browser location
-  |--------------------------------------------------------------------------
-  */
-
   const requestUserLocation = useCallback(() => {
     if (!navigator.geolocation) {
       setLoadingLocation(false);
@@ -306,6 +285,12 @@ export default function LandingPage() {
       setLocationError(
         "Your browser does not support location services."
       );
+
+      setUserLocation(DEFAULT_LOCATION);
+      setMapCenter([
+        DEFAULT_LOCATION.latitude,
+        DEFAULT_LOCATION.longitude,
+      ]);
 
       return;
     }
@@ -315,18 +300,18 @@ export default function LandingPage() {
 
     navigator.geolocation.getCurrentPosition(
       (position) => {
-        const location = {
+        const nextLocation = {
           latitude:
             position.coords.latitude,
           longitude:
             position.coords.longitude,
         };
 
-        setUserLocation(location);
+        setUserLocation(nextLocation);
 
         setMapCenter([
-          location.latitude,
-          location.longitude,
+          nextLocation.latitude,
+          nextLocation.longitude,
         ]);
 
         setLoadingLocation(false);
@@ -358,21 +343,43 @@ export default function LandingPage() {
     );
   }, []);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Load location on page load
-  |--------------------------------------------------------------------------
-  */
-
   useEffect(() => {
     requestUserLocation();
   }, [requestUserLocation]);
 
   /*
-  |--------------------------------------------------------------------------
-  | Load healthcare facilities
-  |--------------------------------------------------------------------------
-  */
+   * Handles navigation from Login/Register pages.
+   * NavigationPage stores the requested section in
+   * location.state.scrollTo before returning here.
+   */
+  useEffect(() => {
+    const sectionId = location.state?.scrollTo;
+
+    if (!sectionId) {
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      const section = document.getElementById(
+        sectionId
+      );
+
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      window.history.replaceState(
+        {},
+        document.title,
+        window.location.pathname
+      );
+    }, 150);
+
+    return () => clearTimeout(timer);
+  }, [location.state]);
 
   useEffect(() => {
     if (!userLocation) {
@@ -477,10 +484,6 @@ export default function LandingPage() {
               a.distance - b.distance
           );
 
-        /*
-         * Remove obvious duplicates.
-         */
-
         const uniqueFacilities = [];
         const seen = new Set();
 
@@ -529,12 +532,6 @@ export default function LandingPage() {
     };
   }, [userLocation]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Search
-  |--------------------------------------------------------------------------
-  */
-
   const filteredFacilities = useMemo(() => {
     const query = search
       .trim()
@@ -558,12 +555,6 @@ export default function LandingPage() {
     );
   }, [facilities, search]);
 
-  /*
-  |--------------------------------------------------------------------------
-  | Select facility
-  |--------------------------------------------------------------------------
-  */
-
   const handleSelectFacility = (
     facility
   ) => {
@@ -574,12 +565,6 @@ export default function LandingPage() {
       facility.longitude,
     ]);
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | Directions
-  |--------------------------------------------------------------------------
-  */
 
   const openDirections = (
     facility
@@ -594,12 +579,6 @@ export default function LandingPage() {
       "noopener,noreferrer"
     );
   };
-
-  /*
-  |--------------------------------------------------------------------------
-  | Website
-  |--------------------------------------------------------------------------
-  */
 
   const openWebsite = (facility) => {
     if (!facility.website) {
@@ -624,24 +603,12 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page pt-16">
-
-      {/* ============================================
-          NAVIGATION
-      ============================================ */}
-
       <NavigationPage />
-
-      {/* ============================================
-          MAP SECTION
-      ============================================ */}
 
       <section
         id="map"
         className="map-section"
       >
-
-        {/* MAP HEADING */}
-
         <div className="map-heading">
           <h1>
             Find the care you need, when you need it.
@@ -654,10 +621,7 @@ export default function LandingPage() {
           </p>
         </div>
 
-        {/* MAP */}
-
         <div className="map-hero">
-
           <MapContainer
             center={mapCenter}
             zoom={13}
@@ -668,8 +632,6 @@ export default function LandingPage() {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-
-            {/* User location */}
 
             {userLocation && (
               <>
@@ -709,8 +671,6 @@ export default function LandingPage() {
               </>
             )}
 
-            {/* Healthcare facilities */}
-
             {filteredFacilities.map(
               (facility) => (
                 <Marker
@@ -734,7 +694,6 @@ export default function LandingPage() {
                 >
                   <Popup>
                     <div className="map-popup">
-
                       <span className="popup-type">
                         {facility.type}
                       </span>
@@ -781,7 +740,6 @@ export default function LandingPage() {
                       >
                         View details
                       </button>
-
                     </div>
                   </Popup>
                 </Marker>
@@ -797,17 +755,10 @@ export default function LandingPage() {
                   : 13
               }
             />
-
           </MapContainer>
 
-          {/* MAP CONTENT */}
-
           <div className="map-overlay">
-
-            {/* Search */}
-
             <div className="map-search">
-
               <span className="material-symbols-outlined search-icon">
                 search
               </span>
@@ -838,35 +789,27 @@ export default function LandingPage() {
                   </span>
                 </button>
               )}
-
             </div>
 
-            {/* Status */}
-
             <div className="map-status">
-
               {loadingLocation && (
                 <div className="status-card">
-
                   <span className="loading-spinner"></span>
 
                   <span>
                     Finding your location...
                   </span>
-
                 </div>
               )}
 
               {!loadingLocation &&
                 loadingFacilities && (
                   <div className="status-card">
-
                     <span className="loading-spinner"></span>
 
                     <span>
                       Finding nearby healthcare...
                     </span>
-
                   </div>
                 )}
 
@@ -874,7 +817,6 @@ export default function LandingPage() {
                 !loadingFacilities &&
                 facilityError && (
                   <div className="status-card error-card">
-
                     <span className="material-symbols-outlined">
                       error
                     </span>
@@ -882,7 +824,6 @@ export default function LandingPage() {
                     <span>
                       {facilityError}
                     </span>
-
                   </div>
                 )}
 
@@ -891,7 +832,6 @@ export default function LandingPage() {
                 !facilityError &&
                 facilities.length > 0 && (
                   <div className="status-card">
-
                     <span className="material-symbols-outlined">
                       local_hospital
                     </span>
@@ -903,16 +843,11 @@ export default function LandingPage() {
                         : "facilities"}{" "}
                       found nearby
                     </span>
-
                   </div>
                 )}
-
             </div>
 
-            {/* Controls */}
-
             <div className="map-controls">
-
               <button
                 type="button"
                 className="location-button"
@@ -920,7 +855,6 @@ export default function LandingPage() {
                   requestUserLocation
                 }
               >
-
                 <span className="material-symbols-outlined">
                   my_location
                 </span>
@@ -928,18 +862,12 @@ export default function LandingPage() {
                 <span>
                   Use my location
                 </span>
-
               </button>
-
             </div>
-
           </div>
-
-          {/* LOCATION ERROR */}
 
           {locationError && (
             <div className="location-warning">
-
               <span className="material-symbols-outlined">
                 location_off
               </span>
@@ -947,17 +875,12 @@ export default function LandingPage() {
               <span>
                 {locationError}
               </span>
-
             </div>
           )}
 
-          {/* SELECTED FACILITY */}
-
           {selectedFacility && (
             <div className="location-card">
-
               <div className="location-card-header">
-
                 <div
                   className={`location-icon ${
                     selectedFacility.type ===
@@ -966,14 +889,12 @@ export default function LandingPage() {
                       : ""
                   }`}
                 >
-
                   <span className="material-symbols-outlined">
                     {selectedFacility.type ===
                     "Hospital"
                       ? "local_hospital"
                       : "medical_services"}
                   </span>
-
                 </div>
 
                 <button
@@ -986,17 +907,13 @@ export default function LandingPage() {
                   }
                   aria-label="Close location details"
                 >
-
                   <span className="material-symbols-outlined">
                     close
                   </span>
-
                 </button>
-
               </div>
 
               <div className="location-card-content">
-
                 <span className="location-type">
                   {selectedFacility.type}
                 </span>
@@ -1006,7 +923,6 @@ export default function LandingPage() {
                 </h2>
 
                 <div className="location-distance">
-
                   <span className="material-symbols-outlined">
                     distance
                   </span>
@@ -1020,20 +936,16 @@ export default function LandingPage() {
                   <span>
                     from your location
                   </span>
-
                 </div>
 
                 <div className="location-details">
-
                   {selectedFacility.openingHours && (
                     <div className="location-detail">
-
                       <span className="material-symbols-outlined">
                         schedule
                       </span>
 
                       <div>
-
                         <small>
                           Opening hours
                         </small>
@@ -1043,21 +955,17 @@ export default function LandingPage() {
                             selectedFacility.openingHours
                           }
                         </strong>
-
                       </div>
-
                     </div>
                   )}
 
                   {selectedFacility.phone && (
                     <div className="location-detail">
-
                       <span className="material-symbols-outlined">
                         call
                       </span>
 
                       <div>
-
                         <small>
                           Contact
                         </small>
@@ -1069,21 +977,17 @@ export default function LandingPage() {
                             selectedFacility.phone
                           }
                         </a>
-
                       </div>
-
                     </div>
                   )}
 
                   {selectedFacility.address && (
                     <div className="location-detail">
-
                       <span className="material-symbols-outlined">
                         location_on
                       </span>
 
                       <div>
-
                         <small>
                           Address
                         </small>
@@ -1093,21 +997,17 @@ export default function LandingPage() {
                             selectedFacility.address
                           }
                         </strong>
-
                       </div>
-
                     </div>
                   )}
 
                   {selectedFacility.operator && (
                     <div className="location-detail">
-
                       <span className="material-symbols-outlined">
                         business
                       </span>
 
                       <div>
-
                         <small>
                           Operator
                         </small>
@@ -1117,16 +1017,12 @@ export default function LandingPage() {
                             selectedFacility.operator
                           }
                         </strong>
-
                       </div>
-
                     </div>
                   )}
-
                 </div>
 
                 <div className="location-actions">
-
                   <button
                     type="button"
                     className="directions-button"
@@ -1136,13 +1032,11 @@ export default function LandingPage() {
                       )
                     }
                   >
-
                     <span className="material-symbols-outlined">
                       directions
                     </span>
 
                     Directions
-
                   </button>
 
                   {selectedFacility.website && (
@@ -1155,22 +1049,15 @@ export default function LandingPage() {
                         )
                       }
                     >
-
                       <span className="material-symbols-outlined">
                         language
                       </span>
-
                     </button>
                   )}
-
                 </div>
-
               </div>
-
             </div>
           )}
-
-          {/* NO RESULTS */}
 
           {!loadingFacilities &&
             !facilityError &&
@@ -1178,7 +1065,6 @@ export default function LandingPage() {
             filteredFacilities.length ===
               0 && (
               <div className="no-results">
-
                 <span className="material-symbols-outlined">
                   search_off
                 </span>
@@ -1191,26 +1077,17 @@ export default function LandingPage() {
                   Try searching for another
                   clinic or hospital.
                 </p>
-
               </div>
             )}
-
         </div>
       </section>
-
-      {/* ============================================
-          ABOUT
-      ============================================ */}
 
       <section
         id="about"
         className="intro-section"
       >
-
         <div className="section-container">
-
           <div className="intro-content">
-
             <span className="section-label">
               PHILALINK
             </span>
@@ -1226,13 +1103,10 @@ export default function LandingPage() {
               proxies together through one simple
               digital platform.
             </p>
-
           </div>
 
           <div className="intro-stats">
-
             <div className="stat-card">
-
               <span className="material-symbols-outlined">
                 medication
               </span>
@@ -1244,11 +1118,9 @@ export default function LandingPage() {
               <span>
                 Made easier
               </span>
-
             </div>
 
             <div className="stat-card">
-
               <span className="material-symbols-outlined">
                 location_on
               </span>
@@ -1260,11 +1132,9 @@ export default function LandingPage() {
               <span>
                 Find care nearby
               </span>
-
             </div>
 
             <div className="stat-card">
-
               <span className="material-symbols-outlined">
                 notifications_active
               </span>
@@ -1276,28 +1146,17 @@ export default function LandingPage() {
               <span>
                 Never miss a collection
               </span>
-
             </div>
-
           </div>
-
         </div>
-
       </section>
-
-      {/* ============================================
-          SERVICES
-      ============================================ */}
 
       <section
         id="services"
         className="services-section"
       >
-
         <div className="section-container">
-
           <div className="section-heading">
-
             <span className="section-label">
               OUR SERVICES
             </span>
@@ -1312,19 +1171,14 @@ export default function LandingPage() {
               of chronic healthcare management
               together in one simple platform.
             </p>
-
           </div>
 
           <div className="services-grid">
-
             <article className="service-card">
-
               <div className="service-icon">
-
                 <span className="material-symbols-outlined">
                   medication
                 </span>
-
               </div>
 
               <h3>
@@ -1336,17 +1190,13 @@ export default function LandingPage() {
                 collections and treatment
                 information in one place.
               </p>
-
             </article>
 
             <article className="service-card">
-
               <div className="service-icon">
-
                 <span className="material-symbols-outlined">
                   location_on
                 </span>
-
               </div>
 
               <h3>
@@ -1358,17 +1208,13 @@ export default function LandingPage() {
                 hospitals using your current
                 location and an interactive map.
               </p>
-
             </article>
 
             <article className="service-card">
-
               <div className="service-icon">
-
                 <span className="material-symbols-outlined">
                   notifications
                 </span>
-
               </div>
 
               <h3>
@@ -1380,17 +1226,13 @@ export default function LandingPage() {
                 collections, appointments and
                 important healthcare reminders.
               </p>
-
             </article>
 
             <article className="service-card">
-
               <div className="service-icon">
-
                 <span className="material-symbols-outlined">
                   group
                 </span>
-
               </div>
 
               <h3>
@@ -1402,17 +1244,13 @@ export default function LandingPage() {
                 to manage medication collections on
                 behalf of patients.
               </p>
-
             </article>
 
             <article className="service-card">
-
               <div className="service-icon">
-
                 <span className="material-symbols-outlined">
                   chat
                 </span>
-
               </div>
 
               <h3>
@@ -1424,17 +1262,13 @@ export default function LandingPage() {
                 information through the built-in
                 PhilaLink assistant.
               </p>
-
             </article>
 
             <article className="service-card">
-
               <div className="service-icon">
-
                 <span className="material-symbols-outlined">
                   security
                 </span>
-
               </div>
 
               <h3>
@@ -1446,28 +1280,17 @@ export default function LandingPage() {
                 with secure records, verification
                 and activity tracking.
               </p>
-
             </article>
-
           </div>
-
         </div>
-
       </section>
-
-      {/* ============================================
-          HEALTH TIPS
-      ============================================ */}
 
       <section
         id="health-tips"
         className="health-tips-section"
       >
-
         <div className="section-container">
-
           <div className="section-heading">
-
             <span className="section-label">
               HEALTH TIPS
             </span>
@@ -1481,13 +1304,10 @@ export default function LandingPage() {
               Helpful reminders to support your
               everyday healthcare routine.
             </p>
-
           </div>
 
           <div className="health-tips-grid">
-
             <article className="health-tip-card">
-
               <span className="material-symbols-outlined">
                 medication
               </span>
@@ -1502,11 +1322,9 @@ export default function LandingPage() {
                 keep track of your medication
                 collections.
               </p>
-
             </article>
 
             <article className="health-tip-card">
-
               <span className="material-symbols-outlined">
                 calendar_month
               </span>
@@ -1520,11 +1338,9 @@ export default function LandingPage() {
                 identify problems early and keep
                 your treatment on track.
               </p>
-
             </article>
 
             <article className="health-tip-card">
-
               <span className="material-symbols-outlined">
                 water_drop
               </span>
@@ -1538,25 +1354,14 @@ export default function LandingPage() {
                 day, especially when you are active
                 or in hot weather.
               </p>
-
             </article>
-
           </div>
-
         </div>
-
       </section>
 
-      {/* ============================================
-          CTA
-      ============================================ */}
-
       <section className="cta-section">
-
         <div className="cta-container">
-
           <div className="cta-content">
-
             <span className="section-label">
               GET STARTED
             </span>
@@ -1575,7 +1380,6 @@ export default function LandingPage() {
             </p>
 
             <div className="cta-actions">
-
               <Link
                 to="/register"
                 className="primary-button"
@@ -1593,30 +1397,19 @@ export default function LandingPage() {
               >
                 Log in
               </Link>
-
             </div>
-
           </div>
 
           <div className="cta-visual"></div>
-
         </div>
-
       </section>
-
-      {/* ============================================
-          FOOTER
-      ============================================ */}
 
       <footer
         id="contacts"
         className="landing-footer"
       >
-
         <div className="footer-content">
-
           <div className="footer-brand">
-
             <img
               src="/logo2.png"
               alt="PhilaLink"
@@ -1625,11 +1418,9 @@ export default function LandingPage() {
             <span>
               Phila<span>Link</span>
             </span>
-
           </div>
 
           <div className="footer-links">
-
             <a href="#about">
               About
             </a>
@@ -1645,11 +1436,9 @@ export default function LandingPage() {
             <a href="#health-tips">
               Health Tips
             </a>
-
           </div>
 
           <div className="footer-bottom">
-
             <span>
               © 2026 PhilaLink. All rights reserved.
             </span>
@@ -1657,13 +1446,9 @@ export default function LandingPage() {
             <span>
               Emergency: 10177
             </span>
-
           </div>
-
         </div>
-
       </footer>
-
     </div>
   );
 }

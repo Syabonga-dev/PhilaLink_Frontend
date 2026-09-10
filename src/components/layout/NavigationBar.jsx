@@ -1,21 +1,33 @@
-import { Link } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 
 export default function NavigationPage() {
-  const scrollToSection = (sectionId) => {
-    const section = document.getElementById(sectionId);
+  const location = useLocation();
+  const navigate = useNavigate();
 
-    if (section) {
-      section.scrollIntoView({
-        behavior: "smooth",
-        block: "start",
-      });
+  const scrollToSection = (sectionId) => {
+    if (location.pathname === "/") {
+      const section = document.getElementById(sectionId);
+
+      if (section) {
+        section.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+      }
+
+      return;
     }
+
+    navigate("/", {
+      state: {
+        scrollTo: sectionId,
+      },
+    });
   };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-[1000] border-b border-outline-variant/60 bg-surface-container-lowest/95 backdrop-blur">
       <div className="mx-auto flex h-16 w-full items-center justify-between px-6 sm:px-8 lg:px-12">
-        {/* Logo */}
         <Link
           to="/"
           className="flex items-center gap-2.5 transition-opacity hover:opacity-90"
@@ -31,7 +43,6 @@ export default function NavigationPage() {
           </span>
         </Link>
 
-        {/* Navigation */}
         <nav className="hidden items-center gap-1 lg:flex">
           <button
             type="button"
@@ -74,7 +85,6 @@ export default function NavigationPage() {
           </button>
         </nav>
 
-        {/* Authentication */}
         <div className="flex items-center gap-2 sm:gap-3">
           <Link
             to="/login"
