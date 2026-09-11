@@ -1,0 +1,220 @@
+.patient-figma-root {
+  --brand-primary: #0f766e;
+  --brand-hover: #115e59;
+  --brand-dark: #134e4a;
+  --brand-secondary: #2563eb;
+  --brand-tertiary: #ccfbf1;
+  --brand-muted: #f0fdfa;
+  --on-brand: #ffffff;
+
+  --accent: #2563eb;
+  --accent-light: #dbeafe;
+
+  --success: #16a34a;
+  --warning: #d97706;
+  --danger: #dc2626;
+  --info: #2563eb;
+
+  --surface-bg: #ffffff;
+  --surface-secondary-bg: #f8fafc;
+  --surface-hover: #f1f5f9;
+  --surface-dark: #0f172a;
+  --input-bg: #ffffff;
+
+  --bg-faint: #f8fafc;
+  --bg-subtle: #f1f5f9;
+  --bg-hover: #e2e8f0;
+
+  --modal-scrim: rgba(15, 23, 42, 0.48);
+
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --text-tertiary: #94a3b8;
+  --text-disabled: #cbd5e1;
+
+  --text-on-dark: #ffffff;
+  --text-on-dark-secondary: #cbd5e1;
+
+  --border-primary: #cbd5e1;
+  --border-secondary: #e2e8f0;
+  --border-selected: #0f766e;
+  --border-focus: #0f766e;
+  --border-danger: #dc2626;
+
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 0.75rem;
+  --space-lg: 1rem;
+  --space-xl: 1.5rem;
+  --space-2xl: 2rem;
+  --space-3xl: 2.5rem;
+  --space-4xl: 3rem;
+  --space-5xl: 4rem;
+
+  --corner-sm: 0.375rem;
+  --corner-md: 0.625rem;
+  --corner-lg: 1rem;
+  --corner-xl: 1.25rem;
+  --corner-2xl: 1.5rem;
+  --corner-full: 9999px;
+
+  --shadow-sm:
+    0 1px 2px rgba(15, 23, 42, 0.05);
+
+  --shadow-md:
+    0 4px 12px rgba(15, 23, 42, 0.08);
+
+  --shadow-lg:
+    0 12px 30px rgba(15, 23, 42, 0.12);
+
+  --shadow-xl:
+    0 20px 50px rgba(15, 23, 42, 0.18);
+
+  min-height: 100vh;
+
+  background-color: var(--surface-secondary-bg);
+  color: var(--text-primary);
+}
+
+.patient-figma-root,
+.patient-figma-root *,
+.patient-figma-root *::before,
+.patient-figma-root *::after {
+  box-sizing: border-box;
+}
+
+.patient-figma-root input,
+.patient-figma-root select,
+.patient-figma-root textarea,
+.patient-figma-root button {
+  font-family: inherit;
+}
+
+.patient-figma-root button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+.patient-figma-root .leaflet-container {
+  width: 100%;
+  height: 100%;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    sans-serif;
+
+  background-color: #e2e8f0;
+}
+
+.patient-figma-root .leaflet-popup-content-wrapper {
+  border-radius: var(--corner-md);
+
+  box-shadow:
+    0 12px 30px rgba(15, 23, 42, 0.15);
+}
+
+.patient-figma-root .leaflet-popup-content {
+  margin: 14px 16px;
+
+  color: var(--text-primary);
+}
+
+.patient-figma-root .leaflet-popup-tip {
+  background-color: var(--surface-bg);
+}
+
+.patient-figma-root .leaflet-control-zoom {
+  overflow: hidden;
+
+  border: none !important;
+
+  border-radius: var(--corner-md) !important;
+
+  box-shadow:
+    0 4px 12px rgba(15, 23, 42, 0.12) !important;
+}
+
+.patient-figma-root .leaflet-control-zoom a {
+  color: var(--text-primary) !important;
+
+  border-color:
+    var(--border-secondary) !important;
+}
+
+.patient-figma-root .leaflet-control-attribution {
+  font-size: 10px;
+}
+
+.patient-figma-root ::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.patient-figma-root ::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.patient-figma-root ::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1;
+
+  border-radius: var(--corner-full);
+}
+
+.patient-figma-root ::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8;
+}
+
+.patient-figma-root * {
+  scrollbar-width: thin;
+
+  scrollbar-color:
+    #cbd5e1 transparent;
+}
+
+@keyframes patient-chatbot-enter {
+  from {
+    opacity: 0;
+
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+
+    transform: translateY(0);
+  }
+}
+
+.patient-chatbot-enter {
+  animation:
+    patient-chatbot-enter 0.25s ease-out;
+}
+
+@keyframes patient-pulse-ring {
+  0% {
+    box-shadow:
+      0 0 0 0 rgba(15, 118, 110, 0.35);
+  }
+
+  70% {
+    box-shadow:
+      0 0 0 10px rgba(15, 118, 110, 0);
+  }
+
+  100% {
+    box-shadow:
+      0 0 0 0 rgba(15, 118, 110, 0);
+  }
+}
+
+.patient-pulse-ring {
+  animation:
+    patient-pulse-ring 2.5s infinite;
+}
+
+@media (max-width: 640px) {
+  .patient-figma-root {
+    --space-xl: 1.25rem;
+    --space-2xl: 1.5rem;
+  }
+}
