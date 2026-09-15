@@ -1445,91 +1445,6 @@
 
 
 /* =========================================================
-   FOOTER
-========================================================= */
-
-.landing-footer {
-  padding: 24px 6%;
-
-  background: #073b3b;
-
-  color: #ffffff;
-}
-
-.footer-content {
-  max-width: 1200px;
-
-  margin: 0 auto;
-}
-
-.footer-brand {
-  display: flex;
-  align-items: center;
-
-  gap: 10px;
-
-  font-size: 1.3rem;
-  font-weight: 700;
-}
-
-.footer-brand img {
-  width: 34px;
-  height: 34px;
-
-  object-fit: contain;
-}
-
-.footer-brand span span {
-  color: #5bffff;
-}
-
-.footer-content > p {
-  margin: 6px 0 14px;
-
-  color: rgba(255, 255, 255, 0.7);
-
-  font-size: 0.9rem;
-}
-
-.footer-links {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap: 16px;
-
-  margin-bottom: 16px;
-}
-
-.footer-links a {
-  color: rgba(255, 255, 255, 0.8);
-
-  font-size: 0.9rem;
-
-  text-decoration: none;
-
-  transition: color 0.2s ease;
-}
-
-.footer-links a:hover {
-  color: #ffffff;
-}
-
-.footer-bottom {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-
-  padding-top: 12px;
-
-  border-top: 1px solid rgba(255, 255, 255, 0.15);
-
-  color: rgba(255, 255, 255, 0.55);
-
-  font-size: 0.8rem;
-}
-
-
-/* =========================================================
    LARGE TABLET / SMALL LAPTOP
 ========================================================= */
 
@@ -1908,23 +1823,6 @@
   .cta-visual {
     align-self: center;
   }
-
-
-  /* -------------------------------------------------------
-     Footer
-  ------------------------------------------------------- */
-
-  .landing-footer {
-    padding: 24px 6%;
-  }
-
-  .footer-bottom {
-    flex-direction: column;
-
-    align-items: flex-start;
-
-    gap: 8px;
-  }
 }
 
 
@@ -2140,17 +2038,6 @@
   .cta-visual {
     width: 250px;
     height: 220px;
-  }
-
-
-  /* -------------------------------------------------------
-     Footer
-  ------------------------------------------------------- */
-
-  .footer-links {
-    flex-direction: column;
-
-    gap: 1rem;
   }
 }
 
