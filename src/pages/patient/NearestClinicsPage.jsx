@@ -1,4 +1,9 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   MapContainer,
   Marker,
@@ -8,6 +13,7 @@ import {
 } from "react-leaflet";
 import L from "leaflet";
 import {
+  AlertCircle,
   Clock,
   LocateFixed,
   MapPin,
@@ -16,93 +22,11 @@ import {
   RefreshCw,
   Search,
 } from "lucide-react";
-
-const clinics = [
-  {
-    id: "1",
-    name: "Soweto Community Health Centre",
-    type: "Community Health Centre",
-    latitude: -26.2482,
-    longitude: 27.8546,
-    address: "Soweto, Johannesburg",
-    phone: "011 000 1001",
-    open: false,
-  },
-  {
-    id: "2",
-    name: "Chris Hani Baragwanath Hospital",
-    type: "Public Hospital",
-    latitude: -26.2618,
-    longitude: 27.9437,
-    address: "Diepkloof, Soweto",
-    phone: "011 933 8000",
-    open: true,
-  },
-  {
-    id: "3",
-    name: "Diepkloof Zone 6 Clinic",
-    type: "Clinic",
-    latitude: -26.241,
-    longitude: 27.9503,
-    address: "Diepkloof Zone 6, Soweto",
-    phone: "011 000 1003",
-    open: false,
-  },
-  {
-    id: "4",
-    name: "Dobsonville Community Health Centre",
-    type: "Community Health Centre",
-    latitude: -26.2156,
-    longitude: 27.8663,
-    address: "Dobsonville, Soweto",
-    phone: "011 000 1004",
-    open: false,
-  },
-  {
-    id: "5",
-    name: "Devland Community Health Centre",
-    type: "Community Health Centre",
-    latitude: -26.285,
-    longitude: 27.8907,
-    address: "Devland, Johannesburg",
-    phone: "011 000 1005",
-    open: false,
-  },
-  {
-    id: "6",
-    name: "Chiawelo Community Health Centre",
-    type: "Community Health Centre",
-    latitude: -26.297,
-    longitude: 27.8902,
-    address: "Chiawelo, Soweto",
-    phone: "011 000 1006",
-    open: false,
-  },
-  {
-    id: "7",
-    name: "Lenasia Community Health Centre",
-    type: "Community Health Centre",
-    latitude: -26.3208,
-    longitude: 27.835,
-    address: "Lenasia, Johannesburg",
-    phone: "011 000 1007",
-    open: false,
-  },
-  {
-    id: "8",
-    name: "Eldorado Park Community Health Centre",
-    type: "Community Health Centre",
-    latitude: -26.2966,
-    longitude: 27.8847,
-    address: "Eldorado Park, Johannesburg",
-    phone: "011 000 1008",
-    open: false,
-  },
-];
+import { clinicsApi } from "../../services/api/clinics.js";
 
 const defaultCentre = {
-  latitude: -26.2482,
-  longitude: 27.8546,
+  latitude: -30.5595,
+  longitude: 22.9375,
 };
 
 const clinicMarkerIcon = L.divIcon({
@@ -161,24 +85,27 @@ function calculateDistanceKm(
   const toRadians = (degrees) =>
     (degrees * Math.PI) / 180;
 
-  const latitudeDifference = toRadians(
-    latitude2 - latitude1
-  );
+  const latitudeDifference =
+    toRadians(
+      latitude2 - latitude1
+    );
 
-  const longitudeDifference = toRadians(
-    longitude2 - longitude1
-  );
+  const longitudeDifference =
+    toRadians(
+      longitude2 - longitude1
+    );
 
-  const firstLatitude = toRadians(
-    latitude1
-  );
+  const firstLatitude =
+    toRadians(latitude1);
 
-  const secondLatitude = toRadians(
-    latitude2
-  );
+  const secondLatitude =
+    toRadians(latitude2);
 
   const a =
-    Math.sin(latitudeDifference / 2) ** 2 +
+    Math.sin(
+      latitudeDifference / 2
+    ) **
+      2 +
     Math.cos(firstLatitude) *
       Math.cos(secondLatitude) *
       Math.sin(
@@ -196,6 +123,94 @@ function calculateDistanceKm(
   return earthRadiusKm * c;
 }
 
+function formatTime(value) {
+  if (!value) return null;
+
+  const text = String(value);
+
+  if (/^\d{2}:\d{2}/.test(text)) {
+    return text.slice(0, 5);
+  }
+
+  return text;
+}
+
+function getClinicOpenState(clinic) {
+  if (
+    !clinic?.openingTime ||
+    !clinic?.closingTime
+  ) {
+    return {
+      known: false,
+      open: false,
+      label: "Hours unavailable",
+    };
+  }
+
+  const opening =
+    formatTime(
+      clinic.openingTime
+    );
+
+  const closing =
+    formatTime(
+      clinic.closingTime
+    );
+
+  if (!opening || !closing) {
+    return {
+      known: false,
+      open: false,
+      label: "Hours unavailable",
+    };
+  }
+
+  const now = new Date();
+
+  const currentMinutes =
+    now.getHours() * 60 +
+    now.getMinutes();
+
+  const [openHour, openMinute] =
+    opening
+      .split(":")
+      .map(Number);
+
+  const [closeHour, closeMinute] =
+    closing
+      .split(":")
+      .map(Number);
+
+  const openMinutes =
+    openHour * 60 +
+    openMinute;
+
+  const closeMinutes =
+    closeHour * 60 +
+    closeMinute;
+
+  const open =
+    currentMinutes >=
+      openMinutes &&
+    currentMinutes <
+      closeMinutes;
+
+  return {
+    known: true,
+    open,
+    label: open
+      ? "Open"
+      : "Closed",
+  };
+}
+
+function getDirectionsUrl(
+  latitude,
+  longitude
+) {
+  return `https://www.google.com/maps/dir/?api=1&destination=${latitude},${longitude}`;
+}
+
 function MapController({
   latitude,
   longitude,
@@ -204,8 +219,8 @@ function MapController({
 
   useEffect(() => {
     if (
-      typeof latitude === "number" &&
-      typeof longitude === "number"
+      Number.isFinite(latitude) &&
+      Number.isFinite(longitude)
     ) {
       map.flyTo(
         [latitude, longitude],
@@ -215,12 +230,38 @@ function MapController({
         }
       );
     }
-  }, [latitude, longitude, map]);
+  }, [
+    latitude,
+    longitude,
+    map,
+  ]);
 
   return null;
 }
 
+function LoadingList() {
+  return (
+    <div className="p-lg flex flex-col gap-md">
+      {[1, 2, 3].map(
+        (item) => (
+          <div
+            key={item}
+            className="animate-pulse border-b border-border-secondary pb-lg"
+          >
+            <div className="h-4 w-52 rounded bg-border-secondary mb-sm" />
+            <div className="h-3 w-36 rounded bg-border-secondary mb-sm" />
+            <div className="h-3 w-64 rounded bg-border-secondary" />
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
 export default function NearestClinicsPage() {
+  const [clinics, setClinics] =
+    useState([]);
+
   const [search, setSearch] =
     useState("");
 
@@ -230,138 +271,253 @@ export default function NearestClinicsPage() {
   const [locationError, setLocationError] =
     useState("");
 
-  const [locationLoading, setLocationLoading] =
-    useState(false);
+  const [
+    locationLoading,
+    setLocationLoading,
+  ] = useState(false);
 
-  const requestLocation = () => {
-    if (!navigator.geolocation) {
-      setLocationError(
-        "Location services are not supported by this browser."
-      );
+  const [
+    clinicsLoading,
+    setClinicsLoading,
+  ] = useState(true);
 
-      return;
-    }
+  const [error, setError] =
+    useState("");
 
-    setLocationLoading(true);
-    setLocationError("");
+  const loadClinics =
+    useCallback(async () => {
+      try {
+        setClinicsLoading(true);
+        setError("");
 
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        setLocation({
-          latitude:
-            position.coords.latitude,
-          longitude:
-            position.coords.longitude,
-        });
+        const result =
+          await clinicsApi.getAll();
 
-        setLocationLoading(false);
-      },
-      (error) => {
-        setLocation(null);
+        setClinics(
+          Array.isArray(result)
+            ? result.filter(
+                (clinic) =>
+                  clinic?.isActive !==
+                  false
+              )
+            : []
+        );
+      } catch (err) {
+        console.error(
+          "Failed to load clinics:",
+          err
+        );
 
-        if (
-          error.code ===
-          error.PERMISSION_DENIED
-        ) {
-          setLocationError(
-            "Location access denied. Enable it in browser settings to see distances."
-          );
-        } else if (
-          error.code ===
-          error.POSITION_UNAVAILABLE
-        ) {
-          setLocationError(
-            "Your current location could not be determined."
-          );
-        } else if (
-          error.code === error.TIMEOUT
-        ) {
-          setLocationError(
-            "Location request timed out. Please try again."
-          );
-        } else {
-          setLocationError(
-            "Location unavailable."
-          );
-        }
+        setClinics([]);
 
-        setLocationLoading(false);
-      },
-      {
-        enableHighAccuracy: true,
-        timeout: 10000,
-        maximumAge: 60000,
+        setError(
+          err?.message ||
+            "We could not load clinics."
+        );
+      } finally {
+        setClinicsLoading(false);
       }
-    );
-  };
+    }, []);
+
+  const requestLocation =
+    useCallback(() => {
+      if (
+        !navigator.geolocation
+      ) {
+        setLocationError(
+          "Location services are not supported by this browser."
+        );
+
+        return;
+      }
+
+      setLocationLoading(true);
+      setLocationError("");
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLocation({
+            latitude:
+              position.coords
+                .latitude,
+            longitude:
+              position.coords
+                .longitude,
+          });
+
+          setLocationLoading(
+            false
+          );
+        },
+        (geoError) => {
+          setLocation(null);
+
+          if (
+            geoError.code ===
+            geoError.PERMISSION_DENIED
+          ) {
+            setLocationError(
+              "Location access denied. Enable it in your browser settings to see distances."
+            );
+          } else if (
+            geoError.code ===
+            geoError.POSITION_UNAVAILABLE
+          ) {
+            setLocationError(
+              "Your current location could not be determined."
+            );
+          } else if (
+            geoError.code ===
+            geoError.TIMEOUT
+          ) {
+            setLocationError(
+              "Location request timed out. Please try again."
+            );
+          } else {
+            setLocationError(
+              "Location unavailable."
+            );
+          }
+
+          setLocationLoading(
+            false
+          );
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: 10000,
+          maximumAge: 60000,
+        }
+      );
+    }, []);
 
   useEffect(() => {
+    loadClinics();
     requestLocation();
-  }, []);
+  }, [
+    loadClinics,
+    requestLocation,
+  ]);
 
-  const clinicsWithDistance = useMemo(
-    () =>
-      clinics
+  const clinicsWithDistance =
+    useMemo(() => {
+      return clinics
+        .filter(
+          (clinic) =>
+            Number.isFinite(
+              Number(
+                clinic.latitude
+              )
+            ) &&
+            Number.isFinite(
+              Number(
+                clinic.longitude
+              )
+            )
+        )
         .map((clinic) => {
-          if (!location) {
-            return {
-              ...clinic,
-              distance: null,
-            };
-          }
+          const latitude =
+            Number(
+              clinic.latitude
+            );
+
+          const longitude =
+            Number(
+              clinic.longitude
+            );
+
+          const distance =
+            location
+              ? calculateDistanceKm(
+                  location.latitude,
+                  location.longitude,
+                  latitude,
+                  longitude
+                )
+              : null;
 
           return {
             ...clinic,
-            distance: calculateDistanceKm(
-              location.latitude,
-              location.longitude,
-              clinic.latitude,
-              clinic.longitude
-            ),
+            latitude,
+            longitude,
+            distance,
           };
         })
-        .sort((first, second) => {
-          if (
-            first.distance == null ||
-            second.distance == null
-          ) {
-            return 0;
-          }
+        .sort(
+          (first, second) => {
+            if (
+              first.distance ==
+                null &&
+              second.distance ==
+                null
+            ) {
+              return first.name.localeCompare(
+                second.name
+              );
+            }
 
-          return (
-            first.distance -
-            second.distance
-          );
-        }),
-    [location]
-  );
+            if (
+              first.distance ==
+              null
+            ) {
+              return 1;
+            }
+
+            if (
+              second.distance ==
+              null
+            ) {
+              return -1;
+            }
+
+            return (
+              first.distance -
+              second.distance
+            );
+          }
+        );
+    }, [clinics, location]);
 
   const visibleClinics =
-    clinicsWithDistance.filter(
-      (clinic) => {
-        const query = search
-          .trim()
-          .toLowerCase();
+    useMemo(() => {
+      const query = search
+        .trim()
+        .toLowerCase();
 
-        if (!query) {
-          return true;
-        }
+      if (!query) {
+        return clinicsWithDistance;
+      }
 
-        return (
-          clinic.name
-            .toLowerCase()
-            .includes(query) ||
-          clinic.type
-            .toLowerCase()
-            .includes(query) ||
-          clinic.address
+      return clinicsWithDistance.filter(
+        (clinic) =>
+          [
+            clinic.name,
+            clinic.type,
+            clinic.address,
+            clinic.services,
+          ]
+            .filter(Boolean)
+            .join(" ")
             .toLowerCase()
             .includes(query)
-        );
-      }
-    );
+      );
+    }, [
+      clinicsWithDistance,
+      search,
+    ]);
 
-  const mapCentre = location ?? defaultCentre;
+  const mapCentre =
+    location ??
+    (visibleClinics.length > 0
+      ? {
+          latitude:
+            visibleClinics[0]
+              .latitude,
+          longitude:
+            visibleClinics[0]
+              .longitude,
+        }
+      : defaultCentre);
 
   return (
     <div className="p-lg md:p-xl lg:p-2xl">
@@ -371,13 +527,36 @@ export default function NearestClinicsPage() {
         </h1>
 
         <p className="mt-xs text-label-sm text-text-secondary">
-          Healthcare facilities in your
-          area
+          Find active PhilaLink
+          healthcare facilities.
         </p>
       </div>
 
+      {error && (
+        <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-danger/20 bg-danger/10 p-md">
+          <AlertCircle
+            size={17}
+            className="mt-0.5 shrink-0 text-danger"
+          />
+
+          <div>
+            <p className="text-label-sm text-text-primary">
+              {error}
+            </p>
+
+            <button
+              type="button"
+              onClick={loadClinics}
+              className="mt-xs text-label-sm text-brand-primary hover:opacity-70"
+            >
+              Try again
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 gap-lg lg:grid-cols-[minmax(0,1.4fr)_minmax(320px,.8fr)] lg:gap-xl">
-        <div className="overflow-hidden rounded-corner-lg bg-surface-bg">
+        <div className="overflow-hidden rounded-corner-lg bg-surface-bg border border-border-secondary">
           <div className="border-b border-border-secondary p-lg">
             <div className="flex flex-col gap-md sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -387,23 +566,22 @@ export default function NearestClinicsPage() {
                     : "Location unavailable"}
                 </p>
 
-                {location ? (
-                  <p className="mt-xs text-video-title text-text-secondary">
-                    Clinics are sorted by
-                    distance from you.
-                  </p>
-                ) : (
-                  <p className="mt-xs text-video-title text-text-secondary">
-                    {locationError ||
+                <p className="mt-xs text-video-title text-text-secondary">
+                  {location
+                    ? "Clinics are sorted by distance from you."
+                    : locationError ||
                       "Allow location access to see accurate distances."}
-                  </p>
-                )}
+                </p>
               </div>
 
               <button
                 type="button"
-                onClick={requestLocation}
-                disabled={locationLoading}
+                onClick={
+                  requestLocation
+                }
+                disabled={
+                  locationLoading
+                }
                 className="inline-flex items-center justify-center gap-xs rounded-corner-md border border-border-secondary bg-white px-md py-sm text-label-sm font-medium text-text-primary transition hover:bg-bg-faint disabled:cursor-not-allowed disabled:opacity-60"
               >
                 {locationLoading ? (
@@ -412,7 +590,9 @@ export default function NearestClinicsPage() {
                     className="animate-spin"
                   />
                 ) : (
-                  <LocateFixed size={15} />
+                  <LocateFixed
+                    size={15}
+                  />
                 )}
 
                 {locationLoading
@@ -463,7 +643,8 @@ export default function NearestClinicsPage() {
                   }
                 >
                   <Popup>
-                    Your current location
+                    Your current
+                    location
                   </Popup>
                 </Marker>
               )}
@@ -486,13 +667,15 @@ export default function NearestClinicsPage() {
                           {clinic.name}
                         </strong>
 
-                        <div
-                          style={{
-                            marginTop: 4,
-                          }}
-                        >
-                          {clinic.type}
-                        </div>
+                        {clinic.type && (
+                          <div
+                            style={{
+                              marginTop: 4,
+                            }}
+                          >
+                            {clinic.type}
+                          </div>
+                        )}
 
                         {clinic.distance !=
                           null && (
@@ -516,7 +699,7 @@ export default function NearestClinicsPage() {
           </div>
         </div>
 
-        <div className="flex min-h-0 flex-col rounded-corner-lg bg-surface-bg">
+        <div className="flex min-h-0 flex-col rounded-corner-lg bg-surface-bg border border-border-secondary">
           <div className="border-b border-border-secondary p-lg">
             <div className="relative">
               <Search
@@ -527,9 +710,12 @@ export default function NearestClinicsPage() {
               <input
                 type="text"
                 value={search}
-                onChange={(event) =>
+                onChange={(
+                  event
+                ) =>
                   setSearch(
-                    event.target.value
+                    event.target
+                      .value
                   )
                 }
                 placeholder="Search clinics"
@@ -539,153 +725,184 @@ export default function NearestClinicsPage() {
           </div>
 
           <div className="flex-1 overflow-y-auto">
-            {visibleClinics.map(
-              (clinic, index) => (
-                <div
-                  key={clinic.id}
-                  className={`p-lg ${
-                    index <
-                    visibleClinics.length -
-                      1
-                      ? "border-b border-border-secondary"
-                      : ""
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-md">
-                    <div className="min-w-0 flex-1">
-                      <div className="flex flex-wrap items-center gap-sm">
-                        <h3 className="text-label-sm font-semibold text-text-primary">
-                          {clinic.name}
-                        </h3>
-
-                        <span
-                          className={`rounded-corner-full px-sm py-[2px] text-[11px] font-medium ${
-                            clinic.open
-                              ? "bg-[#dcfce7] text-[#166534]"
-                              : "bg-[#f1f5f9] text-[#475569]"
-                          }`}
-                        >
-                          {clinic.open
-                            ? "Open"
-                            : "Closed"}
-                        </span>
-                      </div>
-
-                      <p className="mt-xs text-video-title text-text-secondary">
-                        {clinic.type}
-                      </p>
-
-                      <div className="mt-md flex flex-col gap-sm">
-                        <div className="flex items-start gap-xs">
-                          <MapPin
-                            size={13}
-                            className="mt-[2px] shrink-0 text-text-tertiary"
-                          />
-
-                          <span className="text-video-title text-text-secondary">
-                            {
-                              clinic.address
-                            }
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-xs">
-                          <Phone
-                            size={13}
-                            className="shrink-0 text-text-tertiary"
-                          />
-
-                          <span className="text-video-title text-text-secondary">
-                            {
-                              clinic.phone
-                            }
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-xs">
-                          <Clock
-                            size={13}
-                            className="shrink-0 text-text-tertiary"
-                          />
-
-                          <span className="text-video-title text-text-secondary">
-                            {clinic.open
-                              ? "Currently open"
-                              : "Currently closed"}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {clinic.distance != null && (
-                      <div className="shrink-0 text-right">
-                        <p className="text-label-sm font-semibold text-text-primary">
-                          {clinic.distance.toFixed(
-                            1
-                          )}{" "}
-                          km
-                        </p>
-
-                        <p className="mt-xs text-video-title text-text-tertiary">
-                          away
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="mt-lg flex gap-md">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const destination = `${clinic.latitude},${clinic.longitude}`;
-
-                        window.open(
-                          `https://www.google.com/maps/dir/?api=1&destination=${destination}`,
-                          "_blank",
-                          "noopener,noreferrer"
-                        );
-                      }}
-                      className="inline-flex flex-1 items-center justify-center gap-xs rounded-corner-md bg-brand-primary px-md py-sm text-label-sm font-medium text-white transition hover:opacity-90"
-                    >
-                      <Navigation
-                        size={14}
-                      />
-
-                      Directions
-                    </button>
-
-                    <a
-                      href={`tel:${clinic.phone.replace(
-                        /\s/g,
-                        ""
-                      )}`}
-                      className="inline-flex flex-1 items-center justify-center gap-xs rounded-corner-md border border-border-secondary bg-white px-md py-sm text-label-sm font-medium text-text-primary transition hover:bg-bg-faint"
-                    >
-                      <Phone size={14} />
-
-                      Call
-                    </a>
-                  </div>
-                </div>
-              )
-            )}
-
-            {visibleClinics.length === 0 && (
-              <div className="p-2xl text-center">
+            {clinicsLoading ? (
+              <LoadingList />
+            ) : visibleClinics.length ===
+              0 ? (
+              <div className="p-xl text-center">
                 <MapPin
-                  size={28}
+                  size={26}
                   className="mx-auto text-text-tertiary"
                 />
 
-                <h3 className="mt-md text-label font-semibold text-text-primary">
+                <p className="mt-md text-label font-semibold text-text-primary">
                   No clinics found
-                </h3>
+                </p>
 
                 <p className="mt-xs text-label-sm text-text-secondary">
-                  Try a different clinic
-                  name or area.
+                  Try changing your
+                  search.
                 </p>
               </div>
+            ) : (
+              visibleClinics.map(
+                (
+                  clinic,
+                  index
+                ) => {
+                  const state =
+                    getClinicOpenState(
+                      clinic
+                    );
+
+                  return (
+                    <div
+                      key={
+                        clinic.id
+                      }
+                      className={`p-lg ${
+                        index <
+                        visibleClinics.length -
+                          1
+                          ? "border-b border-border-secondary"
+                          : ""
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-md">
+                        <div className="min-w-0 flex-1">
+                          <div className="flex flex-wrap items-center gap-sm">
+                            <h3 className="text-label-sm font-semibold text-text-primary">
+                              {
+                                clinic.name
+                              }
+                            </h3>
+
+                            {state.known && (
+                              <span
+                                className={`rounded-corner-full px-sm py-[2px] text-[11px] font-medium ${
+                                  state.open
+                                    ? "bg-[#dcfce7] text-[#166534]"
+                                    : "bg-[#f1f5f9] text-[#475569]"
+                                }`}
+                              >
+                                {
+                                  state.label
+                                }
+                              </span>
+                            )}
+                          </div>
+
+                          {clinic.type && (
+                            <p className="mt-xs text-video-title text-text-secondary">
+                              {
+                                clinic.type
+                              }
+                            </p>
+                          )}
+
+                          <div className="mt-md flex flex-col gap-sm">
+                            {clinic.address && (
+                              <div className="flex items-start gap-xs">
+                                <MapPin
+                                  size={13}
+                                  className="mt-[2px] shrink-0 text-text-tertiary"
+                                />
+
+                                <span className="text-video-title text-text-secondary">
+                                  {
+                                    clinic.address
+                                  }
+                                </span>
+                              </div>
+                            )}
+
+                            {clinic.contactNumber && (
+                              <div className="flex items-center gap-xs">
+                                <Phone
+                                  size={13}
+                                  className="shrink-0 text-text-tertiary"
+                                />
+
+                                <a
+                                  href={`tel:${clinic.contactNumber}`}
+                                  className="text-video-title text-text-secondary hover:text-brand-primary"
+                                >
+                                  {
+                                    clinic.contactNumber
+                                  }
+                                </a>
+                              </div>
+                            )}
+
+                            {clinic.openingTime &&
+                              clinic.closingTime && (
+                                <div className="flex items-center gap-xs">
+                                  <Clock
+                                    size={13}
+                                    className="shrink-0 text-text-tertiary"
+                                  />
+
+                                  <span className="text-video-title text-text-secondary">
+                                    {formatTime(
+                                      clinic.openingTime
+                                    )}{" "}
+                                    –{" "}
+                                    {formatTime(
+                                      clinic.closingTime
+                                    )}
+                                  </span>
+                                </div>
+                              )}
+
+                            {clinic.distance !=
+                              null && (
+                              <div className="flex items-center gap-xs">
+                                <Navigation
+                                  size={13}
+                                  className="shrink-0 text-brand-primary"
+                                />
+
+                                <span className="text-video-title text-text-secondary">
+                                  {clinic.distance.toFixed(
+                                    1
+                                  )}{" "}
+                                  km away
+                                </span>
+                              </div>
+                            )}
+                          </div>
+
+                          {clinic.services && (
+                            <p className="mt-md text-video-title text-text-secondary">
+                              {
+                                clinic.services
+                              }
+                            </p>
+                          )}
+
+                          <div className="mt-md">
+                            <a
+                              href={getDirectionsUrl(
+                                clinic.latitude,
+                                clinic.longitude
+                              )}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="inline-flex items-center gap-xs text-label-sm font-medium text-brand-primary hover:opacity-70"
+                            >
+                              <Navigation
+                                size={14}
+                              />
+
+                              Directions
+                            </a>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                }
+              )
             )}
           </div>
         </div>

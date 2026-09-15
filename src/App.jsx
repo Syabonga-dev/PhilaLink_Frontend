@@ -1,4 +1,8 @@
-import { Routes, Route, Navigate } from "react-router-dom";
+import {
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
 import { useAuth } from "./context/AuthContext.jsx";
 import {
   ProtectedRoute,
@@ -26,7 +30,6 @@ import PatientSettingsPage from "./pages/patient/SettingsPage.jsx";
 import NurseDashboard from "./pages/nurse/NurseDashboard.jsx";
 import NursePatientsPage from "./pages/nurse/NursePatientsPage.jsx";
 import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
-import AuditLogPage from "./pages/nurse/AuditLogPage.jsx";
 
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
@@ -35,11 +38,26 @@ import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
 import ManageStaffPage from "./pages/admin/ManageStaffPage.jsx";
 
-function RedirectIfAuthenticated({ children }) {
-  const { isAuthenticated, role, isLoading } = useAuth();
+function RedirectIfAuthenticated({
+  children,
+}) {
+  const {
+    isAuthenticated,
+    role,
+    isLoading,
+  } = useAuth();
 
-  if (!isLoading && isAuthenticated) {
-    return <Navigate to={homePathForRole(role)} replace />;
+  if (isLoading) {
+    return children;
+  }
+
+  if (isAuthenticated) {
+    return (
+      <Navigate
+        to={homePathForRole(role)}
+        replace
+      />
+    );
   }
 
   return children;
@@ -66,88 +84,189 @@ export default function App() {
         }
       />
 
-      <Route path="/register" element={<RegisterPage />} />
-      <Route path="/register/verify" element={<PhoneVerificationPage />} />
-      <Route path="/register/success" element={<RegistrationSuccessPage />} />
+      <Route
+        path="/register"
+        element={
+          <RegisterPage />
+        }
+      />
 
-      <Route element={<ProtectedRoute />}>
-        <Route element={<RoleRoute allow={["Patient"]} />}>
-          <Route path="/patient" element={<PatientAppLayout />}>
-            <Route index element={<PatientDashboardPage />} />
+      <Route
+        path="/register/verify"
+        element={
+          <PhoneVerificationPage />
+        }
+      />
+
+      <Route
+        path="/register/success"
+        element={
+          <RegistrationSuccessPage />
+        }
+      />
+
+      <Route
+        element={
+          <ProtectedRoute />
+        }
+      >
+        <Route
+          element={
+            <RoleRoute
+              allow={[
+                "Patient",
+              ]}
+            />
+          }
+        >
+          <Route
+            path="/patient"
+            element={
+              <PatientAppLayout />
+            }
+          >
+            <Route
+              index
+              element={
+                <PatientDashboardPage />
+              }
+            />
 
             <Route
               path="medications"
-              element={<PatientMedicationsPage />}
+              element={
+                <PatientMedicationsPage />
+              }
             />
 
             <Route
               path="appointments"
-              element={<PatientAppointmentsPage />}
+              element={
+                <PatientAppointmentsPage />
+              }
             />
 
             <Route
               path="records"
-              element={<PatientRecordsPage />}
+              element={
+                <PatientRecordsPage />
+              }
             />
 
             <Route
               path="clinics"
-              element={<PatientNearestClinicsPage />}
+              element={
+                <PatientNearestClinicsPage />
+              }
             />
 
             <Route
               path="settings"
-              element={<PatientSettingsPage />}
+              element={
+                <PatientSettingsPage />
+              }
             />
           </Route>
         </Route>
 
-        <Route element={<AuthenticatedLayout />}>
-          <Route element={<RoleRoute allow={["Nurse"]} />}>
-            <Route path="/nurse" element={<NurseDashboard />} />
+        <Route
+          element={
+            <AuthenticatedLayout />
+          }
+        >
+          <Route
+            element={
+              <RoleRoute
+                allow={[
+                  "Nurse",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/nurse"
+              element={
+                <NurseDashboard />
+              }
+            />
 
             <Route
               path="/nurse/patients"
-              element={<NursePatientsPage />}
+              element={
+                <NursePatientsPage />
+              }
             />
 
             <Route
               path="/nurse/collections"
-              element={<CollectionsPage />}
-            />
-
-            <Route
-              path="/nurse/audit-log"
-              element={<AuditLogPage />}
+              element={
+                <CollectionsPage />
+              }
             />
           </Route>
 
-          <Route element={<RoleRoute allow={["Proxy"]} />}>
-            <Route path="/proxy" element={<ProxyDashboard />} />
+          <Route
+            element={
+              <RoleRoute
+                allow={[
+                  "Proxy",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/proxy"
+              element={
+                <ProxyDashboard />
+              }
+            />
 
             <Route
               path="/proxy/patients"
-              element={<ProxyPatientsPage />}
+              element={
+                <ProxyPatientsPage />
+              }
             />
           </Route>
 
-          <Route element={<RoleRoute allow={["Admin"]} />}>
-            <Route path="/admin" element={<AdminDashboard />} />
+          <Route
+            element={
+              <RoleRoute
+                allow={[
+                  "ClinicAdmin",
+                  "SuperAdmin",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/admin"
+              element={
+                <AdminDashboard />
+              }
+            />
 
             <Route
               path="/admin/register-staff"
-              element={<RegisterStaffPage />}
+              element={
+                <RegisterStaffPage />
+              }
             />
 
             <Route
               path="/admin/staff"
-              element={<ManageStaffPage />}
+              element={
+                <ManageStaffPage />
+              }
             />
           </Route>
         </Route>
       </Route>
 
-      <Route path="*" element={<NotFound />} />
+      <Route
+        path="*"
+        element={<NotFound />}
+      />
     </Routes>
   );
 }

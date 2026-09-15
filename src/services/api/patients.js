@@ -1,26 +1,116 @@
 import { api } from "./client.js";
 
 export const patientsApi = {
-  // Matches GET /api/Patient/user/{userId} — there's no /me convenience
-  // route on the backend, so this needs the logged-in user's id (from
-  // AuthContext's `user.id`, i.e. tokenStore.getUser().id).
-  getByUserId: (userId) => api.get(`/api/patient/user/${userId}`),
+  getMe: () =>
+    api.get("/api/patients/me"),
 
-  // Matches PUT /api/Patient/{id} — NOTE: this is the Patient record's own
-  // id, not the User id. If you only have the userId, call getByUserId()
-  // first to get the patient record (and its .id) before updating.
-  update: (patientId, payload) => api.put(`/api/patient/${patientId}`, payload),
+  updateMe: (payload) =>
+    api.put("/api/patients/me", payload),
 
-  getById: (patientId) => api.get(`/api/patient/${patientId}`),
-  list: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return api.get(`/api/patient${qs ? `?${qs}` : ""}`);
+  getDashboard: () =>
+    api.get("/api/patients/me/dashboard"),
+
+  getRecords: () =>
+    api.get("/api/patients/me/records"),
+
+  getMedications: () =>
+    api.get("/api/patients/me/medications"),
+
+  logMedication: (
+    medicationId,
+    { taken, notes = null }
+  ) => {
+    if (!medicationId) {
+      throw new Error(
+        "A medication ID is required."
+      );
+    }
+
+    return api.post(
+      `/api/patients/me/medications/${medicationId}/log`,
+      {
+        taken,
+        notes,
+      }
+    );
   },
 
-  // --- Not yet backed by any Patient-controller endpoint ---
-  // These map to Medication/Collections concepts and are handled in
-  // their own passes, left untouched here for now.
-  getMedications: () => api.get("/api/patients/me/medications"),
-  getUpcomingCollection: () => api.get("/api/patients/me/collections/next"),
-  getCollectionHistory: () => api.get("/api/patients/me/collections"),
+  getAppointments: () =>
+    api.get("/api/patients/me/appointments"),
+
+  bookAppointment: (payload) =>
+    api.post(
+      "/api/patients/me/appointments",
+      payload
+    ),
+
+  rescheduleAppointment: (
+    appointmentId,
+    payload
+  ) => {
+    if (!appointmentId) {
+      throw new Error(
+        "An appointment ID is required."
+      );
+    }
+
+    return api.patch(
+      `/api/patients/me/appointments/${appointmentId}/reschedule`,
+      payload
+    );
+  },
+
+  cancelAppointment: (
+    appointmentId
+  ) => {
+    if (!appointmentId) {
+      throw new Error(
+        "An appointment ID is required."
+      );
+    }
+
+    return api.patch(
+      `/api/patients/me/appointments/${appointmentId}/cancel`
+    );
+  },
+
+  getCollections: () =>
+    api.get(
+      "/api/patients/me/collections"
+    ),
+
+  getNextCollection: () =>
+    api.get(
+      "/api/patients/me/collections/next"
+    ),
+
+  getNotifications: () =>
+    api.get(
+      "/api/patients/me/notifications"
+    ),
+
+  markNotificationRead: (
+    notificationId
+  ) => {
+    if (!notificationId) {
+      throw new Error(
+        "A notification ID is required."
+      );
+    }
+
+    return api.patch(
+      `/api/patients/me/notifications/${notificationId}/read`
+    );
+  },
+
+  getPreferences: () =>
+    api.get(
+      "/api/patients/me/preferences"
+    ),
+
+  updatePreferences: (payload) =>
+    api.put(
+      "/api/patients/me/preferences",
+      payload
+    ),
 };

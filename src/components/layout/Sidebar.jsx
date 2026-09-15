@@ -1,62 +1,62 @@
 import { NavLink } from "react-router-dom";
 
+const NURSE_NAV = [
+  {
+    to: "/nurse",
+    label: "Dashboard",
+    icon: "space_dashboard",
+    end: true,
+  },
+  {
+    to: "/nurse/patients",
+    label: "Patients",
+    icon: "groups",
+  },
+  {
+    to: "/nurse/collections",
+    label: "Collections",
+    icon: "inventory_2",
+  },
+];
+
+const PROXY_NAV = [
+  {
+    to: "/proxy",
+    label: "Dashboard",
+    icon: "space_dashboard",
+    end: true,
+  },
+  {
+    to: "/proxy/patients",
+    label: "Patients Under Care",
+    icon: "family_restroom",
+  },
+];
+
+const ADMIN_NAV = [
+  {
+    to: "/admin",
+    label: "Overview",
+    icon: "space_dashboard",
+    end: true,
+  },
+  {
+    to: "/admin/register-staff",
+    label: "Register Staff",
+    icon: "person_add",
+  },
+  {
+    to: "/admin/staff",
+    label: "Manage Staff",
+    icon: "badge",
+  },
+];
+
 const NAV_BY_ROLE = {
-  Nurse: [
-    {
-      to: "/nurse",
-      label: "Dashboard",
-      icon: "space_dashboard",
-      end: true,
-    },
-    {
-      to: "/nurse/patients",
-      label: "Patients",
-      icon: "groups",
-    },
-    {
-      to: "/nurse/collections",
-      label: "Collections",
-      icon: "inventory_2",
-    },
-    {
-      to: "/nurse/audit-log",
-      label: "Audit Log",
-      icon: "fact_check",
-    },
-  ],
-
-  Proxy: [
-    {
-      to: "/proxy",
-      label: "Dashboard",
-      icon: "space_dashboard",
-      end: true,
-    },
-    {
-      to: "/proxy/patients",
-      label: "Patients Under Care",
-      icon: "family_restroom",
-    },
-  ],
-
-  Admin: [
-    {
-      to: "/admin",
-      label: "Overview",
-      icon: "space_dashboard",
-      end: true,
-    },
-    {
-      to: "/admin/register-staff",
-      label: "Register Staff",
-      icon: "person_add",
-    },
-    {
-      to: "/admin/staff",
-      label: "Manage Staff",
-      icon: "badge",
-    },
-  ],
+  Nurse: NURSE_NAV,
+  Proxy: PROXY_NAV,
+  ClinicAdmin: ADMIN_NAV,
+  SuperAdmin: ADMIN_NAV,
 };
 
 export default function Sidebar({
@@ -64,7 +64,8 @@ export default function Sidebar({
   open,
   onClose,
 }) {
-  const items = NAV_BY_ROLE[role] || [];
+  const items =
+    NAV_BY_ROLE[role] || [];
 
   return (
     <>
@@ -93,27 +94,31 @@ export default function Sidebar({
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">
-          {items.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={onClose}
-              className={({ isActive }) =>
-                `flex items-center gap-3 rounded-md border-l-[3px] px-3 py-2.5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "border-primary bg-primary-container/10 text-primary"
-                    : "border-transparent text-on-surface-variant hover:bg-surface-container"
-                }`
-              }
-            >
-              <span className="material-symbols-outlined text-[20px]">
-                {item.icon}
-              </span>
+          {items.map(
+            (item) => (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={onClose}
+                className={({
+                  isActive,
+                }) =>
+                  `flex items-center gap-3 rounded-md border-l-[3px] px-3 py-2.5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "border-primary bg-primary-container/10 text-primary"
+                      : "border-transparent text-on-surface-variant hover:bg-surface-container"
+                  }`
+                }
+              >
+                <span className="material-symbols-outlined text-[20px]">
+                  {item.icon}
+                </span>
 
-              {item.label}
-            </NavLink>
-          ))}
+                {item.label}
+              </NavLink>
+            )
+          )}
         </nav>
       </aside>
     </>

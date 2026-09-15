@@ -1,20 +1,94 @@
 import { api } from "./client.js";
 
-// Nurse and Proxy users are never created through public self-registration —
-// only an authenticated Admin (or an authorized Nurse manager) can provision
-// those accounts, which is why these calls require an authenticated session
-// with an Admin role on the backend (enforced server-side via [Authorize]).
 export const adminApi = {
-  /** POST /api/admin/staff  { role: "Nurse" | "Proxy", ...profileFields } */
-  createStaff: (payload) => api.post("/api/admin/staff", payload),
+  getMe: () =>
+    api.get("/api/admin/me"),
 
-  listStaff: (params = {}) => {
-    const qs = new URLSearchParams(params).toString();
-    return api.get(`/api/admin/staff${qs ? `?${qs}` : ""}`);
+  getDashboard: () =>
+    api.get("/api/admin/dashboard"),
+
+  getClinicOverview: () =>
+    api.get(
+      "/api/admin/clinic-overview"
+    ),
+
+  registerNurse: (payload) =>
+    api.post(
+      "/api/admin/nurses",
+      payload
+    ),
+
+  registerProxy: (payload) =>
+    api.post(
+      "/api/admin/proxies",
+      payload
+    ),
+
+  registerClinicAdmin: (payload) =>
+    api.post(
+      "/api/admin/clinic-admins",
+      payload
+    ),
+
+  listAccounts: (role) => {
+    const qs =
+      role && role !== "All"
+        ? `?role=${encodeURIComponent(
+            role
+          )}`
+        : "";
+
+    return api.get(
+      `/api/admin/accounts${qs}`
+    );
   },
 
-  deactivateStaff: (userId) => api.patch(`/api/admin/staff/${userId}/deactivate`, {}),
-  reactivateStaff: (userId) => api.patch(`/api/admin/staff/${userId}/reactivate`, {}),
+  deactivateAccount: (
+    userId
+  ) => {
+    if (!userId) {
+      throw new Error(
+        "A user ID is required."
+      );
+    }
 
-  getSystemStats: () => api.get("/api/admin/dashboard"),
+    return api.patch(
+      `/api/admin/accounts/${userId}/deactivate`
+    );
+  },
+
+  activateAccount: (
+    userId
+  ) => {
+    if (!userId) {
+      throw new Error(
+        "A user ID is required."
+      );
+    }
+
+    return api.patch(
+      `/api/admin/accounts/${userId}/activate`
+    );
+  },
+
+  assignProxy: (
+    patientId,
+    proxyId
+  ) => {
+    if (!patientId || !proxyId) {
+      throw new Error(
+        "A patient ID and proxy ID are required."
+      );
+    }
+
+    const qs =
+      new URLSearchParams({
+        patientId,
+        proxyId,
+      }).toString();
+
+    return api.post(
+      `/api/admin/proxy-links?${qs}`
+    );
+  },
 };

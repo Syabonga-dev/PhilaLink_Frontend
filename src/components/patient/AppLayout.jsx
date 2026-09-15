@@ -1,4 +1,8 @@
-import { useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useState,
+} from "react";
 import {
   NavLink,
   Outlet,
@@ -19,6 +23,7 @@ import {
 } from "lucide-react";
 
 import { useAuth } from "../../context/AuthContext.jsx";
+import { patientsApi } from "../../services/api/patients.js";
 import PhilaChatBot from "./chatbot/PhilaChatBot.jsx";
 
 const navigationItems = [
@@ -65,43 +70,160 @@ function initialsFromName(name) {
     .filter(Boolean);
 
   if (parts.length === 1) {
-    return parts[0].slice(0, 2).toUpperCase();
+    return parts[0]
+      .slice(0, 2)
+      .toUpperCase();
   }
 
   return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
 }
 
+function formatNotificationDate(value) {
+  if (!value) {
+    return "";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleString("en-ZA", {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function AppLayout() {
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [notificationsOpen, setNotificationsOpen] =
+  const [mobileOpen, setMobileOpen] =
     useState(false);
+
+  const [
+    notificationsOpen,
+    setNotificationsOpen,
+  ] = useState(false);
+
+  const [
+    notifications,
+    setNotifications,
+  ] = useState([]);
+
+  const [
+    notificationsLoading,
+    setNotificationsLoading,
+  ] = useState(false);
+
+  const [
+    notificationsError,
+    setNotificationsError,
+  ] = useState("");
 
   const location = useLocation();
   const navigate = useNavigate();
 
-  const {
-    user,
-    logout,
-  } = useAuth();
+  const { user, logout } = useAuth();
 
   const displayName =
     user?.fullName ||
     user?.name ||
     "Patient";
 
-  const initials = initialsFromName(displayName);
+  const initials =
+    initialsFromName(displayName);
 
   const currentPage =
     navigationItems.find((item) => {
       if (item.path === "/patient") {
-        return location.pathname === "/patient";
+        return (
+          location.pathname ===
+          "/patient"
+        );
       }
 
-      return location.pathname.startsWith(item.path);
+      return location.pathname.startsWith(
+        item.path
+      );
     }) || navigationItems[0];
+
+  const loadNotifications =
+    useCallback(async () => {
+      try {
+        setNotificationsLoading(true);
+        setNotificationsError("");
+
+        const result =
+          await patientsApi.getNotifications();
+
+        setNotifications(
+          Array.isArray(result)
+            ? result
+            : []
+        );
+      } catch (error) {
+        console.error(
+          "Failed to load notifications:",
+          error
+        );
+
+        setNotifications([]);
+
+        setNotificationsError(
+          error?.message ||
+            "Could not load notifications."
+        );
+      } finally {
+        setNotificationsLoading(false);
+      }
+    }, []);
+
+  useEffect(() => {
+    loadNotifications();
+  }, [loadNotifications]);
+
+  const unreadNotifications =
+    notifications.filter(
+      (notification) =>
+        !notification.isRead
+    );
+
+  const handleNotificationClick =
+    async (notification) => {
+      if (
+        !notification?.id ||
+        notification.isRead
+      ) {
+        return;
+      }
+
+      try {
+        await patientsApi.markNotificationRead(
+          notification.id
+        );
+
+        setNotifications((current) =>
+          current.map((item) =>
+            item.id === notification.id
+              ? {
+                  ...item,
+                  isRead: true,
+                }
+              : item
+          )
+        );
+      } catch (error) {
+        console.error(
+          "Failed to mark notification as read:",
+          error
+        );
+      }
+    };
 
   const handleLogout = () => {
     logout();
+
     navigate("/login", {
       replace: true,
     });
@@ -113,7 +235,9 @@ export default function AppLayout() {
         <div className="flex h-[78px] items-center border-b border-[#e2e8f0] px-7">
           <button
             type="button"
-            onClick={() => navigate("/patient")}
+            onClick={() =>
+              navigate("/patient")
+            }
             className="flex items-center gap-3"
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0f766e] text-white">
@@ -136,30 +260,37 @@ export default function AppLayout() {
         </div>
 
         <nav className="flex-1 space-y-2 px-4 py-6">
-          {navigationItems.map((item) => {
-            const Icon = item.icon;
+          {navigationItems.map(
+            (item) => {
+              const Icon = item.icon;
 
-            return (
-              <NavLink
-                key={item.path}
-                to={item.path}
-                end={item.path === "/patient"}
-                className={({ isActive }) =>
-                  `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
-                    isActive
-                      ? "bg-[#ccfbf1] text-[#115e59]"
-                      : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
-                  }`
-                }
-              >
-                <Icon size={20} />
+              return (
+                <NavLink
+                  key={item.path}
+                  to={item.path}
+                  end={
+                    item.path ===
+                    "/patient"
+                  }
+                  className={({
+                    isActive,
+                  }) =>
+                    `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium transition ${
+                      isActive
+                        ? "bg-[#ccfbf1] text-[#115e59]"
+                        : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
+                    }`
+                  }
+                >
+                  <Icon size={20} />
 
-                <span>
-                  {item.label}
-                </span>
-              </NavLink>
-            );
-          })}
+                  <span>
+                    {item.label}
+                  </span>
+                </NavLink>
+              );
+            }
+          )}
         </nav>
 
         <div className="border-t border-[#e2e8f0] p-4">
@@ -185,7 +316,6 @@ export default function AppLayout() {
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#64748b] transition hover:bg-[#fee2e2] hover:text-[#dc2626]"
           >
             <LogOut size={19} />
-
             Logout
           </button>
         </div>
@@ -196,7 +326,9 @@ export default function AppLayout() {
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => setMobileOpen(true)}
+              onClick={() =>
+                setMobileOpen(true)
+              }
               className="flex h-10 w-10 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#475569] lg:hidden"
               aria-label="Open navigation"
             >
@@ -209,7 +341,8 @@ export default function AppLayout() {
               </h1>
 
               <p className="hidden text-sm text-[#64748b] sm:block">
-                Welcome back, {displayName}
+                Welcome back,{" "}
+                {displayName}
               </p>
             </div>
           </div>
@@ -228,41 +361,135 @@ export default function AppLayout() {
               >
                 <Bell size={19} />
 
-                <span className="absolute right-[7px] top-[7px] h-2 w-2 rounded-full bg-[#dc2626]" />
+                {unreadNotifications.length >
+                  0 && (
+                  <span className="absolute right-[4px] top-[3px] flex h-4 min-w-4 items-center justify-center rounded-full bg-[#dc2626] px-1 text-[9px] font-bold text-white">
+                    {unreadNotifications.length >
+                    9
+                      ? "9+"
+                      : unreadNotifications.length}
+                  </span>
+                )}
               </button>
 
               {notificationsOpen && (
                 <div className="absolute right-0 top-12 w-[320px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:w-[360px]">
                   <div className="border-b border-[#e2e8f0] px-5 py-4">
-                    <h2 className="font-semibold text-[#0f172a]">
-                      Notifications
-                    </h2>
+                    <div className="flex items-center justify-between gap-3">
+                      <h2 className="font-semibold text-[#0f172a]">
+                        Notifications
+                      </h2>
+
+                      {unreadNotifications.length >
+                        0 && (
+                        <span className="rounded-full bg-[#ccfbf1] px-2 py-1 text-[11px] font-semibold text-[#115e59]">
+                          {
+                            unreadNotifications.length
+                          }{" "}
+                          unread
+                        </span>
+                      )}
+                    </div>
 
                     <p className="mt-1 text-xs text-[#64748b]">
-                      Your latest PhilaLink updates
+                      Your latest PhilaLink
+                      updates
                     </p>
                   </div>
 
-                  <div className="divide-y divide-[#e2e8f0]">
-                    <div className="px-5 py-4">
-                      <p className="text-sm font-medium text-[#0f172a]">
-                        Medication reminder
-                      </p>
+                  <div className="max-h-[360px] overflow-y-auto divide-y divide-[#e2e8f0]">
+                    {notificationsLoading ? (
+                      <div className="px-5 py-6 text-center">
+                        <p className="text-sm text-[#64748b]">
+                          Loading
+                          notifications...
+                        </p>
+                      </div>
+                    ) : notificationsError ? (
+                      <div className="px-5 py-5">
+                        <p className="text-sm text-[#dc2626]">
+                          {
+                            notificationsError
+                          }
+                        </p>
 
-                      <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                        Remember to take your scheduled medication.
-                      </p>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={
+                            loadNotifications
+                          }
+                          className="mt-2 text-xs font-medium text-[#0f766e]"
+                        >
+                          Try again
+                        </button>
+                      </div>
+                    ) : notifications.length ===
+                      0 ? (
+                      <div className="px-5 py-8 text-center">
+                        <Bell
+                          size={24}
+                          className="mx-auto text-[#94a3b8]"
+                        />
 
-                    <div className="px-5 py-4">
-                      <p className="text-sm font-medium text-[#0f172a]">
-                        Upcoming appointment
-                      </p>
+                        <p className="mt-3 text-sm font-medium text-[#0f172a]">
+                          No notifications
+                        </p>
 
-                      <p className="mt-1 text-xs leading-5 text-[#64748b]">
-                        Review your upcoming clinic appointment.
-                      </p>
-                    </div>
+                        <p className="mt-1 text-xs text-[#64748b]">
+                          You're all caught
+                          up.
+                        </p>
+                      </div>
+                    ) : (
+                      notifications.map(
+                        (
+                          notification
+                        ) => (
+                          <button
+                            key={
+                              notification.id
+                            }
+                            type="button"
+                            onClick={() =>
+                              handleNotificationClick(
+                                notification
+                              )
+                            }
+                            className={`w-full px-5 py-4 text-left transition hover:bg-[#f8fafc] ${
+                              notification.isRead
+                                ? "bg-white"
+                                : "bg-[#f0fdfa]"
+                            }`}
+                          >
+                            <div className="flex items-start gap-3">
+                              {!notification.isRead && (
+                                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#0f766e]" />
+                              )}
+
+                              <div className="min-w-0 flex-1">
+                                <p
+                                  className={`text-sm text-[#0f172a] ${
+                                    notification.isRead
+                                      ? "font-normal"
+                                      : "font-semibold"
+                                  }`}
+                                >
+                                  {
+                                    notification.message
+                                  }
+                                </p>
+
+                                <p className="mt-1 text-xs text-[#64748b]">
+                                  {formatNotificationDate(
+                                    notification.createdAt
+                                  )}
+                                </p>
+                              </div>
+                            </div>
+                          </button>
+                        )
+                      )
+                    )}
                   </div>
                 </div>
               )}
@@ -271,7 +498,9 @@ export default function AppLayout() {
             <button
               type="button"
               onClick={() =>
-                navigate("/patient/settings")
+                navigate(
+                  "/patient/settings"
+                )
               }
               className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white"
               title={displayName}
@@ -290,7 +519,9 @@ export default function AppLayout() {
         <div className="fixed inset-0 z-50 lg:hidden">
           <button
             type="button"
-            onClick={() => setMobileOpen(false)}
+            onClick={() =>
+              setMobileOpen(false)
+            }
             className="absolute inset-0 bg-black/40"
             aria-label="Close navigation"
           />
@@ -299,7 +530,9 @@ export default function AppLayout() {
             <div className="flex h-[78px] items-center justify-between border-b border-[#e2e8f0] px-5">
               <div className="flex items-center gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f766e] text-white">
-                  <Stethoscope size={20} />
+                  <Stethoscope
+                    size={20}
+                  />
                 </div>
 
                 <span className="text-lg font-bold">
@@ -316,47 +549,77 @@ export default function AppLayout() {
                   setMobileOpen(false)
                 }
                 className="flex h-9 w-9 items-center justify-center rounded-lg text-[#64748b] hover:bg-[#f1f5f9]"
+                aria-label="Close navigation"
               >
                 <X size={20} />
               </button>
             </div>
 
             <nav className="flex-1 space-y-2 px-4 py-6">
-              {navigationItems.map((item) => {
-                const Icon = item.icon;
+              {navigationItems.map(
+                (item) => {
+                  const Icon =
+                    item.icon;
 
-                return (
-                  <NavLink
-                    key={item.path}
-                    to={item.path}
-                    end={item.path === "/patient"}
-                    onClick={() =>
-                      setMobileOpen(false)
-                    }
-                    className={({ isActive }) =>
-                      `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${
-                        isActive
-                          ? "bg-[#ccfbf1] text-[#115e59]"
-                          : "text-[#475569] hover:bg-[#f1f5f9]"
-                      }`
-                    }
-                  >
-                    <Icon size={20} />
+                  return (
+                    <NavLink
+                      key={
+                        item.path
+                      }
+                      to={item.path}
+                      end={
+                        item.path ===
+                        "/patient"
+                      }
+                      onClick={() =>
+                        setMobileOpen(
+                          false
+                        )
+                      }
+                      className={({
+                        isActive,
+                      }) =>
+                        `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${
+                          isActive
+                            ? "bg-[#ccfbf1] text-[#115e59]"
+                            : "text-[#475569] hover:bg-[#f1f5f9]"
+                        }`
+                      }
+                    >
+                      <Icon
+                        size={20}
+                      />
 
-                    {item.label}
-                  </NavLink>
-                );
-              })}
+                      {item.label}
+                    </NavLink>
+                  );
+                }
+              )}
             </nav>
 
             <div className="border-t border-[#e2e8f0] p-4">
+              <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f8fafc] p-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white">
+                  {initials}
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold text-[#0f172a]">
+                    {displayName}
+                  </div>
+
+                  <div className="text-xs text-[#64748b]">
+                    Patient
+                  </div>
+                </div>
+              </div>
+
               <button
                 type="button"
                 onClick={handleLogout}
                 className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#dc2626] hover:bg-[#fee2e2]"
               >
                 <LogOut size={19} />
-
                 Logout
               </button>
             </div>
