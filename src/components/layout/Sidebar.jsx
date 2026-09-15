@@ -50,13 +50,39 @@ const ADMIN_NAV = [
     label: "Manage Staff",
     icon: "badge",
   },
+  {
+    to: "/admin/audit",
+    label: "Audit Log",
+    icon: "history",
+  },
+];
+
+const SUPER_ADMIN_NAV = [
+  ...ADMIN_NAV,
+  {
+    to: "/admin/clinics",
+    label: "Manage Clinics",
+    icon: "local_hospital",
+  },
+  {
+    to: "/admin/register-clinic-admin",
+    label: "Register Clinic Admin",
+    icon: "admin_panel_settings",
+  },
 ];
 
 const NAV_BY_ROLE = {
-  Nurse: NURSE_NAV,
-  Proxy: PROXY_NAV,
-  ClinicAdmin: ADMIN_NAV,
-  SuperAdmin: ADMIN_NAV,
+  Nurse:
+    NURSE_NAV,
+
+  Proxy:
+    PROXY_NAV,
+
+  ClinicAdmin:
+    ADMIN_NAV,
+
+  SuperAdmin:
+    SUPER_ADMIN_NAV,
 };
 
 export default function Sidebar({
@@ -65,14 +91,18 @@ export default function Sidebar({
   onClose,
 }) {
   const items =
-    NAV_BY_ROLE[role] || [];
+    NAV_BY_ROLE[
+      role
+    ] || [];
 
   return (
     <>
       {open && (
         <div
           className="fixed inset-0 z-30 bg-black/30 lg:hidden"
-          onClick={onClose}
+          onClick={
+            onClose
+          }
           aria-hidden="true"
         />
       )}
@@ -97,10 +127,18 @@ export default function Sidebar({
           {items.map(
             (item) => (
               <NavLink
-                key={item.to}
-                to={item.to}
-                end={item.end}
-                onClick={onClose}
+                key={
+                  item.to
+                }
+                to={
+                  item.to
+                }
+                end={
+                  item.end
+                }
+                onClick={
+                  onClose
+                }
                 className={({
                   isActive,
                 }) =>
@@ -112,7 +150,9 @@ export default function Sidebar({
                 }
               >
                 <span className="material-symbols-outlined text-[20px]">
-                  {item.icon}
+                  {
+                    item.icon
+                  }
                 </span>
 
                 {item.label}

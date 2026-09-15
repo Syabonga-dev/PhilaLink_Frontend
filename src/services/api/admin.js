@@ -2,37 +2,55 @@ import { api } from "./client.js";
 
 export const adminApi = {
   getMe: () =>
-    api.get("/api/admin/me"),
+    api.get(
+      "/api/admin/me"
+    ),
 
   getDashboard: () =>
-    api.get("/api/admin/dashboard"),
+    api.get(
+      "/api/admin/dashboard"
+    ),
 
   getClinicOverview: () =>
     api.get(
       "/api/admin/clinic-overview"
     ),
 
-  registerNurse: (payload) =>
+  getAuditLog: () =>
+    api.get(
+      "/api/audit"
+    ),
+
+  registerNurse: (
+    payload
+  ) =>
     api.post(
       "/api/admin/nurses",
       payload
     ),
 
-  registerProxy: (payload) =>
+  registerProxy: (
+    payload
+  ) =>
     api.post(
       "/api/admin/proxies",
       payload
     ),
 
-  registerClinicAdmin: (payload) =>
+  registerClinicAdmin: (
+    payload
+  ) =>
     api.post(
       "/api/admin/clinic-admins",
       payload
     ),
 
-  listAccounts: (role) => {
+  listAccounts: (
+    role
+  ) => {
     const qs =
-      role && role !== "All"
+      role &&
+      role !== "All"
         ? `?role=${encodeURIComponent(
             role
           )}`
@@ -75,7 +93,10 @@ export const adminApi = {
     patientId,
     proxyId
   ) => {
-    if (!patientId || !proxyId) {
+    if (
+      !patientId ||
+      !proxyId
+    ) {
       throw new Error(
         "A patient ID and proxy ID are required."
       );

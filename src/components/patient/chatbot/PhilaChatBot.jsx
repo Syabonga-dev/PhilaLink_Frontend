@@ -1,114 +1,263 @@
-import { useState } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { defaultAssessment } from "./types";
 import FloatingButton from "./FloatingButton";
 import ChatPanel from "./ChatPanel";
+import { chatbotApi } from "../../../services/api/chatbot.js";
+import { symptomAssessmentsApi } from "../../../services/api/symptomAssessments.js";
 
-const EMERGENCY_KEYWORDS = [
-  "shortness of breath",
-  "chest pain",
-  "loss of consciousness",
-  "seizure",
-  "severe bleeding",
-  "stroke",
-];
-
-const INITIAL_FOLLOW_UP_MESSAGES = [
-  {
-    type: "ai",
-    text: "How can I help you further? Feel free to ask any questions about your symptoms or the assessment results.",
-  },
-];
+const INITIAL_FOLLOW_UP_MESSAGES =
+  [
+    {
+      type: "ai",
+      text: "How can I help you further? Feel free to ask about your assessment or general health information.",
+    },
+  ];
 
 export default function PhilaChatBot() {
-  const [isOpen, setIsOpen] = useState(false);
-  const [step, setStep] = useState("welcome");
-  const [assessment, setAssessment] =
-    useState(defaultAssessment);
-  const [messages, setMessages] = useState(
+  const [
+    isOpen,
+    setIsOpen,
+  ] = useState(false);
+
+  const [
+    step,
+    setStep,
+  ] = useState("welcome");
+
+  const [
+    assessment,
+    setAssessment,
+  ] = useState(
+    defaultAssessment
+  );
+
+  const [
+    assessmentResult,
+    setAssessmentResult,
+  ] = useState(null);
+
+  const [
+    messages,
+    setMessages,
+  ] = useState(
     INITIAL_FOLLOW_UP_MESSAGES
   );
-  const [inputValue, setInputValue] =
-    useState("");
-  const [errorType] = useState("network");
 
-  const isEmergency =
-    assessment.symptoms.some((symptom) =>
-      EMERGENCY_KEYWORDS.some((keyword) =>
-        symptom
-          .toLowerCase()
-          .includes(keyword)
-      )
-    );
+  const [
+    inputValue,
+    setInputValue,
+  ] = useState("");
 
-  const handleAssessmentChange = (data) => {
-    setAssessment((previous) => ({
-      ...previous,
-      ...data,
-    }));
-  };
+  const [
+    errorType,
+    setErrorType,
+  ] = useState(
+    "network"
+  );
 
-  const handleRestart = () => {
-    setAssessment(defaultAssessment);
-    setMessages(
-      INITIAL_FOLLOW_UP_MESSAGES
-    );
-    setStep("quick-start");
-  };
+  const [
+    isSending,
+    setIsSending,
+  ] = useState(false);
 
-  const handleSend = () => {
-    const text = inputValue.trim();
+  const historyLoaded =
+    useRef(false);
 
-    if (!text) {
+  useEffect(() => {
+    if (
+      !isOpen ||
+      historyLoaded.current
+    ) {
       return;
     }
 
-    setMessages((previous) => [
-      ...previous,
-      {
-        type: "user",
-        text,
-      },
-    ]);
+    historyLoaded.current =
+      true;
 
-    setInputValue("");
+    chatbotApi
+      .getHistory()
+      .then((history) => {
+        if (
+          !Array.isArray(
+            history?.messages
+          ) ||
+          history.messages
+            .length === 0
+        ) {
+          return;
+        }
 
-    const responses = [
-      "Thank you for sharing that. Based on the symptoms you described, I recommend monitoring your condition over the next 24–48 hours and staying hydrated.",
+        setMessages(
+          history.messages.map(
+            (message) => ({
+              type:
+                message.role ===
+                "user"
+                  ? "user"
+                  : "ai",
 
-      "That's a good question. Remember that PhilaChatBot provides general health guidance only — please consult a healthcare professional for personalised advice.",
+              text:
+                message.content,
+            })
+          )
+        );
+      })
+      .catch(() => {
+        historyLoaded.current =
+          false;
+      });
+  }, [isOpen]);
 
-      "I understand your concern. If your symptoms worsen or you develop new symptoms, please contact your clinic or seek medical attention.",
+  const handleAssessmentChange =
+    (data) => {
+      setAssessment(
+        (previous) => ({
+          ...previous,
+          ...data,
+        })
+      );
+    };
 
-      "Based on your assessment, your symptoms appear to be mild to moderate. A pharmacist can advise on suitable over-the-counter relief options.",
+  const handleRestart = () => {
+    setAssessment(
+      defaultAssessment
+    );
 
-      "It's important to rest and give your body time to recover. If you're unsure about any medication, always check with a pharmacist or your doctor first.",
-    ];
+    setAssessmentResult(
+      null
+    );
 
-    const response =
-      responses[
-        Math.floor(
-          Math.random() *
-            responses.length
-        )
-      ];
+    setErrorType(
+      "network"
+    );
 
-    setTimeout(() => {
-      setMessages((previous) => [
-        ...previous,
-        {
-          type: "ai",
-          text: response,
-        },
-      ]);
-    }, 1200);
+    setStep(
+      "quick-start"
+    );
   };
+
+  const handleAnalyze =
+    async () => {
+      const symptoms =
+        Array.isArray(
+          assessment.symptoms
+        )
+          ? assessment.symptoms
+              .filter(Boolean)
+              .join(", ")
+          : "";
+
+      if (!symptoms) {
+        setStep("symptoms");
+        return;
+      }
+
+      setStep("loading");
+
+      try {
+        const result =
+          await symptomAssessmentsApi.create(
+            symptoms
+          );
+
+        setAssessmentResult(
+          result
+        );
+
+        if (
+          result?.result ===
+          "Emergency"
+        ) {
+          setStep(
+            "emergency"
+          );
+        } else {
+          setStep("results");
+        }
+      } catch (error) {
+        setErrorType(
+          error?.isNetworkError
+            ? "network"
+            : "unavailable"
+        );
+
+        setStep("error");
+      }
+    };
+
+  const handleSend =
+    async () => {
+      const text =
+        inputValue.trim();
+
+      if (
+        !text ||
+        isSending
+      ) {
+        return;
+      }
+
+      setMessages(
+        (previous) => [
+          ...previous,
+          {
+            type: "user",
+            text,
+          },
+        ]
+      );
+
+      setInputValue("");
+      setIsSending(true);
+
+      try {
+        const response =
+          await chatbotApi.sendMessage(
+            text
+          );
+
+        setMessages(
+          (previous) => [
+            ...previous,
+            {
+              type: "ai",
+              text:
+                response
+                  ?.message ||
+                "No response was returned.",
+            },
+          ]
+        );
+      } catch (error) {
+        setMessages(
+          (previous) => [
+            ...previous,
+            {
+              type: "ai",
+              text:
+                error?.message ||
+                "I couldn't process that message right now.",
+            },
+          ]
+        );
+      } finally {
+        setIsSending(
+          false
+        );
+      }
+    };
 
   return (
     <>
       <FloatingButton
         onClick={() =>
           setIsOpen(
-            (previous) => !previous
+            (previous) =>
+              !previous
           )
         }
       />
@@ -116,24 +265,44 @@ export default function PhilaChatBot() {
       <ChatPanel
         isOpen={isOpen}
         step={step}
-        assessment={assessment}
+        assessment={
+          assessment
+        }
+        assessmentResult={
+          assessmentResult
+        }
         messages={messages}
-        inputValue={inputValue}
-        errorType={errorType}
-        isEmergency={isEmergency}
+        inputValue={
+          inputValue
+        }
+        errorType={
+          errorType
+        }
+        sending={isSending}
         onClose={() =>
           setIsOpen(false)
         }
         onMinimize={() =>
           setIsOpen(false)
         }
-        onStepChange={setStep}
+        onStepChange={
+          setStep
+        }
         onAssessmentChange={
           handleAssessmentChange
         }
-        onInputChange={setInputValue}
-        onSend={handleSend}
-        onRestart={handleRestart}
+        onAnalyze={
+          handleAnalyze
+        }
+        onInputChange={
+          setInputValue
+        }
+        onSend={
+          handleSend
+        }
+        onRestart={
+          handleRestart
+        }
       />
     </>
   );

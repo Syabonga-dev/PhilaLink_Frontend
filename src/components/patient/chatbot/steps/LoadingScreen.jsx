@@ -10,52 +10,36 @@ import {
 } from "lucide-react";
 
 const stages = [
-  "Understanding your symptoms",
-  "Checking symptom duration",
-  "Reviewing allergies and medications",
-  "Checking for serious warning signs",
-  "Preparing health guidance",
+  "Sending your symptoms securely",
+  "Checking for warning signs",
+  "Recording your assessment",
+  "Preparing your triage result",
 ];
 
-export default function LoadingScreen({
-  onComplete,
-}) {
-  const [currentStage, setCurrentStage] =
-    useState(0);
+export default function LoadingScreen() {
+  const [
+    currentStage,
+    setCurrentStage,
+  ] = useState(0);
 
   useEffect(() => {
-    const interval = setInterval(
-      () => {
+    const interval =
+      setInterval(() => {
         setCurrentStage(
-          (previous) => {
-            if (
-              previous >=
-              stages.length - 1
-            ) {
-              clearInterval(
-                interval
-              );
-
-              setTimeout(
-                () => {
-                  onComplete();
-                },
-                700
-              );
-
-              return previous;
-            }
-
-            return previous + 1;
-          }
+          (previous) =>
+            Math.min(
+              previous + 1,
+              stages.length -
+                1
+            )
         );
-      },
-      700
-    );
+      }, 700);
 
     return () =>
-      clearInterval(interval);
-  }, [onComplete]);
+      clearInterval(
+        interval
+      );
+  }, []);
 
   return (
     <div className="flex flex-col items-center gap-xl py-lg text-center">
@@ -68,18 +52,26 @@ export default function LoadingScreen({
 
       <div>
         <h2 className="text-title text-text-primary">
-          PhilaChatBot is analyzing your symptoms
+          PhilaLink is
+          assessing your
+          symptoms
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          This may take a few moments.
+          Your assessment
+          is being processed
+          by the PhilaLink
+          backend.
         </p>
       </div>
 
       <div className="w-full rounded-corner-lg border border-border-secondary bg-white p-lg text-left">
         <div className="flex flex-col gap-md">
           {stages.map(
-            (stage, index) => {
+            (
+              stage,
+              index
+            ) => {
               const completed =
                 index <
                 currentStage;
@@ -90,18 +82,24 @@ export default function LoadingScreen({
 
               return (
                 <div
-                  key={stage}
+                  key={
+                    stage
+                  }
                   className="flex items-center gap-md"
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center">
                     {completed ? (
                       <CheckCircle2
-                        size={18}
+                        size={
+                          18
+                        }
                         className="text-success"
                       />
                     ) : active ? (
                       <LoaderCircle
-                        size={18}
+                        size={
+                          18
+                        }
                         className="animate-spin text-brand-primary"
                       />
                     ) : (
@@ -133,8 +131,11 @@ export default function LoadingScreen({
         />
 
         <p className="text-video-title leading-5 text-text-secondary">
-          This assessment provides general health
-          information and is not a medical diagnosis.
+          This assessment
+          provides triage
+          guidance and is
+          not a medical
+          diagnosis.
         </p>
       </div>
     </div>

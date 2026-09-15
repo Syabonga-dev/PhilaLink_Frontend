@@ -39,6 +39,9 @@ import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
 import ManageStaffPage from "./pages/admin/ManageStaffPage.jsx";
+import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage.jsx";
+import ManageClinicsPage from "./pages/admin/ManageClinicsPage.jsx";
+import RegisterClinicAdminPage from "./pages/admin/RegisterClinicAdminPage.jsx";
 
 function RedirectIfAuthenticated({
   children,
@@ -281,6 +284,37 @@ export default function App() {
               path="/admin/staff"
               element={
                 <ManageStaffPage />
+              }
+            />
+
+            <Route
+              path="/admin/audit"
+              element={
+                <AdminAuditLogPage />
+              }
+            />
+          </Route>
+
+          <Route
+            element={
+              <RoleRoute
+                allow={[
+                  "SuperAdmin",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/admin/clinics"
+              element={
+                <ManageClinicsPage />
+              }
+            />
+
+            <Route
+              path="/admin/register-clinic-admin"
+              element={
+                <RegisterClinicAdminPage />
               }
             />
           </Route>

@@ -33,6 +33,15 @@ const TITLES = {
 
   "/admin/staff":
     "Manage Staff",
+
+  "/admin/audit":
+    "Audit Log",
+
+  "/admin/clinics":
+    "Manage Clinics",
+
+  "/admin/register-clinic-admin":
+    "Register Clinic Admin",
 };
 
 export default function AuthenticatedLayout() {
@@ -56,9 +65,13 @@ export default function AuthenticatedLayout() {
     <div className="flex h-screen bg-background">
       <Sidebar
         role={role}
-        open={sidebarOpen}
+        open={
+          sidebarOpen
+        }
         onClose={() =>
-          setSidebarOpen(false)
+          setSidebarOpen(
+            false
+          )
         }
       />
 
@@ -66,7 +79,9 @@ export default function AuthenticatedLayout() {
         <Topbar
           title={title}
           onMenuClick={() =>
-            setSidebarOpen(true)
+            setSidebarOpen(
+              true
+            )
           }
         />
 

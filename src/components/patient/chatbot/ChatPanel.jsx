@@ -19,14 +19,16 @@ export default function ChatPanel({
   isOpen,
   step,
   assessment,
+  assessmentResult,
   messages,
   inputValue,
   errorType,
-  isEmergency,
+  sending,
   onClose,
   onMinimize,
   onStepChange,
   onAssessmentChange,
+  onAnalyze,
   onInputChange,
   onSend,
   onRestart,
@@ -48,9 +50,13 @@ export default function ChatPanel({
         return (
           <QuickStartScreen
             onStartAssessment={() =>
-              onStepChange("age")
+              onStepChange(
+                "age"
+              )
             }
-            onSelectOption={(selectedStep) =>
+            onSelectOption={(
+              selectedStep
+            ) =>
               onStepChange(
                 selectedStep
               )
@@ -61,7 +67,9 @@ export default function ChatPanel({
       case "age":
         return (
           <AssessmentAge
-            assessment={assessment}
+            assessment={
+              assessment
+            }
             onUpdate={
               onAssessmentChange
             }
@@ -81,7 +89,9 @@ export default function ChatPanel({
       case "symptoms":
         return (
           <AssessmentSymptoms
-            assessment={assessment}
+            assessment={
+              assessment
+            }
             onUpdate={
               onAssessmentChange
             }
@@ -91,7 +101,9 @@ export default function ChatPanel({
               )
             }
             onBack={() =>
-              onStepChange("age")
+              onStepChange(
+                "age"
+              )
             }
           />
         );
@@ -99,7 +111,9 @@ export default function ChatPanel({
       case "duration":
         return (
           <AssessmentDuration
-            assessment={assessment}
+            assessment={
+              assessment
+            }
             onUpdate={
               onAssessmentChange
             }
@@ -119,7 +133,9 @@ export default function ChatPanel({
       case "allergies":
         return (
           <AssessmentAllergies
-            assessment={assessment}
+            assessment={
+              assessment
+            }
             onUpdate={
               onAssessmentChange
             }
@@ -139,7 +155,9 @@ export default function ChatPanel({
       case "medications":
         return (
           <AssessmentMedications
-            assessment={assessment}
+            assessment={
+              assessment
+            }
             onUpdate={
               onAssessmentChange
             }
@@ -159,7 +177,9 @@ export default function ChatPanel({
       case "conditions":
         return (
           <AssessmentConditions
-            assessment={assessment}
+            assessment={
+              assessment
+            }
             onUpdate={
               onAssessmentChange
             }
@@ -179,14 +199,18 @@ export default function ChatPanel({
       case "review":
         return (
           <ReviewScreen
-            assessment={assessment}
-            onEdit={(target) =>
-              onStepChange(target)
+            assessment={
+              assessment
             }
-            onAnalyze={() =>
+            onEdit={(
+              target
+            ) =>
               onStepChange(
-                "loading"
+                target
               )
+            }
+            onAnalyze={
+              onAnalyze
             }
             onBack={() =>
               onStepChange(
@@ -198,15 +222,7 @@ export default function ChatPanel({
 
       case "loading":
         return (
-          <LoadingScreen
-            onComplete={() =>
-              onStepChange(
-                isEmergency
-                  ? "emergency"
-                  : "results"
-              )
-            }
-          />
+          <LoadingScreen />
         );
 
       case "emergency":
@@ -226,7 +242,12 @@ export default function ChatPanel({
       case "results":
         return (
           <ResultsScreen
-            assessment={assessment}
+            assessment={
+              assessment
+            }
+            assessmentResult={
+              assessmentResult
+            }
             onFollowUp={() =>
               onStepChange(
                 "followup"
@@ -241,11 +262,11 @@ export default function ChatPanel({
       case "error":
         return (
           <ErrorScreen
-            errorType={errorType}
-            onRetry={() =>
-              onStepChange(
-                "review"
-              )
+            errorType={
+              errorType
+            }
+            onRetry={
+              onAnalyze
             }
           />
         );
@@ -269,19 +290,33 @@ export default function ChatPanel({
       ].join(" ")}
     >
       <ChatHeader
-        onMinimize={onMinimize}
-        onClose={onClose}
+        onMinimize={
+          onMinimize
+        }
+        onClose={
+          onClose
+        }
       />
 
-      {step === "followup" ? (
+      {step ===
+      "followup" ? (
         <div className="flex min-h-0 flex-1 flex-col">
           <FollowUpScreen
-            messages={messages}
-            inputValue={inputValue}
+            messages={
+              messages
+            }
+            inputValue={
+              inputValue
+            }
+            sending={
+              sending
+            }
             onInputChange={
               onInputChange
             }
-            onSend={onSend}
+            onSend={
+              onSend
+            }
           />
         </div>
       ) : (
