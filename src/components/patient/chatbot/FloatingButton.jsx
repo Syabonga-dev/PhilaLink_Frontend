@@ -5,7 +5,7 @@ export default function FloatingButton({
   onClick,
 }) {
   return (
-    <div className="fixed bottom-4 left-4 z-50 lg:bottom-6 lg:left-[76px]">
+    <div className="fixed bottom-4 right-4 z-50 lg:bottom-6 lg:right-6">
       <Tooltip
         content="Your AI health assistant"
         position="right"

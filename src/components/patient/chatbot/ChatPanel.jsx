@@ -283,7 +283,7 @@ export default function ChatPanel({
         "transition-all duration-300",
         "inset-x-2 bottom-2",
         "h-[calc(100dvh-16px)]",
-        "lg:inset-x-auto lg:left-[68px] lg:bottom-5 lg:h-[660px] lg:max-h-[calc(100vh-40px)] lg:w-[420px]",
+        "lg:inset-x-auto lg:right-6 lg:bottom-5 lg:h-[660px] lg:max-h-[calc(100vh-40px)] lg:w-[420px]",,
         isOpen
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0",

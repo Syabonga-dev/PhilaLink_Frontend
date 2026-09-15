@@ -17,6 +17,7 @@ import {
   TileLayer,
   useMap,
 } from "react-leaflet";
+
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
@@ -42,32 +43,16 @@ function calculateDistance(
   const earthRadius = 6371;
 
   const latitudeDifference =
-    ((lat2 - lat1) * Math.PI) /
-    180;
+    ((lat2 - lat1) * Math.PI) / 180;
 
   const longitudeDifference =
-    ((lon2 - lon1) *
-      Math.PI) /
-    180;
+    ((lon2 - lon1) * Math.PI) / 180;
 
   const a =
-    Math.sin(
-      latitudeDifference / 2
-    ) **
-      2 +
-    Math.cos(
-      (lat1 * Math.PI) /
-        180
-    ) *
-      Math.cos(
-        (lat2 * Math.PI) /
-          180
-      ) *
-      Math.sin(
-        longitudeDifference /
-          2
-      ) **
-        2;
+    Math.sin(latitudeDifference / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(longitudeDifference / 2) ** 2;
 
   const c =
     2 *
@@ -79,23 +64,17 @@ function calculateDistance(
   return earthRadius * c;
 }
 
-function formatDistance(
-  distance
-) {
+function formatDistance(distance) {
   if (distance < 1) {
     return `${Math.round(
       distance * 1000
     )} m`;
   }
 
-  return `${distance.toFixed(
-    1
-  )} km`;
+  return `${distance.toFixed(1)} km`;
 }
 
-function getFacilityType(
-  tags = {}
-) {
+function getFacilityType(tags = {}) {
   const amenity =
     tags.amenity?.toLowerCase();
 
@@ -103,71 +82,51 @@ function getFacilityType(
     tags.healthcare?.toLowerCase();
 
   if (
-    amenity ===
-      "hospital" ||
-    healthcare ===
-      "hospital"
+    amenity === "hospital" ||
+    healthcare === "hospital"
   ) {
     return "Hospital";
   }
 
   if (
-    healthcare ===
-      "clinic" ||
-    healthcare ===
-      "centre" ||
-    healthcare ===
-      "center"
+    healthcare === "clinic" ||
+    healthcare === "centre" ||
+    healthcare === "center"
   ) {
     return "Clinic";
   }
 
-  if (
-    amenity === "clinic"
-  ) {
+  if (amenity === "clinic") {
     return "Clinic";
   }
 
-  if (
-    healthcare ===
-    "doctors"
-  ) {
+  if (healthcare === "doctors") {
     return "Medical Practice";
   }
 
   return "Healthcare Facility";
 }
 
-function getCoordinates(
-  element
-) {
+function getCoordinates(element) {
   if (
-    typeof element.lat ===
-      "number" &&
-    typeof element.lon ===
-      "number"
+    typeof element.lat === "number" &&
+    typeof element.lon === "number"
   ) {
     return {
-      latitude:
-        element.lat,
-
-      longitude:
-        element.lon,
+      latitude: element.lat,
+      longitude: element.lon,
     };
   }
 
   if (
-    typeof element.center
-      ?.lat === "number" &&
-    typeof element.center
-      ?.lon === "number"
+    typeof element.center?.lat ===
+      "number" &&
+    typeof element.center?.lon ===
+      "number"
   ) {
     return {
-      latitude:
-        element.center.lat,
-
-      longitude:
-        element.center.lon,
+      latitude: element.center.lat,
+      longitude: element.center.lon,
     };
   }
 
@@ -216,28 +175,23 @@ async function fetchHealthcareFacilities(
 
   let lastError = null;
 
-  for (
-    const endpoint of
-    OVERPASS_URLS
-  ) {
+  for (const endpoint of OVERPASS_URLS) {
     try {
-      const response =
-        await fetch(
-          endpoint,
-          {
-            method:
-              "POST",
+      const response = await fetch(
+        endpoint,
+        {
+          method: "POST",
 
-            headers: {
-              "Content-Type":
-                "application/x-www-form-urlencoded",
-            },
+          headers: {
+            "Content-Type":
+              "application/x-www-form-urlencoded",
+          },
 
-            body: `data=${encodeURIComponent(
-              query
-            )}`,
-          }
-        );
+          body: `data=${encodeURIComponent(
+            query
+          )}`,
+        }
+      );
 
       if (!response.ok) {
         throw new Error(
@@ -248,12 +202,9 @@ async function fetchHealthcareFacilities(
       const data =
         await response.json();
 
-      return (
-        data.elements || []
-      );
+      return data.elements || [];
     } catch (error) {
-      lastError =
-        error;
+      lastError = error;
     }
   }
 
@@ -265,73 +216,60 @@ async function fetchHealthcareFacilities(
   );
 }
 
-const hospitalIcon =
-  L.divIcon({
-    className:
-      "custom-healthcare-marker",
+const hospitalIcon = L.divIcon({
+  className:
+    "custom-healthcare-marker",
 
-    html: `
-      <div class="healthcare-marker hospital-marker">
-        <span class="material-symbols-outlined">
-          local_hospital
-        </span>
-      </div>
-    `,
+  html: `
+    <div class="healthcare-marker hospital-marker">
+      <span class="material-symbols-outlined">
+        local_hospital
+      </span>
+    </div>
+  `,
 
-    iconSize: [44, 44],
-    iconAnchor: [22, 44],
-    popupAnchor: [
-      0,
-      -42,
-    ],
-  });
+  iconSize: [36, 36],
+  iconAnchor: [18, 34],
+  popupAnchor: [0, -32],
+});
 
-const clinicIcon =
-  L.divIcon({
-    className:
-      "custom-healthcare-marker",
+const clinicIcon = L.divIcon({
+  className:
+    "custom-healthcare-marker",
 
-    html: `
-      <div class="healthcare-marker clinic-marker">
-        <span class="material-symbols-outlined">
-          medical_services
-        </span>
-      </div>
-    `,
+  html: `
+    <div class="healthcare-marker clinic-marker">
+      <span class="material-symbols-outlined">
+        medical_services
+      </span>
+    </div>
+  `,
 
-    iconSize: [44, 44],
-    iconAnchor: [22, 44],
-    popupAnchor: [
-      0,
-      -42,
-    ],
-  });
+  iconSize: [36, 36],
+  iconAnchor: [18, 34],
+  popupAnchor: [0, -32],
+});
 
 function RecenterMap({
   latitude,
   longitude,
-  zoom = 14,
+  zoom = 13,
 }) {
   const map = useMap();
 
   useEffect(() => {
     if (
-      typeof latitude !==
-        "number" ||
-      typeof longitude !==
-        "number"
+      typeof latitude !== "number" ||
+      typeof longitude !== "number"
     ) {
       return;
     }
 
-    map.flyTo(
-      [
-        latitude,
-        longitude,
-      ],
+    map.setView(
+      [latitude, longitude],
       zoom,
       {
-        duration: 1.2,
+        animate: false,
       }
     );
   }, [
@@ -421,26 +359,18 @@ export default function LandingPage() {
         return;
       }
 
-      setLoadingLocation(
-        true
-      );
-
+      setLoadingLocation(true);
       setLocationError("");
 
       navigator.geolocation.getCurrentPosition(
         (position) => {
-          const nextLocation =
-            {
-              latitude:
-                position
-                  .coords
-                  .latitude,
+          const nextLocation = {
+            latitude:
+              position.coords.latitude,
 
-              longitude:
-                position
-                  .coords
-                  .longitude,
-            };
+            longitude:
+              position.coords.longitude,
+          };
 
           setUserLocation(
             nextLocation
@@ -450,6 +380,10 @@ export default function LandingPage() {
             nextLocation.latitude,
             nextLocation.longitude,
           ]);
+
+          setSelectedFacility(
+            null
+          );
 
           setLoadingLocation(
             false
@@ -494,14 +428,11 @@ export default function LandingPage() {
 
   useEffect(() => {
     requestUserLocation();
-  }, [
-    requestUserLocation,
-  ]);
+  }, [requestUserLocation]);
 
   useEffect(() => {
     const sectionId =
-      location.state
-        ?.scrollTo;
+      location.state?.scrollTo;
 
     if (!sectionId) {
       return;
@@ -515,29 +446,21 @@ export default function LandingPage() {
           );
 
         if (section) {
-          section.scrollIntoView(
-            {
-              behavior:
-                "smooth",
-
-              block:
-                "start",
-            }
-          );
+          section.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         }
 
         window.history.replaceState(
           {},
           document.title,
-          window.location
-            .pathname
+          window.location.pathname
         );
       }, 150);
 
     return () =>
-      clearTimeout(
-        timer
-      );
+      clearTimeout(timer);
   }, [location.state]);
 
   useEffect(() => {
@@ -545,17 +468,11 @@ export default function LandingPage() {
       return;
     }
 
-    let cancelled =
-      false;
+    let cancelled = false;
 
     async function loadFacilities() {
-      setLoadingFacilities(
-        true
-      );
-
-      setFacilityError(
-        ""
-      );
+      setLoadingFacilities(true);
+      setFacilityError("");
 
       try {
         const elements =
@@ -570,118 +487,104 @@ export default function LandingPage() {
 
         const mappedFacilities =
           elements
-            .map(
-              (
-                element
-              ) => {
-                const coordinates =
-                  getCoordinates(
-                    element
-                  );
+            .map((element) => {
+              const coordinates =
+                getCoordinates(
+                  element
+                );
 
-                if (
-                  !coordinates
-                ) {
-                  return null;
-                }
-
-                const tags =
-                  element.tags ||
-                  {};
-
-                const distance =
-                  calculateDistance(
-                    userLocation.latitude,
-                    userLocation.longitude,
-                    coordinates.latitude,
-                    coordinates.longitude
-                  );
-
-                return {
-                  id: `${element.type}-${element.id}`,
-
-                  name:
-                    tags.name ||
-                    tags[
-                      "name:en"
-                    ] ||
-                    "Unnamed healthcare facility",
-
-                  type:
-                    getFacilityType(
-                      tags
-                    ),
-
-                  latitude:
-                    coordinates.latitude,
-
-                  longitude:
-                    coordinates.longitude,
-
-                  distance,
-
-                  distanceLabel:
-                    formatDistance(
-                      distance
-                    ),
-
-                  phone:
-                    tags.phone ||
-                    tags[
-                      "contact:phone"
-                    ] ||
-                    null,
-
-                  website:
-                    tags.website ||
-                    tags[
-                      "contact:website"
-                    ] ||
-                    null,
-
-                  openingHours:
-                    tags.opening_hours ||
-                    null,
-
-                  address:
-                    tags[
-                      "addr:street"
-                    ] ||
-                    tags[
-                      "addr:full"
-                    ] ||
-                    null,
-
-                  city:
-                    tags[
-                      "addr:city"
-                    ] ||
-                    null,
-
-                  emergency:
-                    tags.emergency ===
-                    "yes",
-
-                  operator:
-                    tags.operator ||
-                    null,
-
-                  osmId:
-                    element.id,
-
-                  osmType:
-                    element.type,
-                };
+              if (!coordinates) {
+                return null;
               }
-            )
-            .filter(
-              Boolean
-            )
+
+              const tags =
+                element.tags || {};
+
+              const distance =
+                calculateDistance(
+                  userLocation.latitude,
+                  userLocation.longitude,
+                  coordinates.latitude,
+                  coordinates.longitude
+                );
+
+              return {
+                id: `${element.type}-${element.id}`,
+
+                name:
+                  tags.name ||
+                  tags["name:en"] ||
+                  "Unnamed healthcare facility",
+
+                type:
+                  getFacilityType(
+                    tags
+                  ),
+
+                latitude:
+                  coordinates.latitude,
+
+                longitude:
+                  coordinates.longitude,
+
+                distance,
+
+                distanceLabel:
+                  formatDistance(
+                    distance
+                  ),
+
+                phone:
+                  tags.phone ||
+                  tags[
+                    "contact:phone"
+                  ] ||
+                  null,
+
+                website:
+                  tags.website ||
+                  tags[
+                    "contact:website"
+                  ] ||
+                  null,
+
+                openingHours:
+                  tags.opening_hours ||
+                  null,
+
+                address:
+                  tags[
+                    "addr:street"
+                  ] ||
+                  tags[
+                    "addr:full"
+                  ] ||
+                  null,
+
+                city:
+                  tags[
+                    "addr:city"
+                  ] ||
+                  null,
+
+                emergency:
+                  tags.emergency ===
+                  "yes",
+
+                operator:
+                  tags.operator ||
+                  null,
+
+                osmId:
+                  element.id,
+
+                osmType:
+                  element.type,
+              };
+            })
+            .filter(Boolean)
             .sort(
-              (
-                a,
-                b
-              ) =>
+              (a, b) =>
                 a.distance -
                 b.distance
             );
@@ -689,8 +592,7 @@ export default function LandingPage() {
         const uniqueFacilities =
           [];
 
-        const seen =
-          new Set();
+        const seen = new Set();
 
         for (
           const facility of
@@ -701,14 +603,8 @@ export default function LandingPage() {
               .toLowerCase()
               .trim();
 
-          if (
-            !seen.has(
-              key
-            )
-          ) {
-            seen.add(
-              key
-            );
+          if (!seen.has(key)) {
+            seen.add(key);
 
             uniqueFacilities.push(
               facility
@@ -719,34 +615,19 @@ export default function LandingPage() {
         setFacilities(
           uniqueFacilities
         );
-
-        if (
-          uniqueFacilities.length >
-          0
-        ) {
-          setSelectedFacility(
-            uniqueFacilities[
-              0
-            ]
-          );
-        }
       } catch (error) {
         console.error(
           "Healthcare lookup failed:",
           error
         );
 
-        if (
-          !cancelled
-        ) {
+        if (!cancelled) {
           setFacilityError(
             "We couldn't load nearby healthcare facilities right now. Please try again."
           );
         }
       } finally {
-        if (
-          !cancelled
-        ) {
+        if (!cancelled) {
           setLoadingFacilities(
             false
           );
@@ -757,8 +638,7 @@ export default function LandingPage() {
     loadFacilities();
 
     return () => {
-      cancelled =
-        true;
+      cancelled = true;
     };
   }, [userLocation]);
 
@@ -777,19 +657,13 @@ export default function LandingPage() {
         (facility) =>
           facility.name
             .toLowerCase()
-            .includes(
-              query
-            ) ||
+            .includes(query) ||
           facility.type
             .toLowerCase()
-            .includes(
-              query
-            ) ||
+            .includes(query) ||
           facility.city
             ?.toLowerCase()
-            .includes(
-              query
-            )
+            .includes(query)
       );
     }, [
       facilities,
@@ -823,9 +697,7 @@ export default function LandingPage() {
 
   const openWebsite =
     (facility) => {
-      if (
-        !facility.website
-      ) {
+      if (!facility.website) {
         return;
       }
 
@@ -850,213 +722,50 @@ export default function LandingPage() {
       );
     };
 
-  const scrollToTop =
-    () => {
-      window.scrollTo({
-        top: 0,
-        behavior: "smooth",
-      });
-    };
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  };
 
   return (
     <div className="landing-page pt-16">
       <NavigationPage />
 
+      {/* =====================================================
+          MAP
+      ===================================================== */}
+
       <section
         id="map"
         className="map-section"
       >
-        <div className="map-heading">
-          <h1>
-            Find the care you
-            need, when you need
-            it.
-          </h1>
+        <div className="map-section-container">
+          <div className="map-heading">
+            <span className="section-label">
+              FIND HEALTHCARE
+            </span>
 
-          <p>
-            Discover nearby
-            clinics and hospitals
-            using your current
-            location, then get
-            directions straight
-            from the map.
-          </p>
-        </div>
+            <h1>
+              Find the care you
+              need, when you
+              need it.
+            </h1>
 
-        <div className="map-hero">
-          <MapContainer
-            center={
-              mapCenter
-            }
-            zoom={13}
-            scrollWheelZoom={
-              true
-            }
-            className="map-container"
-          >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            />
+            <p>
+              Discover nearby
+              clinics and
+              hospitals using
+              your current
+              location, then
+              get directions
+              straight from
+              the map.
+            </p>
+          </div>
 
-            {userLocation && (
-              <>
-                <CircleMarker
-                  center={[
-                    userLocation.latitude,
-                    userLocation.longitude,
-                  ]}
-                  radius={9}
-                  pathOptions={{
-                    color:
-                      "#ffffff",
-
-                    fillColor:
-                      "#006b6b",
-
-                    fillOpacity:
-                      1,
-
-                    weight:
-                      3,
-                  }}
-                >
-                  <Popup>
-                    <strong>
-                      Your
-                      location
-                    </strong>
-                  </Popup>
-                </CircleMarker>
-
-                <CircleMarker
-                  center={[
-                    userLocation.latitude,
-                    userLocation.longitude,
-                  ]}
-                  radius={25}
-                  pathOptions={{
-                    color:
-                      "#006b6b",
-
-                    fillColor:
-                      "#006b6b",
-
-                    fillOpacity:
-                      0.08,
-
-                    weight:
-                      2,
-                  }}
-                />
-              </>
-            )}
-
-            {filteredFacilities.map(
-              (
-                facility
-              ) => (
-                <Marker
-                  key={
-                    facility.id
-                  }
-                  position={[
-                    facility.latitude,
-                    facility.longitude,
-                  ]}
-                  icon={
-                    facility.type ===
-                    "Hospital"
-                      ? hospitalIcon
-                      : clinicIcon
-                  }
-                  eventHandlers={{
-                    click:
-                      () =>
-                        handleSelectFacility(
-                          facility
-                        ),
-                  }}
-                >
-                  <Popup>
-                    <div className="map-popup">
-                      <span className="popup-type">
-                        {
-                          facility.type
-                        }
-                      </span>
-
-                      <h3>
-                        {
-                          facility.name
-                        }
-                      </h3>
-
-                      <div className="popup-info">
-                        <span className="material-symbols-outlined">
-                          distance
-                        </span>
-
-                        <span>
-                          {
-                            facility.distanceLabel
-                          }{" "}
-                          away
-                        </span>
-                      </div>
-
-                      {facility.openingHours && (
-                        <div className="popup-info">
-                          <span className="material-symbols-outlined">
-                            schedule
-                          </span>
-
-                          <span>
-                            {
-                              facility.openingHours
-                            }
-                          </span>
-                        </div>
-                      )}
-
-                      <button
-                        type="button"
-                        className="popup-button"
-                        onClick={() =>
-                          handleSelectFacility(
-                            facility
-                          )
-                        }
-                      >
-                        View
-                        details
-                      </button>
-                    </div>
-                  </Popup>
-                </Marker>
-              )
-            )}
-
-            <RecenterMap
-              latitude={
-                mapCenter[
-                  0
-                ]
-              }
-              longitude={
-                mapCenter[
-                  1
-                ]
-              }
-              zoom={
-                selectedFacility
-                  ? 15
-                  : 13
-              }
-            />
-          </MapContainer>
-
-          <div className="map-overlay">
+          <div className="map-toolbar">
             <div className="map-search">
               <span className="material-symbols-outlined search-icon">
                 search
@@ -1064,19 +773,16 @@ export default function LandingPage() {
 
               <input
                 type="text"
-                value={
-                  search
-                }
+                value={search}
                 onChange={(
                   event
                 ) =>
                   setSearch(
-                    event
-                      .target
+                    event.target
                       .value
                   )
                 }
-                placeholder="Search nearby clinics or hospitals..."
+                placeholder="Search clinics or hospitals..."
                 aria-label="Search healthcare facilities"
               />
 
@@ -1085,9 +791,7 @@ export default function LandingPage() {
                   type="button"
                   className="clear-search"
                   onClick={() =>
-                    setSearch(
-                      ""
-                    )
+                    setSearch("")
                   }
                   aria-label="Clear search"
                 >
@@ -1098,122 +802,331 @@ export default function LandingPage() {
               )}
             </div>
 
-            <div className="map-status">
-              {loadingLocation && (
-                <div className="status-card">
-                  <span className="loading-spinner" />
+            <button
+              type="button"
+              className="location-button"
+              onClick={
+                requestUserLocation
+              }
+              disabled={
+                loadingLocation
+              }
+            >
+              <span className="material-symbols-outlined">
+                my_location
+              </span>
+
+              <span>
+                {loadingLocation
+                  ? "Finding location..."
+                  : "Use my location"}
+              </span>
+            </button>
+          </div>
+
+          <div className="map-feedback">
+            {loadingFacilities && (
+              <div className="map-message">
+                <span className="material-symbols-outlined">
+                  progress_activity
+                </span>
+
+                <span>
+                  Finding nearby
+                  healthcare...
+                </span>
+              </div>
+            )}
+
+            {!loadingFacilities &&
+              facilityError && (
+                <div className="map-message map-message-error">
+                  <span className="material-symbols-outlined">
+                    error
+                  </span>
 
                   <span>
-                    Finding your
-                    location...
+                    {
+                      facilityError
+                    }
                   </span>
                 </div>
               )}
 
-              {!loadingLocation &&
-                loadingFacilities && (
-                  <div className="status-card">
-                    <span className="loading-spinner" />
+            {!loadingFacilities &&
+              !facilityError &&
+              facilities.length >
+                0 && (
+                <div className="map-message">
+                  <span className="material-symbols-outlined">
+                    local_hospital
+                  </span>
 
-                    <span>
-                      Finding nearby
-                      healthcare...
-                    </span>
-                  </div>
-                )}
+                  <span>
+                    {
+                      facilities.length
+                    }{" "}
+                    healthcare{" "}
+                    {facilities.length ===
+                    1
+                      ? "facility"
+                      : "facilities"}{" "}
+                    found nearby
+                  </span>
+                </div>
+              )}
 
-              {!loadingLocation &&
-                !loadingFacilities &&
-                facilityError && (
-                  <div className="status-card error-card">
-                    <span className="material-symbols-outlined">
-                      error
-                    </span>
-
-                    <span>
-                      {
-                        facilityError
-                      }
-                    </span>
-                  </div>
-                )}
-
-              {!loadingLocation &&
-                !loadingFacilities &&
-                !facilityError &&
-                facilities.length >
-                  0 && (
-                  <div className="status-card">
-                    <span className="material-symbols-outlined">
-                      local_hospital
-                    </span>
-
-                    <span>
-                      {
-                        facilities.length
-                      }{" "}
-                      healthcare{" "}
-                      {facilities.length ===
-                      1
-                        ? "facility"
-                        : "facilities"}{" "}
-                      found nearby
-                    </span>
-                  </div>
-                )}
-            </div>
-
-            <div className="map-controls">
-              <button
-                type="button"
-                className="location-button"
-                onClick={
-                  requestUserLocation
-                }
-              >
+            {locationError && (
+              <div className="map-message map-message-warning">
                 <span className="material-symbols-outlined">
-                  my_location
+                  location_off
                 </span>
 
                 <span>
-                  Use my
-                  location
+                  {
+                    locationError
+                  }
                 </span>
-              </button>
-            </div>
+              </div>
+            )}
           </div>
 
-          {locationError && (
-            <div className="location-warning">
-              <span className="material-symbols-outlined">
-                location_off
-              </span>
+          <div className="map-wrapper">
+            <MapContainer
+              center={mapCenter}
+              zoom={13}
+              scrollWheelZoom={
+                false
+              }
+              doubleClickZoom={
+                true
+              }
+              dragging={true}
+              touchZoom={true}
+              className="map-container"
+            >
+              <TileLayer
+                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+              />
 
-              <span>
-                {
-                  locationError
+              {userLocation && (
+                <>
+                  <CircleMarker
+                    center={[
+                      userLocation.latitude,
+                      userLocation.longitude,
+                    ]}
+                    radius={8}
+                    pathOptions={{
+                      color:
+                        "#ffffff",
+
+                      fillColor:
+                        "#006b6b",
+
+                      fillOpacity:
+                        1,
+
+                      weight: 3,
+                    }}
+                  >
+                    <Popup>
+                      <strong>
+                        Your
+                        location
+                      </strong>
+                    </Popup>
+                  </CircleMarker>
+
+                  <CircleMarker
+                    center={[
+                      userLocation.latitude,
+                      userLocation.longitude,
+                    ]}
+                    radius={18}
+                    pathOptions={{
+                      color:
+                        "#006b6b",
+
+                      fillColor:
+                        "#006b6b",
+
+                      fillOpacity:
+                        0.08,
+
+                      weight: 1,
+                    }}
+                  />
+                </>
+              )}
+
+              {filteredFacilities.map(
+                (
+                  facility
+                ) => (
+                  <Marker
+                    key={
+                      facility.id
+                    }
+                    position={[
+                      facility.latitude,
+                      facility.longitude,
+                    ]}
+                    icon={
+                      facility.type ===
+                      "Hospital"
+                        ? hospitalIcon
+                        : clinicIcon
+                    }
+                    eventHandlers={{
+                      click:
+                        () =>
+                          handleSelectFacility(
+                            facility
+                          ),
+                    }}
+                  >
+                    <Popup>
+                      <div className="map-popup">
+                        <span className="popup-type">
+                          {
+                            facility.type
+                          }
+                        </span>
+
+                        <h3>
+                          {
+                            facility.name
+                          }
+                        </h3>
+
+                        <div className="popup-info">
+                          <span className="material-symbols-outlined">
+                            distance
+                          </span>
+
+                          <span>
+                            {
+                              facility.distanceLabel
+                            }{" "}
+                            away
+                          </span>
+                        </div>
+
+                        {facility.openingHours && (
+                          <div className="popup-info">
+                            <span className="material-symbols-outlined">
+                              schedule
+                            </span>
+
+                            <span>
+                              {
+                                facility.openingHours
+                              }
+                            </span>
+                          </div>
+                        )}
+
+                        <button
+                          type="button"
+                          className="popup-button"
+                          onClick={() =>
+                            handleSelectFacility(
+                              facility
+                            )
+                          }
+                        >
+                          View details
+                        </button>
+                      </div>
+                    </Popup>
+                  </Marker>
+                )
+              )}
+
+              <RecenterMap
+                latitude={
+                  mapCenter[0]
                 }
-              </span>
-            </div>
-          )}
+                longitude={
+                  mapCenter[1]
+                }
+                zoom={
+                  selectedFacility
+                    ? 15
+                    : 13
+                }
+              />
+            </MapContainer>
+          </div>
+
+          {!loadingFacilities &&
+            !facilityError &&
+            search &&
+            filteredFacilities.length ===
+              0 && (
+              <div className="no-results">
+                <span className="material-symbols-outlined">
+                  search_off
+                </span>
+
+                <div>
+                  <strong>
+                    No matching
+                    facilities
+                  </strong>
+
+                  <p>
+                    Try another
+                    clinic or
+                    hospital name.
+                  </p>
+                </div>
+              </div>
+            )}
 
           {selectedFacility && (
             <div className="location-card">
-              <div className="location-card-header">
-                <div
-                  className={`location-icon ${
-                    selectedFacility.type ===
-                    "Hospital"
-                      ? "hospital-icon"
-                      : ""
-                  }`}
-                >
+              <div className="location-card-main">
+                <div className="location-card-icon">
                   <span className="material-symbols-outlined">
                     {selectedFacility.type ===
                     "Hospital"
                       ? "local_hospital"
                       : "medical_services"}
                   </span>
+                </div>
+
+                <div className="location-card-info">
+                  <span className="location-type">
+                    {
+                      selectedFacility.type
+                    }
+                  </span>
+
+                  <h2>
+                    {
+                      selectedFacility.name
+                    }
+                  </h2>
+
+                  <div className="location-distance">
+                    <span className="material-symbols-outlined">
+                      distance
+                    </span>
+
+                    <strong>
+                      {
+                        selectedFacility.distanceLabel
+                      }
+                    </strong>
+
+                    <span>
+                      from your
+                      location
+                    </span>
+                  </div>
                 </div>
 
                 <button
@@ -1232,183 +1145,140 @@ export default function LandingPage() {
                 </button>
               </div>
 
-              <div className="location-card-content">
-                <span className="location-type">
-                  {
-                    selectedFacility.type
-                  }
-                </span>
+              <div className="location-details">
+                {selectedFacility.openingHours && (
+                  <div className="location-detail">
+                    <span className="material-symbols-outlined">
+                      schedule
+                    </span>
 
-                <h2>
-                  {
-                    selectedFacility.name
-                  }
-                </h2>
+                    <div>
+                      <small>
+                        Opening
+                        hours
+                      </small>
 
-                <div className="location-distance">
+                      <strong>
+                        {
+                          selectedFacility.openingHours
+                        }
+                      </strong>
+                    </div>
+                  </div>
+                )}
+
+                {selectedFacility.phone && (
+                  <div className="location-detail">
+                    <span className="material-symbols-outlined">
+                      call
+                    </span>
+
+                    <div>
+                      <small>
+                        Contact
+                      </small>
+
+                      <a
+                        href={`tel:${selectedFacility.phone}`}
+                      >
+                        {
+                          selectedFacility.phone
+                        }
+                      </a>
+                    </div>
+                  </div>
+                )}
+
+                {selectedFacility.address && (
+                  <div className="location-detail">
+                    <span className="material-symbols-outlined">
+                      location_on
+                    </span>
+
+                    <div>
+                      <small>
+                        Address
+                      </small>
+
+                      <strong>
+                        {
+                          selectedFacility.address
+                        }
+                      </strong>
+                    </div>
+                  </div>
+                )}
+
+                {selectedFacility.operator && (
+                  <div className="location-detail">
+                    <span className="material-symbols-outlined">
+                      business
+                    </span>
+
+                    <div>
+                      <small>
+                        Operator
+                      </small>
+
+                      <strong>
+                        {
+                          selectedFacility.operator
+                        }
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="location-actions">
+                <button
+                  type="button"
+                  className="directions-button"
+                  onClick={() =>
+                    openDirections(
+                      selectedFacility
+                    )
+                  }
+                >
                   <span className="material-symbols-outlined">
-                    distance
+                    directions
                   </span>
 
-                  <strong>
-                    {
-                      selectedFacility.distanceLabel
-                    }
-                  </strong>
+                  Directions
+                </button>
 
-                  <span>
-                    from your
-                    location
-                  </span>
-                </div>
-
-                <div className="location-details">
-                  {selectedFacility.openingHours && (
-                    <div className="location-detail">
-                      <span className="material-symbols-outlined">
-                        schedule
-                      </span>
-
-                      <div>
-                        <small>
-                          Opening
-                          hours
-                        </small>
-
-                        <strong>
-                          {
-                            selectedFacility.openingHours
-                          }
-                        </strong>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedFacility.phone && (
-                    <div className="location-detail">
-                      <span className="material-symbols-outlined">
-                        call
-                      </span>
-
-                      <div>
-                        <small>
-                          Contact
-                        </small>
-
-                        <a
-                          href={`tel:${selectedFacility.phone}`}
-                        >
-                          {
-                            selectedFacility.phone
-                          }
-                        </a>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedFacility.address && (
-                    <div className="location-detail">
-                      <span className="material-symbols-outlined">
-                        location_on
-                      </span>
-
-                      <div>
-                        <small>
-                          Address
-                        </small>
-
-                        <strong>
-                          {
-                            selectedFacility.address
-                          }
-                        </strong>
-                      </div>
-                    </div>
-                  )}
-
-                  {selectedFacility.operator && (
-                    <div className="location-detail">
-                      <span className="material-symbols-outlined">
-                        business
-                      </span>
-
-                      <div>
-                        <small>
-                          Operator
-                        </small>
-
-                        <strong>
-                          {
-                            selectedFacility.operator
-                          }
-                        </strong>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                <div className="location-actions">
+                {selectedFacility.website && (
                   <button
                     type="button"
-                    className="directions-button"
+                    className="website-button"
                     onClick={() =>
-                      openDirections(
+                      openWebsite(
                         selectedFacility
                       )
                     }
+                    aria-label="Open facility website"
                   >
                     <span className="material-symbols-outlined">
-                      directions
+                      language
                     </span>
-
-                    Directions
                   </button>
-
-                  {selectedFacility.website && (
-                    <button
-                      type="button"
-                      className="website-button"
-                      onClick={() =>
-                        openWebsite(
-                          selectedFacility
-                        )
-                      }
-                    >
-                      <span className="material-symbols-outlined">
-                        language
-                      </span>
-                    </button>
-                  )}
-                </div>
+                )}
               </div>
             </div>
           )}
 
-          {!loadingFacilities &&
-            !facilityError &&
-            search &&
-            filteredFacilities.length ===
-              0 && (
-              <div className="no-results">
-                <span className="material-symbols-outlined">
-                  search_off
-                </span>
-
-                <strong>
-                  No matching
-                  facilities
-                </strong>
-
-                <p>
-                  Try searching
-                  for another
-                  clinic or
-                  hospital.
-                </p>
-              </div>
-            )}
+          <p className="map-scroll-note">
+            Scroll normally to
+            continue down the page.
+            Use the map controls to
+            zoom in or out.
+          </p>
         </div>
       </section>
+
+      {/* =====================================================
+          ABOUT
+      ===================================================== */}
 
       <section
         id="about"
@@ -1421,8 +1291,7 @@ export default function LandingPage() {
             </span>
 
             <h2>
-              Healthcare should
-              be
+              Healthcare should be
               <span>
                 {" "}
                 connected.
@@ -1431,14 +1300,11 @@ export default function LandingPage() {
 
             <p>
               PhilaLink brings
-              patients,
-              healthcare
-              workers and
-              medication
+              patients, healthcare
+              workers and medication
               proxies together
-              through one
-              simple digital
-              platform.
+              through one simple
+              digital platform.
             </p>
           </div>
 
@@ -1467,8 +1333,7 @@ export default function LandingPage() {
               </strong>
 
               <span>
-                Find care
-                nearby
+                Find care nearby
               </span>
             </div>
 
@@ -1490,6 +1355,10 @@ export default function LandingPage() {
         </div>
       </section>
 
+      {/* =====================================================
+          SERVICES
+      ===================================================== */}
+
       <section
         id="services"
         className="services-section"
@@ -1509,13 +1378,12 @@ export default function LandingPage() {
             </h2>
 
             <p>
-              PhilaLink brings
-              the essential
-              parts of chronic
-              healthcare
-              management
-              together in one
-              simple platform.
+              PhilaLink brings the
+              essential parts of
+              chronic healthcare
+              management together
+              in one simple
+              platform.
             </p>
           </div>
 
@@ -1534,12 +1402,10 @@ export default function LandingPage() {
 
               <p>
                 Keep track of
-                medication
-                schedules,
+                medication schedules,
                 collections and
-                treatment
-                information in
-                one place.
+                treatment information
+                in one place.
               </p>
             </article>
 
@@ -1556,9 +1422,8 @@ export default function LandingPage() {
 
               <p>
                 Discover nearby
-                clinics and
-                hospitals using
-                your current
+                clinics and hospitals
+                using your current
                 location and an
                 interactive map.
               </p>
@@ -1579,9 +1444,8 @@ export default function LandingPage() {
                 Stay on top of
                 medication
                 collections,
-                appointments
-                and important
-                healthcare
+                appointments and
+                important healthcare
                 reminders.
               </p>
             </article>
@@ -1598,14 +1462,11 @@ export default function LandingPage() {
               </h3>
 
               <p>
-                Make it easier
-                for trusted
-                proxies to
-                manage
-                medication
-                collections on
-                behalf of
-                patients.
+                Make it easier for
+                trusted proxies to
+                manage medication
+                collections on behalf
+                of patients.
               </p>
             </article>
 
@@ -1622,13 +1483,10 @@ export default function LandingPage() {
 
               <p>
                 Get helpful
-                healthcare
-                guidance and
-                information
-                through the
-                built-in
-                PhilaLink
-                assistant.
+                healthcare guidance
+                and information
+                through the built-in
+                PhilaLink assistant.
               </p>
             </article>
 
@@ -1645,17 +1503,19 @@ export default function LandingPage() {
 
               <p>
                 Keep healthcare
-                activity
-                organised with
-                secure records,
-                verification
-                and activity
-                tracking.
+                activity organised
+                with secure records,
+                verification and
+                activity tracking.
               </p>
             </article>
           </div>
         </div>
       </section>
+
+      {/* =====================================================
+          HEALTH TIPS
+      ===================================================== */}
 
       <section
         id="health-tips"
@@ -1676,11 +1536,9 @@ export default function LandingPage() {
             </h2>
 
             <p>
-              Helpful reminders
-              to support your
-              everyday
-              healthcare
-              routine.
+              Helpful reminders to
+              support your everyday
+              healthcare routine.
             </p>
           </div>
 
@@ -1691,17 +1549,16 @@ export default function LandingPage() {
               </span>
 
               <h3>
-                Take medication
-                as prescribed
+                Take medication as
+                prescribed
               </h3>
 
               <p>
                 Follow your
                 healthcare
                 professional's
-                instructions
-                and keep track
-                of your
+                instructions and keep
+                track of your
                 medication
                 collections.
               </p>
@@ -1718,14 +1575,11 @@ export default function LandingPage() {
               </h3>
 
               <p>
-                Regular
-                healthcare
+                Regular healthcare
                 visits can help
-                identify
-                problems early
-                and keep your
-                treatment on
-                track.
+                identify problems
+                early and keep your
+                treatment on track.
               </p>
             </article>
 
@@ -1739,71 +1593,19 @@ export default function LandingPage() {
               </h3>
 
               <p>
-                Drink enough
-                water
-                throughout the
-                day, especially
-                when you are
-                active or in
-                hot weather.
+                Drink enough water
+                throughout the day,
+                especially when you
+                are active or in hot
+                weather.
               </p>
             </article>
           </div>
         </div>
       </section>
 
-      <section className="cta-section">
-        <div className="cta-container">
-          <div className="cta-content">
-            <span className="section-label">
-              GET STARTED
-            </span>
-
-            <h2>
-              A simpler way to
-              <span>
-                stay connected
-                to care.
-              </span>
-            </h2>
-
-            <p>
-              Join PhilaLink
-              and bring your
-              healthcare
-              journey into one
-              connected
-              platform.
-            </p>
-
-            <div className="cta-actions">
-              <Link
-                to="/register"
-                className="primary-button"
-              >
-                Create your
-                account
-
-                <span className="material-symbols-outlined">
-                  arrow_forward
-                </span>
-              </Link>
-
-              <Link
-                to="/login"
-                className="secondary-button"
-              >
-                Log in
-              </Link>
-            </div>
-          </div>
-
-          <div className="cta-visual" />
-        </div>
-      </section>
-
       {/* =====================================================
-          REDESIGNED FOOTER — TAILWIND ONLY
+          SINGLE UNIFIED FOOTER
       ===================================================== */}
 
       <footer
@@ -1811,17 +1613,62 @@ export default function LandingPage() {
         className="bg-[#073b3b] text-white"
       >
         <div className="mx-auto w-full max-w-[1200px] px-6 pb-7 pt-16 sm:px-8 lg:px-12 lg:pt-20">
-          <div className="grid gap-12 border-b border-white/10 pb-12 lg:grid-cols-[1.2fr_2fr] lg:gap-20 lg:pb-16">
-            {/* Brand / introduction */}
+          {/* GET STARTED */}
+          <div className="grid gap-8 border-b border-white/10 pb-14 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
+            <div className="max-w-3xl">
+              <span className="inline-block text-xs font-bold uppercase tracking-[0.14em] text-[#70dfdf]">
+                GET STARTED
+              </span>
+
+              <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
+                A simpler way to{" "}
+                <span className="text-[#70dfdf]">
+                  stay connected to
+                  care.
+                </span>
+              </h2>
+
+              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/65 sm:text-base">
+                Join PhilaLink and
+                bring your healthcare
+                journey into one
+                connected platform.
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+              <Link
+                to="/register"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[#075d5d] transition-colors hover:bg-[#e8f5f5]"
+              >
+                Create your account
+
+                <span className="material-symbols-outlined text-[18px]">
+                  arrow_forward
+                </span>
+              </Link>
+
+              <Link
+                to="/login"
+                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+              >
+                Log in
+              </Link>
+            </div>
+          </div>
+
+          {/* MAIN FOOTER */}
+          <div className="grid gap-12 border-b border-white/10 py-14 lg:grid-cols-[1.2fr_2fr] lg:gap-20">
             <div className="max-w-lg">
               <Link
                 to="/"
-                className="inline-flex items-center gap-3 transition-opacity hover:opacity-90"
+                className="inline-flex items-center gap-3"
               >
                 <img
                   src="/logo2.png"
-                  alt="PhilaLink"
-                  className="h-12 w-12 object-contain"
+                  alt=""
+                  aria-hidden="true"
+                  className="h-11 w-11 object-contain"
                 />
 
                 <span className="text-2xl font-bold tracking-tight text-white">
@@ -1832,50 +1679,22 @@ export default function LandingPage() {
                 </span>
               </Link>
 
-              <h2 className="mt-7 text-xl font-semibold leading-snug text-white sm:text-2xl">
-                Healthcare
-                connected around
-                you.
-              </h2>
+              <h3 className="mt-6 text-xl font-semibold leading-snug text-white sm:text-2xl">
+                Healthcare connected
+                around you.
+              </h3>
 
               <p className="mt-4 max-w-md text-sm leading-7 text-white/65">
-                PhilaLink brings
-                patients,
-                healthcare
-                workers and
-                trusted
-                medication
-                proxies together
-                through one
-                simple digital
-                healthcare
-                platform.
+                Connecting patients,
+                healthcare workers
+                and trusted proxies
+                through simpler,
+                more accessible
+                digital healthcare.
               </p>
-
-              <div className="mt-7 flex flex-wrap gap-3">
-                <Link
-                  to="/register"
-                  className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[#075d5d] transition hover:bg-[#e9f7f7]"
-                >
-                  Create account
-
-                  <span className="material-symbols-outlined text-[18px]">
-                    arrow_forward
-                  </span>
-                </Link>
-
-                <Link
-                  to="/login"
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg border border-white/20 px-5 text-sm font-semibold text-white transition hover:bg-white/10"
-                >
-                  Log in
-                </Link>
-              </div>
             </div>
 
-            {/* Footer link columns */}
             <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Explore */}
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-white">
                   Explore
@@ -1884,35 +1703,34 @@ export default function LandingPage() {
                 <div className="mt-5 flex flex-col gap-3.5">
                   <a
                     href="#map"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     Map
                   </a>
 
                   <a
                     href="#about"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     About
                   </a>
 
                   <a
                     href="#services"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     Services
                   </a>
 
                   <a
                     href="#health-tips"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     Health Tips
                   </a>
                 </div>
               </div>
 
-              {/* Patient access */}
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-white">
                   Patient Access
@@ -1921,39 +1739,37 @@ export default function LandingPage() {
                 <div className="mt-5 flex flex-col gap-3.5">
                   <Link
                     to="/register"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     Create account
                   </Link>
 
                   <Link
                     to="/login"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     Log in
                   </Link>
 
                   <a
                     href="#map"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     Find healthcare
                   </a>
 
                   <a
                     href="#services"
-                    className="w-fit text-sm text-white/65 transition hover:translate-x-1 hover:text-[#70dfdf]"
+                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                   >
                     View services
                   </a>
                 </div>
               </div>
 
-              {/* Healthcare support */}
               <div className="sm:col-span-2 lg:col-span-1">
                 <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-white">
-                  Healthcare
-                  Support
+                  Healthcare Support
                 </h3>
 
                 <div className="mt-5 flex flex-col gap-5">
@@ -1963,7 +1779,7 @@ export default function LandingPage() {
                     </span>
 
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+                      <p className="text-xs uppercase tracking-wide text-white/40">
                         Emergency
                       </p>
 
@@ -1979,13 +1795,13 @@ export default function LandingPage() {
                     </span>
 
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+                      <p className="text-xs uppercase tracking-wide text-white/40">
                         Nearby care
                       </p>
 
                       <a
                         href="#map"
-                        className="mt-1 block text-sm text-white/65 transition hover:text-[#70dfdf]"
+                        className="mt-1 block text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
                       >
                         Find clinics
                         and hospitals
@@ -1999,7 +1815,7 @@ export default function LandingPage() {
                     </span>
 
                     <div>
-                      <p className="text-xs font-medium uppercase tracking-wide text-white/40">
+                      <p className="text-xs uppercase tracking-wide text-white/40">
                         Treatment
                         support
                       </p>
@@ -2017,24 +1833,12 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Bottom footer bar */}
-          <div className="mt-7 flex flex-col gap-5 rounded-2xl border border-white/10 bg-white/[0.04] px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-            <div className="flex flex-col gap-1 text-xs text-white/50 sm:flex-row sm:items-center sm:gap-3">
-              <span>
-                © 2026
-                PhilaLink. All
-                rights reserved.
-              </span>
-
-              <span className="hidden text-white/20 sm:inline">
-                |
-              </span>
-
-              <span>
-                Connected care.
-                Simplified.
-              </span>
-            </div>
+          {/* BOTTOM BAR */}
+          <div className="mt-7 flex flex-col gap-4 rounded-xl bg-white/[0.04] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <span className="text-xs text-white/50">
+              © 2026 PhilaLink.
+              All rights reserved.
+            </span>
 
             <div className="flex items-center justify-between gap-5 sm:justify-end">
               <div className="flex items-center gap-2 text-xs">
@@ -2053,13 +1857,11 @@ export default function LandingPage() {
 
               <button
                 type="button"
-                onClick={
-                  scrollToTop
-                }
-                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#087878] text-white transition hover:-translate-y-1 hover:bg-[#0b8d8d]"
+                onClick={scrollToTop}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#087878] text-white transition-colors hover:bg-[#0b8d8d]"
                 aria-label="Back to top"
               >
-                <span className="material-symbols-outlined text-[20px]">
+                <span className="material-symbols-outlined text-[19px]">
                   arrow_upward
                 </span>
               </button>
