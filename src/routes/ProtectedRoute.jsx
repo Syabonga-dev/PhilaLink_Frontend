@@ -10,9 +10,11 @@ export function ProtectedRoute() {
   const {
     isAuthenticated,
     isLoading,
+    mustChangePassword,
   } = useAuth();
 
-  const location = useLocation();
+  const location =
+    useLocation();
 
   if (isLoading) {
     return (
@@ -34,6 +36,19 @@ export function ProtectedRoute() {
     );
   }
 
+  if (
+    mustChangePassword &&
+    location.pathname !==
+      "/change-password"
+  ) {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+      />
+    );
+  }
+
   return <Outlet />;
 }
 
@@ -43,6 +58,7 @@ export function RoleRoute({
   const {
     role,
     isLoading,
+    mustChangePassword,
   } = useAuth();
 
   if (isLoading) {
@@ -54,12 +70,66 @@ export function RoleRoute({
   }
 
   if (
+    mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+      />
+    );
+  }
+
+  if (
     !role ||
     !allow.includes(role)
   ) {
     return (
       <Navigate
-        to={homePathForRole(role)}
+        to={homePathForRole(
+          role
+        )}
+        replace
+      />
+    );
+  }
+
+  return <Outlet />;
+}
+
+export function PasswordChangeRoute() {
+  const {
+    isAuthenticated,
+    isLoading,
+    mustChangePassword,
+    role,
+  } = useAuth();
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center bg-background">
+        <Spinner label="Checking your session…" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
+  }
+
+  if (
+    !mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to={homePathForRole(
+          role
+        )}
         replace
       />
     );

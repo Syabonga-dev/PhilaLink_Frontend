@@ -17,14 +17,6 @@ export const clinicsApi = {
   },
 };
 
-export const symptomCheckerApi = {
-  assess: (payload) =>
-    api.post(
-      "/api/symptom-checker/assess",
-      payload
-    ),
-};
-
 export const collectionsApi = {
   list: () =>
     api.get("/api/collections"),

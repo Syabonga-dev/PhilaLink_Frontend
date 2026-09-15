@@ -7,6 +7,7 @@ import { useAuth } from "./context/AuthContext.jsx";
 import {
   ProtectedRoute,
   RoleRoute,
+  PasswordChangeRoute,
   homePathForRole,
 } from "./routes/ProtectedRoute.jsx";
 
@@ -17,6 +18,7 @@ import LoginPage from "./pages/auth/LoginPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import PhoneVerificationPage from "./pages/auth/PhoneVerificationPage.jsx";
 import RegistrationSuccessPage from "./pages/auth/RegistrationSuccessPage.jsx";
+import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 import PatientAppLayout from "./components/patient/AppLayout.jsx";
@@ -45,16 +47,25 @@ function RedirectIfAuthenticated({
     isAuthenticated,
     role,
     isLoading,
+    mustChangePassword,
   } = useAuth();
 
   if (isLoading) {
     return children;
   }
 
-  if (isAuthenticated) {
+  if (
+    isAuthenticated
+  ) {
     return (
       <Navigate
-        to={homePathForRole(role)}
+        to={
+          mustChangePassword
+            ? "/change-password"
+            : homePathForRole(
+                role
+              )
+        }
         replace
       />
     );
@@ -110,6 +121,19 @@ export default function App() {
           <ProtectedRoute />
         }
       >
+        <Route
+          element={
+            <PasswordChangeRoute />
+          }
+        >
+          <Route
+            path="/change-password"
+            element={
+              <ChangePasswordPage />
+            }
+          />
+        </Route>
+
         <Route
           element={
             <RoleRoute
@@ -265,7 +289,9 @@ export default function App() {
 
       <Route
         path="*"
-        element={<NotFound />}
+        element={
+          <NotFound />
+        }
       />
     </Routes>
   );

@@ -16,19 +16,6 @@ export const nursesApi = {
   getSupplyLevels: () =>
     api.get("/api/clinic-stock"),
 
-  getAuditLog: (params = {}) => {
-    const qs =
-      new URLSearchParams(
-        params
-      ).toString();
-
-    return api.get(
-      `/api/audit-log${
-        qs ? `?${qs}` : ""
-      }`
-    );
-  },
-
   recordCollection: (payload) =>
     api.post(
       "/api/collections",

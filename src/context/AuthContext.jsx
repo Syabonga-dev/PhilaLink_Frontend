@@ -1,107 +1,291 @@
-import { createContext, useContext, useState, useCallback, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+  useRef,
+} from "react";
+import {
+  useNavigate,
+} from "react-router-dom";
 import { authApi } from "../services/api/auth.js";
-import { tokenStore, registerUnauthorizedHandler, ApiError } from "../services/api/client.js";
+import {
+  tokenStore,
+  registerUnauthorizedHandler,
+  ApiError,
+} from "../services/api/client.js";
 
-const AuthContext = createContext(null);
+const AuthContext =
+  createContext(null);
 
-export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => tokenStore.getUser());
-  const [status, setStatus] = useState("idle"); // idle | loading | authenticated | unauthenticated
-  const navigate = useNavigate();
-  const hasBootstrapped = useRef(false);
+export function AuthProvider({
+  children,
+}) {
+  const [user, setUser] =
+    useState(
+      () =>
+        tokenStore.getUser()
+    );
 
-  // Force a clean logout whenever the API client hits an un-refreshable 401.
+  const [status, setStatus] =
+    useState("idle");
+
+  const navigate =
+    useNavigate();
+
+  const hasBootstrapped =
+    useRef(false);
+
   useEffect(() => {
-    registerUnauthorizedHandler(() => {
-      setUser(null);
-      setStatus("unauthenticated");
-      navigate("/login", { replace: true });
-    });
+    registerUnauthorizedHandler(
+      () => {
+        tokenStore.clear();
+
+        setUser(null);
+
+        setStatus(
+          "unauthenticated"
+        );
+
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
+      }
+    );
   }, [navigate]);
 
-  // On first load, trust whatever's already in localStorage. There's no
-  // GET /api/auth/me on the backend yet to re-hydrate/validate against, so
-  // we can't tell a valid stored session from a stale one here — just
-  // treat "has a token" as authenticated and let the first real API call
-  // (via the 401 handler above) catch a genuinely expired/invalid token.
   useEffect(() => {
-    if (hasBootstrapped.current) return;
-    hasBootstrapped.current = true;
-
-    const token = tokenStore.getToken();
-    const storedUser = tokenStore.getUser();
-    if (!token || !storedUser) {
-      tokenStore.clear();
-      setUser(null);
-      setStatus("unauthenticated");
+    if (
+      hasBootstrapped.current
+    ) {
       return;
     }
-    setUser(storedUser);
-    setStatus("authenticated");
+
+    hasBootstrapped.current =
+      true;
+
+    const bootstrap =
+      async () => {
+        const token =
+          tokenStore.getToken();
+
+        if (!token) {
+          tokenStore.clear();
+
+          setUser(null);
+
+          setStatus(
+            "unauthenticated"
+          );
+
+          return;
+        }
+
+        setStatus("loading");
+
+        try {
+          const currentUser =
+            await authApi.getMe();
+
+          tokenStore.setUser(
+            currentUser
+          );
+
+          setUser(
+            currentUser
+          );
+
+          setStatus(
+            "authenticated"
+          );
+        } catch {
+          tokenStore.clear();
+
+          setUser(null);
+
+          setStatus(
+            "unauthenticated"
+          );
+        }
+      };
+
+    bootstrap();
   }, []);
 
-  const login = useCallback(async ({ idNumber, password, role }) => {
-    const data = await authApi.login({ idNumber, password, role });
-    tokenStore.setSession({
-      token: data.token,
-      refreshToken: data.refreshToken,
-      user: data.user,
-    });
-    setUser(data.user);
-    setStatus("authenticated");
-    return data.user;
-  }, []);
+  const login =
+    useCallback(
+      async ({
+        idNumber,
+        password,
+      }) => {
+        const data =
+          await authApi.login({
+            idNumber,
+            password,
+          });
 
-  const registerPatient = useCallback(async (payload) => {
-    // Returns the created (unverified) user; the caller routes to the
-    // phone-verification screen next — no session is established yet.
-    return authApi.registerPatient(payload);
-  }, []);
+        tokenStore.setSession({
+          token:
+            data.token,
+          user:
+            data.user,
+        });
 
-  const verifyPhone = useCallback(async (payload) => {
-    const data = await authApi.verifyPhone(payload);
-    if (data?.token) {
-      tokenStore.setSession({
-        token: data.token,
-        refreshToken: data.refreshToken,
-        user: data.user,
-      });
-      setUser(data.user);
-      setStatus("authenticated");
-    }
-    return data;
-  }, []);
+        setUser(
+          data.user
+        );
 
-  const logout = useCallback(async () => {
-    // No POST /api/auth/logout on the backend yet — clear the local
-    // session only. (Note: the refresh token stays valid server-side
-    // until it expires on its own, since there's no revoke endpoint.)
-    tokenStore.clear();
-    setUser(null);
-    setStatus("unauthenticated");
-    navigate("/login", { replace: true });
-  }, [navigate]);
+        setStatus(
+          "authenticated"
+        );
+
+        return data.user;
+      },
+      []
+    );
+
+  const changePassword =
+    useCallback(
+      async (payload) => {
+        const data =
+          await authApi.changePassword(
+            payload
+          );
+
+        tokenStore.setSession({
+          token:
+            data.token,
+          user:
+            data.user,
+        });
+
+        setUser(
+          data.user
+        );
+
+        setStatus(
+          "authenticated"
+        );
+
+        return data.user;
+      },
+      []
+    );
+
+  const registerPatient =
+    useCallback(
+      async (payload) =>
+        authApi.registerPatient(
+          payload
+        ),
+      []
+    );
+
+  const verifyPhone =
+    useCallback(
+      async ({
+        userId,
+        code,
+      }) =>
+        authApi.verifyPhone(
+          userId,
+          code
+        ),
+      []
+    );
+
+  const logout =
+    useCallback(() => {
+      tokenStore.clear();
+
+      setUser(null);
+
+      setStatus(
+        "unauthenticated"
+      );
+
+      navigate(
+        "/login",
+        {
+          replace: true,
+        }
+      );
+    }, [navigate]);
+
+  const updateUser =
+    useCallback(
+      (nextUser) => {
+        tokenStore.setUser(
+          nextUser
+        );
+
+        setUser(
+          nextUser
+        );
+      },
+      []
+    );
 
   const value = {
     user,
-    role: user?.role ?? null,
-    isAuthenticated: status === "authenticated" && !!user,
-    isLoading: status === "loading" || status === "idle",
+
+    role:
+      user?.role ??
+      null,
+
+    mustChangePassword:
+      user?.mustChangePassword ===
+      true,
+
+    isAuthenticated:
+      status ===
+        "authenticated" &&
+      !!user,
+
+    isLoading:
+      status ===
+        "loading" ||
+      status ===
+        "idle",
+
     login,
+    logout,
+
+    changePassword,
+
     registerPatient,
     verifyPhone,
-    logout,
-    setUser,
+
+    setUser:
+      updateUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return (
+    <AuthContext.Provider
+      value={value}
+    >
+      {children}
+    </AuthContext.Provider>
+  );
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within an AuthProvider");
-  return ctx;
+  const context =
+    useContext(
+      AuthContext
+    );
+
+  if (!context) {
+    throw new Error(
+      "useAuth must be used within an AuthProvider"
+    );
+  }
+
+  return context;
 }
 
 export { ApiError };
