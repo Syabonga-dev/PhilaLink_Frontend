@@ -14,6 +14,7 @@ import {
   Plus,
   RefreshCw,
   Stethoscope,
+  Trash2,
   Video,
   X,
 } from "lucide-react";
@@ -185,6 +186,44 @@ function canReschedule(
     "noshow",
     "no-show",
   ].includes(status);
+}
+
+function canCancel(
+  appointment
+) {
+  const status =
+    normaliseStatus(
+      appointment?.status
+    );
+
+  if (
+    [
+      "completed",
+      "cancelled",
+      "canceled",
+      "missed",
+      "noshow",
+      "no-show",
+    ].includes(status)
+  ) {
+    return false;
+  }
+
+  const date =
+    parseDate(
+      appointment
+        ?.scheduledAt
+    );
+
+  if (
+    date &&
+    date.getTime() <
+      Date.now()
+  ) {
+    return false;
+  }
+
+  return true;
 }
 
 function getStatusDetails(
@@ -405,6 +444,7 @@ function AppointmentCard({
   appointment,
   past = false,
   onReschedule,
+  onCancel,
 }) {
   const status =
     getStatusDetails(
@@ -420,6 +460,11 @@ function AppointmentCard({
     canReschedule(
       appointment
     );
+
+    const cancellable =
+  canCancel(
+    appointment
+  );
 
   return (
     <div
@@ -539,24 +584,45 @@ function AppointmentCard({
           )}
 
           {!past &&
-            reschedulable && (
-            <div className="mt-lg border-t border-border-secondary pt-lg">
-              <button
-                type="button"
-                onClick={() =>
-                  onReschedule(
-                    appointment
-                  )
-                }
-                className="inline-flex items-center gap-xs rounded-corner-md border border-border-secondary px-md py-sm text-label-sm font-medium text-text-secondary transition hover:bg-bg-faint hover:text-brand-primary"
-              >
-                <Pencil
-                  size={14}
-                />
+            (reschedulable ||
+              cancellable) && (
+              <div className="mt-lg flex flex-wrap gap-sm border-t border-border-secondary pt-lg">
+                {reschedulable && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onReschedule(
+                        appointment
+                      )
+                    }
+                    className="inline-flex items-center gap-xs rounded-corner-md border border-border-secondary px-md py-sm text-label-sm font-medium text-text-secondary transition hover:bg-bg-faint hover:text-brand-primary"
+                  >
+                    <Pencil
+                      size={14}
+                    />
 
-                Reschedule
-              </button>
-            </div>
+                    Reschedule
+                  </button>
+                )}
+
+                {cancellable && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      onCancel(
+                        appointment
+                      )
+                    }
+                    className="inline-flex items-center gap-xs rounded-corner-md border border-danger/30 px-md py-sm text-label-sm font-medium text-danger transition hover:bg-danger/10"
+                  >
+                    <Trash2
+                      size={14}
+                    />
+
+                    Cancel
+                  </button>
+                )}
+              </div>
           )}
         </div>
       </div>
@@ -1279,6 +1345,193 @@ function RescheduleModal({
   );
 }
 
+function CancelAppointmentModal({
+  appointment,
+  onClose,
+  onCancelled,
+}) {
+  const [
+    submitting,
+    setSubmitting,
+  ] = useState(false);
+
+  const [
+    submitError,
+    setSubmitError,
+  ] = useState("");
+
+  useEffect(() => {
+    if (appointment) {
+      setSubmitError("");
+    }
+  }, [
+    appointment,
+  ]);
+
+  if (!appointment) {
+    return null;
+  }
+
+  const handleCancel =
+    async () => {
+      try {
+        setSubmitting(
+          true
+        );
+
+        setSubmitError(
+          ""
+        );
+
+        await appointmentsApi
+          .cancel(
+            appointment.id
+          );
+
+        await onCancelled();
+
+        onClose();
+      } catch (err) {
+        console.error(
+          "Failed to cancel appointment:",
+          err
+        );
+
+        setSubmitError(
+          err?.message ||
+            "We could not cancel this appointment."
+        );
+      } finally {
+        setSubmitting(
+          false
+        );
+      }
+    };
+
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-lg">
+      <div className="w-full rounded-t-corner-lg bg-surface-bg shadow-xl sm:max-w-lg sm:rounded-corner-lg">
+        <div className="flex items-center justify-between border-b border-border-secondary px-lg py-md">
+          <div>
+            <h2 className="text-label font-semibold text-text-primary">
+              Cancel appointment
+            </h2>
+
+            <p className="mt-xs text-video-title text-text-secondary">
+              This will mark the appointment as cancelled.
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={
+              onClose
+            }
+            disabled={
+              submitting
+            }
+            className="flex h-9 w-9 items-center justify-center rounded-corner-full text-text-secondary hover:bg-bg-faint"
+            aria-label="Close cancellation confirmation"
+          >
+            <X
+              size={18}
+            />
+          </button>
+        </div>
+
+        <div className="flex flex-col gap-lg p-lg">
+          <div className="rounded-corner-md bg-bg-faint p-md">
+            <p className="text-label-sm font-medium text-text-primary">
+              {appointment.type ||
+                "Appointment"}
+            </p>
+
+            <p className="mt-xs text-label-sm text-text-secondary">
+              {formatDate(
+                appointment
+                  .scheduledAt
+              )}
+            </p>
+
+            <p className="mt-xs text-label-sm text-text-secondary">
+              {formatTimeRange(
+                appointment
+                  .scheduledAt,
+                appointment
+                  .durationMinutes
+              )}
+            </p>
+
+            {appointment.reason && (
+              <p className="mt-md text-video-title text-text-secondary">
+                {
+                  appointment.reason
+                }
+              </p>
+            )}
+          </div>
+
+          {submitError && (
+            <div className="flex items-start gap-sm rounded-corner-md border border-danger/20 bg-danger/10 p-md">
+              <AlertCircle
+                size={16}
+                className="mt-[2px] shrink-0 text-danger"
+              />
+
+              <p className="text-label-sm text-text-primary">
+                {
+                  submitError
+                }
+              </p>
+            </div>
+          )}
+
+          <div className="flex items-start gap-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
+            <AlertCircle
+              size={16}
+              className="mt-[2px] shrink-0 text-warning"
+            />
+
+            <p className="text-label-sm text-text-secondary">
+              Are you sure you want to cancel this appointment?
+            </p>
+          </div>
+
+          <div className="flex flex-col-reverse gap-sm border-t border-border-secondary pt-lg sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              onClick={
+                onClose
+              }
+              disabled={
+                submitting
+              }
+              className="rounded-corner-md border border-border-secondary px-lg py-sm text-label-sm font-medium text-text-secondary hover:bg-bg-faint disabled:opacity-50"
+            >
+              Keep appointment
+            </button>
+
+            <button
+              type="button"
+              onClick={
+                handleCancel
+              }
+              disabled={
+                submitting
+              }
+              className="rounded-corner-md bg-danger px-lg py-sm text-label-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+            >
+              {submitting
+                ? "Cancelling..."
+                : "Cancel appointment"}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function AppointmentsPage() {
   const [
     appointments,
@@ -1311,6 +1564,11 @@ export default function AppointmentsPage() {
     rescheduleAppointment,
     setRescheduleAppointment,
   ] = useState(null);
+
+  const [
+  cancelAppointment,
+  setCancelAppointment,
+] = useState(null);
 
   const loadAppointments =
     useCallback(
@@ -1480,6 +1738,20 @@ export default function AppointmentsPage() {
         loadAppointments,
       ]
     );
+
+    const handleCancelled =
+  useCallback(
+    async () => {
+      await loadAppointments();
+
+      setTab(
+        "upcoming"
+      );
+    },
+    [
+      loadAppointments,
+    ]
+  );
 
   return (
     <>

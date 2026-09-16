@@ -27,4 +27,18 @@ export const appointmentsApi = {
       payload
     );
   },
+
+  cancel: (
+    appointmentId
+  ) => {
+    if (!appointmentId) {
+      throw new Error(
+        "An appointment ID is required."
+      );
+    }
+
+    return api.patch(
+      `/api/patients/me/appointments/${appointmentId}/cancel`
+    );
+  },
 };
