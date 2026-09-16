@@ -587,9 +587,7 @@ export default function AppLayout() {
                                 </p>
 
                                 <p className="mt-1 text-xs text-[#64748b]">
-                                  {formatNotificationDate(
-                                    notification.createdAt
-                                  )}
+                                  {formatNotificationDate(notification.createdAt)}
                                 </p>
                               </div>
                             </div>
