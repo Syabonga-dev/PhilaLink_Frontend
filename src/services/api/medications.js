@@ -1,11 +1,27 @@
 import { api } from "./client.js";
 
 export const medicationsApi = {
-  getMine: () => api.get("/api/medications/me"),
+  getMine: () =>
+    api.get(
+      "/api/medications/me"
+    ),
 
-  logDose: (medicationId, { taken, notes = null }) => {
+  getSupply: () =>
+    api.get(
+      "/api/medications/me/supply"
+    ),
+
+  logDose: (
+    medicationId,
+    {
+      taken,
+      notes = null,
+    }
+  ) => {
     if (!medicationId) {
-      throw new Error("A medication ID is required.");
+      throw new Error(
+        "A medication ID is required."
+      );
     }
 
     return api.post(

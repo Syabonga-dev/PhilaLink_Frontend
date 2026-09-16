@@ -38,8 +38,7 @@ function parseDate(value) {
     return null;
   }
 
-  const date =
-    new Date(value);
+  const date = new Date(value);
 
   return Number.isNaN(
     date.getTime()
@@ -123,6 +122,138 @@ function formatTimeOnly(value) {
   }
 
   return text;
+}
+
+function getCollectionState(
+  collection
+) {
+  if (!collection) {
+    return {
+      type: "none",
+      label:
+        "No upcoming collection",
+      message:
+        "There is no medication collection currently scheduled.",
+    };
+  }
+
+  const scheduledDate =
+    parseDate(
+      collection
+        .scheduledCollectionDate
+    );
+
+  if (!scheduledDate) {
+    return {
+      type: "unknown",
+      label:
+        collection.status ||
+        "Collection scheduled",
+      message:
+        "Collection date unavailable.",
+    };
+  }
+
+  const now =
+    new Date();
+
+  const today =
+    new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate()
+    );
+
+  const scheduled =
+    new Date(
+      scheduledDate.getFullYear(),
+      scheduledDate.getMonth(),
+      scheduledDate.getDate()
+    );
+
+  const differenceMs =
+    scheduled.getTime() -
+    today.getTime();
+
+  const differenceDays =
+    Math.round(
+      differenceMs /
+        (1000 *
+          60 *
+          60 *
+          24)
+    );
+
+  const status =
+    String(
+      collection.status ?? ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    status === "overdue" ||
+    differenceDays < 0
+  ) {
+    const daysOverdue =
+      Math.abs(
+        differenceDays
+      );
+
+    return {
+      type: "overdue",
+      label: "Overdue",
+      message:
+        daysOverdue === 1
+          ? "Collection was due yesterday."
+          : `Collection is ${daysOverdue} days overdue.`,
+    };
+  }
+
+  if (
+    differenceDays === 0
+  ) {
+    return {
+      type: "today",
+      label: "Due today",
+      message:
+        "Your medication collection is due today.",
+    };
+  }
+
+  if (
+    differenceDays === 1
+  ) {
+    return {
+      type: "upcoming",
+      label: "Tomorrow",
+      message:
+        "Your medication collection is tomorrow.",
+    };
+  }
+
+  return {
+    type: "upcoming",
+    label:
+      `${differenceDays} days`,
+    message:
+      `Your medication collection is in ${differenceDays} days.`,
+  };
+}
+
+function getCollectionBadgeVariant(
+  type
+) {
+  switch (type) {
+    case "overdue":
+      return "warning";
+
+    case "today":
+      return "success";
+
+    default:
+      return "default";
+  }
 }
 
 function formatNextDose(value) {
@@ -211,7 +342,6 @@ function getStatusDetails(
         label:
           statusValue ||
           "Scheduled",
-
         variant: "default",
       };
   }
@@ -498,6 +628,12 @@ export default function DashboardPage() {
         )
       : null;
 
+  const collectionState =
+    getCollectionState(
+      dashboard
+        ?.nextCollection
+    );
+
   const refreshAll =
     () => {
       loadDashboard();
@@ -514,8 +650,7 @@ export default function DashboardPage() {
           </h1>
 
           <p className="mt-xs text-label-sm text-text-secondary">
-            PhilaLink
-            Patient Portal
+            PhilaLink Patient Portal
           </p>
         </div>
 
@@ -585,17 +720,11 @@ export default function DashboardPage() {
 
           <div className="flex-1">
             <p className="text-label-sm font-medium text-text-primary">
-              Complete your
-              patient profile
+              Complete your patient profile
             </p>
 
             <p className="mt-xs text-video-title text-text-secondary">
-              Some PhilaLink
-              features may
-              require your
-              profile
-              information to
-              be complete.
+              Some PhilaLink features may require your profile information to be complete.
             </p>
           </div>
 
@@ -624,8 +753,7 @@ export default function DashboardPage() {
                 />
 
                 <h2 className="text-label font-semibold text-text-primary">
-                  My
-                  Medications
+                  My Medications
                 </h2>
               </div>
 
@@ -725,8 +853,7 @@ export default function DashboardPage() {
                               medication
                                 .daysRemaining
                             }{" "}
-                            days
-                            remaining
+                            days remaining
                           </span>
                         )}
                       </div>
@@ -742,9 +869,7 @@ export default function DashboardPage() {
                 />
 
                 <p className="mt-md text-label-sm text-text-secondary">
-                  No active
-                  medications on
-                  record.
+                  No active medications on record.
                 </p>
               </div>
             )}
@@ -759,8 +884,7 @@ export default function DashboardPage() {
                 />
 
                 <h2 className="text-label font-semibold text-text-primary">
-                  Health
-                  Metrics
+                  Health Metrics
                 </h2>
               </div>
             </div>
@@ -855,55 +979,227 @@ export default function DashboardPage() {
                 />
 
                 <p className="mt-md text-label-sm text-text-secondary">
-                  No health
-                  metrics
-                  recorded yet.
+                  No health metrics recorded yet.
                 </p>
               </div>
             )}
           </section>
 
-          {dashboard
-            ?.nextCollection && (
-            <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
-              <div className="flex items-start gap-md">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-brand-tertiary">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="flex items-start gap-md">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full ${
+                  collectionState.type ===
+                  "overdue"
+                    ? "bg-warning/10"
+                    : "bg-brand-tertiary"
+                }`}
+              >
+                {collectionState.type ===
+                "overdue" ? (
+                  <AlertCircle
+                    size={17}
+                    className="text-warning"
+                  />
+                ) : (
                   <Package
                     size={17}
                     className="text-brand-primary"
                   />
-                </div>
+                )}
+              </div>
 
-                <div className="flex-1">
-                  <h2 className="text-label font-semibold text-text-primary">
-                    Next
-                    medication
-                    collection
-                  </h2>
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-sm sm:flex-row sm:items-start sm:justify-between">
+                  <div>
+                    <h2 className="text-label font-semibold text-text-primary">
+                      Next medication collection
+                    </h2>
 
-                  <p className="mt-xs text-label-sm text-text-secondary">
-                    {formatDate(
-                      dashboard
-                        .nextCollection
-                        .scheduledCollectionDate
-                    )}
-                  </p>
-
-                  {dashboard
-                    .nextCollection
-                    .clinicName && (
-                    <p className="mt-xs text-video-title text-text-secondary">
+                    <p className="mt-xs text-label-sm text-text-secondary">
                       {
-                        dashboard
-                          .nextCollection
-                          .clinicName
+                        collectionState.message
                       }
                     </p>
+                  </div>
+
+                  {dashboard
+                    ?.nextCollection && (
+                    <Badge
+                      label={
+                        collectionState.label
+                      }
+                      variant={getCollectionBadgeVariant(
+                        collectionState.type
+                      )}
+                    />
                   )}
                 </div>
+
+                {dashboard
+                  ?.nextCollection ? (
+                  <div className="mt-lg flex flex-col gap-sm">
+                    <div className="flex items-center gap-xs">
+                      <Calendar
+                        size={13}
+                        className={
+                          collectionState.type ===
+                          "overdue"
+                            ? "shrink-0 text-warning"
+                            : "shrink-0 text-text-tertiary"
+                        }
+                      />
+
+                      <span className="text-label-sm font-medium text-text-primary">
+                        {formatDate(
+                          dashboard
+                            .nextCollection
+                            .scheduledCollectionDate
+                        )}
+                      </span>
+                    </div>
+
+                    {dashboard
+                      .nextCollection
+                      .clinicName && (
+                      <div className="flex items-start gap-xs">
+                        <MapPin
+                          size={13}
+                          className="mt-[2px] shrink-0 text-text-tertiary"
+                        />
+
+                        <span className="text-label-sm text-text-secondary">
+                          {
+                            dashboard
+                              .nextCollection
+                              .clinicName
+                          }
+                        </span>
+                      </div>
+                    )}
+
+                    {dashboard
+                      .nextCollection
+                      .medicationName && (
+                      <div className="flex items-start gap-xs">
+                        <Pill
+                          size={13}
+                          className="mt-[2px] shrink-0 text-text-tertiary"
+                        />
+
+                        <span className="text-label-sm text-text-secondary">
+                          {
+                            dashboard
+                              .nextCollection
+                              .medicationName
+                          }
+                        </span>
+                      </div>
+                    )}
+
+                    {Array.isArray(
+                      dashboard
+                        .nextCollection
+                        .items
+                    ) &&
+                      dashboard
+                        .nextCollection
+                        .items.length >
+                        0 && (
+                        <div className="mt-sm border-t border-border-secondary pt-md">
+                          <p className="mb-sm text-video-title text-text-tertiary">
+                            Medication collection
+                          </p>
+
+                          <div className="flex flex-col gap-xs">
+                            {dashboard
+                              .nextCollection
+                              .items.map(
+                                (
+                                  item
+                                ) => (
+                                  <div
+                                    key={
+                                      item.id
+                                    }
+                                    className="flex items-start justify-between gap-md"
+                                  >
+                                    <span className="min-w-0 text-label-sm text-text-secondary">
+                                      {
+                                        item.medicationName
+                                      }
+
+                                      {item.dosage
+                                        ? ` ${item.dosage}`
+                                        : ""}
+                                    </span>
+
+                                    <span className="shrink-0 text-video-title text-text-tertiary">
+                                      Qty{" "}
+                                      {
+                                        item.quantity
+                                      }
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                          </div>
+                        </div>
+                      )}
+
+                    {dashboard
+                      .nextCollection
+                      .notes && (
+                      <div className="mt-sm rounded-corner-md bg-bg-faint p-md">
+                        <p className="text-video-title text-text-tertiary">
+                          Collection note
+                        </p>
+
+                        <p className="mt-xs text-label-sm text-text-secondary">
+                          {
+                            dashboard
+                              .nextCollection
+                              .notes
+                          }
+                        </p>
+                      </div>
+                    )}
+
+                    {collectionState.type ===
+                      "overdue" && (
+                      <div className="mt-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
+                        <div className="flex items-start gap-sm">
+                          <AlertCircle
+                            size={15}
+                            className="mt-[2px] shrink-0 text-warning"
+                          />
+
+                          <p className="text-label-sm text-text-secondary">
+                            Please contact your clinic if you are unable to collect your medication as scheduled.
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="mt-lg rounded-corner-md bg-bg-faint p-lg text-center">
+                    <Package
+                      size={24}
+                      className="mx-auto text-text-tertiary"
+                    />
+
+                    <p className="mt-md text-label-sm font-medium text-text-primary">
+                      Nothing scheduled
+                    </p>
+
+                    <p className="mt-xs text-video-title text-text-secondary">
+                      When your clinic schedules your next medication collection, it will appear here.
+                    </p>
+                  </div>
+                )}
               </div>
-            </section>
-          )}
+            </div>
+          </section>
         </div>
 
         <div className="flex flex-col gap-lg lg:gap-xl">
@@ -1008,8 +1304,7 @@ export default function DashboardPage() {
                 />
 
                 <p className="mt-md text-label-sm text-text-secondary">
-                  No upcoming
-                  appointments.
+                  No upcoming appointments.
                 </p>
               </div>
             )}
@@ -1101,10 +1396,7 @@ export default function DashboardPage() {
               </div>
             ) : (
               <p className="text-label-sm text-text-secondary">
-                No clinic has
-                been assigned
-                to your
-                profile.
+                No clinic has been assigned to your profile.
               </p>
             )}
           </section>
@@ -1117,9 +1409,7 @@ export default function DashboardPage() {
               />
 
               <h2 className="text-label font-semibold text-text-primary">
-                Assigned
-                Primary Health
-                Care Worker
+                Assigned Primary Health Care Worker
               </h2>
             </div>
 
@@ -1190,8 +1480,7 @@ export default function DashboardPage() {
                       <span className="h-2 w-2 rounded-corner-full bg-success" />
 
                       <span className="text-video-title text-text-secondary">
-                        Active
-                        assignment
+                        Active assignment
                       </span>
                     </div>
                   </div>
@@ -1256,19 +1545,11 @@ export default function DashboardPage() {
                 />
 
                 <p className="mt-md text-label-sm font-medium text-text-primary">
-                  No Primary
-                  Health Care
-                  Worker
-                  assigned
+                  No Primary Health Care Worker assigned
                 </p>
 
                 <p className="mt-xs text-video-title text-text-secondary">
-                  Your clinic has
-                  not assigned an
-                  active health
-                  care worker to
-                  your profile
-                  yet.
+                  Your clinic has not assigned an active health care worker to your profile yet.
                 </p>
               </div>
             )}

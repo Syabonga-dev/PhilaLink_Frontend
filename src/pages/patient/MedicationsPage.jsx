@@ -4,242 +4,538 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import {
   AlertCircle,
   CheckCircle,
   ChevronRight,
   Clock,
   History,
+  Package,
   Pill,
   RefreshCw,
 } from "lucide-react";
+
 import {
   Badge,
   Button,
 } from "../../components/patient/chatbot/AstraCompat.jsx";
+
 import { medicationsApi } from "../../services/api/medications.js";
 
 function formatTime(value) {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
-  const text = String(value);
+  const text =
+    String(value);
 
-  if (/^\d{2}:\d{2}/.test(text)) {
-    return text.slice(0, 5);
+  if (
+    /^\d{2}:\d{2}/.test(
+      text
+    )
+  ) {
+    return text.slice(
+      0,
+      5
+    );
   }
 
   return text;
 }
 
 function formatDate(value) {
-  if (!value) return "—";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
+  if (!value) {
     return "—";
   }
 
-  return date.toLocaleDateString("en-ZA", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  });
+  const date =
+    new Date(value);
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "—";
+  }
+
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    }
+  );
 }
 
 function formatDateTime(value) {
-  if (!value) return "—";
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
+  if (!value) {
     return "—";
   }
 
-  return date.toLocaleString("en-ZA", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+  const date =
+    new Date(value);
 
-function getActiveSchedules(medication) {
-  if (!Array.isArray(medication?.schedules)) {
-    return [];
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "—";
   }
 
-  return medication.schedules
-    .filter((schedule) => schedule?.isActive !== false)
-    .sort((a, b) =>
-      String(a?.timeOfDay ?? "").localeCompare(
-        String(b?.timeOfDay ?? "")
-      )
-    );
-}
-
-function getTodayLogs(medication) {
-  if (!Array.isArray(medication?.logs)) {
-    return [];
-  }
-
-  const now = new Date();
-
-  return medication.logs.filter((log) => {
-    if (!log?.takenAt) return false;
-
-    const date = new Date(log.takenAt);
-
-    if (Number.isNaN(date.getTime())) {
-      return false;
+  return date.toLocaleString(
+    "en-ZA",
+    {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
     }
+  );
+}
 
-    return (
-      date.getFullYear() === now.getFullYear() &&
-      date.getMonth() === now.getMonth() &&
-      date.getDate() === now.getDate()
+function getActiveSchedules(
+  medication
+) {
+  if (
+    !Array.isArray(
+      medication?.schedules
+    )
+  ) {
+    return [];
+  }
+
+  return [
+    ...medication.schedules,
+  ]
+    .filter(
+      (schedule) =>
+        schedule?.isActive !==
+        false
+    )
+    .sort(
+      (a, b) =>
+        String(
+          a?.timeOfDay ?? ""
+        ).localeCompare(
+          String(
+            b?.timeOfDay ?? ""
+          )
+        )
     );
-  });
+}
+
+function getTodayLogs(
+  medication
+) {
+  if (
+    !Array.isArray(
+      medication?.logs
+    )
+  ) {
+    return [];
+  }
+
+  const now =
+    new Date();
+
+  return medication.logs.filter(
+    (log) => {
+      if (!log?.takenAt) {
+        return false;
+      }
+
+      const date =
+        new Date(
+          log.takenAt
+        );
+
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+        return false;
+      }
+
+      return (
+        date.getFullYear() ===
+          now.getFullYear() &&
+        date.getMonth() ===
+          now.getMonth() &&
+        date.getDate() ===
+          now.getDate()
+      );
+    }
+  );
+}
+
+function formatQuantity(value) {
+  if (
+    value == null ||
+    Number.isNaN(
+      Number(value)
+    )
+  ) {
+    return "—";
+  }
+
+  const number =
+    Number(value);
+
+  return Number.isInteger(
+    number
+  )
+    ? String(number)
+    : number.toFixed(1);
+}
+
+function getSupplyMessage(
+  supply
+) {
+  if (!supply) {
+    return {
+      label:
+        "Supply unavailable",
+      variant:
+        "default",
+      text:
+        "Supply information is not available yet.",
+    };
+  }
+
+  switch (
+    supply.calculationStatus
+  ) {
+    case "Available":
+      return {
+        label:
+          supply.daysRemaining ===
+          0
+            ? "Supply depleted"
+            : `${supply.daysRemaining} ${
+                supply.daysRemaining ===
+                1
+                  ? "day"
+                  : "days"
+              } remaining`,
+        variant:
+          supply.daysRemaining <=
+          3
+            ? "warning"
+            : "success",
+        text:
+          "Estimated from the most recent completed medication collection and your active dosing schedule.",
+      };
+
+    case "MissingUnitsPerDose":
+      return {
+        label:
+          "Dose amount needed",
+        variant:
+          "warning",
+        text:
+          "Your dispensed quantity is recorded, but units per dose have not been captured yet.",
+      };
+
+    case "MissingSchedule":
+      return {
+        label:
+          "Schedule needed",
+        variant:
+          "warning",
+        text:
+          "Your dispensed quantity is recorded, but no active dosing schedule is available.",
+      };
+
+    case "NoCompletedCollection":
+      return {
+        label:
+          "No collected supply",
+        variant:
+          "default",
+        text:
+          "No completed medication collection has been recorded for this medication.",
+      };
+
+    default:
+      return {
+        label:
+          "Supply unavailable",
+        variant:
+          "default",
+        text:
+          "Supply information could not be calculated.",
+      };
+  }
 }
 
 function LoadingState() {
   return (
     <div className="flex flex-col gap-md">
-      {[1, 2, 3].map((item) => (
-        <div
-          key={item}
-          className="bg-surface-bg rounded-corner-lg p-lg lg:p-xl border border-border-secondary animate-pulse"
-        >
-          <div className="flex gap-md">
-            <div className="w-9 h-9 rounded-corner-full bg-border-secondary" />
+      {[1, 2, 3].map(
+        (item) => (
+          <div
+            key={item}
+            className="animate-pulse rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl"
+          >
+            <div className="flex gap-md">
+              <div className="h-9 w-9 rounded-corner-full bg-border-secondary" />
 
-            <div className="flex-1">
-              <div className="h-4 w-40 bg-border-secondary rounded mb-sm" />
-              <div className="h-3 w-56 bg-border-secondary rounded" />
+              <div className="flex-1">
+                <div className="mb-sm h-4 w-40 rounded bg-border-secondary" />
+                <div className="h-3 w-56 rounded bg-border-secondary" />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      )}
     </div>
   );
 }
 
 function EmptyState() {
   return (
-    <div className="bg-surface-bg rounded-corner-lg border border-border-secondary p-xl lg:p-2xl text-center">
-      <div className="w-12 h-12 rounded-corner-full bg-brand-tertiary flex items-center justify-center mx-auto mb-md">
+    <div className="rounded-corner-lg border border-border-secondary bg-surface-bg p-xl text-center lg:p-2xl">
+      <div className="mx-auto mb-md flex h-12 w-12 items-center justify-center rounded-corner-full bg-brand-tertiary">
         <Pill
           size={20}
           className="text-brand-primary"
         />
       </div>
 
-      <h2 className="text-label text-text-primary font-semibold">
+      <h2 className="text-label font-semibold text-text-primary">
         No medications on record
       </h2>
 
-      <p className="text-label-sm text-text-secondary mt-xs max-w-md mx-auto">
-        There are currently no medications linked to your
-        patient profile.
+      <p className="mx-auto mt-xs max-w-md text-label-sm text-text-secondary">
+        There are currently no medications linked to your patient profile.
       </p>
     </div>
   );
 }
 
 export default function MedicationsPage() {
-  const [medications, setMedications] = useState([]);
-  const [selected, setSelected] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [actionMedicationId, setActionMedicationId] =
+  const [
+    medications,
+    setMedications,
+  ] =
+    useState([]);
+
+  const [
+    supply,
+    setSupply,
+  ] =
+    useState([]);
+
+  const [
+    selected,
+    setSelected,
+  ] =
     useState(null);
-  const [error, setError] = useState("");
-  const [message, setMessage] = useState("");
 
-  const loadMedications = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
 
-      const result = await medicationsApi.getMine();
+  const [
+    actionMedicationId,
+    setActionMedicationId,
+  ] =
+    useState(null);
 
-      setMedications(
-        Array.isArray(result) ? result : []
-      );
-    } catch (err) {
-      console.error(
-        "Failed to load medications:",
-        err
-      );
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
 
-      setError(
-        err?.message ||
-          "We could not load your medications."
-      );
+  const [
+    message,
+    setMessage,
+  ] =
+    useState("");
 
-      setMedications([]);
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const loadMedications =
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
 
-  useEffect(() => {
-    loadMedications();
-  }, [loadMedications]);
+          setError("");
 
-  const activeMedications = useMemo(
-    () =>
-      medications.filter(
-        (medication) =>
-          medication?.isActive !== false
-      ),
-    [medications]
+          const [
+            medicationResult,
+            supplyResult,
+          ] =
+            await Promise.all([
+              medicationsApi
+                .getMine(),
+              medicationsApi
+                .getSupply(),
+            ]);
+
+          setMedications(
+            Array.isArray(
+              medicationResult
+            )
+              ? medicationResult
+              : []
+          );
+
+          setSupply(
+            Array.isArray(
+              supplyResult
+            )
+              ? supplyResult
+              : []
+          );
+        } catch (err) {
+          console.error(
+            "Failed to load medications:",
+            err
+          );
+
+          setError(
+            err?.message ||
+              "We could not load your medications."
+          );
+
+          setMedications(
+            []
+          );
+
+          setSupply(
+            []
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      []
+    );
+
+  useEffect(
+    () => {
+      loadMedications();
+    },
+    [
+      loadMedications,
+    ]
   );
 
-  const inactiveMedications = useMemo(
-    () =>
-      medications.filter(
-        (medication) =>
-          medication?.isActive === false
-      ),
-    [medications]
-  );
+  const supplyByMedication =
+    useMemo(
+      () =>
+        new Map(
+          supply.map(
+            (item) => [
+              item.medicationId,
+              item,
+            ]
+          )
+        ),
+      [supply]
+    );
 
-  const todaySchedule = useMemo(() => {
-    return activeMedications
-      .flatMap((medication) =>
-        getActiveSchedules(medication).map(
-          (schedule) => ({
-            medicationId: medication.id,
-            medicationName: medication.name,
-            dosage: medication.dosage,
-            time: schedule.timeOfDay,
-          })
-        )
-      )
-      .sort((a, b) =>
-        String(a.time).localeCompare(
-          String(b.time)
-        )
-      );
-  }, [activeMedications]);
+  const activeMedications =
+    useMemo(
+      () =>
+        medications.filter(
+          (medication) =>
+            medication
+              ?.isActive !==
+            false
+        ),
+      [medications]
+    );
+
+  const inactiveMedications =
+    useMemo(
+      () =>
+        medications.filter(
+          (medication) =>
+            medication
+              ?.isActive ===
+            false
+        ),
+      [medications]
+    );
+
+  const todaySchedule =
+    useMemo(
+      () =>
+        activeMedications
+          .flatMap(
+            (
+              medication
+            ) =>
+              getActiveSchedules(
+                medication
+              ).map(
+                (
+                  schedule
+                ) => ({
+                  medicationId:
+                    medication.id,
+
+                  medicationName:
+                    medication.name,
+
+                  dosage:
+                    medication.dosage,
+
+                  time:
+                    schedule.timeOfDay,
+                })
+              )
+          )
+          .sort(
+            (a, b) =>
+              String(
+                a.time
+              ).localeCompare(
+                String(
+                  b.time
+                )
+              )
+          ),
+      [
+        activeMedications,
+      ]
+    );
 
   async function handleLogDose(
     medicationId,
     taken
   ) {
     try {
-      setActionMedicationId(medicationId);
+      setActionMedicationId(
+        medicationId
+      );
+
       setError("");
       setMessage("");
 
-      await medicationsApi.logDose(
-        medicationId,
-        {
-          taken,
-          notes: null,
-        }
-      );
+      await medicationsApi
+        .logDose(
+          medicationId,
+          {
+            taken,
+            notes: null,
+          }
+        );
 
       setMessage(
         taken
@@ -259,39 +555,71 @@ export default function MedicationsPage() {
           "We could not update this medication."
       );
     } finally {
-      setActionMedicationId(null);
+      setActionMedicationId(
+        null
+      );
     }
   }
 
-  function renderMedicationCard(medication) {
+  function renderMedicationCard(
+    medication
+  ) {
     const isSelected =
-      selected === medication.id;
+      selected ===
+      medication.id;
 
     const schedules =
-      getActiveSchedules(medication);
+      getActiveSchedules(
+        medication
+      );
 
     const todayLogs =
-      getTodayLogs(medication);
+      getTodayLogs(
+        medication
+      );
 
-    const mostRecentLog = Array.isArray(
-      medication.logs
-    )
-      ? [...medication.logs]
-          .filter((log) => log?.takenAt)
-          .sort(
-            (a, b) =>
-              new Date(b.takenAt) -
-              new Date(a.takenAt)
-          )[0]
-      : null;
+    const medicationSupply =
+      supplyByMedication.get(
+        medication.id
+      );
+
+    const supplyDetails =
+      getSupplyMessage(
+        medicationSupply
+      );
+
+    const mostRecentLog =
+      Array.isArray(
+        medication.logs
+      )
+        ? [
+            ...medication.logs,
+          ]
+            .filter(
+              (log) =>
+                log?.takenAt
+            )
+            .sort(
+              (a, b) =>
+                new Date(
+                  b.takenAt
+                ) -
+                new Date(
+                  a.takenAt
+                )
+            )[0]
+        : null;
 
     const isUpdating =
-      actionMedicationId === medication.id;
+      actionMedicationId ===
+      medication.id;
 
     return (
       <div
-        key={medication.id}
-        className={`w-full bg-surface-bg rounded-corner-lg border transition-colors ${
+        key={
+          medication.id
+        }
+        className={`w-full rounded-corner-lg border bg-surface-bg transition-colors ${
           isSelected
             ? "border-brand-primary"
             : "border-border-secondary"
@@ -306,11 +634,11 @@ export default function MedicationsPage() {
                 : medication.id
             )
           }
-          className="w-full text-left p-lg lg:p-xl"
+          className="w-full p-lg text-left lg:p-xl"
         >
-          <div className="flex items-start justify-between gap-md">
-            <div className="flex items-center gap-md flex-1 min-w-0">
-              <div className="w-9 h-9 rounded-corner-full bg-brand-tertiary flex items-center justify-center flex-shrink-0">
+          <div className="flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex min-w-0 flex-1 items-center gap-md">
+              <div className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-corner-full bg-brand-tertiary">
                 <Pill
                   size={16}
                   className="text-brand-primary"
@@ -319,19 +647,21 @@ export default function MedicationsPage() {
 
               <div className="min-w-0">
                 <div className="flex flex-wrap items-center gap-sm">
-                  <p className="text-label-sm text-text-primary font-semibold">
+                  <p className="text-label-sm font-semibold text-text-primary">
                     {medication.name ||
                       "Medication"}
                   </p>
 
                   {medication.dosage && (
                     <span className="text-label-sm text-text-secondary">
-                      {medication.dosage}
+                      {
+                        medication.dosage
+                      }
                     </span>
                   )}
                 </div>
 
-                <p className="text-video-title text-text-secondary mt-xs">
+                <p className="mt-xs text-video-title text-text-secondary">
                   {medication.instructions ||
                     medication.form ||
                     "No instructions recorded"}
@@ -339,7 +669,18 @@ export default function MedicationsPage() {
               </div>
             </div>
 
-            <div className="flex items-center gap-md flex-shrink-0">
+            <div className="flex flex-wrap items-center gap-sm">
+              {medication.isActive && (
+                <Badge
+                  label={
+                    supplyDetails.label
+                  }
+                  variant={
+                    supplyDetails.variant
+                  }
+                />
+              )}
+
               <Badge
                 label={
                   medication.isActive
@@ -366,21 +707,126 @@ export default function MedicationsPage() {
         </button>
 
         {isSelected && (
-          <div className="px-lg lg:px-xl pb-lg lg:pb-xl">
-            <div className="pt-lg border-t border-border-secondary">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-lg">
+          <div className="px-lg pb-lg lg:px-xl lg:pb-xl">
+            <div className="border-t border-border-secondary pt-lg">
+              {medication.isActive && (
+                <div className="mb-lg rounded-corner-md bg-bg-faint p-lg">
+                  <div className="mb-md flex items-start gap-sm">
+                    <Package
+                      size={16}
+                      className="mt-[2px] shrink-0 text-brand-primary"
+                    />
+
+                    <div>
+                      <p className="text-label-sm font-semibold text-text-primary">
+                        Medication supply
+                      </p>
+
+                      <p className="mt-xs text-video-title text-text-secondary">
+                        {
+                          supplyDetails.text
+                        }
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-md sm:grid-cols-4">
+                    <div>
+                      <p className="text-video-title text-text-tertiary">
+                        Dispensed
+                      </p>
+
+                      <p className="mt-xs text-label-sm font-medium text-text-primary">
+                        {formatQuantity(
+                          medicationSupply
+                            ?.dispensedQuantity
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-video-title text-text-tertiary">
+                        Remaining
+                      </p>
+
+                      <p className="mt-xs text-label-sm font-medium text-text-primary">
+                        {formatQuantity(
+                          medicationSupply
+                            ?.estimatedRemainingQuantity
+                        )}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-video-title text-text-tertiary">
+                        Days left
+                      </p>
+
+                      <p className="mt-xs text-label-sm font-medium text-text-primary">
+                        {medicationSupply
+                          ?.daysRemaining ??
+                          "—"}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-video-title text-text-tertiary">
+                        Doses/day
+                      </p>
+
+                      <p className="mt-xs text-label-sm font-medium text-text-primary">
+                        {medicationSupply
+                          ?.dosesPerDay ??
+                          "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {medicationSupply
+                    ?.lastCollectedAt && (
+                    <p className="mt-md text-video-title text-text-tertiary">
+                      Last collected{" "}
+                      {formatDate(
+                        medicationSupply
+                          .lastCollectedAt
+                      )}
+                    </p>
+                  )}
+
+                  {medicationSupply
+                    ?.unitsPerDose !=
+                    null && (
+                    <p className="mt-xs text-video-title text-text-tertiary">
+                      {
+                        medicationSupply.unitsPerDose
+                      }{" "}
+                      unit
+                      {Number(
+                        medicationSupply.unitsPerDose
+                      ) ===
+                      1
+                        ? ""
+                        : "s"}{" "}
+                      per dose
+                    </p>
+                  )}
+                </div>
+              )}
+
+              <div className="grid grid-cols-1 gap-lg sm:grid-cols-2">
                 <div>
-                  <p className="text-video-title text-text-tertiary mb-xs">
+                  <p className="mb-xs text-video-title text-text-tertiary">
                     Form
                   </p>
 
                   <p className="text-label-sm text-text-primary">
-                    {medication.form || "—"}
+                    {medication.form ||
+                      "—"}
                   </p>
                 </div>
 
                 <div>
-                  <p className="text-video-title text-text-tertiary mb-xs">
+                  <p className="mb-xs text-video-title text-text-tertiary">
                     Condition
                   </p>
 
@@ -391,7 +837,7 @@ export default function MedicationsPage() {
                 </div>
 
                 <div>
-                  <p className="text-video-title text-text-tertiary mb-xs">
+                  <p className="mb-xs text-video-title text-text-tertiary">
                     Prescribed by
                   </p>
 
@@ -402,14 +848,17 @@ export default function MedicationsPage() {
                 </div>
 
                 <div>
-                  <p className="text-video-title text-text-tertiary mb-xs">
+                  <p className="mb-xs text-video-title text-text-tertiary">
                     Schedule
                   </p>
 
-                  {schedules.length > 0 ? (
+                  {schedules.length >
+                  0 ? (
                     <div className="flex flex-wrap gap-xs">
                       {schedules.map(
-                        (schedule) => (
+                        (
+                          schedule
+                        ) => (
                           <span
                             key={
                               schedule.id ||
@@ -437,7 +886,7 @@ export default function MedicationsPage() {
                 </div>
 
                 <div>
-                  <p className="text-video-title text-text-tertiary mb-xs">
+                  <p className="mb-xs text-video-title text-text-tertiary">
                     Start date
                   </p>
 
@@ -449,7 +898,7 @@ export default function MedicationsPage() {
                 </div>
 
                 <div>
-                  <p className="text-video-title text-text-tertiary mb-xs">
+                  <p className="mb-xs text-video-title text-text-tertiary">
                     End date
                   </p>
 
@@ -464,19 +913,19 @@ export default function MedicationsPage() {
               </div>
 
               {mostRecentLog && (
-                <div className="mt-lg p-md rounded-corner-md bg-surface-secondary">
+                <div className="mt-lg rounded-corner-md bg-surface-secondary p-md">
                   <div className="flex items-start gap-md">
                     <History
                       size={15}
-                      className="text-text-secondary mt-0.5 flex-shrink-0"
+                      className="mt-0.5 flex-shrink-0 text-text-secondary"
                     />
 
                     <div>
-                      <p className="text-label-sm text-text-primary font-medium">
+                      <p className="text-label-sm font-medium text-text-primary">
                         Latest adherence entry
                       </p>
 
-                      <p className="text-video-title text-text-secondary mt-xs">
+                      <p className="mt-xs text-video-title text-text-secondary">
                         {mostRecentLog.taken
                           ? "Taken"
                           : "Skipped"}{" "}
@@ -487,7 +936,7 @@ export default function MedicationsPage() {
                       </p>
 
                       {mostRecentLog.notes && (
-                        <p className="text-video-title text-text-secondary mt-xs">
+                        <p className="mt-xs text-video-title text-text-secondary">
                           {
                             mostRecentLog.notes
                           }
@@ -500,8 +949,9 @@ export default function MedicationsPage() {
 
               {medication.isActive && (
                 <div className="mt-lg">
-                  {todayLogs.length > 0 && (
-                    <div className="flex items-center gap-xs mb-md">
+                  {todayLogs.length >
+                    0 && (
+                    <div className="mb-md flex items-center gap-xs">
                       <CheckCircle
                         size={14}
                         className="text-success"
@@ -521,11 +971,13 @@ export default function MedicationsPage() {
                     </div>
                   )}
 
-                  <div className="flex flex-col sm:flex-row gap-md">
+                  <div className="flex flex-col gap-md sm:flex-row">
                     <Button
                       variant="neutral"
                       className="flex-1"
-                      disabled={isUpdating}
+                      disabled={
+                        isUpdating
+                      }
                       onClick={() =>
                         handleLogDose(
                           medication.id,
@@ -541,7 +993,9 @@ export default function MedicationsPage() {
                     <Button
                       variant="subtle"
                       className="flex-1"
-                      disabled={isUpdating}
+                      disabled={
+                        isUpdating
+                      }
                       onClick={() =>
                         handleLogDose(
                           medication.id,
@@ -563,17 +1017,18 @@ export default function MedicationsPage() {
 
   return (
     <div className="p-lg md:p-xl lg:p-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-md mb-lg lg:mb-xl">
+      <div className="mb-lg flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between lg:mb-xl">
         <div>
           <h1 className="text-title text-text-primary">
             My Medications
           </h1>
 
-          <p className="text-label-sm text-text-secondary mt-xs">
+          <p className="mt-xs text-label-sm text-text-secondary">
             {loading
               ? "Loading your prescriptions..."
               : `${activeMedications.length} active ${
-                  activeMedications.length === 1
+                  activeMedications.length ===
+                  1
                     ? "prescription"
                     : "prescriptions"
                 }`}
@@ -583,20 +1038,26 @@ export default function MedicationsPage() {
         <Button
           variant="subtle"
           iconStart={
-            <RefreshCw size={15} />
+            <RefreshCw
+              size={15}
+            />
           }
-          onClick={loadMedications}
-          disabled={loading}
+          onClick={
+            loadMedications
+          }
+          disabled={
+            loading
+          }
         >
           Refresh
         </Button>
       </div>
 
       {message && (
-        <div className="mb-lg flex items-start gap-md bg-success/10 rounded-corner-lg p-md border border-success/20">
+        <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-success/20 bg-success/10 p-md">
           <CheckCircle
             size={17}
-            className="text-success flex-shrink-0 mt-0.5"
+            className="mt-0.5 flex-shrink-0 text-success"
           />
 
           <p className="text-label-sm text-text-primary">
@@ -606,10 +1067,10 @@ export default function MedicationsPage() {
       )}
 
       {error && (
-        <div className="mb-lg flex items-start gap-md bg-danger/10 rounded-corner-lg p-md border border-danger/20">
+        <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-danger/20 bg-danger/10 p-md">
           <AlertCircle
             size={17}
-            className="text-danger flex-shrink-0 mt-0.5"
+            className="mt-0.5 flex-shrink-0 text-danger"
           />
 
           <div className="flex-1">
@@ -619,8 +1080,10 @@ export default function MedicationsPage() {
 
             <button
               type="button"
-              onClick={loadMedications}
-              className="text-label-sm text-brand-primary mt-xs hover:opacity-70 transition-opacity"
+              onClick={
+                loadMedications
+              }
+              className="mt-xs text-label-sm text-brand-primary hover:opacity-70"
             >
               Try again
             </button>
@@ -628,125 +1091,104 @@ export default function MedicationsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-lg lg:gap-xl">
-        <div className="lg:col-span-2">
-          {loading ? (
-            <LoadingState />
-          ) : activeMedications.length ===
-            0 ? (
-            <EmptyState />
-          ) : (
-            <div className="flex flex-col gap-md">
-              {activeMedications.map(
-                renderMedicationCard
-              )}
-            </div>
-          )}
+      {loading ? (
+        <LoadingState />
+      ) : medications.length ===
+        0 ? (
+        <EmptyState />
+      ) : (
+        <div className="flex flex-col gap-xl">
+          {todaySchedule.length >
+            0 && (
+            <section>
+              <div className="mb-md flex items-center gap-sm">
+                <Clock
+                  size={16}
+                  className="text-brand-primary"
+                />
 
-          {!loading &&
-            inactiveMedications.length >
-              0 && (
-              <div className="mt-xl">
-                <h2 className="text-label text-text-primary font-semibold mb-md">
-                  Previous medications
+                <h2 className="text-label font-semibold text-text-primary">
+                  Today&apos;s schedule
                 </h2>
-
-                <div className="flex flex-col gap-md">
-                  {inactiveMedications.map(
-                    renderMedicationCard
-                  )}
-                </div>
               </div>
-            )}
-        </div>
 
-        <div className="flex flex-col gap-lg">
-          <div className="bg-surface-bg rounded-corner-lg p-lg lg:p-xl border border-border-secondary">
-            <div className="flex items-center gap-sm mb-lg">
-              <Clock
-                size={16}
-                className="text-brand-primary"
-              />
-
-              <h2 className="text-label text-text-primary font-semibold">
-                Today's schedule
-              </h2>
-            </div>
-
-            {loading ? (
-              <p className="text-label-sm text-text-secondary">
-                Loading schedule...
-              </p>
-            ) : todaySchedule.length ===
-              0 ? (
-              <p className="text-label-sm text-text-secondary">
-                No medication times are
-                scheduled.
-              </p>
-            ) : (
-              <div className="flex flex-col gap-md">
+              <div className="rounded-corner-lg border border-border-secondary bg-surface-bg">
                 {todaySchedule.map(
-                  (item, index) => (
+                  (
+                    item,
+                    index
+                  ) => (
                     <div
-                      key={`${item.medicationId}-${item.time}-${index}`}
-                      className="flex items-center gap-md"
+                      key={`${item.medicationId}-${item.time}`}
+                      className={`flex items-center justify-between gap-md p-md ${
+                        index <
+                        todaySchedule.length -
+                          1
+                          ? "border-b border-border-secondary"
+                          : ""
+                      }`}
                     >
-                      <div className="w-12 flex-shrink-0 text-right">
-                        <span className="text-video-title text-text-tertiary">
-                          {formatTime(
-                            item.time
-                          )}
-                        </span>
-                      </div>
-
-                      <div className="w-px h-8 bg-border-secondary flex-shrink-0" />
-
-                      <div className="flex-1 min-w-0">
-                        <p className="text-label-sm text-text-primary truncate">
+                      <div className="min-w-0">
+                        <p className="truncate text-label-sm font-medium text-text-primary">
                           {
                             item.medicationName
                           }
                         </p>
 
-                        {item.dosage && (
-                          <p className="text-video-title text-text-secondary truncate">
-                            {
-                              item.dosage
-                            }
-                          </p>
-                        )}
+                        <p className="mt-xs text-video-title text-text-secondary">
+                          {
+                            item.dosage
+                          }
+                        </p>
                       </div>
+
+                      <span className="shrink-0 text-label-sm font-medium text-brand-primary">
+                        {formatTime(
+                          item.time
+                        )}
+                      </span>
                     </div>
                   )
                 )}
               </div>
-            )}
-          </div>
+            </section>
+          )}
 
-          <div className="bg-surface-bg rounded-corner-lg p-lg lg:p-xl border border-border-secondary">
-            <div className="flex items-start gap-md">
-              <AlertCircle
-                size={16}
-                className="text-brand-primary flex-shrink-0 mt-0.5"
-              />
+          <section>
+            <h2 className="mb-md text-label font-semibold text-text-primary">
+              Active medications
+            </h2>
 
-              <div>
-                <h2 className="text-label text-text-primary font-semibold">
-                  Medication safety
-                </h2>
-
-                <p className="text-label-sm text-text-secondary mt-xs">
-                  Only mark a dose as taken
-                  after you have taken it.
-                  Contact your clinic if any
-                  prescription details appear
-                  incorrect.
-                </p>
+            {activeMedications.length >
+            0 ? (
+              <div className="flex flex-col gap-md">
+                {activeMedications.map(
+                  renderMedicationCard
+                )}
               </div>
-            </div>
-          </div>
+            ) : (
+              <p className="text-label-sm text-text-secondary">
+                No active medications.
+              </p>
+            )}
+          </section>
+
+          {inactiveMedications.length >
+            0 && (
+            <section>
+              <h2 className="mb-md text-label font-semibold text-text-primary">
+                Previous medications
+              </h2>
+
+              <div className="flex flex-col gap-md">
+                {inactiveMedications.map(
+                  renderMedicationCard
+                )}
+              </div>
+            </section>
+          )}
         </div>
-      </div>
+      )}
 
       <div className="h-20 lg:hidden" />
     </div>
