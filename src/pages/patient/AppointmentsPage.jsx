@@ -1906,6 +1906,9 @@ export default function AppointmentsPage() {
                     onReschedule={
                       setRescheduleAppointment
                     }
+                    onCancel={
+                      setCancelAppointment
+                    }
                   />
                 )
               )}
@@ -1967,6 +1970,20 @@ export default function AppointmentsPage() {
         }
         onRescheduled={
           handleRescheduled
+        }
+      />
+
+      <CancelAppointmentModal
+        appointment={
+          cancelAppointment
+        }
+        onClose={() =>
+          setCancelAppointment(
+            null
+          )
+        }
+        onCancelled={
+          handleCancelled
         }
       />
     </>
