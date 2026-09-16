@@ -4,7 +4,9 @@ import {
   useMemo,
   useState,
 } from "react";
+
 import { useNavigate } from "react-router-dom";
+
 import {
   Activity,
   AlertCircle,
@@ -13,76 +15,126 @@ import {
   CheckCircle,
   ChevronRight,
   Clock,
+  Mail,
   MapPin,
   Package,
   Phone,
   Pill,
   RefreshCw,
+  UserRound,
 } from "lucide-react";
+
 import {
   Avatar,
   Badge,
   Button,
 } from "../../components/patient/chatbot/AstraCompat.jsx";
+
 import { patientsApi } from "../../services/api/patients.js";
+import { proxiesApi } from "../../services/api/proxies.js";
 
 function parseDate(value) {
-  if (!value) return null;
+  if (!value) {
+    return null;
+  }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  return Number.isNaN(date.getTime())
+  return Number.isNaN(
+    date.getTime()
+  )
     ? null
     : date;
 }
 
 function formatDate(value) {
-  const date = parseDate(value);
+  const date =
+    parseDate(value);
 
   if (!date) {
     return "Date unavailable";
   }
 
-  return date.toLocaleDateString("en-ZA", {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-  });
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      weekday: "short",
+      day: "numeric",
+      month: "short",
+    }
+  );
+}
+
+function formatAssignedDate(
+  value
+) {
+  const date =
+    parseDate(value);
+
+  if (!date) {
+    return "Assignment date unavailable";
+  }
+
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    }
+  );
 }
 
 function formatTime(value) {
-  const date = parseDate(value);
+  const date =
+    parseDate(value);
 
   if (!date) {
     return "—";
   }
 
-  return date.toLocaleTimeString("en-ZA", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  return date.toLocaleTimeString(
+    "en-ZA",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
 }
 
 function formatTimeOnly(value) {
-  if (!value) return "—";
+  if (!value) {
+    return "—";
+  }
 
-  const text = String(value);
+  const text =
+    String(value);
 
-  if (/^\d{2}:\d{2}/.test(text)) {
-    return text.slice(0, 5);
+  if (
+    /^\d{2}:\d{2}/.test(
+      text
+    )
+  ) {
+    return text.slice(
+      0,
+      5
+    );
   }
 
   return text;
 }
 
 function formatNextDose(value) {
-  const date = parseDate(value);
+  const date =
+    parseDate(value);
 
   if (!date) {
     return "No next dose";
   }
 
-  const now = new Date();
+  const now =
+    new Date();
 
   const sameDay =
     date.getFullYear() ===
@@ -93,12 +145,14 @@ function formatNextDose(value) {
       now.getDate();
 
   if (sameDay) {
-    return `Today, ${formatTime(value)}`;
+    return `Today, ${formatTime(
+      value
+    )}`;
   }
 
-  return `${formatDate(value)}, ${formatTime(
+  return `${formatDate(
     value
-  )}`;
+  )}, ${formatTime(value)}`;
 }
 
 function getInitials(name) {
@@ -111,12 +165,16 @@ function getInitials(name) {
     .filter(Boolean)
     .slice(0, 2)
     .map((part) =>
-      part.charAt(0).toUpperCase()
+      part
+        .charAt(0)
+        .toUpperCase()
     )
     .join("");
 }
 
-function getStatusDetails(statusValue) {
+function getStatusDetails(
+  statusValue
+) {
   const status = String(
     statusValue ?? ""
   )
@@ -151,7 +209,9 @@ function getStatusDetails(statusValue) {
     default:
       return {
         label:
-          statusValue || "Scheduled",
+          statusValue ||
+          "Scheduled",
+
         variant: "default",
       };
   }
@@ -175,25 +235,45 @@ function isClinicOpen(clinic) {
       clinic.closingTime
     );
 
-  const [openHour, openMinute] =
-    opening.split(":").map(Number);
+  const [
+    openHour,
+    openMinute,
+  ] =
+    opening
+      .split(":")
+      .map(Number);
 
-  const [closeHour, closeMinute] =
-    closing.split(":").map(Number);
+  const [
+    closeHour,
+    closeMinute,
+  ] =
+    closing
+      .split(":")
+      .map(Number);
 
   if (
-    Number.isNaN(openHour) ||
-    Number.isNaN(openMinute) ||
-    Number.isNaN(closeHour) ||
-    Number.isNaN(closeMinute)
+    Number.isNaN(
+      openHour
+    ) ||
+    Number.isNaN(
+      openMinute
+    ) ||
+    Number.isNaN(
+      closeHour
+    ) ||
+    Number.isNaN(
+      closeMinute
+    )
   ) {
     return null;
   }
 
-  const now = new Date();
+  const now =
+    new Date();
 
   const current =
-    now.getHours() * 60 +
+    now.getHours() *
+      60 +
     now.getMinutes();
 
   const open =
@@ -212,21 +292,21 @@ function isClinicOpen(clinic) {
 
 function LoadingDashboard() {
   return (
-    <div className="p-lg md:p-xl lg:p-2xl animate-pulse">
+    <div className="animate-pulse p-lg md:p-xl lg:p-2xl">
       <div className="mb-xl">
-        <div className="h-7 w-64 bg-border-secondary rounded mb-sm" />
-        <div className="h-4 w-72 bg-border-secondary rounded" />
+        <div className="mb-sm h-7 w-64 rounded bg-border-secondary" />
+        <div className="h-4 w-72 rounded bg-border-secondary" />
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg lg:gap-xl">
-        <div className="md:col-span-2 flex flex-col gap-lg">
-          <div className="h-72 bg-surface-bg rounded-corner-lg" />
-          <div className="h-48 bg-surface-bg rounded-corner-lg" />
+      <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3 lg:gap-xl">
+        <div className="flex flex-col gap-lg md:col-span-2">
+          <div className="h-72 rounded-corner-lg bg-surface-bg" />
+          <div className="h-48 rounded-corner-lg bg-surface-bg" />
         </div>
 
         <div className="flex flex-col gap-lg">
-          <div className="h-64 bg-surface-bg rounded-corner-lg" />
-          <div className="h-48 bg-surface-bg rounded-corner-lg" />
+          <div className="h-64 rounded-corner-lg bg-surface-bg" />
+          <div className="h-48 rounded-corner-lg bg-surface-bg" />
         </div>
       </div>
     </div>
@@ -234,47 +314,128 @@ function LoadingDashboard() {
 }
 
 export default function DashboardPage() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const [dashboard, setDashboard] =
-    useState(null);
+  const [
+    dashboard,
+    setDashboard,
+  ] = useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    assignedWorker,
+    setAssignedWorker,
+  ] = useState(null);
 
-  const [error, setError] =
-    useState("");
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
+
+  const [
+    error,
+    setError,
+  ] = useState("");
+
+  const [
+    workerLoading,
+    setWorkerLoading,
+  ] = useState(true);
+
+  const [
+    workerError,
+    setWorkerError,
+  ] = useState("");
 
   const loadDashboard =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
 
-        const result =
-          await patientsApi.getDashboard();
+          setError("");
 
-        setDashboard(result);
-      } catch (err) {
-        console.error(
-          "Failed to load patient dashboard:",
-          err
-        );
+          const result =
+            await patientsApi
+              .getDashboard();
 
-        setDashboard(null);
+          setDashboard(
+            result
+          );
+        } catch (err) {
+          console.error(
+            "Failed to load patient dashboard:",
+            err
+          );
 
-        setError(
-          err?.message ||
-            "We could not load your dashboard."
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+          setDashboard(
+            null
+          );
+
+          setError(
+            err?.message ||
+              "We could not load your dashboard."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      []
+    );
+
+  const loadAssignedWorker =
+    useCallback(
+      async () => {
+        try {
+          setWorkerLoading(
+            true
+          );
+
+          setWorkerError(
+            ""
+          );
+
+          const result =
+            await proxiesApi
+              .getMyAssignedWorker();
+
+          setAssignedWorker(
+            result || null
+          );
+        } catch (err) {
+          console.error(
+            "Failed to load assigned primary health care worker:",
+            err
+          );
+
+          setAssignedWorker(
+            null
+          );
+
+          setWorkerError(
+            err?.message ||
+              "Could not load your assigned health care worker."
+          );
+        } finally {
+          setWorkerLoading(
+            false
+          );
+        }
+      },
+      []
+    );
 
   useEffect(() => {
     loadDashboard();
-  }, [loadDashboard]);
+    loadAssignedWorker();
+  }, [
+    loadDashboard,
+    loadAssignedWorker,
+  ]);
 
   const medications =
     useMemo(
@@ -291,9 +452,11 @@ export default function DashboardPage() {
     useMemo(
       () =>
         Array.isArray(
-          dashboard?.upcomingAppointments
+          dashboard
+            ?.upcomingAppointments
         )
-          ? dashboard.upcomingAppointments
+          ? dashboard
+              .upcomingAppointments
           : [],
       [dashboard]
     );
@@ -310,7 +473,9 @@ export default function DashboardPage() {
     );
 
   if (loading) {
-    return <LoadingDashboard />;
+    return (
+      <LoadingDashboard />
+    );
   }
 
   const fullName =
@@ -328,24 +493,35 @@ export default function DashboardPage() {
 
   const clinicOpen =
     clinic
-      ? isClinicOpen(clinic)
+      ? isClinicOpen(
+          clinic
+        )
       : null;
+
+  const refreshAll =
+    () => {
+      loadDashboard();
+      loadAssignedWorker();
+    };
 
   return (
     <div className="p-lg md:p-xl lg:p-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-lg lg:mb-xl gap-md">
+      <div className="mb-lg flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between lg:mb-xl">
         <div>
           <h1 className="text-title text-text-primary">
-            Welcome, {firstName}
+            Welcome,{" "}
+            {firstName}
           </h1>
 
-          <p className="text-label-sm text-text-secondary mt-xs">
-            PhilaLink Patient Portal
+          <p className="mt-xs text-label-sm text-text-secondary">
+            PhilaLink
+            Patient Portal
           </p>
         </div>
 
         <div className="flex items-center gap-sm">
-          {dashboard?.unreadNotifications >
+          {dashboard
+            ?.unreadNotifications >
             0 && (
             <Badge
               label={`${dashboard.unreadNotifications} unread ${
@@ -365,7 +541,9 @@ export default function DashboardPage() {
                 size={15}
               />
             }
-            onClick={loadDashboard}
+            onClick={
+              refreshAll
+            }
           >
             Refresh
           </Button>
@@ -397,24 +575,27 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {!dashboard?.isProfileComplete && (
-        <div className="mb-lg rounded-corner-lg border border-warning/20 bg-warning/10 p-md flex items-start gap-md">
+      {!dashboard
+        ?.isProfileComplete && (
+        <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-warning/20 bg-warning/10 p-md">
           <AlertCircle
             size={17}
-            className="text-warning shrink-0 mt-0.5"
+            className="mt-0.5 shrink-0 text-warning"
           />
 
           <div className="flex-1">
             <p className="text-label-sm font-medium text-text-primary">
-              Complete your patient
-              profile
+              Complete your
+              patient profile
             </p>
 
             <p className="mt-xs text-video-title text-text-secondary">
-              Some PhilaLink features
-              may require your profile
-              information to be
-              complete.
+              Some PhilaLink
+              features may
+              require your
+              profile
+              information to
+              be complete.
             </p>
           </div>
 
@@ -432,18 +613,19 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-lg lg:gap-xl">
-        <div className="col-span-1 md:col-span-2 flex flex-col gap-lg lg:gap-xl">
-          <section className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl">
-            <div className="flex items-center justify-between mb-lg">
+      <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3 lg:gap-xl">
+        <div className="col-span-1 flex flex-col gap-lg md:col-span-2 lg:gap-xl">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="mb-lg flex items-center justify-between">
               <div className="flex items-center gap-sm">
                 <Pill
                   size={16}
                   className="text-brand-primary"
                 />
 
-                <h2 className="text-label text-text-primary font-semibold">
-                  My Medications
+                <h2 className="text-label font-semibold text-text-primary">
+                  My
+                  Medications
                 </h2>
               </div>
 
@@ -454,9 +636,10 @@ export default function DashboardPage() {
                     "/patient/medications"
                   )
                 }
-                className="text-label-sm text-brand-primary flex items-center gap-xs hover:opacity-70 transition-opacity"
+                className="flex items-center gap-xs text-label-sm text-brand-primary transition-opacity hover:opacity-70"
               >
                 View all
+
                 <ChevronRight
                   size={14}
                 />
@@ -475,7 +658,7 @@ export default function DashboardPage() {
                       key={
                         medication.id
                       }
-                      className={`flex items-start sm:items-center justify-between py-lg gap-md ${
+                      className={`flex items-start justify-between gap-md py-lg sm:items-center ${
                         index <
                         medications.length -
                           1
@@ -483,11 +666,11 @@ export default function DashboardPage() {
                           : ""
                       }`}
                     >
-                      <div className="flex items-center gap-md flex-1 min-w-0">
-                        <div className="w-2 h-2 rounded-corner-full bg-brand-primary flex-shrink-0" />
+                      <div className="flex min-w-0 flex-1 items-center gap-md">
+                        <div className="h-2 w-2 flex-shrink-0 rounded-corner-full bg-brand-primary" />
 
                         <div className="min-w-0">
-                          <p className="text-label-sm text-text-primary font-medium truncate">
+                          <p className="truncate text-label-sm font-medium text-text-primary">
                             {
                               medication.name
                             }{" "}
@@ -496,20 +679,21 @@ export default function DashboardPage() {
                             }
                           </p>
 
-                          <p className="text-video-title text-text-secondary mt-xs">
+                          <p className="mt-xs text-video-title text-text-secondary">
                             {medication.instructions ||
                               medication.form ||
                               "No instructions recorded"}
                           </p>
 
                           {Array.isArray(
-                            medication.scheduleTimes
+                            medication
+                              .scheduleTimes
                           ) &&
                             medication
                               .scheduleTimes
                               .length >
                               0 && (
-                              <p className="text-video-title text-text-tertiary mt-xs">
+                              <p className="mt-xs text-video-title text-text-tertiary">
                                 {medication.scheduleTimes.join(
                                   " · "
                                 )}
@@ -518,27 +702,31 @@ export default function DashboardPage() {
                         </div>
                       </div>
 
-                      <div className="flex flex-col items-end gap-xs flex-shrink-0">
+                      <div className="flex flex-shrink-0 flex-col items-end gap-xs">
                         <div className="flex items-center gap-xs">
                           <Clock
                             size={12}
                             className="text-text-tertiary"
                           />
 
-                          <span className="text-video-title text-text-secondary whitespace-nowrap">
+                          <span className="whitespace-nowrap text-video-title text-text-secondary">
                             {formatNextDose(
-                              medication.nextDoseAt
+                              medication
+                                .nextDoseAt
                             )}
                           </span>
                         </div>
 
-                        {medication.daysRemaining !=
+                        {medication
+                          .daysRemaining !=
                           null && (
                           <span className="text-video-title text-text-tertiary">
                             {
-                              medication.daysRemaining
+                              medication
+                                .daysRemaining
                             }{" "}
-                            days remaining
+                            days
+                            remaining
                           </span>
                         )}
                       </div>
@@ -562,41 +750,45 @@ export default function DashboardPage() {
             )}
           </section>
 
-          <section className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl">
-            <div className="flex items-center justify-between mb-lg">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="mb-lg flex items-center justify-between">
               <div className="flex items-center gap-sm">
                 <Activity
                   size={16}
                   className="text-brand-primary"
                 />
 
-                <h2 className="text-label text-text-primary font-semibold">
-                  Health Metrics
+                <h2 className="text-label font-semibold text-text-primary">
+                  Health
+                  Metrics
                 </h2>
               </div>
             </div>
 
-            {metrics.length > 0 ? (
-              <div className="flex flex-col sm:grid sm:grid-cols-3 gap-md">
+            {metrics.length >
+            0 ? (
+              <div className="flex flex-col gap-md sm:grid sm:grid-cols-3">
                 {metrics.map(
                   (metric) => (
                     <div
-                      key={metric.id}
-                      className="bg-bg-faint rounded-corner-md p-md"
+                      key={
+                        metric.id
+                      }
+                      className="rounded-corner-md bg-bg-faint p-md"
                     >
-                      <p className="text-video-title text-text-secondary mb-xs">
+                      <p className="mb-xs text-video-title text-text-secondary">
                         {
                           metric.metricType
                         }
                       </p>
 
-                      <p className="text-label-sm text-text-primary font-semibold">
+                      <p className="text-label-sm font-semibold text-text-primary">
                         {
                           metric.value
                         }
 
                         {metric.unit && (
-                          <span className="text-video-title text-text-secondary font-normal ml-xs">
+                          <span className="ml-xs text-video-title font-normal text-text-secondary">
                             {
                               metric.unit
                             }
@@ -606,7 +798,7 @@ export default function DashboardPage() {
 
                       {(metric.status ||
                         metric.note) && (
-                        <div className="flex items-start gap-xs mt-sm">
+                        <div className="mt-sm flex items-start gap-xs">
                           {String(
                             metric.status ??
                               ""
@@ -627,14 +819,14 @@ export default function DashboardPage() {
                               size={
                                 11
                               }
-                              className="text-success mt-[2px]"
+                              className="mt-[2px] text-success"
                             />
                           ) : (
                             <AlertCircle
                               size={
                                 11
                               }
-                              className="text-warning mt-[2px]"
+                              className="mt-[2px] text-warning"
                             />
                           )}
 
@@ -645,9 +837,10 @@ export default function DashboardPage() {
                         </div>
                       )}
 
-                      <p className="text-video-title text-text-tertiary mt-sm">
+                      <p className="mt-sm text-video-title text-text-tertiary">
                         {formatDate(
-                          metric.recordedAt
+                          metric
+                            .recordedAt
                         )}
                       </p>
                     </div>
@@ -662,17 +855,19 @@ export default function DashboardPage() {
                 />
 
                 <p className="mt-md text-label-sm text-text-secondary">
-                  No health metrics
+                  No health
+                  metrics
                   recorded yet.
                 </p>
               </div>
             )}
           </section>
 
-          {dashboard?.nextCollection && (
-            <section className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl">
+          {dashboard
+            ?.nextCollection && (
+            <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
               <div className="flex items-start gap-md">
-                <div className="w-10 h-10 rounded-corner-full bg-brand-tertiary flex items-center justify-center shrink-0">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-brand-tertiary">
                   <Package
                     size={17}
                     className="text-brand-primary"
@@ -680,8 +875,9 @@ export default function DashboardPage() {
                 </div>
 
                 <div className="flex-1">
-                  <h2 className="text-label text-text-primary font-semibold">
-                    Next medication
+                  <h2 className="text-label font-semibold text-text-primary">
+                    Next
+                    medication
                     collection
                   </h2>
 
@@ -711,15 +907,15 @@ export default function DashboardPage() {
         </div>
 
         <div className="flex flex-col gap-lg lg:gap-xl">
-          <section className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl">
-            <div className="flex items-center justify-between mb-lg">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="mb-lg flex items-center justify-between">
               <div className="flex items-center gap-sm">
                 <Calendar
                   size={16}
                   className="text-brand-primary"
                 />
 
-                <h2 className="text-label text-text-primary font-semibold">
+                <h2 className="text-label font-semibold text-text-primary">
                   Appointments
                 </h2>
               </div>
@@ -731,7 +927,7 @@ export default function DashboardPage() {
                     "/patient/appointments"
                   )
                 }
-                className="text-label-sm text-brand-primary hover:opacity-70 transition-opacity"
+                className="text-label-sm text-brand-primary transition-opacity hover:opacity-70"
               >
                 View all
               </button>
@@ -741,7 +937,9 @@ export default function DashboardPage() {
             0 ? (
               <div className="flex flex-col gap-lg">
                 {appointments.map(
-                  (appointment) => {
+                  (
+                    appointment
+                  ) => {
                     const status =
                       getStatusDetails(
                         appointment.status
@@ -752,16 +950,16 @@ export default function DashboardPage() {
                         key={
                           appointment.id
                         }
-                        className="bg-bg-faint rounded-corner-md p-lg"
+                        className="rounded-corner-md bg-bg-faint p-lg"
                       >
                         <div className="flex items-start justify-between gap-md">
-                          <div className="flex-1 min-w-0">
-                            <p className="text-label-sm text-text-primary font-medium truncate">
+                          <div className="min-w-0 flex-1">
+                            <p className="truncate text-label-sm font-medium text-text-primary">
                               {appointment.type ||
                                 "Appointment"}
                             </p>
 
-                            <p className="text-video-title text-text-secondary mt-xs">
+                            <p className="mt-xs text-video-title text-text-secondary">
                               {appointment.providerName ||
                                 appointment.nurseName ||
                                 appointment.clinicName ||
@@ -779,7 +977,7 @@ export default function DashboardPage() {
                           />
                         </div>
 
-                        <div className="flex items-center gap-xs mt-md">
+                        <div className="mt-md flex items-center gap-xs">
                           <Calendar
                             size={11}
                             className="text-text-tertiary"
@@ -787,11 +985,13 @@ export default function DashboardPage() {
 
                           <span className="text-video-title text-text-secondary">
                             {formatDate(
-                              appointment.scheduledAt
+                              appointment
+                                .scheduledAt
                             )}{" "}
                             ·{" "}
                             {formatTime(
-                              appointment.scheduledAt
+                              appointment
+                                .scheduledAt
                             )}
                           </span>
                         </div>
@@ -815,22 +1015,24 @@ export default function DashboardPage() {
             )}
           </section>
 
-          <section className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl">
-            <h2 className="text-label text-text-primary font-semibold mb-lg">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <h2 className="mb-lg text-label font-semibold text-text-primary">
               My Clinic
             </h2>
 
             {clinic ? (
               <div className="flex flex-col gap-md">
-                <p className="text-label-sm text-text-primary font-medium">
-                  {clinic.name}
+                <p className="text-label-sm font-medium text-text-primary">
+                  {
+                    clinic.name
+                  }
                 </p>
 
                 {clinic.address && (
                   <div className="flex items-start gap-xs">
                     <MapPin
                       size={12}
-                      className="mt-[2px] text-text-tertiary shrink-0"
+                      className="mt-[2px] shrink-0 text-text-tertiary"
                     />
 
                     <p className="text-label-sm text-text-secondary">
@@ -841,11 +1043,12 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {clinic.contactNumber && (
+                {clinic
+                  .contactNumber && (
                   <div className="flex items-center gap-xs">
                     <Phone
                       size={12}
-                      className="text-text-tertiary shrink-0"
+                      className="shrink-0 text-text-tertiary"
                     />
 
                     <a
@@ -859,11 +1062,15 @@ export default function DashboardPage() {
                   </div>
                 )}
 
-                {clinic.openingTime &&
-                  clinic.closingTime && (
+                {clinic
+                  .openingTime &&
+                  clinic
+                    .closingTime && (
                     <div className="flex items-center gap-xs">
                       <Activity
-                        size={11}
+                        size={
+                          11
+                        }
                         className={
                           clinicOpen
                             ? "text-success"
@@ -880,11 +1087,13 @@ export default function DashboardPage() {
                           : "Closed"}{" "}
                         ·{" "}
                         {formatTimeOnly(
-                          clinic.openingTime
+                          clinic
+                            .openingTime
                         )}{" "}
                         –{" "}
                         {formatTimeOnly(
-                          clinic.closingTime
+                          clinic
+                            .closingTime
                         )}
                       </span>
                     </div>
@@ -892,15 +1101,181 @@ export default function DashboardPage() {
               </div>
             ) : (
               <p className="text-label-sm text-text-secondary">
-                No clinic has been
-                assigned to your
+                No clinic has
+                been assigned
+                to your
                 profile.
               </p>
             )}
           </section>
 
-          <section className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl">
-            <div className="flex items-center gap-md mb-lg">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="mb-lg flex items-center gap-sm">
+              <UserRound
+                size={16}
+                className="text-brand-primary"
+              />
+
+              <h2 className="text-label font-semibold text-text-primary">
+                Assigned
+                Primary Health
+                Care Worker
+              </h2>
+            </div>
+
+            {workerLoading ? (
+              <div className="animate-pulse">
+                <div className="mb-md flex items-center gap-md">
+                  <div className="h-11 w-11 shrink-0 rounded-corner-full bg-border-secondary" />
+
+                  <div className="flex-1">
+                    <div className="mb-xs h-4 w-32 rounded bg-border-secondary" />
+                    <div className="h-3 w-24 rounded bg-border-secondary" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-sm">
+                  <div className="h-3 w-full rounded bg-border-secondary" />
+                  <div className="h-3 w-3/4 rounded bg-border-secondary" />
+                </div>
+              </div>
+            ) : workerError ? (
+              <div className="rounded-corner-md border border-danger/20 bg-danger/10 p-md">
+                <div className="flex items-start gap-sm">
+                  <AlertCircle
+                    size={16}
+                    className="mt-[2px] shrink-0 text-danger"
+                  />
+
+                  <div>
+                    <p className="text-label-sm text-text-primary">
+                      {
+                        workerError
+                      }
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={
+                        loadAssignedWorker
+                      }
+                      className="mt-sm text-label-sm text-brand-primary hover:opacity-70"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : assignedWorker ? (
+              <div className="flex flex-col gap-md">
+                <div className="flex min-w-0 items-center gap-md">
+                  <Avatar
+                    type="initial"
+                    initials={getInitials(
+                      assignedWorker.fullName
+                    )}
+                    size="large"
+                    shape="square"
+                    className="!rounded-[10px]"
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-label-sm font-medium text-text-primary">
+                      {
+                        assignedWorker.fullName
+                      }
+                    </p>
+
+                    <div className="mt-xs flex items-center gap-xs">
+                      <span className="h-2 w-2 rounded-corner-full bg-success" />
+
+                      <span className="text-video-title text-text-secondary">
+                        Active
+                        assignment
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {assignedWorker
+                  .phoneNumber && (
+                  <div className="flex items-center gap-sm">
+                    <Phone
+                      size={13}
+                      className="shrink-0 text-text-tertiary"
+                    />
+
+                    <a
+                      href={`tel:${assignedWorker.phoneNumber}`}
+                      className="min-w-0 break-all text-label-sm text-text-secondary hover:text-brand-primary"
+                    >
+                      {
+                        assignedWorker.phoneNumber
+                      }
+                    </a>
+                  </div>
+                )}
+
+                {assignedWorker
+                  .email && (
+                  <div className="flex items-start gap-sm">
+                    <Mail
+                      size={13}
+                      className="mt-[2px] shrink-0 text-text-tertiary"
+                    />
+
+                    <a
+                      href={`mailto:${assignedWorker.email}`}
+                      className="min-w-0 break-all text-label-sm text-text-secondary hover:text-brand-primary"
+                    >
+                      {
+                        assignedWorker.email
+                      }
+                    </a>
+                  </div>
+                )}
+
+                <div className="border-t border-border-secondary pt-md">
+                  <p className="text-video-title text-text-tertiary">
+                    Assigned
+                  </p>
+
+                  <p className="mt-xs text-label-sm text-text-secondary">
+                    {formatAssignedDate(
+                      assignedWorker
+                        .assignedAt
+                    )}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-corner-md bg-bg-faint p-lg text-center">
+                <UserRound
+                  size={24}
+                  className="mx-auto text-text-tertiary"
+                />
+
+                <p className="mt-md text-label-sm font-medium text-text-primary">
+                  No Primary
+                  Health Care
+                  Worker
+                  assigned
+                </p>
+
+                <p className="mt-xs text-video-title text-text-secondary">
+                  Your clinic has
+                  not assigned an
+                  active health
+                  care worker to
+                  your profile
+                  yet.
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="mb-lg flex items-center gap-md">
               <Avatar
                 type="initial"
                 initials={getInitials(
@@ -912,13 +1287,16 @@ export default function DashboardPage() {
               />
 
               <div className="min-w-0">
-                <p className="text-label-sm text-text-primary font-medium truncate">
-                  {fullName}
+                <p className="truncate text-label-sm font-medium text-text-primary">
+                  {
+                    fullName
+                  }
                 </p>
 
                 <p className="text-video-title text-text-secondary">
                   ID:{" "}
-                  {dashboard?.patientNumber ||
+                  {dashboard
+                    ?.patientNumber ||
                     "—"}
                 </p>
               </div>
@@ -931,7 +1309,8 @@ export default function DashboardPage() {
                 </span>
 
                 <span className="text-video-title text-text-primary">
-                  {dashboard?.isProfileComplete
+                  {dashboard
+                    ?.isProfileComplete
                     ? "Complete"
                     : "Incomplete"}
                 </span>
@@ -949,7 +1328,8 @@ export default function DashboardPage() {
                   />
 
                   <span className="text-video-title text-text-primary">
-                    {dashboard?.unreadNotifications ??
+                    {dashboard
+                      ?.unreadNotifications ??
                       0}{" "}
                     unread
                   </span>
@@ -964,9 +1344,10 @@ export default function DashboardPage() {
                   "/patient/settings"
                 )
               }
-              className="mt-lg text-label-sm text-brand-primary flex items-center gap-xs hover:opacity-70"
+              className="mt-lg flex items-center gap-xs text-label-sm text-brand-primary hover:opacity-70"
             >
               View profile
+
               <ChevronRight
                 size={13}
               />

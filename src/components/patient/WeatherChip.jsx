@@ -11,10 +11,13 @@ import {
 import {
   useCallback,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
-import { weatherApi } from "../../services/api/weather.js";
+import {
+  weatherApi,
+} from "../../services/api/weather.js";
 
 function getWeatherIcon(
   description
@@ -93,8 +96,10 @@ function formatDescription(
 export default function WeatherChip({
   onNotificationCreated,
 }) {
-  const [weather, setWeather] =
-    useState(null);
+  const [
+    weather,
+    setWeather,
+  ] = useState(null);
 
   const [
     weatherSource,
@@ -110,6 +115,9 @@ export default function WeatherChip({
     error,
     setError,
   ] = useState("");
+
+  const hasLoadedRef =
+    useRef(false);
 
   const generateWeatherTip =
     useCallback(
@@ -196,7 +204,8 @@ export default function WeatherChip({
               );
 
               setError(
-                clinicError?.message ||
+                clinicError
+                  ?.message ||
                   "Weather unavailable."
               );
             } finally {
@@ -263,14 +272,7 @@ export default function WeatherChip({
               }
             },
 
-            async (
-              geolocationError
-            ) => {
-              console.info(
-                "Current location unavailable. Using assigned clinic weather.",
-                geolocationError
-              );
-
+            async () => {
               await useClinicFallback();
             },
 
@@ -295,6 +297,15 @@ export default function WeatherChip({
     );
 
   useEffect(() => {
+    if (
+      hasLoadedRef.current
+    ) {
+      return;
+    }
+
+    hasLoadedRef.current =
+      true;
+
     loadWeather();
   }, [
     loadWeather,

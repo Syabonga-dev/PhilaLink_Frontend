@@ -1,6 +1,8 @@
 import { api } from "./client.js";
 
 export const proxiesApi = {
-  getManagedPatients: () =>
-    api.get("/api/proxies/me/patients"),
+  getMyAssignedWorker: () =>
+    api.get(
+      "/api/proxies/me"
+    ),
 };
