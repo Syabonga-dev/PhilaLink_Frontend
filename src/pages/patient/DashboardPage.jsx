@@ -32,6 +32,7 @@ import {
 
 import { patientsApi } from "../../services/api/patients.js";
 import { proxiesApi } from "../../services/api/proxies.js";
+import { medicationsApi } from "../../services/api/medications.js";
 
 function parseDate(value) {
   if (!value) {
@@ -40,16 +41,13 @@ function parseDate(value) {
 
   const date = new Date(value);
 
-  return Number.isNaN(
-    date.getTime()
-  )
+  return Number.isNaN(date.getTime())
     ? null
     : date;
 }
 
 function formatDate(value) {
-  const date =
-    parseDate(value);
+  const date = parseDate(value);
 
   if (!date) {
     return "Date unavailable";
@@ -65,11 +63,8 @@ function formatDate(value) {
   );
 }
 
-function formatAssignedDate(
-  value
-) {
-  const date =
-    parseDate(value);
+function formatAssignedDate(value) {
+  const date = parseDate(value);
 
   if (!date) {
     return "Assignment date unavailable";
@@ -86,8 +81,7 @@ function formatAssignedDate(
 }
 
 function formatTime(value) {
-  const date =
-    parseDate(value);
+  const date = parseDate(value);
 
   if (!date) {
     return "—";
@@ -107,41 +101,44 @@ function formatTimeOnly(value) {
     return "—";
   }
 
-  const text =
-    String(value);
+  const text = String(value);
 
-  if (
-    /^\d{2}:\d{2}/.test(
-      text
-    )
-  ) {
-    return text.slice(
-      0,
-      5
-    );
+  if (/^\d{2}:\d{2}/.test(text)) {
+    return text.slice(0, 5);
   }
 
   return text;
 }
 
-function getCollectionState(
-  collection
-) {
+function formatQuantity(value) {
+  if (value == null) {
+    return "—";
+  }
+
+  const number = Number(value);
+
+  if (Number.isNaN(number)) {
+    return String(value);
+  }
+
+  return Number.isInteger(number)
+    ? String(number)
+    : number.toFixed(1);
+}
+
+function getCollectionState(collection) {
   if (!collection) {
     return {
       type: "none",
-      label:
-        "No upcoming collection",
+      label: "No upcoming collection",
       message:
         "There is no medication collection currently scheduled.",
     };
   }
 
-  const scheduledDate =
-    parseDate(
-      collection
-        .scheduledCollectionDate
-    );
+  const scheduledDate = parseDate(
+    collection.scheduledCollectionDate
+  );
 
   if (!scheduledDate) {
     return {
@@ -154,51 +151,42 @@ function getCollectionState(
     };
   }
 
-  const now =
-    new Date();
+  const now = new Date();
 
-  const today =
-    new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
+  const today = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  );
 
-  const scheduled =
-    new Date(
-      scheduledDate.getFullYear(),
-      scheduledDate.getMonth(),
-      scheduledDate.getDate()
-    );
+  const scheduled = new Date(
+    scheduledDate.getFullYear(),
+    scheduledDate.getMonth(),
+    scheduledDate.getDate()
+  );
 
   const differenceMs =
     scheduled.getTime() -
     today.getTime();
 
-  const differenceDays =
-    Math.round(
-      differenceMs /
-        (1000 *
-          60 *
-          60 *
-          24)
-    );
+  const differenceDays = Math.round(
+    differenceMs /
+      (1000 * 60 * 60 * 24)
+  );
 
-  const status =
-    String(
-      collection.status ?? ""
-    )
-      .trim()
-      .toLowerCase();
+  const status = String(
+    collection.status ?? ""
+  )
+    .trim()
+    .toLowerCase();
 
   if (
     status === "overdue" ||
     differenceDays < 0
   ) {
-    const daysOverdue =
-      Math.abs(
-        differenceDays
-      );
+    const daysOverdue = Math.abs(
+      differenceDays
+    );
 
     return {
       type: "overdue",
@@ -210,9 +198,7 @@ function getCollectionState(
     };
   }
 
-  if (
-    differenceDays === 0
-  ) {
+  if (differenceDays === 0) {
     return {
       type: "today",
       label: "Due today",
@@ -221,9 +207,7 @@ function getCollectionState(
     };
   }
 
-  if (
-    differenceDays === 1
-  ) {
+  if (differenceDays === 1) {
     return {
       type: "upcoming",
       label: "Tomorrow",
@@ -234,16 +218,13 @@ function getCollectionState(
 
   return {
     type: "upcoming",
-    label:
-      `${differenceDays} days`,
+    label: `${differenceDays} days`,
     message:
       `Your medication collection is in ${differenceDays} days.`,
   };
 }
 
-function getCollectionBadgeVariant(
-  type
-) {
+function getCollectionBadgeVariant(type) {
   switch (type) {
     case "overdue":
       return "warning";
@@ -257,15 +238,13 @@ function getCollectionBadgeVariant(
 }
 
 function formatNextDose(value) {
-  const date =
-    parseDate(value);
+  const date = parseDate(value);
 
   if (!date) {
     return "No next dose";
   }
 
-  const now =
-    new Date();
+  const now = new Date();
 
   const sameDay =
     date.getFullYear() ===
@@ -276,14 +255,10 @@ function formatNextDose(value) {
       now.getDate();
 
   if (sameDay) {
-    return `Today, ${formatTime(
-      value
-    )}`;
+    return `Today, ${formatTime(value)}`;
   }
 
-  return `${formatDate(
-    value
-  )}, ${formatTime(value)}`;
+  return `${formatDate(value)}, ${formatTime(value)}`;
 }
 
 function getInitials(name) {
@@ -303,9 +278,7 @@ function getInitials(name) {
     .join("");
 }
 
-function getStatusDetails(
-  statusValue
-) {
+function getStatusDetails(statusValue) {
   const status = String(
     statusValue ?? ""
   )
@@ -347,6 +320,87 @@ function getStatusDetails(
   }
 }
 
+function getSupplyStatusDetails(supply) {
+  const status = String(
+    supply?.calculationStatus ?? ""
+  )
+    .trim()
+    .toLowerCase();
+
+  switch (status) {
+    case "available":
+      if (
+        supply?.daysRemaining != null
+      ) {
+        const days =
+          Number(supply.daysRemaining);
+
+        if (days <= 3) {
+          return {
+            label:
+              days === 1
+                ? "1 day remaining"
+                : `${days} days remaining`,
+            variant: "warning",
+            message:
+              "Your estimated medication supply is running low.",
+          };
+        }
+
+        return {
+          label:
+            `${days} days remaining`,
+          variant: "success",
+          message:
+            `${formatQuantity(
+              supply.estimatedRemainingQuantity
+            )} units estimated remaining`,
+        };
+      }
+
+      return {
+        label: "Supply available",
+        variant: "success",
+        message:
+          `${formatQuantity(
+            supply?.estimatedRemainingQuantity
+          )} units estimated remaining`,
+      };
+
+    case "nocompletedcollection":
+      return {
+        label: "Supply unavailable",
+        variant: "default",
+        message:
+          "No completed collection is available for this medication yet.",
+      };
+
+    case "missingunitsperdose":
+      return {
+        label: "Needs dose information",
+        variant: "warning",
+        message:
+          "Supply cannot be calculated until units per dose are recorded.",
+      };
+
+    case "missingschedule":
+      return {
+        label: "Needs schedule",
+        variant: "warning",
+        message:
+          "Supply cannot be calculated until an active medication schedule exists.",
+      };
+
+    default:
+      return {
+        label: "Supply unavailable",
+        variant: "default",
+        message:
+          "Medication supply information is currently unavailable.",
+      };
+  }
+}
+
 function isClinicOpen(clinic) {
   if (
     !clinic?.openingTime ||
@@ -355,15 +409,13 @@ function isClinicOpen(clinic) {
     return null;
   }
 
-  const opening =
-    formatTimeOnly(
-      clinic.openingTime
-    );
+  const opening = formatTimeOnly(
+    clinic.openingTime
+  );
 
-  const closing =
-    formatTimeOnly(
-      clinic.closingTime
-    );
+  const closing = formatTimeOnly(
+    clinic.closingTime
+  );
 
   const [
     openHour,
@@ -382,28 +434,18 @@ function isClinicOpen(clinic) {
       .map(Number);
 
   if (
-    Number.isNaN(
-      openHour
-    ) ||
-    Number.isNaN(
-      openMinute
-    ) ||
-    Number.isNaN(
-      closeHour
-    ) ||
-    Number.isNaN(
-      closeMinute
-    )
+    Number.isNaN(openHour) ||
+    Number.isNaN(openMinute) ||
+    Number.isNaN(closeHour) ||
+    Number.isNaN(closeMinute)
   ) {
     return null;
   }
 
-  const now =
-    new Date();
+  const now = new Date();
 
   const current =
-    now.getHours() *
-      60 +
+    now.getHours() * 60 +
     now.getMinutes();
 
   const open =
@@ -432,6 +474,7 @@ function LoadingDashboard() {
         <div className="flex flex-col gap-lg md:col-span-2">
           <div className="h-72 rounded-corner-lg bg-surface-bg" />
           <div className="h-48 rounded-corner-lg bg-surface-bg" />
+          <div className="h-48 rounded-corner-lg bg-surface-bg" />
         </div>
 
         <div className="flex flex-col gap-lg">
@@ -458,6 +501,11 @@ export default function DashboardPage() {
   ] = useState(null);
 
   const [
+    medicationSupply,
+    setMedicationSupply,
+  ] = useState([]);
+
+  const [
     loading,
     setLoading,
   ] = useState(true);
@@ -477,41 +525,42 @@ export default function DashboardPage() {
     setWorkerError,
   ] = useState("");
 
+  const [
+    supplyLoading,
+    setSupplyLoading,
+  ] = useState(true);
+
+  const [
+    supplyError,
+    setSupplyError,
+  ] = useState("");
+
   const loadDashboard =
     useCallback(
       async () => {
         try {
-          setLoading(
-            true
-          );
-
+          setLoading(true);
           setError("");
 
           const result =
             await patientsApi
               .getDashboard();
 
-          setDashboard(
-            result
-          );
+          setDashboard(result);
         } catch (err) {
           console.error(
             "Failed to load patient dashboard:",
             err
           );
 
-          setDashboard(
-            null
-          );
+          setDashboard(null);
 
           setError(
             err?.message ||
               "We could not load your dashboard."
           );
         } finally {
-          setLoading(
-            false
-          );
+          setLoading(false);
         }
       },
       []
@@ -521,13 +570,8 @@ export default function DashboardPage() {
     useCallback(
       async () => {
         try {
-          setWorkerLoading(
-            true
-          );
-
-          setWorkerError(
-            ""
-          );
+          setWorkerLoading(true);
+          setWorkerError("");
 
           const result =
             await proxiesApi
@@ -542,18 +586,49 @@ export default function DashboardPage() {
             err
           );
 
-          setAssignedWorker(
-            null
-          );
+          setAssignedWorker(null);
 
           setWorkerError(
             err?.message ||
               "Could not load your assigned health care worker."
           );
         } finally {
-          setWorkerLoading(
-            false
+          setWorkerLoading(false);
+        }
+      },
+      []
+    );
+
+  const loadMedicationSupply =
+    useCallback(
+      async () => {
+        try {
+          setSupplyLoading(true);
+          setSupplyError("");
+
+          const result =
+            await medicationsApi
+              .getSupply();
+
+          setMedicationSupply(
+            Array.isArray(result)
+              ? result
+              : []
           );
+        } catch (err) {
+          console.error(
+            "Failed to load medication supply:",
+            err
+          );
+
+          setMedicationSupply([]);
+
+          setSupplyError(
+            err?.message ||
+              "Could not load medication supply information."
+          );
+        } finally {
+          setSupplyLoading(false);
         }
       },
       []
@@ -562,10 +637,35 @@ export default function DashboardPage() {
   useEffect(() => {
     loadDashboard();
     loadAssignedWorker();
+    loadMedicationSupply();
   }, [
     loadDashboard,
     loadAssignedWorker,
+    loadMedicationSupply,
   ]);
+
+  const medicationSupplyById =
+    useMemo(() => {
+      const map =
+        new Map();
+
+      medicationSupply.forEach(
+        (item) => {
+          if (
+            item?.medicationId
+          ) {
+            map.set(
+              String(
+                item.medicationId
+              ).toLowerCase(),
+              item
+            );
+          }
+        }
+      );
+
+      return map;
+    }, [medicationSupply]);
 
   const medications =
     useMemo(
@@ -573,9 +673,26 @@ export default function DashboardPage() {
         Array.isArray(
           dashboard?.medications
         )
-          ? dashboard.medications
+          ? dashboard.medications.map(
+              (medication) => {
+                const supply =
+                  medicationSupplyById.get(
+                    String(
+                      medication?.id ?? ""
+                    ).toLowerCase()
+                  ) || null;
+
+                return {
+                  ...medication,
+                  supply,
+                };
+              }
+            )
           : [],
-      [dashboard]
+      [
+        dashboard,
+        medicationSupplyById,
+      ]
     );
 
   const appointments =
@@ -608,6 +725,49 @@ export default function DashboardPage() {
     );
   }
 
+  if (error || !dashboard) {
+    return (
+      <div className="p-lg md:p-xl lg:p-2xl">
+        <div className="mx-auto max-w-2xl rounded-corner-lg border border-danger/20 bg-surface-bg p-xl">
+          <div className="flex items-start gap-md">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-danger/10">
+              <AlertCircle
+                size={18}
+                className="text-danger"
+              />
+            </div>
+
+            <div className="min-w-0 flex-1">
+              <h1 className="text-label font-semibold text-text-primary">
+                We could not load your dashboard
+              </h1>
+
+              <p className="mt-xs text-label-sm text-text-secondary">
+                {error ||
+                  "Your dashboard data is currently unavailable."}
+              </p>
+
+              <Button
+                variant="subtle"
+                iconStart={
+                  <RefreshCw
+                    size={15}
+                  />
+                }
+                onClick={
+                  loadDashboard
+                }
+                className="mt-lg"
+              >
+                Try again
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const fullName =
     dashboard?.fullName ||
     "Patient";
@@ -623,9 +783,7 @@ export default function DashboardPage() {
 
   const clinicOpen =
     clinic
-      ? isClinicOpen(
-          clinic
-        )
+      ? isClinicOpen(clinic)
       : null;
 
   const collectionState =
@@ -638,6 +796,7 @@ export default function DashboardPage() {
     () => {
       loadDashboard();
       loadAssignedWorker();
+      loadMedicationSupply();
     };
 
   return (
@@ -685,33 +844,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {error && (
-        <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-danger/20 bg-danger/10 p-md">
-          <AlertCircle
-            size={17}
-            className="mt-0.5 shrink-0 text-danger"
-          />
-
-          <div className="flex-1">
-            <p className="text-label-sm text-text-primary">
-              {error}
-            </p>
-
-            <button
-              type="button"
-              onClick={
-                loadDashboard
-              }
-              className="mt-xs text-label-sm text-brand-primary hover:opacity-70"
-            >
-              Try again
-            </button>
-          </div>
-        </div>
-      )}
-
-      {!dashboard
-        ?.isProfileComplete && (
+      {!dashboard.isProfileComplete && (
         <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-warning/20 bg-warning/10 p-md">
           <AlertCircle
             size={17}
@@ -774,6 +907,31 @@ export default function DashboardPage() {
               </button>
             </div>
 
+            {supplyError && (
+              <div className="mb-md flex items-start gap-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
+                <AlertCircle
+                  size={15}
+                  className="mt-[2px] shrink-0 text-warning"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-label-sm text-text-primary">
+                    {supplyError}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={
+                      loadMedicationSupply
+                    }
+                    className="mt-xs text-label-sm text-brand-primary hover:opacity-70"
+                  >
+                    Try supply again
+                  </button>
+                </div>
+              </div>
+            )}
+
             {medications.length >
             0 ? (
               <div className="flex flex-col">
@@ -781,84 +939,129 @@ export default function DashboardPage() {
                   (
                     medication,
                     index
-                  ) => (
-                    <div
-                      key={
-                        medication.id
-                      }
-                      className={`flex items-start justify-between gap-md py-lg sm:items-center ${
-                        index <
-                        medications.length -
-                          1
-                          ? "border-b border-border-secondary"
-                          : ""
-                      }`}
-                    >
-                      <div className="flex min-w-0 flex-1 items-center gap-md">
-                        <div className="h-2 w-2 flex-shrink-0 rounded-corner-full bg-brand-primary" />
+                  ) => {
+                    const supplyDetails =
+                      getSupplyStatusDetails(
+                        medication.supply
+                      );
 
-                        <div className="min-w-0">
-                          <p className="truncate text-label-sm font-medium text-text-primary">
-                            {
-                              medication.name
-                            }{" "}
-                            {
-                              medication.dosage
-                            }
-                          </p>
+                    return (
+                      <div
+                        key={
+                          medication.id
+                        }
+                        className={`flex flex-col gap-md py-lg sm:flex-row sm:items-start sm:justify-between ${
+                          index <
+                          medications.length -
+                            1
+                            ? "border-b border-border-secondary"
+                            : ""
+                        }`}
+                      >
+                        <div className="flex min-w-0 flex-1 items-start gap-md">
+                          <div className="mt-2 h-2 w-2 flex-shrink-0 rounded-corner-full bg-brand-primary" />
 
-                          <p className="mt-xs text-video-title text-text-secondary">
-                            {medication.instructions ||
-                              medication.form ||
-                              "No instructions recorded"}
-                          </p>
+                          <div className="min-w-0">
+                            <p className="truncate text-label-sm font-medium text-text-primary">
+                              {
+                                medication.name
+                              }{" "}
+                              {
+                                medication.dosage
+                              }
+                            </p>
 
-                          {Array.isArray(
-                            medication
-                              .scheduleTimes
-                          ) &&
-                            medication
-                              .scheduleTimes
-                              .length >
-                              0 && (
+                            <p className="mt-xs text-video-title text-text-secondary">
+                              {medication.instructions ||
+                                medication.form ||
+                                "No instructions recorded"}
+                            </p>
+
+                            {Array.isArray(
+                              medication
+                                .scheduleTimes
+                            ) &&
+                              medication
+                                .scheduleTimes
+                                .length >
+                                0 && (
+                                <p className="mt-xs text-video-title text-text-tertiary">
+                                  {medication.scheduleTimes.join(
+                                    " · "
+                                  )}
+                                </p>
+                              )}
+
+                            {!supplyLoading && (
+                              <div className="mt-sm flex flex-wrap items-center gap-sm">
+                                <Badge
+                                  label={
+                                    supplyDetails.label
+                                  }
+                                  variant={
+                                    supplyDetails.variant
+                                  }
+                                />
+
+                                <span className="text-video-title text-text-tertiary">
+                                  {
+                                    supplyDetails.message
+                                  }
+                                </span>
+                              </div>
+                            )}
+
+                            {medication
+                              .supply
+                              ?.lastCollectedAt && (
                               <p className="mt-xs text-video-title text-text-tertiary">
-                                {medication.scheduleTimes.join(
-                                  " · "
+                                Last collected:{" "}
+                                {formatDate(
+                                  medication
+                                    .supply
+                                    .lastCollectedAt
                                 )}
                               </p>
                             )}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-shrink-0 flex-col items-end gap-xs">
-                        <div className="flex items-center gap-xs">
-                          <Clock
-                            size={12}
-                            className="text-text-tertiary"
-                          />
-
-                          <span className="whitespace-nowrap text-video-title text-text-secondary">
-                            {formatNextDose(
-                              medication
-                                .nextDoseAt
-                            )}
-                          </span>
+                          </div>
                         </div>
 
-                        {medication
-                          .daysRemaining !=
-                          null && (
-                          <span className="text-video-title text-text-tertiary">
-                            {
-                              medication
-                                .daysRemaining
-                            }{" "}
-                            days remaining
-                          </span>
-                        )}
+                        <div className="flex flex-shrink-0 flex-col items-start gap-xs sm:items-end">
+                          <div className="flex items-center gap-xs">
+                            <Clock
+                              size={12}
+                              className="text-text-tertiary"
+                            />
+
+                            <span className="whitespace-nowrap text-video-title text-text-secondary">
+                              {formatNextDose(
+                                medication
+                                  .nextDoseAt
+                              )}
+                            </span>
+                          </div>
+
+                          {supplyLoading ? (
+                            <span className="text-video-title text-text-tertiary">
+                              Loading supply…
+                            </span>
+                          ) : medication
+                              .supply
+                              ?.estimatedRemainingQuantity !=
+                            null ? (
+                            <span className="text-video-title text-text-tertiary">
+                              {formatQuantity(
+                                medication
+                                  .supply
+                                  .estimatedRemainingQuantity
+                              )}{" "}
+                              units left
+                            </span>
+                          ) : null}
+                        </div>
                       </div>
-                    </div>
-                  )
+                    );
+                  }
                 )}
               </div>
             ) : (
@@ -940,16 +1143,12 @@ export default function DashboardPage() {
                               "good"
                             ) ? (
                             <CheckCircle
-                              size={
-                                11
-                              }
+                              size={11}
                               className="mt-[2px] text-success"
                             />
                           ) : (
                             <AlertCircle
-                              size={
-                                11
-                              }
+                              size={11}
                               className="mt-[2px] text-warning"
                             />
                           )}
@@ -1363,9 +1562,7 @@ export default function DashboardPage() {
                     .closingTime && (
                     <div className="flex items-center gap-xs">
                       <Activity
-                        size={
-                          11
-                        }
+                        size={11}
                         className={
                           clinicOpen
                             ? "text-success"
