@@ -50,12 +50,21 @@ export const symptomAssessmentsApi = {
       );
     }
 
+    const rawAge =
+      String(
+        assessment?.age ??
+          ""
+      ).trim();
+
     const parsedAge =
-      Number(
-        assessment?.age
-      );
+      rawAge
+        ? Number(
+            rawAge
+          )
+        : null;
 
     const age =
+      parsedAge !== null &&
       Number.isInteger(
         parsedAge
       ) &&
@@ -102,15 +111,18 @@ export const symptomAssessmentsApi = {
           duration || null,
         allergies:
           cleanList(
-            assessment?.allergies
+            assessment
+              ?.allergies
           ),
         medications:
           cleanList(
-            assessment?.medications
+            assessment
+              ?.medications
           ),
         conditions:
           cleanList(
-            assessment?.conditions
+            assessment
+              ?.conditions
           ),
       }
     );

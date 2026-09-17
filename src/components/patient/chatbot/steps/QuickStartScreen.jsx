@@ -1,7 +1,6 @@
 import {
   Activity,
   AlertTriangle,
-  HeartPulse,
   MessageCircle,
   Pill,
   ShieldCheck,
@@ -13,7 +12,8 @@ const options = [
     description:
       "Ask a health question or talk about your PhilaLink information.",
     icon: MessageCircle,
-    action: "followup",
+    action: "chat",
+    prompt: "",
   },
   {
     title: "Check my symptoms",
@@ -21,54 +21,54 @@ const options = [
       "Start a guided health assessment.",
     icon: Activity,
     action: "assessment",
-  },
-  {
-    title: "Medication information",
-    description:
-      "Learn about your medication and general use.",
-    icon: Pill,
-    action: "followup",
-  },
-  {
-    title: "My allergies",
-    description:
-      "Ask about allergy information linked to your profile.",
-    icon: ShieldCheck,
-    action: "followup",
+    prompt: "",
   },
   {
     title: "My medications",
     description:
-      "Ask about medications linked to your profile.",
-    icon: HeartPulse,
-    action: "followup",
+      "Ask about your medications, their general use, and your remaining supply.",
+    icon: Pill,
+    action: "chat",
+    prompt:
+      "Tell me about the medications recorded in my PhilaLink profile and how much medication supply I have left.",
+  },
+  {
+    title: "My allergies",
+    description:
+      "Ask about allergy information recorded in your profile.",
+    icon: ShieldCheck,
+    action: "chat",
+    prompt:
+      "What allergies are recorded in my PhilaLink profile, and what general information should I keep in mind about them?",
   },
   {
     title: "When should I seek help?",
     description:
-      "Learn about serious warning signs.",
+      "Ask about warning signs and when urgent or emergency care may be needed.",
     icon: AlertTriangle,
-    action: "emergency",
+    action: "chat",
+    prompt:
+      "What warning signs should make someone seek urgent or emergency medical help?",
   },
 ];
 
 export default function QuickStartScreen({
   onStartAssessment,
-  onSelectOption,
+  onOpenChat,
 }) {
   const handleClick = (
-    action
+    option
   ) => {
     if (
-      action ===
+      option.action ===
       "assessment"
     ) {
       onStartAssessment();
       return;
     }
 
-    onSelectOption(
-      action
+    onOpenChat(
+      option.prompt
     );
   };
 
@@ -101,7 +101,7 @@ export default function QuickStartScreen({
                 type="button"
                 onClick={() =>
                   handleClick(
-                    option.action
+                    option
                   )
                 }
                 className="flex items-start gap-md rounded-corner-lg border border-border-secondary bg-white p-lg text-left transition hover:border-brand-primary hover:bg-brand-tertiary/30"

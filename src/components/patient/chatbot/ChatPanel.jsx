@@ -32,6 +32,7 @@ export default function ChatPanel({
   onInputChange,
   onSend,
   onRestart,
+  onOpenChat,
 }) {
   const renderStep = () => {
     switch (step) {
@@ -54,12 +55,8 @@ export default function ChatPanel({
                 "age"
               )
             }
-            onSelectOption={(
-              selectedStep
-            ) =>
-              onStepChange(
-                selectedStep
-              )
+            onOpenChat={
+              onOpenChat
             }
           />
         );
