@@ -253,14 +253,13 @@ export default function PhilaChatBot() {
 
   return (
     <>
-      <FloatingButton
-        onClick={() =>
-          setIsOpen(
-            (previous) =>
-              !previous
-          )
-        }
-      />
+      {!isOpen && (
+        <FloatingButton
+          onClick={() =>
+            setIsOpen(true)
+          }
+        />
+      )}
 
       <ChatPanel
         isOpen={isOpen}

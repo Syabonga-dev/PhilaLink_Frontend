@@ -238,6 +238,18 @@ export default function AppLayout() {
     loadNotifications,
   ]);
 
+  useEffect(() => {
+    setNotificationsOpen(
+      false
+    );
+
+    setMobileOpen(
+      false
+    );
+  }, [
+    location.pathname,
+  ]);
+
   const unreadNotifications =
     notifications.filter(
       (notification) =>
@@ -308,11 +320,11 @@ export default function AppLayout() {
             }
             className="flex items-center gap-3"
           >
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#0f766e] text-white">
-              <Stethoscope
-                size={22}
-              />
-            </div>
+            <img
+              src="/logo2.png"
+              alt="PhilaLink logo"
+              className="h-11 w-11 shrink-0 object-contain"
+            />
 
             <div className="text-left">
               <div className="text-xl font-bold tracking-tight text-[#0f172a]">
@@ -409,15 +421,19 @@ export default function AppLayout() {
       </aside>
 
       <div className="lg:pl-[270px]">
-        <header className="sticky top-0 z-30 flex h-[78px] items-center justify-between border-b border-[#e2e8f0] bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+        <header className="sticky top-0 z-[1200] flex h-[78px] items-center justify-between border-b border-[#e2e8f0] bg-white/95 px-4 backdrop-blur sm:px-6 lg:z-30 lg:px-8">
           <div className="flex min-w-0 items-center gap-3">
             <button
               type="button"
-              onClick={() =>
+              onClick={() => {
+                setNotificationsOpen(
+                  false
+                );
+
                 setMobileOpen(
                   true
-                )
-              }
+                );
+              }}
               className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#475569] lg:hidden"
               aria-label="Open navigation"
             >
@@ -457,6 +473,9 @@ export default function AppLayout() {
                 }
                 className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#475569] transition hover:bg-[#f8fafc]"
                 aria-label="Notifications"
+                aria-expanded={
+                  notificationsOpen
+                }
               >
                 <Bell
                   size={19}
@@ -474,22 +493,39 @@ export default function AppLayout() {
               </button>
 
               {notificationsOpen && (
-                <div className="absolute right-0 top-12 w-[min(360px,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl">
-                  <div className="border-b border-[#e2e8f0] px-5 py-4">
+                <div className="fixed left-3 right-3 top-[68px] z-[2100] max-h-[calc(100dvh-80px)] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[min(360px,calc(100vw-2rem))] sm:max-h-none">
+                  <div className="border-b border-[#e2e8f0] px-4 py-3 sm:px-5 sm:py-4">
                     <div className="flex items-center justify-between gap-3">
                       <h2 className="font-semibold text-[#0f172a]">
                         Notifications
                       </h2>
 
-                      {unreadNotifications.length >
-                        0 && (
-                        <span className="rounded-full bg-[#ccfbf1] px-2 py-1 text-[11px] font-semibold text-[#115e59]">
-                          {
-                            unreadNotifications.length
-                          }{" "}
-                          unread
-                        </span>
-                      )}
+                      <div className="flex items-center gap-2">
+                        {unreadNotifications.length >
+                          0 && (
+                          <span className="rounded-full bg-[#ccfbf1] px-2 py-1 text-[11px] font-semibold text-[#115e59]">
+                            {
+                              unreadNotifications.length
+                            }{" "}
+                            unread
+                          </span>
+                        )}
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setNotificationsOpen(
+                              false
+                            )
+                          }
+                          className="flex h-7 w-7 items-center justify-center rounded-full text-[#64748b] transition hover:bg-[#f1f5f9] sm:hidden"
+                          aria-label="Close notifications"
+                        >
+                          <X
+                            size={15}
+                          />
+                        </button>
+                      </div>
                     </div>
 
                     <p className="mt-1 text-xs text-[#64748b]">
@@ -500,7 +536,7 @@ export default function AppLayout() {
                     </p>
                   </div>
 
-                  <div className="max-h-[360px] divide-y divide-[#e2e8f0] overflow-y-auto">
+                  <div className="max-h-[calc(100dvh-165px)] divide-y divide-[#e2e8f0] overflow-y-auto overscroll-contain sm:max-h-[360px]">
                     {notificationsLoading ? (
                       <div className="px-5 py-6 text-center">
                         <p className="text-sm text-[#64748b]">
@@ -575,7 +611,7 @@ export default function AppLayout() {
 
                               <div className="min-w-0 flex-1">
                                 <p
-                                  className={`text-sm text-[#0f172a] ${
+                                  className={`break-words text-sm text-[#0f172a] ${
                                     notification.isRead
                                       ? "font-normal"
                                       : "font-semibold"
@@ -600,7 +636,11 @@ export default function AppLayout() {
               )}
             </div>
 
-            <WeatherChip onNotificationCreated={ loadNotifications} />
+            <WeatherChip
+              onNotificationCreated={
+                loadNotifications
+              }
+            />
 
             <button
               type="button"
@@ -625,7 +665,7 @@ export default function AppLayout() {
       </div>
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-50 lg:hidden">
+        <div className="fixed inset-0 z-[3000] lg:hidden">
           <button
             type="button"
             onClick={() =>
@@ -633,20 +673,18 @@ export default function AppLayout() {
                 false
               )
             }
-            className="absolute inset-0 bg-black/40"
+            className="absolute inset-0 z-0 bg-black/40"
             aria-label="Close navigation"
           />
 
-          <aside className="relative flex h-full w-[290px] max-w-[85vw] flex-col bg-white shadow-2xl">
-            <div className="flex h-[78px] items-center justify-between border-b border-[#e2e8f0] px-5">
+          <aside className="relative z-10 flex h-[100dvh] w-[290px] max-w-[85vw] flex-col overflow-hidden bg-white shadow-2xl">
+            <div className="flex h-[78px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0f766e] text-white">
-                  <Stethoscope
-                    size={
-                      20
-                    }
-                  />
-                </div>
+                <img
+                  src="/logo2.png"
+                  alt="PhilaLink logo"
+                  className="h-10 w-10 shrink-0 object-contain"
+                />
 
                 <span className="text-lg font-bold">
                   Phila
@@ -674,7 +712,7 @@ export default function AppLayout() {
               </button>
             </div>
 
-            <nav className="flex-1 space-y-2 overflow-y-auto px-4 py-6">
+            <nav className="flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-6">
               {navigationItems.map(
                 (item) => {
                   const Icon =
@@ -722,7 +760,7 @@ export default function AppLayout() {
               )}
             </nav>
 
-            <div className="border-t border-[#e2e8f0] p-4">
+            <div className="shrink-0 border-t border-[#e2e8f0] bg-white p-4">
               <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f8fafc] p-3">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white">
                   {

@@ -72,17 +72,10 @@ const SUPER_ADMIN_NAV = [
 ];
 
 const NAV_BY_ROLE = {
-  Nurse:
-    NURSE_NAV,
-
-  Proxy:
-    PROXY_NAV,
-
-  ClinicAdmin:
-    ADMIN_NAV,
-
-  SuperAdmin:
-    SUPER_ADMIN_NAV,
+  Nurse: NURSE_NAV,
+  Proxy: PROXY_NAV,
+  ClinicAdmin: ADMIN_NAV,
+  SuperAdmin: SUPER_ADMIN_NAV,
 };
 
 export default function Sidebar({
@@ -115,12 +108,33 @@ export default function Sidebar({
         }`}
       >
         <div className="flex h-16 items-center border-b border-outline-variant/60 px-5">
-          <span className="text-lg font-bold text-on-surface">
-            Phila
-            <span className="text-primary">
-              Link
+          <NavLink
+            to={
+              role === "Nurse"
+                ? "/nurse"
+                : role === "Proxy"
+                  ? "/proxy"
+                  : "/admin"
+            }
+            onClick={
+              onClose
+            }
+            className="flex min-w-0 items-center gap-3"
+            aria-label="PhilaLink home"
+          >
+            <img
+              src="./logo2.png"
+              alt="PhilaLink logo"
+              className="h-11 w-11 shrink-0 object-contain"
+            />
+
+            <span className="text-lg font-bold text-on-surface">
+              Phila
+              <span className="text-primary">
+                Link
+              </span>
             </span>
-          </span>
+          </NavLink>
         </div>
 
         <nav className="flex-1 space-y-1 overflow-y-auto p-3">

@@ -1209,195 +1209,197 @@ export default function DashboardPage() {
               </div>
 
               <div className="min-w-0 flex-1">
-                <div className="flex flex-col gap-sm sm:flex-row sm:items-start sm:justify-between">
-                  <div>
+                <div className="flex flex-col gap-xs">
+                  <div className="flex flex-wrap items-center gap-sm">
                     <h2 className="text-label font-semibold text-text-primary">
                       Next medication collection
                     </h2>
 
-                    <p className="mt-xs text-label-sm text-text-secondary">
-                      {
-                        collectionState.message
-                      }
-                    </p>
+                    {dashboard
+                      ?.nextCollection && (
+                      <span className="inline-flex shrink-0">
+                        <Badge
+                          label={
+                            collectionState.label
+                          }
+                          variant={getCollectionBadgeVariant(
+                            collectionState.type
+                          )}
+                        />
+                      </span>
+                    )}
                   </div>
 
-                  {dashboard
-                    ?.nextCollection && (
-                    <Badge
-                      label={
-                        collectionState.label
-                      }
-                      variant={getCollectionBadgeVariant(
-                        collectionState.type
-                      )}
-                    />
-                  )}
+                  <p className="text-label-sm text-text-secondary">
+                    {
+                      collectionState.message
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {dashboard
+              ?.nextCollection ? (
+              <div className="mt-lg flex flex-col gap-sm">
+                <div className="flex items-center gap-xs">
+                  <Calendar
+                    size={13}
+                    className={
+                      collectionState.type ===
+                      "overdue"
+                        ? "shrink-0 text-warning"
+                        : "shrink-0 text-text-tertiary"
+                    }
+                  />
+
+                  <span className="text-label-sm font-medium text-text-primary">
+                    {formatDate(
+                      dashboard
+                        .nextCollection
+                        .scheduledCollectionDate
+                    )}
+                  </span>
                 </div>
 
                 {dashboard
-                  ?.nextCollection ? (
-                  <div className="mt-lg flex flex-col gap-sm">
-                    <div className="flex items-center gap-xs">
-                      <Calendar
-                        size={13}
-                        className={
-                          collectionState.type ===
-                          "overdue"
-                            ? "shrink-0 text-warning"
-                            : "shrink-0 text-text-tertiary"
-                        }
-                      />
-
-                      <span className="text-label-sm font-medium text-text-primary">
-                        {formatDate(
-                          dashboard
-                            .nextCollection
-                            .scheduledCollectionDate
-                        )}
-                      </span>
-                    </div>
-
-                    {dashboard
-                      .nextCollection
-                      .clinicName && (
-                      <div className="flex items-start gap-xs">
-                        <MapPin
-                          size={13}
-                          className="mt-[2px] shrink-0 text-text-tertiary"
-                        />
-
-                        <span className="text-label-sm text-text-secondary">
-                          {
-                            dashboard
-                              .nextCollection
-                              .clinicName
-                          }
-                        </span>
-                      </div>
-                    )}
-
-                    {dashboard
-                      .nextCollection
-                      .medicationName && (
-                      <div className="flex items-start gap-xs">
-                        <Pill
-                          size={13}
-                          className="mt-[2px] shrink-0 text-text-tertiary"
-                        />
-
-                        <span className="text-label-sm text-text-secondary">
-                          {
-                            dashboard
-                              .nextCollection
-                              .medicationName
-                          }
-                        </span>
-                      </div>
-                    )}
-
-                    {Array.isArray(
-                      dashboard
-                        .nextCollection
-                        .items
-                    ) &&
-                      dashboard
-                        .nextCollection
-                        .items.length >
-                        0 && (
-                        <div className="mt-sm border-t border-border-secondary pt-md">
-                          <p className="mb-sm text-video-title text-text-tertiary">
-                            Medication collection
-                          </p>
-
-                          <div className="flex flex-col gap-xs">
-                            {dashboard
-                              .nextCollection
-                              .items.map(
-                                (
-                                  item
-                                ) => (
-                                  <div
-                                    key={
-                                      item.id
-                                    }
-                                    className="flex items-start justify-between gap-md"
-                                  >
-                                    <span className="min-w-0 text-label-sm text-text-secondary">
-                                      {
-                                        item.medicationName
-                                      }
-
-                                      {item.dosage
-                                        ? ` ${item.dosage}`
-                                        : ""}
-                                    </span>
-
-                                    <span className="shrink-0 text-video-title text-text-tertiary">
-                                      Qty{" "}
-                                      {
-                                        item.quantity
-                                      }
-                                    </span>
-                                  </div>
-                                )
-                              )}
-                          </div>
-                        </div>
-                      )}
-
-                    {dashboard
-                      .nextCollection
-                      .notes && (
-                      <div className="mt-sm rounded-corner-md bg-bg-faint p-md">
-                        <p className="text-video-title text-text-tertiary">
-                          Collection note
-                        </p>
-
-                        <p className="mt-xs text-label-sm text-text-secondary">
-                          {
-                            dashboard
-                              .nextCollection
-                              .notes
-                          }
-                        </p>
-                      </div>
-                    )}
-
-                    {collectionState.type ===
-                      "overdue" && (
-                      <div className="mt-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
-                        <div className="flex items-start gap-sm">
-                          <AlertCircle
-                            size={15}
-                            className="mt-[2px] shrink-0 text-warning"
-                          />
-
-                          <p className="text-label-sm text-text-secondary">
-                            Please contact your clinic if you are unable to collect your medication as scheduled.
-                          </p>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <div className="mt-lg rounded-corner-md bg-bg-faint p-lg text-center">
-                    <Package
-                      size={24}
-                      className="mx-auto text-text-tertiary"
+                  .nextCollection
+                  .clinicName && (
+                  <div className="flex items-start gap-xs">
+                    <MapPin
+                      size={13}
+                      className="mt-[2px] shrink-0 text-text-tertiary"
                     />
 
-                    <p className="mt-md text-label-sm font-medium text-text-primary">
-                      Nothing scheduled
+                    <span className="text-label-sm text-text-secondary">
+                      {
+                        dashboard
+                          .nextCollection
+                          .clinicName
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {dashboard
+                  .nextCollection
+                  .medicationName && (
+                  <div className="flex items-start gap-xs">
+                    <Pill
+                      size={13}
+                      className="mt-[2px] shrink-0 text-text-tertiary"
+                    />
+
+                    <span className="text-label-sm text-text-secondary">
+                      {
+                        dashboard
+                          .nextCollection
+                          .medicationName
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {Array.isArray(
+                  dashboard
+                    .nextCollection
+                    .items
+                ) &&
+                  dashboard
+                    .nextCollection
+                    .items.length >
+                    0 && (
+                    <div className="mt-sm border-t border-border-secondary pt-md">
+                      <p className="mb-sm text-video-title text-text-tertiary">
+                        Medication collection
+                      </p>
+
+                      <div className="flex flex-col gap-xs">
+                        {dashboard
+                          .nextCollection
+                          .items.map(
+                            (
+                              item
+                            ) => (
+                              <div
+                                key={
+                                  item.id
+                                }
+                                className="flex items-start justify-between gap-md"
+                              >
+                                <span className="min-w-0 text-label-sm text-text-secondary">
+                                  {
+                                    item.medicationName
+                                  }
+
+                                  {item.dosage
+                                    ? ` ${item.dosage}`
+                                    : ""}
+                                </span>
+
+                                <span className="shrink-0 text-video-title text-text-tertiary">
+                                  Qty{" "}
+                                  {
+                                    item.quantity
+                                  }
+                                </span>
+                              </div>
+                            )
+                          )}
+                      </div>
+                    </div>
+                  )}
+
+                {dashboard
+                  .nextCollection
+                  .notes && (
+                  <div className="mt-sm rounded-corner-md bg-bg-faint p-md">
+                    <p className="text-video-title text-text-tertiary">
+                      Collection note
                     </p>
 
-                    <p className="mt-xs text-video-title text-text-secondary">
-                      When your clinic schedules your next medication collection, it will appear here.
+                    <p className="mt-xs text-label-sm text-text-secondary">
+                      {
+                        dashboard
+                          .nextCollection
+                          .notes
+                      }
                     </p>
                   </div>
                 )}
+
+                {collectionState.type ===
+                  "overdue" && (
+                  <div className="mt-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
+                    <div className="flex items-start gap-sm">
+                      <AlertCircle
+                        size={15}
+                        className="mt-[2px] shrink-0 text-warning"
+                      />
+
+                      <p className="text-label-sm text-text-secondary">
+                        Please contact your clinic if you are unable to collect your medication as scheduled.
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
-            </div>
+            ) : (
+              <div className="mt-lg rounded-corner-md bg-bg-faint p-lg text-center">
+                <Package
+                  size={24}
+                  className="mx-auto text-text-tertiary"
+                />
+
+                <p className="mt-md text-label-sm font-medium text-text-primary">
+                  Nothing scheduled
+                </p>
+
+                <p className="mt-xs text-video-title text-text-secondary">
+                  When your clinic schedules your next medication collection, it will appear here.
+                </p>
+              </div>
+            )}
           </section>
         </div>
 

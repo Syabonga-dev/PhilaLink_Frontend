@@ -279,15 +279,19 @@ export default function ChatPanel({
   return (
     <div
       className={[
-        "fixed z-40 flex flex-col overflow-hidden rounded-corner-lg bg-surface-bg shadow-2xl",
+        "fixed z-[4000] flex flex-col overflow-hidden rounded-corner-lg border border-border-secondary bg-surface-bg shadow-2xl",
         "transition-all duration-300",
-        "inset-x-2 bottom-2",
-        "h-[calc(100dvh-16px)]",
-        "lg:inset-x-auto lg:right-6 lg:bottom-5 lg:h-[660px] lg:max-h-[calc(100vh-40px)] lg:w-[420px]",,
+        "inset-x-3 bottom-4",
+        "h-[72dvh] max-h-[620px] min-h-[420px]",
+        "sm:inset-x-auto sm:right-4 sm:w-[420px]",
+        "lg:right-6 lg:bottom-5 lg:h-[660px] lg:max-h-[calc(100vh-40px)] lg:w-[420px]",
         isOpen
           ? "pointer-events-auto translate-y-0 opacity-100"
           : "pointer-events-none translate-y-4 opacity-0",
       ].join(" ")}
+      aria-hidden={
+        !isOpen
+      }
     >
       <ChatHeader
         onMinimize={
@@ -320,7 +324,7 @@ export default function ChatPanel({
           />
         </div>
       ) : (
-        <div className="flex flex-1 flex-col gap-lg overflow-y-auto p-xl">
+        <div className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto p-lg sm:p-xl">
           {renderStep()}
 
           <div className="pb-md" />

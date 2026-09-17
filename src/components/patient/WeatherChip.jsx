@@ -4,8 +4,10 @@ import {
   CloudLightning,
   CloudRain,
   CloudSun,
+  MapPin,
   Snowflake,
   Sun,
+  X,
 } from "lucide-react";
 
 import {
@@ -116,8 +118,16 @@ export default function WeatherChip({
     setError,
   ] = useState("");
 
+  const [
+    mobileDetailsOpen,
+    setMobileDetailsOpen,
+  ] = useState(false);
+
   const hasLoadedRef =
     useRef(false);
+
+  const containerRef =
+    useRef(null);
 
   const generateWeatherTip =
     useCallback(
@@ -311,13 +321,79 @@ export default function WeatherChip({
     loadWeather,
   ]);
 
+  useEffect(() => {
+    if (
+      !mobileDetailsOpen
+    ) {
+      return undefined;
+    }
+
+    const handlePointerDown =
+      (event) => {
+        if (
+          containerRef.current &&
+          !containerRef.current.contains(
+            event.target
+          )
+        ) {
+          setMobileDetailsOpen(
+            false
+          );
+        }
+      };
+
+    const handleKeyDown =
+      (event) => {
+        if (
+          event.key ===
+          "Escape"
+        ) {
+          setMobileDetailsOpen(
+            false
+          );
+        }
+      };
+
+    document.addEventListener(
+      "pointerdown",
+      handlePointerDown
+    );
+
+    document.addEventListener(
+      "keydown",
+      handleKeyDown
+    );
+
+    return () => {
+      document.removeEventListener(
+        "pointerdown",
+        handlePointerDown
+      );
+
+      document.removeEventListener(
+        "keydown",
+        handleKeyDown
+      );
+    };
+  }, [
+    mobileDetailsOpen,
+  ]);
+
   if (loading) {
     return (
       <div
-        className="flex h-10 items-center rounded-full border border-[#e2e8f0] bg-white px-3 text-xs text-[#64748b]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] sm:w-auto sm:px-3"
         aria-label="Loading weather"
+        title="Loading weather"
       >
-        Weather...
+        <Cloud
+          size={18}
+          className="shrink-0 text-[#94a3b8]"
+        />
+
+        <span className="ml-2 hidden text-xs sm:inline">
+          Weather...
+        </span>
       </div>
     );
   }
@@ -332,10 +408,18 @@ export default function WeatherChip({
         onClick={
           loadWeather
         }
-        className="flex h-10 items-center rounded-full border border-[#e2e8f0] bg-white px-3 text-xs font-medium text-[#64748b] transition hover:bg-[#f8fafc]"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition hover:bg-[#f8fafc] sm:w-auto sm:px-3"
         title="Retry weather"
+        aria-label="Weather unavailable. Retry weather."
       >
-        Weather unavailable
+        <Cloud
+          size={18}
+          className="shrink-0 text-[#64748b]"
+        />
+
+        <span className="ml-2 hidden text-xs font-medium sm:inline">
+          Weather unavailable
+        </span>
       </button>
     );
   }
@@ -364,6 +448,15 @@ export default function WeatherChip({
       weather.description
     );
 
+  const locationText =
+    weather.locationName ||
+    (
+      weatherSource ===
+      "clinic"
+        ? "Assigned clinic area"
+        : "Current location"
+    );
+
   const title =
     weatherSource ===
     "clinic"
@@ -380,32 +473,134 @@ export default function WeatherChip({
 
   return (
     <div
-      className="flex h-10 min-w-0 items-center gap-2 rounded-full border border-[#e2e8f0] bg-white px-3 text-[#334155]"
-      title={title}
-      aria-label={title}
+      ref={
+        containerRef
+      }
+      className="relative"
     >
-      <WeatherIcon
-        size={18}
-        className="shrink-0 text-[#0f766e]"
-      />
+      <button
+        type="button"
+        onClick={() =>
+          setMobileDetailsOpen(
+            (
+              current
+            ) =>
+              !current
+          )
+        }
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#334155] transition hover:bg-[#f8fafc] sm:w-auto sm:min-w-0 sm:gap-2 sm:px-3"
+        title={title}
+        aria-label={title}
+        aria-expanded={
+          mobileDetailsOpen
+        }
+      >
+        <WeatherIcon
+          size={18}
+          className="shrink-0 text-[#0f766e]"
+        />
 
-      {temperature !==
-        null && (
-        <span className="shrink-0 text-sm font-semibold text-[#0f172a]">
-          {temperature}
-          °C
+        {temperature !==
+          null && (
+          <span className="hidden shrink-0 text-sm font-semibold text-[#0f172a] sm:inline">
+            {temperature}
+            °C
+          </span>
+        )}
+
+        <span className="hidden max-w-[120px] truncate text-xs text-[#64748b] xl:block">
+          {description}
         </span>
-      )}
 
-      <span className="hidden max-w-[120px] truncate text-xs text-[#64748b] xl:block">
-        {description}
-      </span>
+        {weatherSource ===
+          "clinic" && (
+          <span className="hidden rounded-full bg-[#f1f5f9] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#64748b] 2xl:inline">
+            Clinic
+          </span>
+        )}
+      </button>
 
-      {weatherSource ===
-        "clinic" && (
-        <span className="hidden rounded-full bg-[#f1f5f9] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#64748b] 2xl:inline">
-          Clinic
-        </span>
+      {mobileDetailsOpen && (
+        <div className="absolute right-0 top-12 z-50 w-[230px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:hidden">
+          <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
+            <div>
+              <p className="text-xs font-medium uppercase tracking-wide text-[#64748b]">
+                Weather
+              </p>
+
+              <p className="mt-0.5 text-sm font-semibold text-[#0f172a]">
+                {weatherSource ===
+                "clinic"
+                  ? "Clinic weather"
+                  : "Current weather"}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() =>
+                setMobileDetailsOpen(
+                  false
+                )
+              }
+              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#64748b] transition hover:bg-[#f1f5f9]"
+              aria-label="Close weather details"
+            >
+              <X
+                size={15}
+              />
+            </button>
+          </div>
+
+          <div className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-[#f0fdfa]">
+                <WeatherIcon
+                  size={26}
+                  className="text-[#0f766e]"
+                />
+              </div>
+
+              <div className="min-w-0">
+                {temperature !==
+                  null && (
+                  <p className="text-2xl font-bold leading-none text-[#0f172a]">
+                    {temperature}
+                    °C
+                  </p>
+                )}
+
+                <p className="mt-1 text-sm font-medium text-[#475569]">
+                  {description}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f8fafc] px-3 py-2.5">
+              <MapPin
+                size={15}
+                className="mt-0.5 shrink-0 text-[#0f766e]"
+              />
+
+              <div className="min-w-0">
+                <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
+                  Location
+                </p>
+
+                <p className="mt-0.5 break-words text-xs font-medium text-[#475569]">
+                  {locationText}
+                </p>
+              </div>
+            </div>
+
+            {weatherSource ===
+              "clinic" && (
+              <p className="mt-3 text-[11px] leading-4 text-[#64748b]">
+                Location access was unavailable, so PhilaLink is showing weather for your assigned clinic area.
+              </p>
+            )}
+          </div>
+        </div>
       )}
     </div>
   );
