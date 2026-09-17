@@ -324,6 +324,11 @@ export default function ChatPanel({
             onSend={
               onSend
             }
+            onMenu={() =>
+              onStepChange(
+                "quick-start"
+              )
+            }
           />
         </div>
       ) : (

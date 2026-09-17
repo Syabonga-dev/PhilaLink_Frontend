@@ -2,11 +2,19 @@ import {
   Activity,
   AlertTriangle,
   HeartPulse,
+  MessageCircle,
   Pill,
   ShieldCheck,
 } from "lucide-react";
 
 const options = [
+  {
+    title: "Chat with Phila",
+    description:
+      "Ask a health question or talk about your PhilaLink information.",
+    icon: MessageCircle,
+    action: "followup",
+  },
   {
     title: "Check my symptoms",
     description:
@@ -19,21 +27,21 @@ const options = [
     description:
       "Learn about your medication and general use.",
     icon: Pill,
-    action: "medications",
+    action: "followup",
   },
   {
     title: "My allergies",
     description:
-      "Review or confirm allergy information.",
+      "Ask about allergy information linked to your profile.",
     icon: ShieldCheck,
-    action: "allergies",
+    action: "followup",
   },
   {
     title: "My medications",
     description:
-      "Review medications linked to your profile.",
+      "Ask about medications linked to your profile.",
     icon: HeartPulse,
-    action: "medications",
+    action: "followup",
   },
   {
     title: "When should I seek help?",
@@ -48,13 +56,20 @@ export default function QuickStartScreen({
   onStartAssessment,
   onSelectOption,
 }) {
-  const handleClick = (action) => {
-    if (action === "assessment") {
+  const handleClick = (
+    action
+  ) => {
+    if (
+      action ===
+      "assessment"
+    ) {
       onStartAssessment();
       return;
     }
 
-    onSelectOption(action);
+    onSelectOption(
+      action
+    );
   };
 
   return (
@@ -65,43 +80,56 @@ export default function QuickStartScreen({
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Choose an option below or start with a
-          symptom assessment.
+          Chat freely with
+          Phila or start a
+          guided symptom
+          assessment.
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-md">
-        {options.map((option) => {
-          const Icon = option.icon;
+        {options.map(
+          (option) => {
+            const Icon =
+              option.icon;
 
-          return (
-            <button
-              key={option.title}
-              type="button"
-              onClick={() =>
-                handleClick(option.action)
-              }
-              className="flex items-start gap-md rounded-corner-lg border border-border-secondary bg-white p-lg text-left transition hover:border-brand-primary hover:bg-brand-tertiary/30"
-            >
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-brand-tertiary">
-                <Icon
-                  size={17}
-                  className="text-brand-primary"
-                />
-              </div>
+            return (
+              <button
+                key={
+                  option.title
+                }
+                type="button"
+                onClick={() =>
+                  handleClick(
+                    option.action
+                  )
+                }
+                className="flex items-start gap-md rounded-corner-lg border border-border-secondary bg-white p-lg text-left transition hover:border-brand-primary hover:bg-brand-tertiary/30"
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-brand-tertiary">
+                  <Icon
+                    size={17}
+                    className="text-brand-primary"
+                  />
+                </div>
 
-              <div>
-                <p className="text-label-sm font-semibold text-text-primary">
-                  {option.title}
-                </p>
+                <div>
+                  <p className="text-label-sm font-semibold text-text-primary">
+                    {
+                      option.title
+                    }
+                  </p>
 
-                <p className="mt-xs text-video-title leading-5 text-text-secondary">
-                  {option.description}
-                </p>
-              </div>
-            </button>
-          );
-        })}
+                  <p className="mt-xs text-video-title leading-5 text-text-secondary">
+                    {
+                      option.description
+                    }
+                  </p>
+                </div>
+              </button>
+            );
+          }
+        )}
       </div>
     </div>
   );
