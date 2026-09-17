@@ -228,6 +228,9 @@ export default function ChatPanel({
       case "emergency":
         return (
           <EmergencyScreen
+            assessmentResult={
+              assessmentResult
+            }
             onContinue={() =>
               onStepChange(
                 "results"

@@ -1,23 +1,117 @@
 import { api } from "./client.js";
 
-export const symptomAssessmentsApi = {
-  create: (symptoms) => {
-    const cleanSymptoms =
-      String(
-        symptoms || ""
-      ).trim();
+function cleanList(
+  values
+) {
+  if (
+    !Array.isArray(
+      values
+    )
+  ) {
+    return [];
+  }
 
-    if (!cleanSymptoms) {
+  return values
+    .map(
+      (value) =>
+        String(
+          value ?? ""
+        ).trim()
+    )
+    .filter(Boolean);
+}
+
+export const symptomAssessmentsApi = {
+  create: (
+    assessment
+  ) => {
+    const symptoms =
+      Array.isArray(
+        assessment?.symptoms
+      )
+        ? assessment.symptoms
+            .map(
+              (value) =>
+                String(
+                  value ?? ""
+                ).trim()
+            )
+            .filter(Boolean)
+            .join(", ")
+        : String(
+            assessment?.symptoms ??
+              assessment ??
+              ""
+          ).trim();
+
+    if (!symptoms) {
       throw new Error(
         "Symptoms are required."
       );
     }
 
+    const parsedAge =
+      Number(
+        assessment?.age
+      );
+
+    const age =
+      Number.isInteger(
+        parsedAge
+      ) &&
+      parsedAge >= 0 &&
+      parsedAge <= 120
+        ? parsedAge
+        : null;
+
+    let duration =
+      String(
+        assessment?.duration ??
+          ""
+      ).trim();
+
+    if (
+      duration ===
+        "custom" &&
+      assessment
+        ?.customDurationValue
+    ) {
+      const value =
+        String(
+          assessment
+            .customDurationValue
+        ).trim();
+
+      const unit =
+        String(
+          assessment
+            .customDurationUnit ??
+            "days"
+        ).trim();
+
+      duration =
+        `${value} ${unit}`.trim();
+    }
+
     return api.post(
       "/api/symptom-assessments",
       {
-        symptoms:
-          cleanSymptoms,
+        symptoms,
+        age,
+        duration:
+          duration || null,
+        allergies:
+          cleanList(
+            assessment?.allergies
+          ),
+        medications:
+          cleanList(
+            assessment?.medications
+          ),
+        conditions:
+          cleanList(
+            assessment?.conditions
+          ),
       }
     );
   },

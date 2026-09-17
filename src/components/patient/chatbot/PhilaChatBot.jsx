@@ -148,20 +148,26 @@ export default function PhilaChatBot() {
         )
           ? assessment.symptoms
               .filter(Boolean)
-              .join(", ")
-          : "";
+          : [];
 
-      if (!symptoms) {
-        setStep("symptoms");
+      if (
+        symptoms.length === 0
+      ) {
+        setStep(
+          "symptoms"
+        );
+
         return;
       }
 
-      setStep("loading");
+      setStep(
+        "loading"
+      );
 
       try {
         const result =
           await symptomAssessmentsApi.create(
-            symptoms
+            assessment
           );
 
         setAssessmentResult(
@@ -176,7 +182,9 @@ export default function PhilaChatBot() {
             "emergency"
           );
         } else {
-          setStep("results");
+          setStep(
+            "results"
+          );
         }
       } catch (error) {
         setErrorType(
@@ -185,7 +193,9 @@ export default function PhilaChatBot() {
             : "unavailable"
         );
 
-        setStep("error");
+        setStep(
+          "error"
+        );
       }
     };
 
@@ -256,33 +266,47 @@ export default function PhilaChatBot() {
       {!isOpen && (
         <FloatingButton
           onClick={() =>
-            setIsOpen(true)
+            setIsOpen(
+              true
+            )
           }
         />
       )}
 
       <ChatPanel
-        isOpen={isOpen}
-        step={step}
+        isOpen={
+          isOpen
+        }
+        step={
+          step
+        }
         assessment={
           assessment
         }
         assessmentResult={
           assessmentResult
         }
-        messages={messages}
+        messages={
+          messages
+        }
         inputValue={
           inputValue
         }
         errorType={
           errorType
         }
-        sending={isSending}
+        sending={
+          isSending
+        }
         onClose={() =>
-          setIsOpen(false)
+          setIsOpen(
+            false
+          )
         }
         onMinimize={() =>
-          setIsOpen(false)
+          setIsOpen(
+            false
+          )
         }
         onStepChange={
           setStep

@@ -8,9 +8,15 @@ import {
 } from "lucide-react";
 
 export default function EmergencyScreen({
+  assessmentResult,
   onContinue,
   onRestart,
 }) {
+  const recommendation =
+    assessmentResult
+      ?.recommendation ||
+    "Your symptoms may require immediate medical attention. Please seek emergency medical help now or go to the nearest emergency facility. Do not rely on PhilaLink for emergency treatment.";
+
   return (
     <div className="flex flex-col gap-xl">
       <div className="rounded-corner-lg border border-danger/30 bg-danger/5 p-lg">
@@ -23,39 +29,40 @@ export default function EmergencyScreen({
           </div>
 
           <div>
-            <h2 className="text-title text-danger">
-              You may need urgent medical attention
+            <p className="text-video-title font-semibold uppercase tracking-wide text-danger">
+              Emergency
+            </p>
+
+            <h2 className="mt-xs text-title text-danger">
+              Seek emergency medical attention now
             </h2>
 
             <p className="mt-sm text-label-sm leading-6 text-text-secondary">
-              One or more of the symptoms you selected
-              can be associated with serious health
-              conditions. PhilaChatBot cannot safely
-              determine the cause through this chat.
+              One or more of the symptoms you submitted
+              matched a serious warning sign. PhilaChatBot
+              cannot safely determine the cause through
+              this chat.
             </p>
           </div>
         </div>
       </div>
 
-      <div className="rounded-corner-lg border border-border-secondary bg-white p-lg">
-        <div className="flex items-center gap-md">
-          <div className="flex h-10 w-10 items-center justify-center rounded-corner-full bg-danger/10">
+      <div className="rounded-corner-lg border border-danger/30 bg-white p-lg">
+        <div className="flex items-start gap-md">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-danger/10">
             <HeartPulse
               size={17}
               className="text-danger"
             />
           </div>
 
-          <div>
-            <p className="text-label-sm font-semibold text-text-primary">
-              Seek urgent medical care
+          <div className="min-w-0">
+            <p className="text-label-sm font-semibold text-danger">
+              Emergency recommendation
             </p>
 
-            <p className="mt-xs text-video-title leading-5 text-text-secondary">
-              Contact emergency services or go to the
-              nearest emergency department if your
-              symptoms are severe, worsening, or you feel
-              unsafe.
+            <p className="mt-xs text-label-sm leading-6 text-text-primary">
+              {recommendation}
             </p>
           </div>
         </div>
@@ -67,7 +74,7 @@ export default function EmergencyScreen({
         </p>
 
         <ul className="mt-md flex list-disc flex-col gap-sm pl-lg text-label-sm text-text-primary">
-          <li>Severe or persistent chest pain</li>
+          <li>Chest pain</li>
           <li>Severe difficulty breathing</li>
           <li>Loss of consciousness</li>
           <li>Seizure</li>
@@ -80,27 +87,40 @@ export default function EmergencyScreen({
       <div className="flex flex-col gap-md">
         <Button
           variant="primary"
-          iconStart={<PhoneCall size={16} />}
+          iconStart={
+            <PhoneCall
+              size={16}
+            />
+          }
           onClick={() => {
-            window.location.href = "tel:112";
+            window.location.href =
+              "tel:112";
           }}
           className="w-full"
         >
-          Seek urgent medical care
+          Call emergency services
         </Button>
 
         <Button
           variant="neutral"
-          onClick={onContinue}
+          onClick={
+            onContinue
+          }
           className="w-full"
         >
-          Continue to general information
+          View assessment details
         </Button>
 
         <Button
           variant="subtle"
-          iconStart={<RefreshCcw size={15} />}
-          onClick={onRestart}
+          iconStart={
+            <RefreshCcw
+              size={15}
+            />
+          }
+          onClick={
+            onRestart
+          }
           className="w-full"
         >
           Start another assessment
@@ -108,8 +128,8 @@ export default function EmergencyScreen({
       </div>
 
       <p className="text-center text-video-title leading-5 text-text-tertiary">
-        Do not rely on PhilaChatBot if you believe you are
-        experiencing a medical emergency.
+        Do not delay emergency care while using
+        PhilaChatBot.
       </p>
     </div>
   );
