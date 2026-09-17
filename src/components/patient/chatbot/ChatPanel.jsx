@@ -33,6 +33,7 @@ export default function ChatPanel({
   onSend,
   onRestart,
   onOpenChat,
+  onClearHistory,
 }) {
   const renderStep = () => {
     switch (step) {
@@ -299,6 +300,12 @@ export default function ChatPanel({
         }
         onClose={
           onClose
+        }
+        onClearHistory={
+          onClearHistory
+        }
+        sending={
+          sending
         }
       />
 

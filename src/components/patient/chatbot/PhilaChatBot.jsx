@@ -172,6 +172,22 @@ export default function PhilaChatBot() {
       );
     };
 
+  const handleClearHistory =
+    async () => {
+      await chatbotApi.clearHistory();
+
+      setMessages(
+        INITIAL_FOLLOW_UP_MESSAGES
+      );
+
+      setInputValue(
+        ""
+      );
+
+      historyLoaded.current =
+        true;
+    };
+
   const handleAnalyze =
     async () => {
       const symptoms =
@@ -383,6 +399,9 @@ export default function PhilaChatBot() {
         }
         onOpenChat={
           handleOpenChat
+        }
+        onClearHistory={
+          handleClearHistory
         }
       />
     </>
