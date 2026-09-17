@@ -3,9 +3,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
-
 import { useAuth } from "./context/AuthContext.jsx";
-
 import {
   ProtectedRoute,
   RoleRoute,
@@ -35,7 +33,6 @@ import NurseDashboard from "./pages/nurse/NurseDashboard.jsx";
 import NursePatientsPage from "./pages/nurse/NursePatientsPage.jsx";
 import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
 
-import ProxyAppLayout from "./components/proxy/ProxyAppLayout.jsx";
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
 import ProxyCollectionsPage from "./pages/proxy/ProxyCollectionsPage.jsx";
@@ -61,13 +58,17 @@ function RedirectIfAuthenticated({
     return children;
   }
 
-  if (isAuthenticated) {
+  if (
+    isAuthenticated
+  ) {
     return (
       <Navigate
         to={
           mustChangePassword
             ? "/change-password"
-            : homePathForRole(role)
+            : homePathForRole(
+                role
+              )
         }
         replace
       />
@@ -80,10 +81,6 @@ function RedirectIfAuthenticated({
 export default function App() {
   return (
     <Routes>
-      {/* ============================= */}
-      {/* PUBLIC */}
-      {/* ============================= */}
-
       <Route
         path="/"
         element={
@@ -104,147 +101,168 @@ export default function App() {
 
       <Route
         path="/register"
-        element={<RegisterPage />}
+        element={
+          <RegisterPage />
+        }
       />
 
       <Route
         path="/register/verify"
-        element={<PhoneVerificationPage />}
+        element={
+          <PhoneVerificationPage />
+        }
       />
 
       <Route
         path="/register/success"
-        element={<RegistrationSuccessPage />}
+        element={
+          <RegistrationSuccessPage />
+        }
       />
 
-      {/* ============================= */}
-      {/* AUTHENTICATED */}
-      {/* ============================= */}
-
-      <Route element={<ProtectedRoute />}>
-        <Route element={<PasswordChangeRoute />}>
+      <Route
+        element={
+          <ProtectedRoute />
+        }
+      >
+        <Route
+          element={
+            <PasswordChangeRoute />
+          }
+        >
           <Route
             path="/change-password"
-            element={<ChangePasswordPage />}
+            element={
+              <ChangePasswordPage />
+            }
           />
         </Route>
-
-        {/* ============================= */}
-        {/* PATIENT */}
-        {/* ============================= */}
 
         <Route
           element={
             <RoleRoute
-              allow={["Patient"]}
+              allow={[
+                "Patient",
+              ]}
             />
           }
         >
           <Route
             path="/patient"
-            element={<PatientAppLayout />}
+            element={
+              <PatientAppLayout />
+            }
           >
             <Route
               index
-              element={<PatientDashboardPage />}
+              element={
+                <PatientDashboardPage />
+              }
             />
 
             <Route
               path="medications"
-              element={<PatientMedicationsPage />}
+              element={
+                <PatientMedicationsPage />
+              }
             />
 
             <Route
               path="appointments"
-              element={<PatientAppointmentsPage />}
+              element={
+                <PatientAppointmentsPage />
+              }
             />
 
             <Route
               path="records"
-              element={<PatientRecordsPage />}
+              element={
+                <PatientRecordsPage />
+              }
             />
 
             <Route
               path="clinics"
-              element={<PatientNearestClinicsPage />}
+              element={
+                <PatientNearestClinicsPage />
+              }
             />
 
             <Route
               path="settings"
-              element={<PatientSettingsPage />}
+              element={
+                <PatientSettingsPage />
+              }
             />
           </Route>
         </Route>
-
-        {/* ============================= */}
-        {/* PROXY */}
-        {/* IMPORTANT:
-            Proxy now has its own
-            Patient-style layout.
-        */}
-        {/* ============================= */}
 
         <Route
           element={
-            <RoleRoute
-              allow={["Proxy"]}
-            />
+            <AuthenticatedLayout />
           }
         >
           <Route
-            path="/proxy"
-            element={<ProxyAppLayout />}
-          >
-            <Route
-              index
-              element={<ProxyDashboard />}
-            />
-
-            <Route
-              path="patients"
-              element={<ProxyPatientsPage />}
-            />
-
-            <Route
-              path="collections"
-              element={<ProxyCollectionsPage />}
-            />
-          </Route>
-        </Route>
-
-        {/* ============================= */}
-        {/* NURSE + ADMIN GENERIC LAYOUT */}
-        {/* ============================= */}
-
-        <Route
-          element={<AuthenticatedLayout />}
-        >
-          {/* NURSE */}
-
-          <Route
             element={
               <RoleRoute
-                allow={["Nurse"]}
+                allow={[
+                  "Nurse",
+                ]}
               />
             }
           >
             <Route
               path="/nurse"
-              element={<NurseDashboard />}
+              element={
+                <NurseDashboard />
+              }
             />
 
             <Route
               path="/nurse/patients"
-              element={<NursePatientsPage />}
+              element={
+                <NursePatientsPage />
+              }
             />
 
             <Route
               path="/nurse/collections"
-              element={<CollectionsPage />}
+              element={
+                <CollectionsPage />
+              }
             />
           </Route>
 
-          {/* CLINIC ADMIN + SUPER ADMIN */}
+          <Route
+            element={
+              <RoleRoute
+                allow={[
+                  "Proxy",
+                ]}
+              />
+            }
+          >
+            <Route
+              path="/proxy"
+              element={
+                <ProxyDashboard />
+              }
+            />
+
+            <Route
+              path="/proxy/patients"
+              element={
+                <ProxyPatientsPage />
+              }
+            />
+
+            <Route
+              path="/proxy/collections"
+              element={
+                <ProxyCollectionsPage />
+              }
+            />
+          </Route>
 
           <Route
             element={
@@ -258,42 +276,54 @@ export default function App() {
           >
             <Route
               path="/admin"
-              element={<AdminDashboard />}
+              element={
+                <AdminDashboard />
+              }
             />
 
             <Route
               path="/admin/register-staff"
-              element={<RegisterStaffPage />}
+              element={
+                <RegisterStaffPage />
+              }
             />
 
             <Route
               path="/admin/staff"
-              element={<ManageStaffPage />}
+              element={
+                <ManageStaffPage />
+              }
             />
 
             <Route
               path="/admin/audit"
-              element={<AdminAuditLogPage />}
+              element={
+                <AdminAuditLogPage />
+              }
             />
           </Route>
-
-          {/* SUPER ADMIN ONLY */}
 
           <Route
             element={
               <RoleRoute
-                allow={["SuperAdmin"]}
+                allow={[
+                  "SuperAdmin",
+                ]}
               />
             }
           >
             <Route
               path="/admin/clinics"
-              element={<ManageClinicsPage />}
+              element={
+                <ManageClinicsPage />
+              }
             />
 
             <Route
               path="/admin/register-clinic-admin"
-              element={<RegisterClinicAdminPage />}
+              element={
+                <RegisterClinicAdminPage />
+              }
             />
           </Route>
         </Route>
@@ -301,7 +331,9 @@ export default function App() {
 
       <Route
         path="*"
-        element={<NotFound />}
+        element={
+          <NotFound />
+        }
       />
     </Routes>
   );

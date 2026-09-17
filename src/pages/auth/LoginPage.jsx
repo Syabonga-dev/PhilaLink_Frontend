@@ -1,6 +1,5 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.png";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -9,6 +8,7 @@ import { ApiError } from "../../services/api/client.js";
 import { homePathForRole } from "../../routes/ProtectedRoute.jsx";
 import NavigationBar from "../../components/layout/NavigationBar.jsx";
 import "./LoginPage.css";
+import logo2 from "./../../assets/logo2.png";
 
 export default function LoginPage() {
   const [idNumber, setIdNumber] = useState("");
@@ -94,7 +94,7 @@ export default function LoginPage() {
         <main className="login-content">
           <div className="login-card">
             <div className="login-brand">
-              <img src={logo} alt="PhilaLink" />
+              <img src={logo2} alt="PhilaLink logo"  />
 
               <div>
                 <span>Phila</span>Link

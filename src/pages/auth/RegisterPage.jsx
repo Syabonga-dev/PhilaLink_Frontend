@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import logo2 from "../../assets/logo2.png";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -131,7 +131,7 @@ export default function RegisterPage() {
         <main className="register-content">
           <div className="register-card">
             <div className="register-brand">
-              <img src={logo} alt="PhilaLink" />
+              <img src={logo2} alt="PhilaLink logo" />
 
               <div>
                 <span>Phila</span>Link

@@ -1,434 +1,130 @@
 import {
-  useCallback,
   useEffect,
-  useMemo,
-  useState,
 } from "react";
+
 import {
   Link,
   useLocation,
 } from "react-router-dom";
 
 import {
-  CircleMarker,
-  MapContainer,
-  Marker,
-  Popup,
-  TileLayer,
-  useMap,
-} from "react-leaflet";
-
-import L from "leaflet";
-import "leaflet/dist/leaflet.css";
+  Activity,
+  ArrowRight,
+  ArrowUp,
+  Bell,
+  Building2,
+  CalendarDays,
+  CheckCircle2,
+  Droplets,
+  HeartPulse,
+  MessageCircle,
+  PhoneCall,
+  Pill,
+  ShieldCheck,
+  Users,
+} from "lucide-react";
 
 import NavigationPage from "../components/layout/NavigationBar.jsx";
+
 import "./LandingPage.css";
 
-const DEFAULT_LOCATION = {
-  latitude: -33.918,
-  longitude: 25.5701,
-};
+const services = [
+  {
+    icon: Pill,
 
-const OVERPASS_URLS = [
-  "https://overpass-api.de/api/interpreter",
-  "https://overpass.private.coffee/api/interpreter",
+    title:
+      "Medication Management",
+
+    description:
+      "Track medication schedules, upcoming collections and treatment information in one place.",
+  },
+
+  {
+    icon: Building2,
+
+    title:
+      "Connected Care",
+
+    description:
+      "Keep your healthcare information connected to the clinics and healthcare workers supporting your treatment.",
+  },
+
+  {
+    icon: Bell,
+
+    title:
+      "Smart Reminders",
+
+    description:
+      "Stay informed about medication collections, appointments and important healthcare updates.",
+  },
+
+  {
+    icon: Users,
+
+    title:
+      "Proxy Support",
+
+    description:
+      "Allow trusted proxies to support medication collections on behalf of linked patients.",
+  },
+
+  {
+    icon: MessageCircle,
+
+    title:
+      "Phila Chat",
+
+    description:
+      "Get helpful healthcare information through the built-in PhilaLink assistant.",
+  },
+
+  {
+    icon: ShieldCheck,
+
+    title:
+      "Secure Records",
+
+    description:
+      "Keep healthcare activity organised with secure records, verification and activity tracking.",
+  },
 ];
 
-function calculateDistance(
-  lat1,
-  lon1,
-  lat2,
-  lon2
-) {
-  const earthRadius = 6371;
+const healthTips = [
+  {
+    icon: Pill,
 
-  const latitudeDifference =
-    ((lat2 - lat1) * Math.PI) / 180;
+    title:
+      "Take medication as prescribed",
 
-  const longitudeDifference =
-    ((lon2 - lon1) * Math.PI) / 180;
+    description:
+      "Follow your healthcare professional's instructions and keep track of when your medication needs to be collected.",
+  },
 
-  const a =
-    Math.sin(latitudeDifference / 2) ** 2 +
-    Math.cos((lat1 * Math.PI) / 180) *
-      Math.cos((lat2 * Math.PI) / 180) *
-      Math.sin(longitudeDifference / 2) ** 2;
+  {
+    icon: CalendarDays,
 
-  const c =
-    2 *
-    Math.atan2(
-      Math.sqrt(a),
-      Math.sqrt(1 - a)
-    );
+    title:
+      "Keep your appointments",
 
-  return earthRadius * c;
-}
+    description:
+      "Regular healthcare visits can help keep your treatment on track and identify problems early.",
+  },
 
-function formatDistance(distance) {
-  if (distance < 1) {
-    return `${Math.round(
-      distance * 1000
-    )} m`;
-  }
+  {
+    icon: Droplets,
 
-  return `${distance.toFixed(1)} km`;
-}
+    title:
+      "Stay hydrated",
 
-function getFacilityType(tags = {}) {
-  const amenity =
-    tags.amenity?.toLowerCase();
-
-  const healthcare =
-    tags.healthcare?.toLowerCase();
-
-  if (
-    amenity === "hospital" ||
-    healthcare === "hospital"
-  ) {
-    return "Hospital";
-  }
-
-  if (
-    healthcare === "clinic" ||
-    healthcare === "centre" ||
-    healthcare === "center"
-  ) {
-    return "Clinic";
-  }
-
-  if (amenity === "clinic") {
-    return "Clinic";
-  }
-
-  if (healthcare === "doctors") {
-    return "Medical Practice";
-  }
-
-  return "Healthcare Facility";
-}
-
-function getCoordinates(element) {
-  if (
-    typeof element.lat === "number" &&
-    typeof element.lon === "number"
-  ) {
-    return {
-      latitude: element.lat,
-      longitude: element.lon,
-    };
-  }
-
-  if (
-    typeof element.center?.lat ===
-      "number" &&
-    typeof element.center?.lon ===
-      "number"
-  ) {
-    return {
-      latitude: element.center.lat,
-      longitude: element.center.lon,
-    };
-  }
-
-  return null;
-}
-
-async function fetchHealthcareFacilities(
-  latitude,
-  longitude,
-  radius = 15000
-) {
-  const query = `
-    [out:json][timeout:25];
-
-    (
-      node[amenity=hospital]
-        (around:${radius},${latitude},${longitude});
-
-      way[amenity=hospital]
-        (around:${radius},${latitude},${longitude});
-
-      relation[amenity=hospital]
-        (around:${radius},${latitude},${longitude});
-
-      node[healthcare=clinic]
-        (around:${radius},${latitude},${longitude});
-
-      way[healthcare=clinic]
-        (around:${radius},${latitude},${longitude});
-
-      relation[healthcare=clinic]
-        (around:${radius},${latitude},${longitude});
-
-      node[healthcare=centre]
-        (around:${radius},${latitude},${longitude});
-
-      way[healthcare=centre]
-        (around:${radius},${latitude},${longitude});
-
-      relation[healthcare=centre]
-        (around:${radius},${latitude},${longitude});
-    );
-
-    out center tags;
-  `;
-
-  let lastError = null;
-
-  for (const endpoint of OVERPASS_URLS) {
-    try {
-      const response = await fetch(
-        endpoint,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/x-www-form-urlencoded",
-          },
-
-          body: `data=${encodeURIComponent(
-            query
-          )}`,
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(
-          `Overpass returned HTTP ${response.status}`
-        );
-      }
-
-      const data =
-        await response.json();
-
-      return data.elements || [];
-    } catch (error) {
-      lastError = error;
-    }
-  }
-
-  throw (
-    lastError ||
-    new Error(
-      "Unable to reach the healthcare map service."
-    )
-  );
-}
-
-const hospitalIcon = L.divIcon({
-  className:
-    "custom-healthcare-marker",
-
-  html: `
-    <div class="healthcare-marker hospital-marker">
-      <span class="material-symbols-outlined">
-        local_hospital
-      </span>
-    </div>
-  `,
-
-  iconSize: [36, 36],
-  iconAnchor: [18, 34],
-  popupAnchor: [0, -32],
-});
-
-const clinicIcon = L.divIcon({
-  className:
-    "custom-healthcare-marker",
-
-  html: `
-    <div class="healthcare-marker clinic-marker">
-      <span class="material-symbols-outlined">
-        medical_services
-      </span>
-    </div>
-  `,
-
-  iconSize: [36, 36],
-  iconAnchor: [18, 34],
-  popupAnchor: [0, -32],
-});
-
-function RecenterMap({
-  latitude,
-  longitude,
-  zoom = 13,
-}) {
-  const map = useMap();
-
-  useEffect(() => {
-    if (
-      typeof latitude !== "number" ||
-      typeof longitude !== "number"
-    ) {
-      return;
-    }
-
-    map.setView(
-      [latitude, longitude],
-      zoom,
-      {
-        animate: false,
-      }
-    );
-  }, [
-    latitude,
-    longitude,
-    zoom,
-    map,
-  ]);
-
-  return null;
-}
+    description:
+      "Drink enough water throughout the day, especially when you are active or when the weather is hot.",
+  },
+];
 
 export default function LandingPage() {
   const location =
     useLocation();
-
-  const [
-    userLocation,
-    setUserLocation,
-  ] = useState(null);
-
-  const [
-    facilities,
-    setFacilities,
-  ] = useState([]);
-
-  const [
-    selectedFacility,
-    setSelectedFacility,
-  ] = useState(null);
-
-  const [
-    search,
-    setSearch,
-  ] = useState("");
-
-  const [
-    loadingLocation,
-    setLoadingLocation,
-  ] = useState(true);
-
-  const [
-    loadingFacilities,
-    setLoadingFacilities,
-  ] = useState(false);
-
-  const [
-    locationError,
-    setLocationError,
-  ] = useState("");
-
-  const [
-    facilityError,
-    setFacilityError,
-  ] = useState("");
-
-  const [
-    mapCenter,
-    setMapCenter,
-  ] = useState([
-    DEFAULT_LOCATION.latitude,
-    DEFAULT_LOCATION.longitude,
-  ]);
-
-  const requestUserLocation =
-    useCallback(() => {
-      if (
-        !navigator.geolocation
-      ) {
-        setLoadingLocation(
-          false
-        );
-
-        setLocationError(
-          "Your browser does not support location services."
-        );
-
-        setUserLocation(
-          DEFAULT_LOCATION
-        );
-
-        setMapCenter([
-          DEFAULT_LOCATION.latitude,
-          DEFAULT_LOCATION.longitude,
-        ]);
-
-        return;
-      }
-
-      setLoadingLocation(true);
-      setLocationError("");
-
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          const nextLocation = {
-            latitude:
-              position.coords.latitude,
-
-            longitude:
-              position.coords.longitude,
-          };
-
-          setUserLocation(
-            nextLocation
-          );
-
-          setMapCenter([
-            nextLocation.latitude,
-            nextLocation.longitude,
-          ]);
-
-          setSelectedFacility(
-            null
-          );
-
-          setLoadingLocation(
-            false
-          );
-        },
-
-        (error) => {
-          console.error(
-            "Geolocation error:",
-            error
-          );
-
-          setLoadingLocation(
-            false
-          );
-
-          setLocationError(
-            "We couldn't access your location. Showing healthcare facilities around Gqeberha instead."
-          );
-
-          setUserLocation(
-            DEFAULT_LOCATION
-          );
-
-          setMapCenter([
-            DEFAULT_LOCATION.latitude,
-            DEFAULT_LOCATION.longitude,
-          ]);
-        },
-
-        {
-          enableHighAccuracy:
-            true,
-
-          timeout: 10000,
-
-          maximumAge:
-            300000,
-        }
-      );
-    }, []);
-
-  useEffect(() => {
-    requestUserLocation();
-  }, [requestUserLocation]);
 
   useEffect(() => {
     const sectionId =
@@ -461,903 +157,246 @@ export default function LandingPage() {
 
     return () =>
       clearTimeout(timer);
-  }, [location.state]);
+  }, [
+    location.state,
+  ]);
 
-  useEffect(() => {
-    if (!userLocation) {
-      return;
-    }
-
-    let cancelled = false;
-
-    async function loadFacilities() {
-      setLoadingFacilities(true);
-      setFacilityError("");
-
-      try {
-        const elements =
-          await fetchHealthcareFacilities(
-            userLocation.latitude,
-            userLocation.longitude
-          );
-
-        if (cancelled) {
-          return;
-        }
-
-        const mappedFacilities =
-          elements
-            .map((element) => {
-              const coordinates =
-                getCoordinates(
-                  element
-                );
-
-              if (!coordinates) {
-                return null;
-              }
-
-              const tags =
-                element.tags || {};
-
-              const distance =
-                calculateDistance(
-                  userLocation.latitude,
-                  userLocation.longitude,
-                  coordinates.latitude,
-                  coordinates.longitude
-                );
-
-              return {
-                id: `${element.type}-${element.id}`,
-
-                name:
-                  tags.name ||
-                  tags["name:en"] ||
-                  "Unnamed healthcare facility",
-
-                type:
-                  getFacilityType(
-                    tags
-                  ),
-
-                latitude:
-                  coordinates.latitude,
-
-                longitude:
-                  coordinates.longitude,
-
-                distance,
-
-                distanceLabel:
-                  formatDistance(
-                    distance
-                  ),
-
-                phone:
-                  tags.phone ||
-                  tags[
-                    "contact:phone"
-                  ] ||
-                  null,
-
-                website:
-                  tags.website ||
-                  tags[
-                    "contact:website"
-                  ] ||
-                  null,
-
-                openingHours:
-                  tags.opening_hours ||
-                  null,
-
-                address:
-                  tags[
-                    "addr:street"
-                  ] ||
-                  tags[
-                    "addr:full"
-                  ] ||
-                  null,
-
-                city:
-                  tags[
-                    "addr:city"
-                  ] ||
-                  null,
-
-                emergency:
-                  tags.emergency ===
-                  "yes",
-
-                operator:
-                  tags.operator ||
-                  null,
-
-                osmId:
-                  element.id,
-
-                osmType:
-                  element.type,
-              };
-            })
-            .filter(Boolean)
-            .sort(
-              (a, b) =>
-                a.distance -
-                b.distance
-            );
-
-        const uniqueFacilities =
-          [];
-
-        const seen = new Set();
-
-        for (
-          const facility of
-          mappedFacilities
-        ) {
-          const key =
-            facility.name
-              .toLowerCase()
-              .trim();
-
-          if (!seen.has(key)) {
-            seen.add(key);
-
-            uniqueFacilities.push(
-              facility
-            );
-          }
-        }
-
-        setFacilities(
-          uniqueFacilities
-        );
-      } catch (error) {
-        console.error(
-          "Healthcare lookup failed:",
-          error
-        );
-
-        if (!cancelled) {
-          setFacilityError(
-            "We couldn't load nearby healthcare facilities right now. Please try again."
-          );
-        }
-      } finally {
-        if (!cancelled) {
-          setLoadingFacilities(
-            false
-          );
-        }
-      }
-    }
-
-    loadFacilities();
-
-    return () => {
-      cancelled = true;
+  const scrollToTop =
+    () => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
     };
-  }, [userLocation]);
-
-  const filteredFacilities =
-    useMemo(() => {
-      const query =
-        search
-          .trim()
-          .toLowerCase();
-
-      if (!query) {
-        return facilities;
-      }
-
-      return facilities.filter(
-        (facility) =>
-          facility.name
-            .toLowerCase()
-            .includes(query) ||
-          facility.type
-            .toLowerCase()
-            .includes(query) ||
-          facility.city
-            ?.toLowerCase()
-            .includes(query)
-      );
-    }, [
-      facilities,
-      search,
-    ]);
-
-  const handleSelectFacility =
-    (facility) => {
-      setSelectedFacility(
-        facility
-      );
-
-      setMapCenter([
-        facility.latitude,
-        facility.longitude,
-      ]);
-    };
-
-  const openDirections =
-    (facility) => {
-      const url =
-        `https://www.google.com/maps/dir/?api=1` +
-        `&destination=${facility.latitude},${facility.longitude}`;
-
-      window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    };
-
-  const openWebsite =
-    (facility) => {
-      if (!facility.website) {
-        return;
-      }
-
-      let url =
-        facility.website;
-
-      if (
-        !url.startsWith(
-          "http://"
-        ) &&
-        !url.startsWith(
-          "https://"
-        )
-      ) {
-        url = `https://${url}`;
-      }
-
-      window.open(
-        url,
-        "_blank",
-        "noopener,noreferrer"
-      );
-    };
-
-  const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
-  };
 
   return (
-    <div className="landing-page pt-16">
+    <div className="landing-page">
       <NavigationPage />
 
-      {/* =====================================================
-          MAP
-      ===================================================== */}
+      {/* ===================================== */}
+      {/* HERO */}
+      {/* ===================================== */}
 
-      <section
-        id="map"
-        className="map-section"
-      >
-        <div className="map-section-container">
-          <div className="map-heading">
-            <span className="section-label">
-              FIND HEALTHCARE
-            </span>
+      <section className="landing-hero">
+        <div className="section-container hero-layout">
+          {/* LEFT */}
 
-            <h1>
-              Find the care you
-              need, when you
-              need it.
-            </h1>
-
-            <p>
-              Discover nearby
-              clinics and
-              hospitals using
-              your current
-              location, then
-              get directions
-              straight from
-              the map.
-            </p>
-          </div>
-
-          <div className="map-toolbar">
-            <div className="map-search">
-              <span className="material-symbols-outlined search-icon">
-                search
-              </span>
-
-              <input
-                type="text"
-                value={search}
-                onChange={(
-                  event
-                ) =>
-                  setSearch(
-                    event.target
-                      .value
-                  )
-                }
-                placeholder="Search clinics or hospitals..."
-                aria-label="Search healthcare facilities"
+          <div className="hero-content">
+            <div className="hero-eyebrow">
+              <HeartPulse
+                size={16}
               />
-
-              {search && (
-                <button
-                  type="button"
-                  className="clear-search"
-                  onClick={() =>
-                    setSearch("")
-                  }
-                  aria-label="Clear search"
-                >
-                  <span className="material-symbols-outlined">
-                    close
-                  </span>
-                </button>
-              )}
-            </div>
-
-            <button
-              type="button"
-              className="location-button"
-              onClick={
-                requestUserLocation
-              }
-              disabled={
-                loadingLocation
-              }
-            >
-              <span className="material-symbols-outlined">
-                my_location
-              </span>
 
               <span>
-                {loadingLocation
-                  ? "Finding location..."
-                  : "Use my location"}
+                CONNECTED HEALTHCARE
               </span>
-            </button>
-          </div>
+            </div>
 
-          <div className="map-feedback">
-            {loadingFacilities && (
-              <div className="map-message">
-                <span className="material-symbols-outlined">
-                  progress_activity
-                </span>
+            <h1>
+              Your healthcare,
+              <span>
+                {" "}
+                connected.
+              </span>
+            </h1>
 
-                <span>
-                  Finding nearby
-                  healthcare...
-                </span>
-              </div>
-            )}
+            <p className="hero-description">
+              PhilaLink helps patients
+              stay informed about
+              medication, collections,
+              appointments and the
+              people supporting their
+              healthcare journey.
+            </p>
 
-            {!loadingFacilities &&
-              facilityError && (
-                <div className="map-message map-message-error">
-                  <span className="material-symbols-outlined">
-                    error
-                  </span>
+            <div className="hero-actions">
+              <Link
+                to="/register"
+                className="hero-primary-button"
+              >
+                Create account
 
-                  <span>
-                    {
-                      facilityError
-                    }
-                  </span>
-                </div>
-              )}
+                <ArrowRight
+                  size={18}
+                />
+              </Link>
 
-            {!loadingFacilities &&
-              !facilityError &&
-              facilities.length >
-                0 && (
-                <div className="map-message">
-                  <span className="material-symbols-outlined">
-                    local_hospital
-                  </span>
+              <Link
+                to="/login"
+                className="hero-secondary-button"
+              >
+                Log in
+              </Link>
+            </div>
 
-                  <span>
-                    {
-                      facilities.length
-                    }{" "}
-                    healthcare{" "}
-                    {facilities.length ===
-                    1
-                      ? "facility"
-                      : "facilities"}{" "}
-                    found nearby
-                  </span>
-                </div>
-              )}
-
-            {locationError && (
-              <div className="map-message map-message-warning">
-                <span className="material-symbols-outlined">
-                  location_off
-                </span>
+            <div className="hero-trust">
+              <div>
+                <CheckCircle2
+                  size={17}
+                />
 
                 <span>
-                  {
-                    locationError
-                  }
+                  Medication tracking
                 </span>
               </div>
-            )}
-          </div>
 
-          <div className="map-wrapper">
-            <MapContainer
-              center={mapCenter}
-              zoom={13}
-              scrollWheelZoom={
-                false
-              }
-              doubleClickZoom={
-                true
-              }
-              dragging={true}
-              touchZoom={true}
-              className="map-container"
-            >
-              <TileLayer
-                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              />
+              <div>
+                <CheckCircle2
+                  size={17}
+                />
 
-              {userLocation && (
-                <>
-                  <CircleMarker
-                    center={[
-                      userLocation.latitude,
-                      userLocation.longitude,
-                    ]}
-                    radius={8}
-                    pathOptions={{
-                      color:
-                        "#ffffff",
-
-                      fillColor:
-                        "#006b6b",
-
-                      fillOpacity:
-                        1,
-
-                      weight: 3,
-                    }}
-                  >
-                    <Popup>
-                      <strong>
-                        Your
-                        location
-                      </strong>
-                    </Popup>
-                  </CircleMarker>
-
-                  <CircleMarker
-                    center={[
-                      userLocation.latitude,
-                      userLocation.longitude,
-                    ]}
-                    radius={18}
-                    pathOptions={{
-                      color:
-                        "#006b6b",
-
-                      fillColor:
-                        "#006b6b",
-
-                      fillOpacity:
-                        0.08,
-
-                      weight: 1,
-                    }}
-                  />
-                </>
-              )}
-
-              {filteredFacilities.map(
-                (
-                  facility
-                ) => (
-                  <Marker
-                    key={
-                      facility.id
-                    }
-                    position={[
-                      facility.latitude,
-                      facility.longitude,
-                    ]}
-                    icon={
-                      facility.type ===
-                      "Hospital"
-                        ? hospitalIcon
-                        : clinicIcon
-                    }
-                    eventHandlers={{
-                      click:
-                        () =>
-                          handleSelectFacility(
-                            facility
-                          ),
-                    }}
-                  >
-                    <Popup>
-                      <div className="map-popup">
-                        <span className="popup-type">
-                          {
-                            facility.type
-                          }
-                        </span>
-
-                        <h3>
-                          {
-                            facility.name
-                          }
-                        </h3>
-
-                        <div className="popup-info">
-                          <span className="material-symbols-outlined">
-                            distance
-                          </span>
-
-                          <span>
-                            {
-                              facility.distanceLabel
-                            }{" "}
-                            away
-                          </span>
-                        </div>
-
-                        {facility.openingHours && (
-                          <div className="popup-info">
-                            <span className="material-symbols-outlined">
-                              schedule
-                            </span>
-
-                            <span>
-                              {
-                                facility.openingHours
-                              }
-                            </span>
-                          </div>
-                        )}
-
-                        <button
-                          type="button"
-                          className="popup-button"
-                          onClick={() =>
-                            handleSelectFacility(
-                              facility
-                            )
-                          }
-                        >
-                          View details
-                        </button>
-                      </div>
-                    </Popup>
-                  </Marker>
-                )
-              )}
-
-              <RecenterMap
-                latitude={
-                  mapCenter[0]
-                }
-                longitude={
-                  mapCenter[1]
-                }
-                zoom={
-                  selectedFacility
-                    ? 15
-                    : 13
-                }
-              />
-            </MapContainer>
-          </div>
-
-          {!loadingFacilities &&
-            !facilityError &&
-            search &&
-            filteredFacilities.length ===
-              0 && (
-              <div className="no-results">
-                <span className="material-symbols-outlined">
-                  search_off
+                <span>
+                  Collection reminders
                 </span>
+              </div>
 
+              <div>
+                <CheckCircle2
+                  size={17}
+                />
+
+                <span>
+                  Proxy support
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* RIGHT */}
+
+          <div className="hero-visual">
+            <div className="hero-panel">
+              <div className="hero-panel-header">
                 <div>
-                  <strong>
-                    No matching
-                    facilities
-                  </strong>
-
-                  <p>
-                    Try another
-                    clinic or
-                    hospital name.
-                  </p>
-                </div>
-              </div>
-            )}
-
-          {selectedFacility && (
-            <div className="location-card">
-              <div className="location-card-main">
-                <div className="location-card-icon">
-                  <span className="material-symbols-outlined">
-                    {selectedFacility.type ===
-                    "Hospital"
-                      ? "local_hospital"
-                      : "medical_services"}
-                  </span>
-                </div>
-
-                <div className="location-card-info">
-                  <span className="location-type">
-                    {
-                      selectedFacility.type
-                    }
+                  <span className="hero-panel-label">
+                    PHILALINK
                   </span>
 
                   <h2>
-                    {
-                      selectedFacility.name
-                    }
+                    Healthcare at a
+                    glance
                   </h2>
-
-                  <div className="location-distance">
-                    <span className="material-symbols-outlined">
-                      distance
-                    </span>
-
-                    <strong>
-                      {
-                        selectedFacility.distanceLabel
-                      }
-                    </strong>
-
-                    <span>
-                      from your
-                      location
-                    </span>
-                  </div>
                 </div>
 
-                <button
-                  type="button"
-                  className="close-location"
-                  onClick={() =>
-                    setSelectedFacility(
-                      null
-                    )
-                  }
-                  aria-label="Close location details"
-                >
-                  <span className="material-symbols-outlined">
-                    close
-                  </span>
-                </button>
+                <div className="hero-health-icon">
+                  <Activity
+                    size={22}
+                  />
+                </div>
               </div>
 
-              <div className="location-details">
-                {selectedFacility.openingHours && (
-                  <div className="location-detail">
-                    <span className="material-symbols-outlined">
-                      schedule
-                    </span>
+              <div className="hero-feature-list">
+                <HeroFeature
+                  icon={Pill}
+                  title="Medication"
+                  description="Keep treatment information organised."
+                />
 
-                    <div>
-                      <small>
-                        Opening
-                        hours
-                      </small>
-
-                      <strong>
-                        {
-                          selectedFacility.openingHours
-                        }
-                      </strong>
-                    </div>
-                  </div>
-                )}
-
-                {selectedFacility.phone && (
-                  <div className="location-detail">
-                    <span className="material-symbols-outlined">
-                      call
-                    </span>
-
-                    <div>
-                      <small>
-                        Contact
-                      </small>
-
-                      <a
-                        href={`tel:${selectedFacility.phone}`}
-                      >
-                        {
-                          selectedFacility.phone
-                        }
-                      </a>
-                    </div>
-                  </div>
-                )}
-
-                {selectedFacility.address && (
-                  <div className="location-detail">
-                    <span className="material-symbols-outlined">
-                      location_on
-                    </span>
-
-                    <div>
-                      <small>
-                        Address
-                      </small>
-
-                      <strong>
-                        {
-                          selectedFacility.address
-                        }
-                      </strong>
-                    </div>
-                  </div>
-                )}
-
-                {selectedFacility.operator && (
-                  <div className="location-detail">
-                    <span className="material-symbols-outlined">
-                      business
-                    </span>
-
-                    <div>
-                      <small>
-                        Operator
-                      </small>
-
-                      <strong>
-                        {
-                          selectedFacility.operator
-                        }
-                      </strong>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div className="location-actions">
-                <button
-                  type="button"
-                  className="directions-button"
-                  onClick={() =>
-                    openDirections(
-                      selectedFacility
-                    )
+                <HeroFeature
+                  icon={
+                    CalendarDays
                   }
-                >
-                  <span className="material-symbols-outlined">
-                    directions
-                  </span>
+                  title="Collections"
+                  description="Know when medication collection is due."
+                />
 
-                  Directions
-                </button>
+                <HeroFeature
+                  icon={Bell}
+                  title="Reminders"
+                  description="Stay informed about important healthcare events."
+                />
 
-                {selectedFacility.website && (
-                  <button
-                    type="button"
-                    className="website-button"
-                    onClick={() =>
-                      openWebsite(
-                        selectedFacility
-                      )
-                    }
-                    aria-label="Open facility website"
-                  >
-                    <span className="material-symbols-outlined">
-                      language
-                    </span>
-                  </button>
-                )}
+                <HeroFeature
+                  icon={Users}
+                  title="Proxy care"
+                  description="Support linked patients when they need assistance."
+                />
               </div>
             </div>
-          )}
 
-          <p className="map-scroll-note">
-            Scroll normally to
-            continue down the page.
-            Use the map controls to
-            zoom in or out.
-          </p>
+            <div className="hero-floating-card">
+              <div className="hero-floating-icon">
+                <ShieldCheck
+                  size={19}
+                />
+              </div>
+
+              <div>
+                <strong>
+                  Secure access
+                </strong>
+
+                <span>
+                  Role-based healthcare
+                  information
+                </span>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
 
-      {/* =====================================================
-          ABOUT
-      ===================================================== */}
+      {/* ===================================== */}
+      {/* ABOUT */}
+      {/* ===================================== */}
 
       <section
         id="about"
         className="intro-section"
       >
         <div className="section-container">
-          <div className="intro-content">
-            <span className="section-label">
-              PHILALINK
-            </span>
-
-            <h2>
-              Healthcare should be
-              <span>
-                {" "}
-                connected.
-              </span>
-            </h2>
-
-            <p>
-              PhilaLink brings
-              patients, healthcare
-              workers and medication
-              proxies together
-              through one simple
-              digital platform.
-            </p>
-          </div>
-
-          <div className="intro-stats">
-            <div className="stat-card">
-              <span className="material-symbols-outlined">
-                medication
+          <div className="intro-layout">
+            <div className="intro-content">
+              <span className="section-label">
+                ABOUT PHILALINK
               </span>
 
-              <strong>
-                Medication
-              </strong>
+              <h2>
+                Healthcare should be
+                <span>
+                  {" "}
+                  easier to follow.
+                </span>
+              </h2>
 
-              <span>
-                Made easier
-              </span>
+              <p>
+                PhilaLink brings
+                patients, healthcare
+                workers and medication
+                proxies together
+                through one connected
+                digital platform.
+              </p>
             </div>
 
-            <div className="stat-card">
-              <span className="material-symbols-outlined">
-                location_on
-              </span>
+            <div className="intro-stats">
+              <StatCard
+                icon={Pill}
+                title="Medication"
+                text="Keep treatment organised"
+              />
 
-              <strong>
-                Healthcare
-              </strong>
+              <StatCard
+                icon={
+                  CalendarDays
+                }
+                title="Collections"
+                text="Track what is due"
+              />
 
-              <span>
-                Find care nearby
-              </span>
-            </div>
-
-            <div className="stat-card">
-              <span className="material-symbols-outlined">
-                notifications_active
-              </span>
-
-              <strong>
-                Reminders
-              </strong>
-
-              <span>
-                Never miss a
-                collection
-              </span>
+              <StatCard
+                icon={Bell}
+                title="Reminders"
+                text="Stay informed"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          SERVICES
-      ===================================================== */}
+      {/* ===================================== */}
+      {/* SERVICES */}
+      {/* ===================================== */}
 
       <section
         id="services"
@@ -1379,143 +418,49 @@ export default function LandingPage() {
 
             <p>
               PhilaLink brings the
-              essential parts of
-              chronic healthcare
-              management together
-              in one simple
-              platform.
+              important parts of
+              healthcare management
+              together in one clear,
+              accessible platform.
             </p>
           </div>
 
           <div className="services-grid">
-            <article className="service-card">
-              <div className="service-icon">
-                <span className="material-symbols-outlined">
-                  medication
-                </span>
-              </div>
+            {services.map(
+              ({
+                icon: Icon,
+                title,
+                description,
+              }) => (
+                <article
+                  key={title}
+                  className="service-card"
+                >
+                  <div className="service-icon">
+                    <Icon
+                      size={23}
+                    />
+                  </div>
 
-              <h3>
-                Medication
-                Management
-              </h3>
+                  <h3>
+                    {title}
+                  </h3>
 
-              <p>
-                Keep track of
-                medication schedules,
-                collections and
-                treatment information
-                in one place.
-              </p>
-            </article>
-
-            <article className="service-card">
-              <div className="service-icon">
-                <span className="material-symbols-outlined">
-                  location_on
-                </span>
-              </div>
-
-              <h3>
-                Find Healthcare
-              </h3>
-
-              <p>
-                Discover nearby
-                clinics and hospitals
-                using your current
-                location and an
-                interactive map.
-              </p>
-            </article>
-
-            <article className="service-card">
-              <div className="service-icon">
-                <span className="material-symbols-outlined">
-                  notifications
-                </span>
-              </div>
-
-              <h3>
-                Smart Reminders
-              </h3>
-
-              <p>
-                Stay on top of
-                medication
-                collections,
-                appointments and
-                important healthcare
-                reminders.
-              </p>
-            </article>
-
-            <article className="service-card">
-              <div className="service-icon">
-                <span className="material-symbols-outlined">
-                  group
-                </span>
-              </div>
-
-              <h3>
-                Proxy Support
-              </h3>
-
-              <p>
-                Make it easier for
-                trusted proxies to
-                manage medication
-                collections on behalf
-                of patients.
-              </p>
-            </article>
-
-            <article className="service-card">
-              <div className="service-icon">
-                <span className="material-symbols-outlined">
-                  chat
-                </span>
-              </div>
-
-              <h3>
-                Phila Chat
-              </h3>
-
-              <p>
-                Get helpful
-                healthcare guidance
-                and information
-                through the built-in
-                PhilaLink assistant.
-              </p>
-            </article>
-
-            <article className="service-card">
-              <div className="service-icon">
-                <span className="material-symbols-outlined">
-                  security
-                </span>
-              </div>
-
-              <h3>
-                Secure Records
-              </h3>
-
-              <p>
-                Keep healthcare
-                activity organised
-                with secure records,
-                verification and
-                activity tracking.
-              </p>
-            </article>
+                  <p>
+                    {
+                      description
+                    }
+                  </p>
+                </article>
+              )
+            )}
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          HEALTH TIPS
-      ===================================================== */}
+      {/* ===================================== */}
+      {/* HEALTH TIPS */}
+      {/* ===================================== */}
 
       <section
         id="health-tips"
@@ -1543,92 +488,65 @@ export default function LandingPage() {
           </div>
 
           <div className="health-tips-grid">
-            <article className="health-tip-card">
-              <span className="material-symbols-outlined">
-                medication
-              </span>
+            {healthTips.map(
+              ({
+                icon: Icon,
+                title,
+                description,
+              }) => (
+                <article
+                  key={title}
+                  className="health-tip-card"
+                >
+                  <div className="health-tip-icon">
+                    <Icon
+                      size={22}
+                    />
+                  </div>
 
-              <h3>
-                Take medication as
-                prescribed
-              </h3>
+                  <h3>
+                    {title}
+                  </h3>
 
-              <p>
-                Follow your
-                healthcare
-                professional's
-                instructions and keep
-                track of your
-                medication
-                collections.
-              </p>
-            </article>
-
-            <article className="health-tip-card">
-              <span className="material-symbols-outlined">
-                calendar_month
-              </span>
-
-              <h3>
-                Keep your
-                appointments
-              </h3>
-
-              <p>
-                Regular healthcare
-                visits can help
-                identify problems
-                early and keep your
-                treatment on track.
-              </p>
-            </article>
-
-            <article className="health-tip-card">
-              <span className="material-symbols-outlined">
-                water_drop
-              </span>
-
-              <h3>
-                Stay hydrated
-              </h3>
-
-              <p>
-                Drink enough water
-                throughout the day,
-                especially when you
-                are active or in hot
-                weather.
-              </p>
-            </article>
+                  <p>
+                    {
+                      description
+                    }
+                  </p>
+                </article>
+              )
+            )}
           </div>
         </div>
       </section>
 
-      {/* =====================================================
-          SINGLE UNIFIED FOOTER
-      ===================================================== */}
+      {/* ===================================== */}
+      {/* FOOTER */}
+      {/* ===================================== */}
 
       <footer
         id="contacts"
-        className="bg-[#073b3b] text-white"
+        className="landing-footer"
       >
-        <div className="mx-auto w-full max-w-[1200px] px-6 pb-7 pt-16 sm:px-8 lg:px-12 lg:pt-20">
-          {/* GET STARTED */}
-          <div className="grid gap-8 border-b border-white/10 pb-14 lg:grid-cols-[1.35fr_0.65fr] lg:items-end">
-            <div className="max-w-3xl">
-              <span className="inline-block text-xs font-bold uppercase tracking-[0.14em] text-[#70dfdf]">
+        <div className="section-container">
+          {/* CTA */}
+
+          <div className="footer-cta">
+            <div>
+              <span className="footer-label">
                 GET STARTED
               </span>
 
-              <h2 className="mt-4 text-3xl font-bold leading-tight tracking-tight text-white sm:text-4xl lg:text-5xl">
-                A simpler way to{" "}
-                <span className="text-[#70dfdf]">
-                  stay connected to
+              <h2>
+                A simpler way to
+                stay connected to
+                <span>
+                  {" "}
                   care.
                 </span>
               </h2>
 
-              <p className="mt-5 max-w-2xl text-sm leading-7 text-white/65 sm:text-base">
+              <p>
                 Join PhilaLink and
                 bring your healthcare
                 journey into one
@@ -1636,21 +554,21 @@ export default function LandingPage() {
               </p>
             </div>
 
-            <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
+            <div className="footer-cta-actions">
               <Link
                 to="/register"
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-white px-5 text-sm font-semibold text-[#075d5d] transition-colors hover:bg-[#e8f5f5]"
+                className="footer-primary-button"
               >
-                Create your account
+                Create account
 
-                <span className="material-symbols-outlined text-[18px]">
-                  arrow_forward
-                </span>
+                <ArrowRight
+                  size={17}
+                />
               </Link>
 
               <Link
                 to="/login"
-                className="inline-flex min-h-12 items-center justify-center rounded-lg border border-white/20 px-5 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                className="footer-secondary-button"
               >
                 Log in
               </Link>
@@ -1658,217 +576,236 @@ export default function LandingPage() {
           </div>
 
           {/* MAIN FOOTER */}
-          <div className="grid gap-12 border-b border-white/10 py-14 lg:grid-cols-[1.2fr_2fr] lg:gap-20">
-            <div className="max-w-lg">
+
+          <div className="footer-main">
+            <div className="footer-brand">
               <Link
                 to="/"
-                className="inline-flex items-center gap-3"
+                className="footer-logo"
               >
                 <img
                   src="/logo2.png"
-                  alt=""
-                  aria-hidden="true"
-                  className="h-11 w-11 object-contain"
+                  alt="PhilaLink"
                 />
 
-                <span className="text-2xl font-bold tracking-tight text-white">
+                <span>
                   Phila
-                  <span className="text-[#70dfdf]">
+                  <strong>
                     Link
-                  </span>
+                  </strong>
                 </span>
               </Link>
 
-              <h3 className="mt-6 text-xl font-semibold leading-snug text-white sm:text-2xl">
+              <h3>
                 Healthcare connected
                 around you.
               </h3>
 
-              <p className="mt-4 max-w-md text-sm leading-7 text-white/65">
+              <p>
                 Connecting patients,
-                healthcare workers
-                and trusted proxies
-                through simpler,
-                more accessible
-                digital healthcare.
+                healthcare workers and
+                trusted proxies through
+                simpler digital
+                healthcare.
               </p>
             </div>
 
-            <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="footer-links-grid">
+              {/* EXPLORE */}
+
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-white">
+                <h4>
                   Explore
-                </h3>
+                </h4>
 
-                <div className="mt-5 flex flex-col gap-3.5">
-                  <a
-                    href="#map"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
-                    Map
-                  </a>
-
-                  <a
-                    href="#about"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
+                <div className="footer-links">
+                  <a href="#about">
                     About
                   </a>
 
-                  <a
-                    href="#services"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
+                  <a href="#services">
                     Services
                   </a>
 
-                  <a
-                    href="#health-tips"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
+                  <a href="#health-tips">
                     Health Tips
                   </a>
                 </div>
               </div>
 
-              <div>
-                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-white">
-                  Patient Access
-                </h3>
+              {/* ACCESS */}
 
-                <div className="mt-5 flex flex-col gap-3.5">
-                  <Link
-                    to="/register"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
+              <div>
+                <h4>
+                  Patient Access
+                </h4>
+
+                <div className="footer-links">
+                  <Link to="/register">
                     Create account
                   </Link>
 
-                  <Link
-                    to="/login"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
+                  <Link to="/login">
                     Log in
                   </Link>
 
-                  <a
-                    href="#map"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
-                    Find healthcare
-                  </a>
-
-                  <a
-                    href="#services"
-                    className="w-fit text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                  >
+                  <a href="#services">
                     View services
                   </a>
                 </div>
               </div>
 
-              <div className="sm:col-span-2 lg:col-span-1">
-                <h3 className="text-sm font-bold uppercase tracking-[0.12em] text-white">
+              {/* SUPPORT */}
+
+              <div>
+                <h4>
                   Healthcare Support
-                </h3>
+                </h4>
 
-                <div className="mt-5 flex flex-col gap-5">
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined mt-0.5 text-[20px] text-[#70dfdf]">
-                      emergency
-                    </span>
+                <div className="support-list">
+                  <SupportItem
+                    icon={
+                      PhoneCall
+                    }
+                    label="Emergency"
+                    value="10177"
+                  />
 
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-white/40">
-                        Emergency
-                      </p>
+                  <SupportItem
+                    icon={
+                      Building2
+                    }
+                    label="Connected care"
+                    value="Healthcare support through PhilaLink"
+                  />
 
-                      <p className="mt-1 text-sm font-semibold text-white">
-                        10177
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined mt-0.5 text-[20px] text-[#70dfdf]">
-                      location_on
-                    </span>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-white/40">
-                        Nearby care
-                      </p>
-
-                      <a
-                        href="#map"
-                        className="mt-1 block text-sm text-white/65 transition-colors hover:text-[#70dfdf]"
-                      >
-                        Find clinics
-                        and hospitals
-                      </a>
-                    </div>
-                  </div>
-
-                  <div className="flex items-start gap-3">
-                    <span className="material-symbols-outlined mt-0.5 text-[20px] text-[#70dfdf]">
-                      medication
-                    </span>
-
-                    <div>
-                      <p className="text-xs uppercase tracking-wide text-white/40">
-                        Treatment
-                        support
-                      </p>
-
-                      <p className="mt-1 text-sm leading-5 text-white/65">
-                        Medication
-                        schedules,
-                        collections
-                        and reminders
-                      </p>
-                    </div>
-                  </div>
+                  <SupportItem
+                    icon={Pill}
+                    label="Treatment"
+                    value="Medication, collections and reminders"
+                  />
                 </div>
               </div>
             </div>
           </div>
 
-          {/* BOTTOM BAR */}
-          <div className="mt-7 flex flex-col gap-4 rounded-xl bg-white/[0.04] px-5 py-5 sm:flex-row sm:items-center sm:justify-between">
-            <span className="text-xs text-white/50">
+          {/* BOTTOM */}
+
+          <div className="footer-bottom">
+            <span>
               © 2026 PhilaLink.
               All rights reserved.
             </span>
 
-            <div className="flex items-center justify-between gap-5 sm:justify-end">
-              <div className="flex items-center gap-2 text-xs">
-                <span className="material-symbols-outlined text-[17px] text-[#70dfdf]">
-                  emergency
-                </span>
+            <div className="footer-bottom-right">
+              <div className="footer-emergency">
+                <PhoneCall
+                  size={16}
+                />
 
-                <span className="text-white/50">
+                <span>
                   Emergency:
                 </span>
 
-                <span className="font-semibold text-white">
+                <strong>
                   10177
-                </span>
+                </strong>
               </div>
 
               <button
                 type="button"
-                onClick={scrollToTop}
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#087878] text-white transition-colors hover:bg-[#0b8d8d]"
+                onClick={
+                  scrollToTop
+                }
+                className="back-to-top"
                 aria-label="Back to top"
               >
-                <span className="material-symbols-outlined text-[19px]">
-                  arrow_upward
-                </span>
+                <ArrowUp
+                  size={18}
+                />
               </button>
             </div>
           </div>
         </div>
       </footer>
+    </div>
+  );
+}
+
+/* ========================================= */
+/* SMALL COMPONENTS */
+/* ========================================= */
+
+function HeroFeature({
+  icon: Icon,
+  title,
+  description,
+}) {
+  return (
+    <div className="hero-feature">
+      <div className="hero-feature-icon">
+        <Icon
+          size={20}
+        />
+      </div>
+
+      <div>
+        <strong>
+          {title}
+        </strong>
+
+        <span>
+          {description}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function StatCard({
+  icon: Icon,
+  title,
+  text,
+}) {
+  return (
+    <article className="stat-card">
+      <div className="stat-icon">
+        <Icon
+          size={21}
+        />
+      </div>
+
+      <strong>
+        {title}
+      </strong>
+
+      <span>
+        {text}
+      </span>
+    </article>
+  );
+}
+
+function SupportItem({
+  icon: Icon,
+  label,
+  value,
+}) {
+  return (
+    <div className="support-item">
+      <Icon
+        size={19}
+      />
+
+      <div>
+        <span>
+          {label}
+        </span>
+
+        <p>
+          {value}
+        </p>
+      </div>
     </div>
   );
 }

@@ -2,32 +2,38 @@ import {
   useEffect,
   useState,
 } from "react";
+
 import {
   Link,
   useLocation,
   useNavigate,
 } from "react-router-dom";
 
+import {
+  ArrowRight,
+  Menu,
+  X,
+} from "lucide-react";
+
 const NAV_ITEMS = [
-  {
-    label: "Map",
-    sectionId: "map",
-  },
   {
     label: "About",
     sectionId: "about",
   },
+
   {
     label: "Services",
     sectionId: "services",
   },
-  {
-    label: "Contacts",
-    sectionId: "contacts",
-  },
+
   {
     label: "Health Tips",
     sectionId: "health-tips",
+  },
+
+  {
+    label: "Contacts",
+    sectionId: "contacts",
   },
 ];
 
@@ -43,58 +49,65 @@ export default function NavigationPage() {
     setMobileMenuOpen,
   ] = useState(false);
 
-  const scrollToSection = (
-    sectionId
-  ) => {
-    setMobileMenuOpen(false);
+  const scrollToSection =
+    (sectionId) => {
+      setMobileMenuOpen(
+        false
+      );
 
-    if (
-      location.pathname ===
-      "/"
-    ) {
-      const section =
-        document.getElementById(
-          sectionId
-        );
+      if (
+        location.pathname ===
+        "/"
+      ) {
+        const section =
+          document.getElementById(
+            sectionId
+          );
 
-      if (section) {
-        section.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
+        if (section) {
+          section.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
+        }
+
+        return;
       }
 
-      return;
-    }
-
-    navigate("/", {
-      state: {
-        scrollTo: sectionId,
-      },
-    });
-  };
+      navigate("/", {
+        state: {
+          scrollTo:
+            sectionId,
+        },
+      });
+    };
 
   useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
+    setMobileMenuOpen(
+      false
+    );
+  }, [
+    location.pathname,
+  ]);
 
   useEffect(() => {
-    if (!mobileMenuOpen) {
+    if (
+      !mobileMenuOpen
+    ) {
       return undefined;
     }
 
-    const handleEscape = (
-      event
-    ) => {
-      if (
-        event.key ===
-        "Escape"
-      ) {
-        setMobileMenuOpen(
-          false
-        );
-      }
-    };
+    const handleEscape =
+      (event) => {
+        if (
+          event.key ===
+          "Escape"
+        ) {
+          setMobileMenuOpen(
+            false
+          );
+        }
+      };
 
     window.addEventListener(
       "keydown",
@@ -107,11 +120,15 @@ export default function NavigationPage() {
         handleEscape
       );
     };
-  }, [mobileMenuOpen]);
+  }, [
+    mobileMenuOpen,
+  ]);
 
   return (
-    <header className="fixed left-0 right-0 top-0 z-[1000] border-b border-outline-variant/60 bg-surface-container-lowest/95 backdrop-blur">
-      <div className="mx-auto flex h-16 w-full items-center justify-between px-4 sm:px-6 lg:px-12">
+    <header className="fixed left-0 right-0 top-0 z-[1000] border-b border-slate-200/80 bg-white/95 backdrop-blur">
+      <div className="mx-auto flex h-[72px] w-full max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-12">
+        {/* LOGO */}
+
         <Link
           to="/"
           onClick={() =>
@@ -124,18 +141,19 @@ export default function NavigationPage() {
           <img
             src="/logo2.png"
             alt="PhilaLink"
-            className="h-9 w-9"
+            className="h-10 w-10 object-contain"
           />
 
-          <span className="text-xl font-bold text-on-surface">
+          <span className="text-xl font-extrabold tracking-tight text-slate-900">
             Phila
-            <span className="text-primary">
+            <span className="text-[#0f766e]">
               Link
             </span>
           </span>
         </Link>
 
-        {/* Desktop navigation */}
+        {/* DESKTOP NAV */}
+
         <nav className="hidden items-center gap-1 lg:flex">
           {NAV_ITEMS.map(
             (item) => (
@@ -149,7 +167,7 @@ export default function NavigationPage() {
                     item.sectionId
                   )
                 }
-                className="rounded-md px-3 py-2 text-sm font-medium text-on-surface-variant transition-colors hover:bg-primary-container/10 hover:text-primary"
+                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-teal-50 hover:text-[#0f766e]"
               >
                 {item.label}
               </button>
@@ -157,33 +175,35 @@ export default function NavigationPage() {
           )}
         </nav>
 
-        {/* Desktop auth actions */}
-        <div className="hidden items-center gap-3 lg:flex">
+        {/* DESKTOP AUTH */}
+
+        <div className="hidden items-center gap-2 lg:flex">
           <Link
             to="/login"
-            className="rounded-md px-5 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary-container/10"
+            className="rounded-lg px-5 py-2.5 text-sm font-bold text-[#0f766e] transition-colors hover:bg-teal-50"
           >
             Log in
           </Link>
 
           <Link
             to="/register"
-            className="rounded-md bg-primary px-5 py-2 text-sm font-semibold text-on-primary shadow-card transition-colors hover:bg-[#005555]"
+            className="rounded-lg bg-[#0f766e] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#115e59]"
           >
             Sign up
           </Link>
         </div>
 
-        {/* Mobile hamburger */}
+        {/* MOBILE MENU BUTTON */}
+
         <button
           type="button"
           onClick={() =>
             setMobileMenuOpen(
-              (previous) =>
-                !previous
+              (current) =>
+                !current
             )
           }
-          className="flex h-10 w-10 items-center justify-center rounded-md text-on-surface transition-colors hover:bg-primary-container/10 lg:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-lg text-slate-700 transition-colors hover:bg-slate-100 lg:hidden"
           aria-label={
             mobileMenuOpen
               ? "Close navigation menu"
@@ -194,15 +214,20 @@ export default function NavigationPage() {
           }
           aria-controls="mobile-navigation"
         >
-          <span className="material-symbols-outlined text-[28px]">
-            {mobileMenuOpen
-              ? "close"
-              : "menu"}
-          </span>
+          {mobileMenuOpen ? (
+            <X
+              size={23}
+            />
+          ) : (
+            <Menu
+              size={23}
+            />
+          )}
         </button>
       </div>
 
-      {/* Mobile menu */}
+      {/* MOBILE NAV */}
+
       {mobileMenuOpen && (
         <>
           <button
@@ -213,12 +238,12 @@ export default function NavigationPage() {
                 false
               )
             }
-            className="fixed inset-0 top-16 z-[-1] bg-black/20 lg:hidden"
+            className="fixed inset-0 top-[72px] z-[-1] bg-black/20 lg:hidden"
           />
 
           <div
             id="mobile-navigation"
-            className="border-t border-outline-variant/60 bg-surface-container-lowest px-4 py-4 shadow-lg sm:px-6 lg:hidden"
+            className="border-t border-slate-200 bg-white px-4 py-4 shadow-lg sm:px-6 lg:hidden"
           >
             <nav className="flex flex-col gap-1">
               {NAV_ITEMS.map(
@@ -233,21 +258,22 @@ export default function NavigationPage() {
                         item.sectionId
                       )
                     }
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-medium text-on-surface-variant transition-colors hover:bg-primary-container/10 hover:text-primary"
+                    className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-teal-50 hover:text-[#0f766e]"
                   >
                     <span>
                       {item.label}
                     </span>
 
-                    <span className="material-symbols-outlined text-[19px] text-outline">
-                      arrow_forward
-                    </span>
+                    <ArrowRight
+                      size={17}
+                      className="text-slate-400"
+                    />
                   </button>
                 )
               )}
             </nav>
 
-            <div className="my-3 border-t border-outline-variant/60" />
+            <div className="my-3 border-t border-slate-200" />
 
             <div className="grid grid-cols-2 gap-3">
               <Link
@@ -257,7 +283,7 @@ export default function NavigationPage() {
                     false
                   )
                 }
-                className="flex min-h-11 items-center justify-center rounded-md border border-primary/30 px-4 text-sm font-semibold text-primary transition-colors hover:bg-primary-container/10"
+                className="flex min-h-11 items-center justify-center rounded-lg border border-[#0f766e]/30 px-4 text-sm font-bold text-[#0f766e]"
               >
                 Log in
               </Link>
@@ -269,7 +295,7 @@ export default function NavigationPage() {
                     false
                   )
                 }
-                className="flex min-h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-on-primary shadow-card transition-colors hover:bg-[#005555]"
+                className="flex min-h-11 items-center justify-center rounded-lg bg-[#0f766e] px-4 text-sm font-bold text-white"
               >
                 Sign up
               </Link>
