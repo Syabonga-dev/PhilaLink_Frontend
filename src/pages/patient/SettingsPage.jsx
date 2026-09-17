@@ -3,19 +3,32 @@ import {
   useEffect,
   useState,
 } from "react";
+
 import {
   AlertCircle,
   Bell,
   CheckCircle,
   Mail,
   MapPin,
+  Moon,
+  Palette,
   Phone,
   Save,
   Shield,
+  Sun,
   User,
 } from "lucide-react";
-import { Button } from "../../components/patient/chatbot/AstraCompat.jsx";
-import { patientsApi } from "../../services/api/patients.js";
+
+import {
+  Button,
+} from "../../components/patient/chatbot/AstraCompat.jsx";
+
+import {
+  patientsApi,
+} from "../../services/api/patients.js";
+
+const THEME_STORAGE_KEY =
+  "philalink-theme";
 
 const emptyProfile = {
   fullName: "",
@@ -31,7 +44,8 @@ const emptyProfile = {
   postalCode: "",
   emergencyContactName: "",
   emergencyContactPhone: "",
-  emergencyContactRelationship: "",
+  emergencyContactRelationship:
+    "",
 };
 
 const emptyPreferences = {
@@ -40,7 +54,8 @@ const emptyPreferences = {
   clinicNotifications: false,
   healthUpdates: false,
   shareHealthData: false,
-  allowChatbotProfileAccess: false,
+  allowChatbotProfileAccess:
+    false,
 };
 
 function fieldValue(value) {
@@ -52,186 +67,300 @@ function dateInputValue(value) {
     return "";
   }
 
-  const text = String(value);
+  const text =
+    String(value);
 
-  if (/^\d{4}-\d{2}-\d{2}/.test(text)) {
-    return text.slice(0, 10);
+  if (
+    /^\d{4}-\d{2}-\d{2}/.test(
+      text
+    )
+  ) {
+    return text.slice(
+      0,
+      10
+    );
   }
 
-  const date = new Date(value);
+  const date =
+    new Date(value);
 
-  if (Number.isNaN(date.getTime())) {
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
     return "";
   }
 
-  return date.toISOString().slice(0, 10);
+  return date
+    .toISOString()
+    .slice(0, 10);
+}
+
+function getInitialTheme() {
+  if (
+    typeof document !==
+    "undefined"
+  ) {
+    const currentTheme =
+      document.documentElement
+        .getAttribute(
+          "data-theme"
+        );
+
+    if (
+      currentTheme ===
+        "dark" ||
+      currentTheme ===
+        "light"
+    ) {
+      return currentTheme;
+    }
+  }
+
+  try {
+    return localStorage.getItem(
+      THEME_STORAGE_KEY
+    ) === "dark"
+      ? "dark"
+      : "light";
+  } catch {
+    return "light";
+  }
 }
 
 export default function SettingsPage() {
-  const [profile, setProfile] =
-    useState(emptyProfile);
+  const [
+    profile,
+    setProfile,
+  ] = useState(
+    emptyProfile
+  );
 
-  const [preferences, setPreferences] =
-    useState(emptyPreferences);
+  const [
+    preferences,
+    setPreferences,
+  ] = useState(
+    emptyPreferences
+  );
 
-  const [patientInfo, setPatientInfo] =
-    useState(null);
+  const [
+    patientInfo,
+    setPatientInfo,
+  ] = useState(null);
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    loading,
+    setLoading,
+  ] = useState(true);
 
-  const [saving, setSaving] =
-    useState(false);
+  const [
+    saving,
+    setSaving,
+  ] = useState(false);
 
-  const [error, setError] =
-    useState("");
+  const [
+    error,
+    setError,
+  ] = useState("");
 
-  const [success, setSuccess] =
-    useState("");
+  const [
+    success,
+    setSuccess,
+  ] = useState("");
+
+  const [
+    theme,
+    setTheme,
+  ] = useState(
+    getInitialTheme
+  );
 
   const loadSettings =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setLoading(true);
+          setError("");
 
-        const [
-          patient,
-          patientPreferences,
-        ] = await Promise.all([
-          patientsApi.getMe(),
-          patientsApi.getPreferences(),
-        ]);
+          const [
+            patient,
+            patientPreferences,
+          ] =
+            await Promise.all([
+              patientsApi
+                .getMe(),
+              patientsApi
+                .getPreferences(),
+            ]);
 
-        setPatientInfo(patient);
+          setPatientInfo(
+            patient
+          );
 
-        setProfile({
-          fullName:
-            fieldValue(
-              patient?.fullName
-            ),
+          setProfile({
+            fullName:
+              fieldValue(
+                patient
+                  ?.fullName
+              ),
 
-          email:
-            fieldValue(
-              patient?.email
-            ),
+            email:
+              fieldValue(
+                patient?.email
+              ),
 
-          phoneNumber:
-            fieldValue(
-              patient?.phoneNumber
-            ),
+            phoneNumber:
+              fieldValue(
+                patient
+                  ?.phoneNumber
+              ),
 
-          dateOfBirth:
-            dateInputValue(
-              patient?.dateOfBirth
-            ),
+            dateOfBirth:
+              dateInputValue(
+                patient
+                  ?.dateOfBirth
+              ),
 
-          gender:
-            fieldValue(
-              patient?.gender
-            ),
+            gender:
+              fieldValue(
+                patient?.gender
+              ),
 
-          addressLine1:
-            fieldValue(
-              patient?.addressLine1
-            ),
+            addressLine1:
+              fieldValue(
+                patient
+                  ?.addressLine1
+              ),
 
-          addressLine2:
-            fieldValue(
-              patient?.addressLine2
-            ),
+            addressLine2:
+              fieldValue(
+                patient
+                  ?.addressLine2
+              ),
 
-          suburb:
-            fieldValue(
-              patient?.suburb
-            ),
+            suburb:
+              fieldValue(
+                patient?.suburb
+              ),
 
-          city:
-            fieldValue(
-              patient?.city
-            ),
+            city:
+              fieldValue(
+                patient?.city
+              ),
 
-          province:
-            fieldValue(
-              patient?.province
-            ),
+            province:
+              fieldValue(
+                patient
+                  ?.province
+              ),
 
-          postalCode:
-            fieldValue(
-              patient?.postalCode
-            ),
+            postalCode:
+              fieldValue(
+                patient
+                  ?.postalCode
+              ),
 
-          emergencyContactName:
-            fieldValue(
-              patient?.emergencyContactName
-            ),
+            emergencyContactName:
+              fieldValue(
+                patient
+                  ?.emergencyContactName
+              ),
 
-          emergencyContactPhone:
-            fieldValue(
-              patient?.emergencyContactPhone
-            ),
+            emergencyContactPhone:
+              fieldValue(
+                patient
+                  ?.emergencyContactPhone
+              ),
 
-          emergencyContactRelationship:
-            fieldValue(
-              patient?.emergencyContactRelationship
-            ),
-        });
+            emergencyContactRelationship:
+              fieldValue(
+                patient
+                  ?.emergencyContactRelationship
+              ),
+          });
 
-        setPreferences({
-          medicationReminders:
-            Boolean(
-              patientPreferences
-                ?.medicationReminders
-            ),
+          setPreferences({
+            medicationReminders:
+              Boolean(
+                patientPreferences
+                  ?.medicationReminders
+              ),
 
-          appointmentReminders:
-            Boolean(
-              patientPreferences
-                ?.appointmentReminders
-            ),
+            appointmentReminders:
+              Boolean(
+                patientPreferences
+                  ?.appointmentReminders
+              ),
 
-          clinicNotifications:
-            Boolean(
-              patientPreferences
-                ?.clinicNotifications
-            ),
+            clinicNotifications:
+              Boolean(
+                patientPreferences
+                  ?.clinicNotifications
+              ),
 
-          healthUpdates:
-            Boolean(
-              patientPreferences
-                ?.healthUpdates
-            ),
+            healthUpdates:
+              Boolean(
+                patientPreferences
+                  ?.healthUpdates
+              ),
 
-          shareHealthData:
-            Boolean(
-              patientPreferences
-                ?.shareHealthData
-            ),
+            shareHealthData:
+              Boolean(
+                patientPreferences
+                  ?.shareHealthData
+              ),
 
-          allowChatbotProfileAccess:
-            Boolean(
-              patientPreferences
-                ?.allowChatbotProfileAccess
-            ),
-        });
-      } catch (err) {
-        console.error(
-          "Failed to load settings:",
-          err
-        );
+            allowChatbotProfileAccess:
+              Boolean(
+                patientPreferences
+                  ?.allowChatbotProfileAccess
+              ),
+          });
+        } catch (err) {
+          console.error(
+            "Failed to load settings:",
+            err
+          );
 
-        setError(
-          err?.message ||
-            "We could not load your settings."
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+          setError(
+            err?.message ||
+              "We could not load your settings."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      []
+    );
 
   useEffect(() => {
     loadSettings();
-  }, [loadSettings]);
+  }, [
+    loadSettings,
+  ]);
+
+  useEffect(() => {
+    document.documentElement
+      .setAttribute(
+        "data-theme",
+        theme
+      );
+
+    try {
+      localStorage.setItem(
+        THEME_STORAGE_KEY,
+        theme
+      );
+    } catch {
+      // Theme still works for
+      // the current session.
+    }
+  }, [
+    theme,
+  ]);
 
   function handleProfileChange(
     event
@@ -249,7 +378,9 @@ export default function SettingsPage() {
     );
   }
 
-  function togglePreference(key) {
+  function togglePreference(
+    key
+  ) {
     setSuccess("");
 
     setPreferences(
@@ -261,6 +392,16 @@ export default function SettingsPage() {
     );
   }
 
+  function toggleTheme() {
+    setTheme(
+      (current) =>
+        current ===
+        "light"
+          ? "dark"
+          : "light"
+    );
+  }
+
   async function handleSave() {
     try {
       setSaving(true);
@@ -268,50 +409,72 @@ export default function SettingsPage() {
       setSuccess("");
 
       const updatedPatient =
-        await patientsApi.updateMe({
-          fullName:
-            profile.fullName.trim(),
+        await patientsApi
+          .updateMe({
+            fullName:
+              profile.fullName
+                .trim(),
 
-          email:
-            profile.email.trim(),
+            email:
+              profile.email
+                .trim(),
 
-          phoneNumber:
-            profile.phoneNumber.trim(),
+            phoneNumber:
+              profile
+                .phoneNumber
+                .trim(),
 
-          dateOfBirth:
-            profile.dateOfBirth,
+            dateOfBirth:
+              profile
+                .dateOfBirth,
 
-          gender:
-            profile.gender.trim(),
+            gender:
+              profile.gender
+                .trim(),
 
-          addressLine1:
-            profile.addressLine1.trim(),
+            addressLine1:
+              profile
+                .addressLine1
+                .trim(),
 
-          addressLine2:
-            profile.addressLine2.trim() ||
-            null,
+            addressLine2:
+              profile
+                .addressLine2
+                .trim() ||
+              null,
 
-          suburb:
-            profile.suburb.trim(),
+            suburb:
+              profile.suburb
+                .trim(),
 
-          city:
-            profile.city.trim(),
+            city:
+              profile.city
+                .trim(),
 
-          province:
-            profile.province.trim(),
+            province:
+              profile.province
+                .trim(),
 
-          postalCode:
-            profile.postalCode.trim(),
+            postalCode:
+              profile
+                .postalCode
+                .trim(),
 
-          emergencyContactName:
-            profile.emergencyContactName.trim(),
+            emergencyContactName:
+              profile
+                .emergencyContactName
+                .trim(),
 
-          emergencyContactPhone:
-            profile.emergencyContactPhone.trim(),
+            emergencyContactPhone:
+              profile
+                .emergencyContactPhone
+                .trim(),
 
-          emergencyContactRelationship:
-            profile.emergencyContactRelationship.trim(),
-        });
+            emergencyContactRelationship:
+              profile
+                .emergencyContactRelationship
+                .trim(),
+          });
 
       await patientsApi
         .updatePreferences(
@@ -368,8 +531,8 @@ export default function SettingsPage() {
 
           <p className="mt-1 text-sm text-slate-500">
             Manage your profile,
-            notifications and privacy
-            preferences.
+            notifications,
+            privacy and appearance.
           </p>
         </div>
 
@@ -387,7 +550,9 @@ export default function SettingsPage() {
 
               <button
                 type="button"
-                onClick={loadSettings}
+                onClick={
+                  loadSettings
+                }
                 className="mt-2 text-sm font-medium text-teal-700 transition hover:text-teal-800"
               >
                 Reload settings
@@ -421,7 +586,8 @@ export default function SettingsPage() {
                   label="Full name"
                   name="fullName"
                   value={
-                    profile.fullName
+                    profile
+                      .fullName
                   }
                   onChange={
                     handleProfileChange
@@ -447,7 +613,8 @@ export default function SettingsPage() {
                   name="phoneNumber"
                   type="tel"
                   value={
-                    profile.phoneNumber
+                    profile
+                      .phoneNumber
                   }
                   onChange={
                     handleProfileChange
@@ -460,7 +627,8 @@ export default function SettingsPage() {
                   name="dateOfBirth"
                   type="date"
                   value={
-                    profile.dateOfBirth
+                    profile
+                      .dateOfBirth
                   }
                   onChange={
                     handleProfileChange
@@ -521,7 +689,8 @@ export default function SettingsPage() {
                     label="Address line 1"
                     name="addressLine1"
                     value={
-                      profile.addressLine1
+                      profile
+                        .addressLine1
                     }
                     onChange={
                       handleProfileChange
@@ -534,7 +703,8 @@ export default function SettingsPage() {
                     label="Address line 2"
                     name="addressLine2"
                     value={
-                      profile.addressLine2
+                      profile
+                        .addressLine2
                     }
                     onChange={
                       handleProfileChange
@@ -568,7 +738,8 @@ export default function SettingsPage() {
                   label="Province"
                   name="province"
                   value={
-                    profile.province
+                    profile
+                      .province
                   }
                   onChange={
                     handleProfileChange
@@ -579,7 +750,8 @@ export default function SettingsPage() {
                   label="Postal code"
                   name="postalCode"
                   value={
-                    profile.postalCode
+                    profile
+                      .postalCode
                   }
                   onChange={
                     handleProfileChange
@@ -598,7 +770,8 @@ export default function SettingsPage() {
                   label="Contact name"
                   name="emergencyContactName"
                   value={
-                    profile.emergencyContactName
+                    profile
+                      .emergencyContactName
                   }
                   onChange={
                     handleProfileChange
@@ -610,7 +783,8 @@ export default function SettingsPage() {
                   name="emergencyContactPhone"
                   type="tel"
                   value={
-                    profile.emergencyContactPhone
+                    profile
+                      .emergencyContactPhone
                   }
                   onChange={
                     handleProfileChange
@@ -622,7 +796,8 @@ export default function SettingsPage() {
                     label="Relationship"
                     name="emergencyContactRelationship"
                     value={
-                      profile.emergencyContactRelationship
+                      profile
+                        .emergencyContactRelationship
                     }
                     onChange={
                       handleProfileChange
@@ -736,10 +911,16 @@ export default function SettingsPage() {
               <Button
                 variant="primary"
                 iconStart={
-                  <Save size={16} />
+                  <Save
+                    size={16}
+                  />
                 }
-                onClick={handleSave}
-                disabled={saving}
+                onClick={
+                  handleSave
+                }
+                disabled={
+                  saving
+                }
               >
                 {saving
                   ? "Saving..."
@@ -749,6 +930,13 @@ export default function SettingsPage() {
           </div>
 
           <aside className="flex min-w-0 flex-col gap-6">
+            <ThemeCard
+              theme={theme}
+              onToggle={
+                toggleTheme
+              }
+            />
+
             <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6">
               <h2 className="text-base font-semibold text-slate-900">
                 Patient details
@@ -869,6 +1057,100 @@ export default function SettingsPage() {
   );
 }
 
+function ThemeCard({
+  theme,
+  onToggle,
+}) {
+  const isDark =
+    theme === "dark";
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="border-b border-slate-100 px-5 py-5 lg:px-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100">
+            <Palette
+              size={18}
+              className="text-teal-700"
+            />
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-slate-900">
+              Appearance
+            </h2>
+
+            <p className="mt-1 text-sm leading-5 text-slate-500">
+              Choose how the
+              patient portal looks
+              on this device.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 py-5 lg:px-6 lg:py-6">
+        <div className="flex items-center justify-between gap-5">
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-slate-900">
+              Theme
+            </p>
+
+            <p className="mt-1 text-sm leading-5 text-slate-500">
+              {isDark
+                ? "Dark mode is on."
+                : "Light mode is on."}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            role="switch"
+            aria-checked={
+              isDark
+            }
+            aria-label="Toggle dark mode"
+            onClick={
+              onToggle
+            }
+            className={`relative h-[30px] w-[58px] shrink-0 rounded-full border-0 transition-all duration-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 ${
+              isDark
+                ? "bg-[#18352a]"
+                : "bg-[#d1d5d3]"
+            }`}
+          >
+            <span
+              aria-hidden="true"
+              className={`absolute left-[3px] top-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-[#ffffff] text-[#10201a] shadow-md transition-transform duration-300 ${
+                isDark
+                  ? "translate-x-7"
+                  : "translate-x-0"
+              }`}
+            >
+              {isDark ? (
+                <Moon
+                  size={14}
+                />
+              ) : (
+                <Sun
+                  size={14}
+                />
+              )}
+            </span>
+          </button>
+        </div>
+
+        <p className="mt-4 text-xs leading-5 text-slate-400">
+          Your choice is saved
+          automatically and will
+          still be active when you
+          return.
+        </p>
+      </div>
+    </section>
+  );
+}
+
 function SettingsSection({
   icon: Icon,
   title,
@@ -935,7 +1217,9 @@ function Field({
           name={name}
           type={type}
           value={value}
-          onChange={onChange}
+          onChange={
+            onChange
+          }
           className={`h-11 w-full rounded-xl border border-slate-300 bg-white pr-4 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10 ${
             Icon
               ? "pl-10"
@@ -985,9 +1269,15 @@ function SettingToggle({
       <button
         type="button"
         role="switch"
-        aria-checked={checked}
-        aria-label={title}
-        onClick={onChange}
+        aria-checked={
+          checked
+        }
+        aria-label={
+          title
+        }
+        onClick={
+          onChange
+        }
         className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600 focus-visible:ring-offset-2 ${
           checked
             ? "bg-teal-700"

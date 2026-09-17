@@ -14,6 +14,31 @@ import {
 
 import "./index.css";
 
+const THEME_STORAGE_KEY =
+  "philalink-theme";
+
+try {
+  const savedTheme =
+    localStorage.getItem(
+      THEME_STORAGE_KEY
+    );
+
+  const initialTheme =
+    savedTheme === "dark"
+      ? "dark"
+      : "light";
+
+  document.documentElement.setAttribute(
+    "data-theme",
+    initialTheme
+  );
+} catch {
+  document.documentElement.setAttribute(
+    "data-theme",
+    "light"
+  );
+}
+
 ReactDOM.createRoot(
   document.getElementById(
     "root"

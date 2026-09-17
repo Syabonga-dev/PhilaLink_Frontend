@@ -21,6 +21,9 @@ import {
   weatherApi,
 } from "../../services/api/weather.js";
 
+const WEATHER_REFRESH_INTERVAL_MS =
+  60 * 60 * 1000;
+
 function getWeatherIcon(
   description
 ) {
@@ -126,6 +129,9 @@ export default function WeatherChip({
   const hasLoadedRef =
     useRef(false);
 
+  const lastRefreshRef =
+    useRef(0);
+
   const containerRef =
     useRef(null);
 
@@ -165,7 +171,10 @@ export default function WeatherChip({
 
   const loadClinicWeather =
     useCallback(
-      async () => {
+      async ({
+        background =
+          false,
+      } = {}) => {
         const result =
           await weatherApi
             .getCurrent();
@@ -178,7 +187,18 @@ export default function WeatherChip({
           "clinic"
         );
 
+        setError("");
+
+        lastRefreshRef.current =
+          Date.now();
+
         await generateWeatherTip();
+
+        if (!background) {
+          setLoading(
+            false
+          );
+        }
 
         return result;
       },
@@ -189,14 +209,22 @@ export default function WeatherChip({
 
   const loadWeather =
     useCallback(
-      async () => {
-        setLoading(true);
+      async ({
+        background =
+          false,
+      } = {}) => {
+        if (!background) {
+          setLoading(true);
+        }
+
         setError("");
 
         const useClinicFallback =
           async () => {
             try {
-              await loadClinicWeather();
+              await loadClinicWeather({
+                background,
+              });
             } catch (
               clinicError
             ) {
@@ -205,23 +233,27 @@ export default function WeatherChip({
                 clinicError
               );
 
-              setWeather(
-                null
-              );
+              if (!background) {
+                setWeather(
+                  null
+                );
 
-              setWeatherSource(
-                ""
-              );
+                setWeatherSource(
+                  ""
+                );
 
-              setError(
-                clinicError
-                  ?.message ||
-                  "Weather unavailable."
-              );
+                setError(
+                  clinicError
+                    ?.message ||
+                    "Weather unavailable."
+                );
+              }
             } finally {
-              setLoading(
-                false
-              );
+              if (!background) {
+                setLoading(
+                  false
+                );
+              }
             }
           };
 
@@ -262,13 +294,14 @@ export default function WeatherChip({
                   "current"
                 );
 
+                setError("");
+
+                lastRefreshRef.current =
+                  Date.now();
+
                 await generateWeatherTip(
                   latitude,
                   longitude
-                );
-
-                setLoading(
-                  false
                 );
               } catch (
                 locationWeatherError
@@ -279,6 +312,12 @@ export default function WeatherChip({
                 );
 
                 await useClinicFallback();
+              } finally {
+                if (!background) {
+                  setLoading(
+                    false
+                  );
+                }
               }
             },
 
@@ -310,13 +349,64 @@ export default function WeatherChip({
     if (
       hasLoadedRef.current
     ) {
-      return;
+      return undefined;
     }
 
     hasLoadedRef.current =
       true;
 
     loadWeather();
+
+    const intervalId =
+      window.setInterval(
+        () => {
+          loadWeather({
+            background:
+              true,
+          });
+        },
+        WEATHER_REFRESH_INTERVAL_MS
+      );
+
+    const handleVisibilityChange =
+      () => {
+        if (
+          document.visibilityState !==
+          "visible"
+        ) {
+          return;
+        }
+
+        const elapsed =
+          Date.now() -
+          lastRefreshRef.current;
+
+        if (
+          elapsed >=
+          WEATHER_REFRESH_INTERVAL_MS
+        ) {
+          loadWeather({
+            background:
+              true,
+          });
+        }
+      };
+
+    document.addEventListener(
+      "visibilitychange",
+      handleVisibilityChange
+    );
+
+    return () => {
+      window.clearInterval(
+        intervalId
+      );
+
+      document.removeEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+    };
   }, [
     loadWeather,
   ]);
@@ -405,8 +495,8 @@ export default function WeatherChip({
     return (
       <button
         type="button"
-        onClick={
-          loadWeather
+        onClick={() =>
+          loadWeather()
         }
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition hover:bg-[#f8fafc] sm:w-auto sm:px-3"
         title="Retry weather"

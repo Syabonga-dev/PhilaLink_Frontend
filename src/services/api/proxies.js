@@ -5,4 +5,14 @@ export const proxiesApi = {
     api.get(
       "/api/proxies/me"
     ),
+
+  getManagedPatients: () =>
+    api.get(
+      "/api/proxies/me/patients"
+    ),
+
+  getMyPatients: () =>
+    api.get(
+      "/api/proxies/me/patients"
+    ),
 };
