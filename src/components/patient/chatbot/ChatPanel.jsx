@@ -36,247 +36,263 @@ export default function ChatPanel({
   onOpenChat,
   onClearHistory,
 }) {
-  const renderStep = () => {
-    switch (step) {
-      case "welcome":
-        return (
-          <WelcomeScreen
-            onAccept={() =>
-              onStepChange(
-                "quick-start"
-              )
-            }
-          />
-        );
+  const renderStep =
+    () => {
+      switch (
+        step
+      ) {
+        case "welcome":
+          return (
+            <WelcomeScreen
+              onAccept={() =>
+                onStepChange(
+                  "quick-start"
+                )
+              }
+            />
+          );
 
-      case "quick-start":
-        return (
-          <QuickStartScreen
-            onStartAssessment={() =>
-              onStepChange(
-                "age"
-              )
-            }
-            onOpenChat={
-              onOpenChat
-            }
-          />
-        );
 
-      case "age":
-        return (
-          <AssessmentAge
-            assessment={
-              assessment
-            }
-            onUpdate={
-              onAssessmentChange
-            }
-            onNext={() =>
-              onStepChange(
-                "symptoms"
-              )
-            }
-            onBack={() =>
-              onStepChange(
-                "quick-start"
-              )
-            }
-          />
-        );
+        case "quick-start":
+          return (
+            <QuickStartScreen
+              onStartAssessment={() =>
+                onStepChange(
+                  "age"
+                )
+              }
+              onOpenChat={
+                onOpenChat
+              }
+            />
+          );
 
-      case "symptoms":
-        return (
-          <AssessmentSymptoms
-            assessment={
-              assessment
-            }
-            onUpdate={
-              onAssessmentChange
-            }
-            onNext={() =>
-              onStepChange(
-                "duration"
-              )
-            }
-            onBack={() =>
-              onStepChange(
-                "age"
-              )
-            }
-          />
-        );
 
-      case "duration":
-        return (
-          <AssessmentDuration
-            assessment={
-              assessment
-            }
-            onUpdate={
-              onAssessmentChange
-            }
-            onNext={() =>
-              onStepChange(
-                "allergies"
-              )
-            }
-            onBack={() =>
-              onStepChange(
-                "symptoms"
-              )
-            }
-          />
-        );
+        case "age":
+          return (
+            <AssessmentAge
+              assessment={
+                assessment
+              }
+              onUpdate={
+                onAssessmentChange
+              }
+              onNext={() =>
+                onStepChange(
+                  "symptoms"
+                )
+              }
+              onBack={() =>
+                onStepChange(
+                  "quick-start"
+                )
+              }
+            />
+          );
 
-      case "allergies":
-        return (
-          <AssessmentAllergies
-            assessment={
-              assessment
-            }
-            onUpdate={
-              onAssessmentChange
-            }
-            onNext={() =>
-              onStepChange(
-                "medications"
-              )
-            }
-            onBack={() =>
-              onStepChange(
-                "duration"
-              )
-            }
-          />
-        );
 
-      case "medications":
-        return (
-          <AssessmentMedications
-            assessment={
-              assessment
-            }
-            onUpdate={
-              onAssessmentChange
-            }
-            onNext={() =>
-              onStepChange(
-                "conditions"
-              )
-            }
-            onBack={() =>
-              onStepChange(
-                "allergies"
-              )
-            }
-          />
-        );
+        case "symptoms":
+          return (
+            <AssessmentSymptoms
+              assessment={
+                assessment
+              }
+              onUpdate={
+                onAssessmentChange
+              }
+              onNext={() =>
+                onStepChange(
+                  "duration"
+                )
+              }
+              onBack={() =>
+                onStepChange(
+                  "age"
+                )
+              }
+            />
+          );
 
-      case "conditions":
-        return (
-          <AssessmentConditions
-            assessment={
-              assessment
-            }
-            onUpdate={
-              onAssessmentChange
-            }
-            onNext={() =>
-              onStepChange(
-                "review"
-              )
-            }
-            onBack={() =>
-              onStepChange(
-                "medications"
-              )
-            }
-          />
-        );
 
-      case "review":
-        return (
-          <ReviewScreen
-            assessment={
-              assessment
-            }
-            onEdit={(
-              target
-            ) =>
-              onStepChange(
+        case "duration":
+          return (
+            <AssessmentDuration
+              assessment={
+                assessment
+              }
+              onUpdate={
+                onAssessmentChange
+              }
+              onNext={() =>
+                onStepChange(
+                  "allergies"
+                )
+              }
+              onBack={() =>
+                onStepChange(
+                  "symptoms"
+                )
+              }
+            />
+          );
+
+
+        case "allergies":
+          return (
+            <AssessmentAllergies
+              assessment={
+                assessment
+              }
+              onUpdate={
+                onAssessmentChange
+              }
+              onNext={() =>
+                onStepChange(
+                  "medications"
+                )
+              }
+              onBack={() =>
+                onStepChange(
+                  "duration"
+                )
+              }
+            />
+          );
+
+
+        case "medications":
+          return (
+            <AssessmentMedications
+              assessment={
+                assessment
+              }
+              onUpdate={
+                onAssessmentChange
+              }
+              onNext={() =>
+                onStepChange(
+                  "conditions"
+                )
+              }
+              onBack={() =>
+                onStepChange(
+                  "allergies"
+                )
+              }
+            />
+          );
+
+
+        case "conditions":
+          return (
+            <AssessmentConditions
+              assessment={
+                assessment
+              }
+              onUpdate={
+                onAssessmentChange
+              }
+              onNext={() =>
+                onStepChange(
+                  "review"
+                )
+              }
+              onBack={() =>
+                onStepChange(
+                  "medications"
+                )
+              }
+            />
+          );
+
+
+        case "review":
+          return (
+            <ReviewScreen
+              assessment={
+                assessment
+              }
+              onEdit={(
                 target
-              )
-            }
-            onAnalyze={
-              onAnalyze
-            }
-            onBack={() =>
-              onStepChange(
-                "conditions"
-              )
-            }
-          />
-        );
+              ) =>
+                onStepChange(
+                  target
+                )
+              }
+              onAnalyze={
+                onAnalyze
+              }
+              onBack={() =>
+                onStepChange(
+                  "conditions"
+                )
+              }
+            />
+          );
 
-      case "loading":
-        return (
-          <LoadingScreen />
-        );
 
-      case "emergency":
-        return (
-          <EmergencyScreen
-            assessmentResult={
-              assessmentResult
-            }
-            onContinue={() =>
-              onStepChange(
-                "results"
-              )
-            }
-            onRestart={
-              onRestart
-            }
-          />
-        );
+        case "loading":
+          return (
+            <LoadingScreen />
+          );
 
-      case "results":
-        return (
-          <ResultsScreen
-            assessment={
-              assessment
-            }
-            assessmentResult={
-              assessmentResult
-            }
-            onFollowUp={() =>
-              onStepChange(
-                "followup"
-              )
-            }
-            onRestart={
-              onRestart
-            }
-          />
-        );
 
-      case "error":
-        return (
-          <ErrorScreen
-            errorType={
-              errorType
-            }
-            onRetry={
-              onAnalyze
-            }
-          />
-        );
+        case "emergency":
+          return (
+            <EmergencyScreen
+              assessmentResult={
+                assessmentResult
+              }
+              onContinue={() =>
+                onStepChange(
+                  "results"
+                )
+              }
+              onRestart={
+                onRestart
+              }
+            />
+          );
 
-      default:
-        return null;
-    }
-  };
+
+        case "results":
+          return (
+            <ResultsScreen
+              assessment={
+                assessment
+              }
+              assessmentResult={
+                assessmentResult
+              }
+              onFollowUp={() =>
+                onStepChange(
+                  "followup"
+                )
+              }
+              onRestart={
+                onRestart
+              }
+            />
+          );
+
+
+        case "error":
+          return (
+            <ErrorScreen
+              errorType={
+                errorType
+              }
+              onRetry={
+                onAnalyze
+              }
+            />
+          );
+
+
+        default:
+          return null;
+      }
+    };
 
 
   return (
@@ -287,6 +303,7 @@ export default function ChatPanel({
         "overflow-hidden",
         "bg-surface-bg",
         "transition-opacity duration-200",
+
         isOpen
           ? "pointer-events-auto opacity-100"
           : "pointer-events-none opacity-0",
@@ -295,10 +312,7 @@ export default function ChatPanel({
         !isOpen
       }
     >
-      {/*
-        Header remains permanently visible.
-        Only the body below it scrolls.
-      */}
+
       <ChatHeader
         onMinimize={
           onMinimize

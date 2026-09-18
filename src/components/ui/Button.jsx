@@ -55,13 +55,17 @@ export default function Button({
     >
       {loading ? (
         <LoaderCircle
-          size={18}
+          size={
+            18
+          }
           className="shrink-0 animate-spin"
           aria-hidden="true"
         />
       ) : icon ? (
         <span className="material-symbols-outlined text-[18px]">
-          {icon}
+          {
+            icon
+          }
         </span>
       ) : null}
 
