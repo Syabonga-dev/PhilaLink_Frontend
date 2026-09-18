@@ -13,7 +13,6 @@ import {
   Bell,
   Building2,
   CalendarDays,
-  CheckCircle2,
   Droplets,
   HeartPulse,
   MessageCircle,
@@ -99,27 +98,6 @@ const healthTips = [
 ];
 
 
-const heroHighlights = [
-  {
-    icon: Pill,
-    title: "Medication",
-    text: "Track your treatment and supply.",
-  },
-
-  {
-    icon: CalendarDays,
-    title: "Collections",
-    text: "Know when medication is due.",
-  },
-
-  {
-    icon: Users,
-    title: "Support",
-    text: "Stay connected to people helping you.",
-  },
-];
-
-
 export default function LandingPage() {
   const location =
     useLocation();
@@ -177,37 +155,18 @@ export default function LandingPage() {
 
       {/* ===================================== */}
       {/* HERO */}
+      {/* IMAGE + TEXT ONLY */}
       {/* ===================================== */}
 
-      <section className="landing-hero">
-        <div
-          className="landing-hero-background"
-          style={{
-            backgroundImage:
-              `url(${heroImage})`,
-          }}
-          aria-hidden="true"
-        />
-
-        <div
-          className="landing-hero-overlay"
-          aria-hidden="true"
-        />
-
-
+      <section
+        className="landing-hero"
+        style={{
+          "--hero-image":
+            `url(${heroImage})`,
+        }}
+      >
         <div className="section-container hero-layout">
           <div className="hero-content">
-            <div className="hero-eyebrow">
-              <HeartPulse
-                size={17}
-              />
-
-              <span>
-                CONNECTED HEALTHCARE
-              </span>
-            </div>
-
-
             <h1>
               Your healthcare,
               <span>
@@ -216,100 +175,13 @@ export default function LandingPage() {
               </span>
             </h1>
 
-
             <p className="hero-description">
-              PhilaLink helps patients
-              stay informed about medication,
+              PhilaLink helps patients stay
+              informed about medication,
               collections, appointments and
               the people supporting their
               healthcare journey.
             </p>
-
-
-            <div className="hero-actions">
-              <Link
-                to="/register"
-                className="hero-primary-button"
-              >
-                Create account
-
-                <ArrowRight
-                  size={18}
-                />
-              </Link>
-
-              <Link
-                to="/login"
-                className="hero-secondary-button"
-              >
-                Log in
-              </Link>
-            </div>
-
-
-            <div className="hero-trust">
-              <div>
-                <CheckCircle2
-                  size={17}
-                />
-
-                <span>
-                  Medication tracking
-                </span>
-              </div>
-
-              <div>
-                <CheckCircle2
-                  size={17}
-                />
-
-                <span>
-                  Collection reminders
-                </span>
-              </div>
-
-              <div>
-                <CheckCircle2
-                  size={17}
-                />
-
-                <span>
-                  Proxy support
-                </span>
-              </div>
-            </div>
-          </div>
-
-
-          <div className="hero-highlight-grid">
-            {heroHighlights.map(
-              ({
-                icon: Icon,
-                title,
-                text,
-              }) => (
-                <article
-                  key={title}
-                  className="hero-highlight-card"
-                >
-                  <div className="hero-highlight-icon">
-                    <Icon
-                      size={21}
-                    />
-                  </div>
-
-                  <div className="hero-highlight-copy">
-                    <strong>
-                      {title}
-                    </strong>
-
-                    <span>
-                      {text}
-                    </span>
-                  </div>
-                </article>
-              )
-            )}
           </div>
         </div>
       </section>
@@ -737,6 +609,7 @@ export default function LandingPage() {
               All rights reserved.
             </span>
 
+
             <div className="footer-bottom-right">
               <div className="footer-emergency">
                 <PhoneCall
@@ -751,6 +624,7 @@ export default function LandingPage() {
                   10177
                 </strong>
               </div>
+
 
               <button
                 type="button"
