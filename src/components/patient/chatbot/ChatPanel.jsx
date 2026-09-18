@@ -15,6 +15,7 @@ import ResultsScreen from "./steps/ResultsScreen";
 import FollowUpScreen from "./steps/FollowUpScreen";
 import ErrorScreen from "./steps/ErrorScreen";
 
+
 export default function ChatPanel({
   isOpen,
   step,
@@ -277,23 +278,27 @@ export default function ChatPanel({
     }
   };
 
+
   return (
     <div
       className={[
-        "fixed z-[4000] flex flex-col overflow-hidden rounded-corner-lg border border-border-secondary bg-surface-bg shadow-2xl",
-        "transition-all duration-300",
-        "inset-x-3 bottom-4",
-        "h-[72dvh] max-h-[620px] min-h-[420px]",
-        "sm:inset-x-auto sm:right-4 sm:w-[420px]",
-        "lg:right-6 lg:bottom-5 lg:h-[660px] lg:max-h-[calc(100vh-40px)] lg:w-[420px]",
+        "fixed inset-0 z-[4000]",
+        "flex h-[100dvh] w-screen flex-col",
+        "overflow-hidden",
+        "bg-surface-bg",
+        "transition-opacity duration-200",
         isOpen
-          ? "pointer-events-auto translate-y-0 opacity-100"
-          : "pointer-events-none translate-y-4 opacity-0",
+          ? "pointer-events-auto opacity-100"
+          : "pointer-events-none opacity-0",
       ].join(" ")}
       aria-hidden={
         !isOpen
       }
     >
+      {/*
+        Header remains permanently visible.
+        Only the body below it scrolls.
+      */}
       <ChatHeader
         onMinimize={
           onMinimize
@@ -309,9 +314,11 @@ export default function ChatPanel({
         }
       />
 
+
       {step ===
       "followup" ? (
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+
           <FollowUpScreen
             messages={
               messages
@@ -336,7 +343,8 @@ export default function ChatPanel({
           />
         </div>
       ) : (
-        <div className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto p-lg sm:p-xl">
+        <div className="flex min-h-0 flex-1 flex-col gap-lg overflow-y-auto overscroll-contain p-lg sm:p-xl">
+
           {renderStep()}
 
           <div className="pb-md" />
