@@ -12,96 +12,21 @@ export const patientsApi = {
       payload
     ),
 
-  getDashboard: async () => {
-    const [
-      dashboard,
-      supply,
-    ] =
-      await Promise.all([
-        api.get(
-          "/api/patients/me/dashboard"
-        ),
-        api.get(
-          "/api/medications/me/supply"
-        ),
-      ]);
-
-    const supplyByMedication =
-      new Map(
-        (
-          Array.isArray(
-            supply
-          )
-            ? supply
-            : []
-        ).map(
-          (item) => [
-            item.medicationId,
-            item,
-          ]
-        )
-      );
-
-    const medications =
-      Array.isArray(
-        dashboard?.medications
-      )
-        ? dashboard.medications.map(
-            (
-              medication
-            ) => {
-              const medicationSupply =
-                supplyByMedication.get(
-                  medication.id
-                );
-
-              return {
-                ...medication,
-
-                daysRemaining:
-                  medicationSupply
-                    ?.daysRemaining ??
-                  null,
-
-                dispensedQuantity:
-                  medicationSupply
-                    ?.dispensedQuantity ??
-                  null,
-
-                estimatedRemainingQuantity:
-                  medicationSupply
-                    ?.estimatedRemainingQuantity ??
-                  null,
-
-                unitsPerDose:
-                  medicationSupply
-                    ?.unitsPerDose ??
-                  null,
-
-                dosesPerDay:
-                  medicationSupply
-                    ?.dosesPerDay ??
-                  null,
-
-                supplyCalculationStatus:
-                  medicationSupply
-                    ?.calculationStatus ??
-                  null,
-
-                lastCollectedAt:
-                  medicationSupply
-                    ?.lastCollectedAt ??
-                  null,
-              };
-            }
-          )
-        : [];
-
-    return {
-      ...dashboard,
-      medications,
-    };
-  },
+  /*
+   * Dashboard data only.
+   *
+   * Medication supply is intentionally NOT fetched here.
+   * DashboardPage.jsx already loads supply separately.
+   *
+   * This prevents:
+   * - duplicate /api/medications/me/supply requests
+   * - supply timeouts from blocking the whole dashboard
+   * - unnecessary concurrent database load
+   */
+  getDashboard: () =>
+    api.get(
+      "/api/patients/me/dashboard"
+    ),
 
   getRecords: () =>
     api.get(
