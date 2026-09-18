@@ -192,13 +192,18 @@ export default function WeatherChip({
         lastRefreshRef.current =
           Date.now();
 
-        await generateWeatherTip();
-
+        /*
+         * Weather is already available to display.
+         * Health-tip generation is useful, but it is not
+         * required before the user can see the weather.
+         */
         if (!background) {
           setLoading(
             false
           );
         }
+
+        void generateWeatherTip();
 
         return result;
       },
@@ -299,7 +304,17 @@ export default function WeatherChip({
                 lastRefreshRef.current =
                   Date.now();
 
-                await generateWeatherTip(
+                /*
+                 * Do not hold the weather loading state open
+                 * while the secondary tip request completes.
+                 */
+                if (!background) {
+                  setLoading(
+                    false
+                  );
+                }
+
+                void generateWeatherTip(
                   latitude,
                   longitude
                 );

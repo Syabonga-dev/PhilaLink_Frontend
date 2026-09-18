@@ -346,6 +346,12 @@ export default function MedicationsPage() {
     useState(true);
 
   const [
+    supplyLoading,
+    setSupplyLoading,
+  ] =
+    useState(true);
+
+  const [
     actionMedicationId,
     setActionMedicationId,
   ] =
@@ -358,10 +364,60 @@ export default function MedicationsPage() {
     useState("");
 
   const [
+    supplyError,
+    setSupplyError,
+  ] =
+    useState("");
+
+  const [
     message,
     setMessage,
   ] =
     useState("");
+
+  const loadSupply =
+    useCallback(
+      async () => {
+        try {
+          setSupplyLoading(
+            true
+          );
+
+          setSupplyError(
+            ""
+          );
+
+          const supplyResult =
+            await medicationsApi
+              .getSupply();
+
+          setSupply(
+            Array.isArray(
+              supplyResult
+            )
+              ? supplyResult
+              : []
+          );
+        } catch (err) {
+          console.error(
+            "Failed to load medication supply:",
+            err
+          );
+
+          setSupply([]);
+
+          setSupplyError(
+            err?.message ||
+              "Medication supply information is temporarily unavailable."
+          );
+        } finally {
+          setSupplyLoading(
+            false
+          );
+        }
+      },
+      []
+    );
 
   const loadMedications =
     useCallback(
@@ -373,30 +429,19 @@ export default function MedicationsPage() {
 
           setError("");
 
-          const [
-            medicationResult,
-            supplyResult,
-          ] =
-            await Promise.all([
-              medicationsApi
-                .getMine(),
-              medicationsApi
-                .getSupply(),
-            ]);
+          /*
+           * Medication data is the critical path for this page.
+           * Do not make it wait for medication-supply calculation.
+           */
+          const medicationResult =
+            await medicationsApi
+              .getMine();
 
           setMedications(
             Array.isArray(
               medicationResult
             )
               ? medicationResult
-              : []
-          );
-
-          setSupply(
-            Array.isArray(
-              supplyResult
-            )
-              ? supplyResult
               : []
           );
         } catch (err) {
@@ -413,17 +458,21 @@ export default function MedicationsPage() {
           setMedications(
             []
           );
-
-          setSupply(
-            []
-          );
         } finally {
           setLoading(
             false
           );
         }
+
+        /*
+         * Supply is secondary data. Start it after medication
+         * content has had a chance to resolve/render.
+         */
+        await loadSupply();
       },
-      []
+      [
+        loadSupply,
+      ]
     );
 
   useEffect(
@@ -673,10 +722,14 @@ export default function MedicationsPage() {
               {medication.isActive && (
                 <Badge
                   label={
-                    supplyDetails.label
+                    supplyLoading
+                      ? "Loading supply"
+                      : supplyDetails.label
                   }
                   variant={
-                    supplyDetails.variant
+                    supplyLoading
+                      ? "default"
+                      : supplyDetails.variant
                   }
                 />
               )}
@@ -723,9 +776,9 @@ export default function MedicationsPage() {
                       </p>
 
                       <p className="mt-xs text-video-title text-text-secondary">
-                        {
-                          supplyDetails.text
-                        }
+                        {supplyLoading
+                          ? "Loading medication supply information..."
+                          : supplyDetails.text}
                       </p>
                     </div>
                   </div>
@@ -809,6 +862,31 @@ export default function MedicationsPage() {
                         : "s"}{" "}
                       per dose
                     </p>
+                  )}
+
+                  {supplyError && (
+                    <div className="mt-md flex items-start gap-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
+                      <AlertCircle
+                        size={14}
+                        className="mt-[2px] shrink-0 text-warning"
+                      />
+
+                      <div className="min-w-0 flex-1">
+                        <p className="text-video-title text-text-secondary">
+                          {supplyError}
+                        </p>
+
+                        <button
+                          type="button"
+                          onClick={
+                            loadSupply
+                          }
+                          className="mt-xs text-video-title font-medium text-brand-primary hover:opacity-70"
+                        >
+                          Try supply again
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
