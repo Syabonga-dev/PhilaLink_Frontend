@@ -24,11 +24,6 @@
     sans-serif;
 }
 
-
-/* =========================================================
-   GLOBAL LANDING PAGE SAFETY
-========================================================= */
-
 .landing-page *,
 .landing-page *::before,
 .landing-page *::after {
@@ -43,7 +38,7 @@
 
 
 /* =========================================================
-   SHARED CONTAINER
+   SHARED
 ========================================================= */
 
 .section-container {
@@ -66,8 +61,6 @@
   font-size: 0.7rem;
   font-weight: 800;
 
-  line-height: 1.2;
-
   letter-spacing: 0.15em;
   text-transform: uppercase;
 }
@@ -87,7 +80,8 @@
 
 .section-heading h2,
 .intro-heading h2 {
-  margin: 14px 0 0;
+  margin:
+    14px 0 0;
 
   color: #0f172a;
 
@@ -101,9 +95,8 @@
   font-weight: 800;
   line-height: 1.1;
 
-  letter-spacing: -0.045em;
-
-  text-wrap: balance;
+  letter-spacing:
+    -0.045em;
 }
 
 .section-heading h2 span,
@@ -114,17 +107,12 @@
 .section-heading p {
   max-width: 660px;
 
-  margin: 18px 0 0;
+  margin:
+    18px 0 0;
 
   color: #64748b;
 
-  font-size:
-    clamp(
-      0.9rem,
-      1.3vw,
-      0.97rem
-    );
-
+  font-size: 0.97rem;
   line-height: 1.8;
 }
 
@@ -136,6 +124,8 @@
 
 /* =========================================================
    HERO
+
+   IMAGE + TEXT ONLY
 ========================================================= */
 
 .landing-hero {
@@ -150,13 +140,13 @@
 
   min-height:
     clamp(
-      700px,
-      88vh,
-      820px
+      620px,
+      82vh,
+      800px
     );
 
   padding:
-    144px 0
+    120px 0
     70px;
 
   overflow: hidden;
@@ -165,25 +155,25 @@
 }
 
 
-/* =========================================================
-   HERO IMAGE
+/* Background image */
 
-   Exact imported image:
-   Screenshot_20260918-165155_Chrome.jpg
-========================================================= */
-
-.landing-hero-background {
+.landing-hero::before {
   position: absolute;
   z-index: -3;
 
   inset: -8px;
 
-  background-repeat: no-repeat;
+  background-image:
+    var(--hero-image);
+
+  background-repeat:
+    no-repeat;
 
   background-position:
     center center;
 
-  background-size: cover;
+  background-size:
+    cover;
 
   filter:
     blur(2px);
@@ -191,15 +181,13 @@
   transform:
     scale(1.02);
 
-  pointer-events: none;
+  content: "";
 }
 
 
-/* =========================================================
-   HERO OVERLAY
-========================================================= */
+/* Overlay for readability */
 
-.landing-hero-overlay {
+.landing-hero::after {
   position: absolute;
   z-index: -2;
 
@@ -208,44 +196,45 @@
   background:
     linear-gradient(
       90deg,
-      rgba(3, 43, 42, 0.93) 0%,
-      rgba(4, 57, 54, 0.89) 28%,
-      rgba(5, 69, 65, 0.72) 48%,
-      rgba(5, 69, 65, 0.39) 68%,
-      rgba(3, 43, 42, 0.31) 100%
-    );
+      rgba(
+        3,
+        43,
+        42,
+        0.88
+      )
+      0%,
 
-  pointer-events: none;
-}
+      rgba(
+        4,
+        55,
+        52,
+        0.78
+      )
+      34%,
 
+      rgba(
+        4,
+        55,
+        52,
+        0.46
+      )
+      65%,
 
-/* bottom depth */
-
-.landing-hero::after {
-  position: absolute;
-  z-index: -1;
-
-  right: 0;
-  bottom: 0;
-  left: 0;
-
-  height: 190px;
-
-  background:
-    linear-gradient(
-      180deg,
-      rgba(3, 43, 42, 0),
-      rgba(3, 43, 42, 0.33)
+      rgba(
+        3,
+        43,
+        42,
+        0.2
+      )
+      100%
     );
 
   content: "";
-
-  pointer-events: none;
 }
 
 
 /* =========================================================
-   HERO LAYOUT
+   HERO TEXT
 ========================================================= */
 
 .hero-layout {
@@ -253,93 +242,38 @@
   z-index: 2;
 
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  align-items: center;
 
   width: 100%;
-
-  min-height: 540px;
 }
 
 .hero-content {
-  width: min(
-    100%,
-    710px
-  );
-}
-
-
-/* =========================================================
-   HERO EYEBROW
-========================================================= */
-
-.hero-eyebrow {
-  display: inline-flex;
-  align-items: center;
-
-  gap: 9px;
-
-  width: fit-content;
-
-  padding:
-    9px 13px;
-
-  border:
-    1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.28
+  width:
+    min(
+      100%,
+      720px
     );
-
-  border-radius: 999px;
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.1
-    );
-
-  color: #ccfbf1;
-
-  font-size: 0.68rem;
-  font-weight: 800;
-
-  line-height: 1;
-
-  letter-spacing: 0.13em;
-
-  backdrop-filter:
-    blur(10px);
 }
-
-
-/* =========================================================
-   HERO HEADING
-========================================================= */
 
 .hero-content h1 {
-  max-width: 710px;
+  max-width: 720px;
 
-  margin:
-    26px 0 0;
+  margin: 0;
 
   color: #ffffff;
 
   font-size:
     clamp(
-      3.1rem,
-      6vw,
-      5.7rem
+      3.2rem,
+      6.5vw,
+      6rem
     );
 
   font-weight: 800;
   line-height: 0.98;
 
-  letter-spacing: -0.06em;
+  letter-spacing:
+    -0.06em;
 
   text-wrap: balance;
 }
@@ -347,11 +281,6 @@
 .hero-content h1 span {
   color: #99f6e4;
 }
-
-
-/* =========================================================
-   HERO DESCRIPTION
-========================================================= */
 
 .hero-description {
   max-width: 650px;
@@ -364,274 +293,17 @@
       255,
       255,
       255,
-      0.84
+      0.88
     );
 
   font-size:
     clamp(
       1rem,
-      1.7vw,
-      1.14rem
+      1.6vw,
+      1.16rem
     );
 
   line-height: 1.75;
-}
-
-
-/* =========================================================
-   HERO BUTTONS
-========================================================= */
-
-.hero-actions {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap: 12px;
-
-  margin-top: 34px;
-}
-
-.hero-primary-button,
-.hero-secondary-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-
-  gap: 9px;
-
-  min-height: 52px;
-
-  padding:
-    0 23px;
-
-  border-radius: 10px;
-
-  font-size: 0.87rem;
-  font-weight: 750;
-
-  line-height: 1;
-
-  text-decoration: none;
-
-  transition:
-    transform 160ms ease,
-    background 160ms ease,
-    border-color 160ms ease;
-}
-
-.hero-primary-button {
-  border:
-    1px solid #ffffff;
-
-  background: #ffffff;
-  color: #0f766e;
-}
-
-.hero-primary-button:hover {
-  background: #f0fdfa;
-
-  transform:
-    translateY(-2px);
-}
-
-.hero-secondary-button {
-  border:
-    1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.42
-    );
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.09
-    );
-
-  color: #ffffff;
-
-  backdrop-filter:
-    blur(8px);
-}
-
-.hero-secondary-button:hover {
-  border-color:
-    rgba(
-      255,
-      255,
-      255,
-      0.7
-    );
-
-  background:
-    rgba(
-      255,
-      255,
-      255,
-      0.16
-    );
-}
-
-
-/* =========================================================
-   HERO TRUST
-========================================================= */
-
-.hero-trust {
-  display: flex;
-  flex-wrap: wrap;
-
-  gap:
-    12px 22px;
-
-  margin-top: 28px;
-}
-
-.hero-trust div {
-  display: flex;
-  align-items: center;
-
-  gap: 7px;
-
-  color:
-    rgba(
-      255,
-      255,
-      255,
-      0.78
-    );
-
-  font-size: 0.78rem;
-  font-weight: 600;
-}
-
-.hero-trust svg {
-  flex-shrink: 0;
-
-  color: #5eead4;
-}
-
-
-/* =========================================================
-   HERO HIGHLIGHT GRID
-========================================================= */
-
-.hero-highlight-grid {
-  display: grid;
-
-  grid-template-columns:
-    repeat(
-      3,
-      minmax(0, 1fr)
-    );
-
-  gap: 12px;
-
-  width: min(
-    780px,
-    100%
-  );
-
-  margin-top: 50px;
-}
-
-.hero-highlight-card {
-  display: flex;
-  align-items: center;
-
-  gap: 13px;
-
-  min-width: 0;
-
-  padding: 16px;
-
-  border:
-    1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.18
-    );
-
-  border-radius: 16px;
-
-  background:
-    rgba(
-      4,
-      47,
-      46,
-      0.43
-    );
-
-  box-shadow:
-    0 20px 50px
-    rgba(
-      2,
-      20,
-      19,
-      0.15
-    );
-
-  backdrop-filter:
-    blur(12px);
-}
-
-.hero-highlight-icon {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  width: 42px;
-  height: 42px;
-
-  flex-shrink: 0;
-
-  border-radius: 12px;
-
-  background:
-    rgba(
-      153,
-      246,
-      228,
-      0.16
-    );
-
-  color: #99f6e4;
-}
-
-.hero-highlight-copy {
-  min-width: 0;
-}
-
-.hero-highlight-card strong {
-  display: block;
-
-  color: #ffffff;
-
-  font-size: 0.84rem;
-  font-weight: 750;
-}
-
-.hero-highlight-card span {
-  display: block;
-
-  margin-top: 4px;
-
-  color:
-    rgba(
-      255,
-      255,
-      255,
-      0.66
-    );
-
-  font-size: 0.7rem;
-  line-height: 1.45;
 }
 
 
@@ -681,13 +353,7 @@
 
   color: #64748b;
 
-  font-size:
-    clamp(
-      0.9rem,
-      1.25vw,
-      0.98rem
-    );
-
+  font-size: 0.98rem;
   line-height: 1.85;
 }
 
@@ -711,12 +377,7 @@
 
   gap: 18px;
 
-  margin-top:
-    clamp(
-      42px,
-      5vw,
-      66px
-    );
+  margin-top: 66px;
 }
 
 .care-summary-card {
@@ -783,8 +444,6 @@
 
   font-size: 0.78rem;
   font-weight: 800;
-
-  letter-spacing: 0.08em;
 }
 
 .care-summary-card h3 {
@@ -795,8 +454,6 @@
 
   font-size: 1.06rem;
   font-weight: 750;
-
-  letter-spacing: -0.02em;
 }
 
 .care-summary-card p {
@@ -898,21 +555,7 @@
 }
 
 .service-arrow {
-  flex-shrink: 0;
-
   color: #cbd5e1;
-
-  transition:
-    transform 180ms ease,
-    color 180ms ease;
-}
-
-.service-card:hover
-.service-arrow {
-  color: #0f766e;
-
-  transform:
-    translateX(3px);
 }
 
 .service-card h3 {
@@ -923,8 +566,6 @@
 
   font-size: 1rem;
   font-weight: 750;
-
-  letter-spacing: -0.02em;
 }
 
 .service-card p {
@@ -945,11 +586,7 @@
 .care-banner-section {
   padding:
     36px 0
-    clamp(
-      76px,
-      8vw,
-      104px
-    );
+    104px;
 
   background: #f8fafc;
 }
@@ -974,17 +611,8 @@
   background:
     linear-gradient(
       135deg,
-      #064e4b 0%,
-      #0f766e 100%
-    );
-
-  box-shadow:
-    0 24px 70px
-    rgba(
-      15,
-      118,
-      110,
-      0.16
+      #064e4b,
+      #0f766e
     );
 }
 
@@ -995,17 +623,6 @@
 
   width: 62px;
   height: 62px;
-
-  flex-shrink: 0;
-
-  border:
-    1px solid
-    rgba(
-      255,
-      255,
-      255,
-      0.18
-    );
 
   border-radius: 18px;
 
@@ -1018,10 +635,6 @@
     );
 
   color: #99f6e4;
-}
-
-.care-banner-copy {
-  min-width: 0;
 }
 
 .care-banner-copy > span {
@@ -1047,11 +660,6 @@
     );
 
   font-weight: 800;
-  line-height: 1.15;
-
-  letter-spacing: -0.04em;
-
-  text-wrap: balance;
 }
 
 .care-banner-copy p {
@@ -1092,22 +700,7 @@
   font-size: 0.8rem;
   font-weight: 750;
 
-  line-height: 1;
-
   text-decoration: none;
-
-  white-space: nowrap;
-
-  transition:
-    transform 160ms ease,
-    background 160ms ease;
-}
-
-.care-banner-button:hover {
-  background: #f0fdfa;
-
-  transform:
-    translateY(-2px);
 }
 
 
@@ -1147,8 +740,6 @@
 
   padding: 28px;
 
-  overflow: hidden;
-
   border:
     1px solid #e2e8f0;
 
@@ -1167,8 +758,6 @@
 
   font-size: 1.25rem;
   font-weight: 800;
-
-  letter-spacing: -0.04em;
 }
 
 .health-tip-icon {
@@ -1186,8 +775,6 @@
 }
 
 .health-tip-card h3 {
-  max-width: 240px;
-
   margin:
     28px 0 0;
 
@@ -1195,7 +782,6 @@
 
   font-size: 1rem;
   font-weight: 750;
-  line-height: 1.4;
 }
 
 .health-tip-card p {
@@ -1214,8 +800,6 @@
 ========================================================= */
 
 .landing-footer {
-  width: 100%;
-
   background: #073b3b;
   color: #ffffff;
 }
@@ -1250,8 +834,6 @@
 }
 
 .footer-cta h2 {
-  max-width: 750px;
-
   margin:
     14px 0 0;
 
@@ -1265,11 +847,6 @@
     );
 
   font-weight: 800;
-  line-height: 1.12;
-
-  letter-spacing: -0.045em;
-
-  text-wrap: balance;
 }
 
 .footer-cta h2 span {
@@ -1290,16 +867,15 @@
       0.65
     );
 
-  font-size: 0.9rem;
   line-height: 1.8;
 }
 
 .footer-cta-actions {
   display: flex;
-  justify-content: flex-end;
-  flex-wrap: wrap;
 
   gap: 10px;
+
+  justify-content: flex-end;
 }
 
 .footer-primary-button,
@@ -1319,8 +895,6 @@
 
   font-size: 0.8rem;
   font-weight: 700;
-
-  line-height: 1;
 
   text-decoration: none;
 }
@@ -1393,15 +967,10 @@
 }
 
 .footer-brand h3 {
-  max-width: 390px;
-
   margin:
     22px 0 0;
 
   color: #ffffff;
-
-  font-size: 1.25rem;
-  font-weight: 700;
 }
 
 .footer-brand p {
@@ -1437,12 +1006,8 @@
 .footer-links-grid h4 {
   margin: 0;
 
-  color: #ffffff;
-
   font-size: 0.73rem;
-  font-weight: 800;
 
-  letter-spacing: 0.1em;
   text-transform: uppercase;
 }
 
@@ -1456,8 +1021,6 @@
 }
 
 .footer-links a {
-  width: fit-content;
-
   color:
     rgba(
       255,
@@ -1469,13 +1032,6 @@
   font-size: 0.78rem;
 
   text-decoration: none;
-
-  transition:
-    color 150ms ease;
-}
-
-.footer-links a:hover {
-  color: #5eead4;
 }
 
 .support-list {
@@ -1488,22 +1044,15 @@
 
 .support-item {
   display: flex;
-  align-items: flex-start;
 
   gap: 11px;
 }
 
 .support-item > svg {
-  flex-shrink: 0;
-
-  margin-top: 2px;
-
   color: #5eead4;
 }
 
 .support-item span {
-  display: block;
-
   color:
     rgba(
       255,
@@ -1513,7 +1062,6 @@
     );
 
   font-size: 0.65rem;
-  font-weight: 700;
 
   text-transform: uppercase;
 }
@@ -1531,9 +1079,6 @@
     );
 
   font-size: 0.76rem;
-  line-height: 1.5;
-
-  overflow-wrap: anywhere;
 }
 
 .footer-bottom {
@@ -1573,8 +1118,6 @@
 }
 
 .footer-emergency svg {
-  flex-shrink: 0;
-
   color: #5eead4;
 }
 
@@ -1590,184 +1133,115 @@
   width: 40px;
   height: 40px;
 
-  flex-shrink: 0;
-
   border: 0;
-  border-radius: 999px;
+  border-radius: 50%;
 
   background: #0f766e;
   color: #ffffff;
 
   cursor: pointer;
-
-  transition:
-    background 160ms ease,
-    transform 160ms ease;
-}
-
-.back-to-top:hover {
-  background: #115e59;
-
-  transform:
-    translateY(-2px);
 }
 
 
 /* =========================================================
-   VERY LARGE DESKTOP
-   1600px+
+   LARGE SCREENS
 ========================================================= */
 
 @media (
   min-width: 1600px
 ) {
   .section-container {
-    width: min(
-      1240px,
-      calc(100% - 96px)
-    );
+    width:
+      min(
+        1240px,
+        calc(100% - 96px)
+      );
   }
 
   .landing-hero {
-    min-height: 850px;
-
-    padding-top: 160px;
-  }
-
-  .hero-layout {
-    min-height: 600px;
+    min-height: 840px;
   }
 
   .hero-content {
-    width: min(
-      100%,
-      760px
-    );
+    width: 760px;
   }
 
   .hero-content h1 {
-    max-width: 760px;
-
     font-size: 6rem;
-  }
-
-  .hero-description {
-    max-width: 690px;
-
-    font-size: 1.18rem;
-  }
-}
-
-
-/* =========================================================
-   LARGE DESKTOP
-   1281px - 1599px
-========================================================= */
-
-@media (
-  min-width: 1281px
-) and (
-  max-width: 1599px
-) {
-  .landing-hero-background {
-    background-position:
-      center center;
-  }
-}
-
-
-/* =========================================================
-   SMALL DESKTOP / LAPTOP
-   <= 1280px
-========================================================= */
-
-@media (
-  max-width: 1280px
-) {
-  .section-container {
-    width: min(
-      1120px,
-      calc(100% - 48px)
-    );
-  }
-
-  .hero-content {
-    max-width: 680px;
-  }
-
-  .landing-hero-background {
-    background-position:
-      55% center;
   }
 }
 
 
 /* =========================================================
    LAPTOP
-   <= 1200px
 ========================================================= */
 
 @media (
   max-width: 1200px
 ) {
-  .hero-content h1 {
-    font-size:
-      clamp(
-        3rem,
-        6.3vw,
-        5.2rem
+  .section-container {
+    width:
+      min(
+        1100px,
+        calc(100% - 48px)
       );
   }
 
-  .care-summary-grid,
-  .services-grid,
-  .health-tips-grid {
-    gap: 16px;
-  }
-
-  .footer-main {
-    gap: 56px;
+  .landing-hero::before {
+    background-position:
+      56% center;
   }
 }
 
 
 /* =========================================================
    TABLET LANDSCAPE
-   <= 1024px
 ========================================================= */
 
 @media (
   max-width: 1024px
 ) {
   .landing-hero {
-    min-height: 730px;
+    min-height: 700px;
 
     padding:
-      132px 0
-      58px;
+      116px 0
+      60px;
   }
 
-  .landing-hero-background {
+  .landing-hero::before {
     background-position:
-      58% center;
-
-    filter:
-      blur(2px);
+      60% center;
   }
 
-  .landing-hero-overlay {
+  .landing-hero::after {
     background:
       linear-gradient(
         90deg,
-        rgba(3, 43, 42, 0.95) 0%,
-        rgba(5, 69, 65, 0.88) 44%,
-        rgba(5, 69, 65, 0.58) 72%,
-        rgba(3, 43, 42, 0.46) 100%
-      );
-  }
+        rgba(
+          3,
+          43,
+          42,
+          0.92
+        )
+        0%,
 
-  .hero-content {
-    max-width: 650px;
+        rgba(
+          3,
+          43,
+          42,
+          0.76
+        )
+        58%,
+
+        rgba(
+          3,
+          43,
+          42,
+          0.39
+        )
+        100%
+      );
   }
 
   .intro-layout {
@@ -1778,8 +1252,6 @@
   }
 
   .intro-copy {
-    max-width: 760px;
-
     padding-top: 0;
   }
 
@@ -1794,14 +1266,12 @@
   .care-banner {
     grid-template-columns:
       auto
-      minmax(0, 1fr);
+      1fr;
   }
 
   .care-banner-button {
     grid-column:
-      2 / 3;
-
-    justify-self: start;
+      2;
   }
 
   .footer-main {
@@ -1814,65 +1284,7 @@
 
 
 /* =========================================================
-   TABLET
-   <= 900px
-========================================================= */
-
-@media (
-  max-width: 900px
-) {
-  .section-container {
-    width:
-      calc(100% - 40px);
-  }
-
-  .landing-hero {
-    min-height: 740px;
-  }
-
-  .hero-highlight-grid {
-    width: 100%;
-  }
-
-  .care-summary-grid {
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
-  }
-
-  .care-summary-card:last-child {
-    grid-column:
-      1 / -1;
-  }
-
-  .footer-cta {
-    grid-template-columns:
-      1fr;
-
-    align-items: start;
-
-    gap: 28px;
-  }
-
-  .footer-cta-actions {
-    justify-content: flex-start;
-  }
-
-  .footer-links-grid {
-    grid-template-columns:
-      repeat(
-        2,
-        minmax(0, 1fr)
-      );
-  }
-}
-
-
-/* =========================================================
    TABLET PORTRAIT
-   <= 768px
 ========================================================= */
 
 @media (
@@ -1880,116 +1292,86 @@
 ) {
   .section-container {
     width:
-      calc(100% - 32px);
-  }
-
-  .landing-hero {
-    min-height: 760px;
-
-    padding:
-      122px 0
-      50px;
-  }
-
-  .landing-hero-background {
-    inset: -7px;
-
-    background-position:
-      62% center;
-
-    filter:
-      blur(1.8px);
-
-    transform:
-      scale(1.025);
-  }
-
-  .landing-hero-overlay {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(3, 43, 42, 0.95) 0%,
-        rgba(3, 43, 42, 0.88) 58%,
-        rgba(3, 43, 42, 0.63) 100%
+      calc(
+        100% - 32px
       );
   }
 
-  .hero-layout {
-    min-height: 600px;
+  .landing-hero {
+    min-height: 650px;
+
+    padding:
+      112px 0
+      52px;
+  }
+
+  .landing-hero::before {
+    background-position:
+      63% center;
+
+    filter:
+      blur(1.8px);
+  }
+
+  .landing-hero::after {
+    background:
+      linear-gradient(
+        90deg,
+        rgba(
+          3,
+          43,
+          42,
+          0.91
+        )
+        0%,
+
+        rgba(
+          3,
+          43,
+          42,
+          0.75
+        )
+        65%,
+
+        rgba(
+          3,
+          43,
+          42,
+          0.47
+        )
+        100%
+      );
+  }
+
+  .hero-content {
+    max-width: 590px;
   }
 
   .hero-content h1 {
     font-size:
       clamp(
-        2.9rem,
+        3rem,
         12vw,
-        4.25rem
+        4.4rem
       );
-
-    line-height: 1;
   }
 
-  .hero-description {
-    max-width: 560px;
-
-    font-size: 0.97rem;
-  }
-
-  .hero-highlight-grid {
-    grid-template-columns:
-      1fr;
-
-    max-width: 500px;
-
-    margin-top: 38px;
-  }
-
-  .hero-highlight-card {
-    min-height: 68px;
-
-    padding: 13px 14px;
-  }
-
-  .care-summary-grid {
-    grid-template-columns:
-      1fr;
-  }
-
-  .care-summary-card:last-child {
-    grid-column: auto;
-  }
-
-  .care-summary-card {
-    min-height: 0;
-  }
-
-  .services-grid {
-    grid-template-columns:
-      1fr;
-  }
-
-  .service-card {
-    min-height: 0;
-  }
-
+  .care-summary-grid,
+  .services-grid,
   .health-tips-grid {
     grid-template-columns:
       1fr;
   }
 
+  .care-summary-card,
+  .service-card,
   .health-tip-card {
     min-height: 0;
-  }
-
-  .care-banner-section {
-    padding-top: 0;
   }
 
   .care-banner {
     grid-template-columns:
       1fr;
-
-    gap: 20px;
 
     padding:
       30px 26px;
@@ -2001,6 +1383,18 @@
     justify-self: start;
   }
 
+  .footer-cta {
+    grid-template-columns:
+      1fr;
+
+    gap: 28px;
+  }
+
+  .footer-cta-actions {
+    justify-content:
+      flex-start;
+  }
+
   .footer-links-grid {
     grid-template-columns:
       repeat(
@@ -2012,73 +1406,7 @@
 
 
 /* =========================================================
-   LARGE PHONE
-   <= 640px
-========================================================= */
-
-@media (
-  max-width: 640px
-) {
-  .section-container {
-    width:
-      calc(100% - 28px);
-  }
-
-  .landing-hero {
-    min-height: auto;
-
-    padding:
-      118px 0
-      44px;
-  }
-
-  .hero-layout {
-    min-height: auto;
-  }
-
-  .hero-content h1 {
-    max-width: 540px;
-
-    font-size:
-      clamp(
-        2.75rem,
-        13vw,
-        3.8rem
-      );
-  }
-
-  .hero-description {
-    margin-top: 22px;
-  }
-
-  .hero-actions {
-    margin-top: 28px;
-  }
-
-  .hero-highlight-grid {
-    margin-top: 34px;
-  }
-
-  .section-heading {
-    margin-bottom: 34px;
-  }
-
-  .care-summary-card,
-  .service-card,
-  .health-tip-card {
-    padding: 24px;
-  }
-
-  .footer-main {
-    padding:
-      48px 0;
-  }
-}
-
-
-/* =========================================================
-   PHONE
-   <= 520px
+   MOBILE
 ========================================================= */
 
 @media (
@@ -2086,28 +1414,25 @@
 ) {
   .section-container {
     width:
-      calc(100% - 24px);
+      calc(
+        100% - 24px
+      );
   }
 
   .landing-hero {
+    min-height: 600px;
+
     padding:
-      112px 0
-      40px;
+      104px 0
+      44px;
   }
 
-  .landing-hero-background {
+  .landing-hero::before {
     background-position:
       65% center;
-  }
 
-  .landing-hero-overlay {
-    background:
-      linear-gradient(
-        90deg,
-        rgba(3, 43, 42, 0.95) 0%,
-        rgba(3, 43, 42, 0.9) 62%,
-        rgba(3, 43, 42, 0.68) 100%
-      );
+    filter:
+      blur(1.6px);
   }
 
   .hero-content h1 {
@@ -2115,49 +1440,14 @@
       clamp(
         2.6rem,
         14vw,
-        3.55rem
+        3.5rem
       );
-
-    letter-spacing:
-      -0.055em;
   }
 
-  .hero-eyebrow {
-    font-size: 0.62rem;
+  .hero-description {
+    margin-top: 22px;
 
-    letter-spacing: 0.1em;
-  }
-
-  .hero-actions {
-    flex-direction: column;
-
-    width: 100%;
-  }
-
-  .hero-primary-button,
-  .hero-secondary-button {
-    width: 100%;
-  }
-
-  .hero-trust {
-    flex-direction: column;
-
-    gap: 10px;
-  }
-
-  .hero-highlight-grid {
-    width: 100%;
-  }
-
-  .hero-highlight-card {
-    width: 100%;
-  }
-
-  .care-banner {
-    border-radius: 20px;
-
-    padding:
-      26px 22px;
+    font-size: 0.94rem;
   }
 
   .footer-links-grid {
@@ -2166,9 +1456,8 @@
   }
 
   .footer-cta-actions {
-    flex-direction: column;
-
-    width: 100%;
+    flex-direction:
+      column;
   }
 
   .footer-primary-button,
@@ -2177,8 +1466,11 @@
   }
 
   .footer-bottom {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items:
+      flex-start;
+
+    flex-direction:
+      column;
   }
 
   .footer-bottom-right {
@@ -2191,91 +1483,7 @@
 
 
 /* =========================================================
-   SMALL PHONE
-   <= 430px
-========================================================= */
-
-@media (
-  max-width: 430px
-) {
-  .section-container {
-    width:
-      calc(100% - 22px);
-  }
-
-  .landing-hero {
-    padding-top: 108px;
-  }
-
-  .landing-hero-background {
-    background-position:
-      67% center;
-
-    filter:
-      blur(1.6px);
-  }
-
-  .hero-content h1 {
-    font-size:
-      clamp(
-        2.45rem,
-        14vw,
-        3.25rem
-      );
-  }
-
-  .hero-description {
-    font-size: 0.92rem;
-
-    line-height: 1.7;
-  }
-
-  .hero-primary-button,
-  .hero-secondary-button {
-    min-height: 50px;
-  }
-
-  .hero-highlight-card {
-    gap: 11px;
-
-    padding: 12px;
-  }
-
-  .hero-highlight-icon {
-    width: 39px;
-    height: 39px;
-  }
-
-  .section-heading h2,
-  .intro-heading h2 {
-    font-size:
-      clamp(
-        1.85rem,
-        9vw,
-        2.4rem
-      );
-  }
-
-  .care-summary-card,
-  .service-card,
-  .health-tip-card {
-    padding: 22px;
-  }
-
-  .footer-cta h2 {
-    font-size:
-      clamp(
-        1.8rem,
-        9vw,
-        2.35rem
-      );
-  }
-}
-
-
-/* =========================================================
-   COMPACT PHONE
-   <= 375px
+   SMALL MOBILE
 ========================================================= */
 
 @media (
@@ -2283,62 +1491,35 @@
 ) {
   .section-container {
     width:
-      calc(100% - 20px);
-  }
-
-  .landing-hero {
-    padding:
-      104px 0
-      36px;
-  }
-
-  .hero-content h1 {
-    font-size:
-      clamp(
-        2.25rem,
-        14vw,
-        2.95rem
+      calc(
+        100% - 20px
       );
   }
 
-  .hero-eyebrow {
-    padding:
-      8px 10px;
+  .landing-hero {
+    min-height: 560px;
 
-    font-size: 0.58rem;
+    padding-top: 98px;
+  }
+
+  .hero-content h1 {
+    font-size: 2.55rem;
   }
 
   .hero-description {
-    font-size: 0.89rem;
+    font-size: 0.9rem;
   }
 
-  .hero-trust div {
-    font-size: 0.72rem;
-  }
-
-  .hero-highlight-card span {
-    font-size: 0.67rem;
-  }
-
-  .care-banner {
-    padding:
-      24px 20px;
-  }
-
-  .care-banner-icon {
-    width: 54px;
-    height: 54px;
-  }
-
-  .footer-bottom-right {
-    gap: 12px;
+  .care-summary-card,
+  .service-card,
+  .health-tip-card {
+    padding: 21px;
   }
 }
 
 
 /* =========================================================
-   VERY SMALL PHONE
-   <= 320px
+   VERY SMALL MOBILE
 ========================================================= */
 
 @media (
@@ -2346,61 +1527,23 @@
 ) {
   .section-container {
     width:
-      calc(100% - 16px);
-  }
-
-  .landing-hero {
-    padding-top: 102px;
+      calc(
+        100% - 16px
+      );
   }
 
   .hero-content h1 {
-    font-size: 2.12rem;
+    font-size: 2.25rem;
   }
 
   .hero-description {
     font-size: 0.86rem;
   }
-
-  .hero-eyebrow {
-    max-width: 100%;
-
-    font-size: 0.54rem;
-  }
-
-  .hero-primary-button,
-  .hero-secondary-button {
-    padding-inline: 14px;
-
-    font-size: 0.8rem;
-  }
-
-  .hero-highlight-card {
-    padding: 11px;
-  }
-
-  .care-summary-card,
-  .service-card,
-  .health-tip-card {
-    padding: 19px;
-  }
-
-  .footer-cta {
-    padding-top: 52px;
-  }
-
-  .footer-main {
-    padding:
-      42px 0;
-  }
-
-  .footer-emergency {
-    font-size: 0.64rem;
-  }
 }
 
 
 /* =========================================================
-   LANDSCAPE PHONES / SHORT SCREENS
+   SHORT / LANDSCAPE SCREENS
 ========================================================= */
 
 @media (
@@ -2409,21 +1552,17 @@
   min-width: 600px
 ) {
   .landing-hero {
-    min-height: 620px;
+    min-height: 560px;
 
     padding:
-      110px 0
-      38px;
-  }
-
-  .hero-layout {
-    min-height: auto;
+      100px 0
+      40px;
   }
 
   .hero-content h1 {
     font-size:
       clamp(
-        2.7rem,
+        2.8rem,
         7vw,
         4.2rem
       );
@@ -2431,48 +1570,6 @@
 
   .hero-description {
     margin-top: 18px;
-
-    line-height: 1.6;
-  }
-
-  .hero-actions {
-    margin-top: 22px;
-  }
-
-  .hero-trust {
-    margin-top: 20px;
-  }
-
-  .hero-highlight-grid {
-    margin-top: 26px;
-  }
-}
-
-
-/* =========================================================
-   VERY SHORT LANDSCAPE
-========================================================= */
-
-@media (
-  max-height: 480px
-) and (
-  min-width: 700px
-) {
-  .landing-hero {
-    min-height: 560px;
-  }
-
-  .hero-content h1 {
-    font-size:
-      clamp(
-        2.5rem,
-        6vw,
-        3.8rem
-      );
-  }
-
-  .hero-highlight-grid {
-    display: none;
   }
 }
 
@@ -2490,12 +1587,6 @@
 
     box-shadow: none;
   }
-
-  .hero-primary-button:hover,
-  .care-banner-button:hover,
-  .back-to-top:hover {
-    transform: none;
-  }
 }
 
 
@@ -2507,43 +1598,8 @@
   prefers-reduced-motion:
     reduce
 ) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  .hero-primary-button,
-  .hero-secondary-button,
   .service-card,
-  .care-summary-card,
-  .service-arrow,
-  .care-banner-button,
-  .back-to-top {
+  .care-summary-card {
     transition: none;
-  }
-}
-
-
-/* =========================================================
-   HIGH CONTRAST
-========================================================= */
-
-@media (
-  prefers-contrast:
-    more
-) {
-  .landing-hero-overlay {
-    background:
-      rgba(
-        3,
-        43,
-        42,
-        0.82
-      );
-  }
-
-  .hero-description,
-  .hero-trust div,
-  .hero-highlight-card span {
-    color: #ffffff;
   }
 }
