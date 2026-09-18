@@ -1,6 +1,6 @@
 export const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ||
-  "http://localhost:5174";
+  "https://philalink-api.onrender.com";
 
 const TOKEN_KEY =
   "philalink_token";
