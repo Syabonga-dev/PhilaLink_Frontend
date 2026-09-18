@@ -32,7 +32,7 @@ import {
   CollectionStatus,
   formatDate,
   parseDate,
-} from "./proxyUtils.jsx";
+} from "./ProxyUtils.jsx";
 
 function getInitials(name) {
   if (!name) {

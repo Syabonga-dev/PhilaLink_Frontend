@@ -34,7 +34,7 @@ import {
   CollectionStatus,
   formatDate,
   parseDate,
-} from "./proxyUtils.jsx";
+} from "./ProxyUtils.jsx";
 
 const PAGE_SIZE = 20;
 
