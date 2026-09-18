@@ -8,7 +8,6 @@ import {
 } from "react-router-dom";
 
 import {
-  Activity,
   ArrowRight,
   ArrowUp,
   Bell,
@@ -26,105 +25,105 @@ import {
 
 import NavigationPage from "../components/layout/NavigationBar.jsx";
 
+import heroImage from "../assets/Screenshot_20260918-165155_Chrome.jpg";
+
 import "./LandingPage.css";
+
 
 const services = [
   {
     icon: Pill,
-
-    title:
-      "Medication Management",
-
+    title: "Medication Management",
     description:
-      "Track medication schedules, upcoming collections and treatment information in one place.",
+      "Keep track of medication, treatment details and upcoming collection dates from one place.",
   },
 
   {
-    icon: Building2,
-
-    title:
-      "Connected Care",
-
+    icon: CalendarDays,
+    title: "Appointments & Collections",
     description:
-      "Keep your healthcare information connected to the clinics and healthcare workers supporting your treatment.",
+      "Stay aware of important appointments and know when your next medication collection is due.",
   },
 
   {
     icon: Bell,
-
-    title:
-      "Smart Reminders",
-
+    title: "Healthcare Reminders",
     description:
-      "Stay informed about medication collections, appointments and important healthcare updates.",
+      "Receive helpful reminders about medication, appointments, collections and healthcare updates.",
   },
 
   {
     icon: Users,
-
-    title:
-      "Proxy Support",
-
+    title: "Proxy Support",
     description:
-      "Allow trusted proxies to support medication collections on behalf of linked patients.",
+      "Connect trusted people who can support medication collection when a patient needs assistance.",
   },
 
   {
     icon: MessageCircle,
-
-    title:
-      "Phila Chat",
-
+    title: "Phila Chat",
     description:
-      "Get helpful healthcare information through the built-in PhilaLink assistant.",
+      "Access the built-in PhilaLink assistant for helpful healthcare information and guidance.",
   },
 
   {
     icon: ShieldCheck,
-
-    title:
-      "Secure Records",
-
+    title: "Connected Records",
     description:
-      "Keep healthcare activity organised with secure records, verification and activity tracking.",
+      "Keep healthcare activity organised with secure access, verification and role-based information.",
   },
 ];
+
 
 const healthTips = [
   {
     icon: Pill,
-
-    title:
-      "Take medication as prescribed",
-
+    title: "Take medication as prescribed",
     description:
       "Follow your healthcare professional's instructions and keep track of when your medication needs to be collected.",
   },
 
   {
     icon: CalendarDays,
-
-    title:
-      "Keep your appointments",
-
+    title: "Keep your appointments",
     description:
       "Regular healthcare visits can help keep your treatment on track and identify problems early.",
   },
 
   {
     icon: Droplets,
-
-    title:
-      "Stay hydrated",
-
+    title: "Stay hydrated",
     description:
       "Drink enough water throughout the day, especially when you are active or when the weather is hot.",
   },
 ];
 
+
+const heroHighlights = [
+  {
+    icon: Pill,
+    title: "Medication",
+    text: "Track your treatment and supply.",
+  },
+
+  {
+    icon: CalendarDays,
+    title: "Collections",
+    text: "Know when medication is due.",
+  },
+
+  {
+    icon: Users,
+    title: "Support",
+    text: "Stay connected to people helping you.",
+  },
+];
+
+
 export default function LandingPage() {
   const location =
     useLocation();
+
 
   useEffect(() => {
     const sectionId =
@@ -161,6 +160,7 @@ export default function LandingPage() {
     location.state,
   ]);
 
+
   const scrollToTop =
     () => {
       window.scrollTo({
@@ -169,28 +169,44 @@ export default function LandingPage() {
       });
     };
 
+
   return (
     <div className="landing-page">
       <NavigationPage />
+
 
       {/* ===================================== */}
       {/* HERO */}
       {/* ===================================== */}
 
       <section className="landing-hero">
-        <div className="section-container hero-layout">
-          {/* LEFT */}
+        <div
+          className="landing-hero-background"
+          style={{
+            backgroundImage:
+              `url(${heroImage})`,
+          }}
+          aria-hidden="true"
+        />
 
+        <div
+          className="landing-hero-overlay"
+          aria-hidden="true"
+        />
+
+
+        <div className="section-container hero-layout">
           <div className="hero-content">
             <div className="hero-eyebrow">
               <HeartPulse
-                size={16}
+                size={17}
               />
 
               <span>
                 CONNECTED HEALTHCARE
               </span>
             </div>
+
 
             <h1>
               Your healthcare,
@@ -200,14 +216,15 @@ export default function LandingPage() {
               </span>
             </h1>
 
+
             <p className="hero-description">
               PhilaLink helps patients
-              stay informed about
-              medication, collections,
-              appointments and the
-              people supporting their
+              stay informed about medication,
+              collections, appointments and
+              the people supporting their
               healthcare journey.
             </p>
+
 
             <div className="hero-actions">
               <Link
@@ -228,6 +245,7 @@ export default function LandingPage() {
                 Log in
               </Link>
             </div>
+
 
             <div className="hero-trust">
               <div>
@@ -262,79 +280,40 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* RIGHT */}
 
-          <div className="hero-visual">
-            <div className="hero-panel">
-              <div className="hero-panel-header">
-                <div>
-                  <span className="hero-panel-label">
-                    PHILALINK
-                  </span>
+          <div className="hero-highlight-grid">
+            {heroHighlights.map(
+              ({
+                icon: Icon,
+                title,
+                text,
+              }) => (
+                <article
+                  key={title}
+                  className="hero-highlight-card"
+                >
+                  <div className="hero-highlight-icon">
+                    <Icon
+                      size={21}
+                    />
+                  </div>
 
-                  <h2>
-                    Healthcare at a
-                    glance
-                  </h2>
-                </div>
+                  <div className="hero-highlight-copy">
+                    <strong>
+                      {title}
+                    </strong>
 
-                <div className="hero-health-icon">
-                  <Activity
-                    size={22}
-                  />
-                </div>
-              </div>
-
-              <div className="hero-feature-list">
-                <HeroFeature
-                  icon={Pill}
-                  title="Medication"
-                  description="Keep treatment information organised."
-                />
-
-                <HeroFeature
-                  icon={
-                    CalendarDays
-                  }
-                  title="Collections"
-                  description="Know when medication collection is due."
-                />
-
-                <HeroFeature
-                  icon={Bell}
-                  title="Reminders"
-                  description="Stay informed about important healthcare events."
-                />
-
-                <HeroFeature
-                  icon={Users}
-                  title="Proxy care"
-                  description="Support linked patients when they need assistance."
-                />
-              </div>
-            </div>
-
-            <div className="hero-floating-card">
-              <div className="hero-floating-icon">
-                <ShieldCheck
-                  size={19}
-                />
-              </div>
-
-              <div>
-                <strong>
-                  Secure access
-                </strong>
-
-                <span>
-                  Role-based healthcare
-                  information
-                </span>
-              </div>
-            </div>
+                    <span>
+                      {text}
+                    </span>
+                  </div>
+                </article>
+              )
+            )}
           </div>
         </div>
       </section>
+
 
       {/* ===================================== */}
       {/* ABOUT */}
@@ -344,55 +323,68 @@ export default function LandingPage() {
         id="about"
         className="intro-section"
       >
-        <div className="section-container">
-          <div className="intro-layout">
-            <div className="intro-content">
-              <span className="section-label">
-                ABOUT PHILALINK
+        <div className="section-container intro-layout">
+          <div className="intro-heading">
+            <span className="section-label">
+              ABOUT PHILALINK
+            </span>
+
+            <h2>
+              Healthcare should be
+              <span>
+                {" "}
+                easier to follow.
               </span>
+            </h2>
+          </div>
 
-              <h2>
-                Healthcare should be
-                <span>
-                  {" "}
-                  easier to follow.
-                </span>
-              </h2>
 
-              <p>
-                PhilaLink brings
-                patients, healthcare
-                workers and medication
-                proxies together
-                through one connected
-                digital platform.
-              </p>
-            </div>
+          <div className="intro-copy">
+            <p>
+              PhilaLink brings patients,
+              healthcare workers and trusted
+              medication proxies together
+              through one connected digital
+              platform.
+            </p>
 
-            <div className="intro-stats">
-              <StatCard
-                icon={Pill}
-                title="Medication"
-                text="Keep treatment organised"
-              />
+            <p>
+              The platform helps patients
+              understand what medication they
+              have, when their next collection
+              is due and the healthcare activity
+              around their treatment.
+            </p>
+          </div>
+        </div>
 
-              <StatCard
-                icon={
-                  CalendarDays
-                }
-                title="Collections"
-                text="Track what is due"
-              />
 
-              <StatCard
-                icon={Bell}
-                title="Reminders"
-                text="Stay informed"
-              />
-            </div>
+        <div className="section-container">
+          <div className="care-summary-grid">
+            <CareSummaryCard
+              number="01"
+              icon={Pill}
+              title="Know your medication"
+              text="Keep medication details and treatment information organised and easy to access."
+            />
+
+            <CareSummaryCard
+              number="02"
+              icon={CalendarDays}
+              title="Know what is next"
+              text="See upcoming collections and appointments before they become easy to miss."
+            />
+
+            <CareSummaryCard
+              number="03"
+              icon={Users}
+              title="Stay supported"
+              text="Connect patients with trusted proxies and healthcare workers involved in their care."
+            />
           </div>
         </div>
       </section>
+
 
       {/* ===================================== */}
       {/* SERVICES */}
@@ -403,27 +395,28 @@ export default function LandingPage() {
         className="services-section"
       >
         <div className="section-container">
-          <div className="section-heading">
+          <div className="section-heading section-heading-centered">
             <span className="section-label">
               OUR SERVICES
             </span>
 
             <h2>
-              Healthcare made
+              One place for the parts of
+              healthcare that
               <span>
                 {" "}
-                simpler.
+                matter every day.
               </span>
             </h2>
 
             <p>
-              PhilaLink brings the
-              important parts of
-              healthcare management
-              together in one clear,
-              accessible platform.
+              PhilaLink keeps important
+              healthcare information together
+              so patients and the people
+              supporting them can stay informed.
             </p>
           </div>
+
 
           <div className="services-grid">
             {services.map(
@@ -436,9 +429,16 @@ export default function LandingPage() {
                   key={title}
                   className="service-card"
                 >
-                  <div className="service-icon">
-                    <Icon
-                      size={23}
+                  <div className="service-card-top">
+                    <div className="service-icon">
+                      <Icon
+                        size={23}
+                      />
+                    </div>
+
+                    <ArrowRight
+                      className="service-arrow"
+                      size={18}
                     />
                   </div>
 
@@ -447,9 +447,7 @@ export default function LandingPage() {
                   </h3>
 
                   <p>
-                    {
-                      description
-                    }
+                    {description}
                   </p>
                 </article>
               )
@@ -457,6 +455,56 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+
+      {/* ===================================== */}
+      {/* CARE BANNER */}
+      {/* ===================================== */}
+
+      <section className="care-banner-section">
+        <div className="section-container">
+          <div className="care-banner">
+            <div className="care-banner-icon">
+              <HeartPulse
+                size={30}
+              />
+            </div>
+
+
+            <div className="care-banner-copy">
+              <span>
+                BUILT AROUND THE PATIENT
+              </span>
+
+              <h2>
+                Your treatment information
+                should move with you.
+              </h2>
+
+              <p>
+                PhilaLink connects medication,
+                collection information,
+                appointments and healthcare
+                support around one patient
+                journey.
+              </p>
+            </div>
+
+
+            <Link
+              to="/register"
+              className="care-banner-button"
+            >
+              Get started
+
+              <ArrowRight
+                size={18}
+              />
+            </Link>
+          </div>
+        </div>
+      </section>
+
 
       {/* ===================================== */}
       {/* HEALTH TIPS */}
@@ -473,19 +521,20 @@ export default function LandingPage() {
             </span>
 
             <h2>
-              Simple steps for
+              Small habits can support
               <span>
                 {" "}
-                better health.
+                better healthcare.
               </span>
             </h2>
 
             <p>
-              Helpful reminders to
-              support your everyday
-              healthcare routine.
+              Simple reminders to help support
+              everyday treatment and healthcare
+              routines.
             </p>
           </div>
+
 
           <div className="health-tips-grid">
             {healthTips.map(
@@ -493,11 +542,15 @@ export default function LandingPage() {
                 icon: Icon,
                 title,
                 description,
-              }) => (
+              }, index) => (
                 <article
                   key={title}
                   className="health-tip-card"
                 >
+                  <div className="health-tip-number">
+                    0{index + 1}
+                  </div>
+
                   <div className="health-tip-icon">
                     <Icon
                       size={22}
@@ -509,9 +562,7 @@ export default function LandingPage() {
                   </h3>
 
                   <p>
-                    {
-                      description
-                    }
+                    {description}
                   </p>
                 </article>
               )
@@ -519,6 +570,7 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
 
       {/* ===================================== */}
       {/* FOOTER */}
@@ -529,8 +581,6 @@ export default function LandingPage() {
         className="landing-footer"
       >
         <div className="section-container">
-          {/* CTA */}
-
           <div className="footer-cta">
             <div>
               <span className="footer-label">
@@ -538,21 +588,21 @@ export default function LandingPage() {
               </span>
 
               <h2>
-                A simpler way to
-                stay connected to
+                Your healthcare journey,
                 <span>
                   {" "}
-                  care.
+                  connected in one place.
                 </span>
               </h2>
 
               <p>
-                Join PhilaLink and
-                bring your healthcare
-                journey into one
-                connected platform.
+                Create your PhilaLink account
+                and keep medication,
+                collections, appointments and
+                care support easier to follow.
               </p>
             </div>
+
 
             <div className="footer-cta-actions">
               <Link
@@ -575,7 +625,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* MAIN FOOTER */}
 
           <div className="footer-main">
             <div className="footer-brand">
@@ -605,14 +654,12 @@ export default function LandingPage() {
                 Connecting patients,
                 healthcare workers and
                 trusted proxies through
-                simpler digital
-                healthcare.
+                simpler digital healthcare.
               </p>
             </div>
 
-            <div className="footer-links-grid">
-              {/* EXPLORE */}
 
+            <div className="footer-links-grid">
               <div>
                 <h4>
                   Explore
@@ -633,7 +680,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* ACCESS */}
 
               <div>
                 <h4>
@@ -655,7 +701,6 @@ export default function LandingPage() {
                 </div>
               </div>
 
-              {/* SUPPORT */}
 
               <div>
                 <h4>
@@ -664,17 +709,13 @@ export default function LandingPage() {
 
                 <div className="support-list">
                   <SupportItem
-                    icon={
-                      PhoneCall
-                    }
+                    icon={PhoneCall}
                     label="Emergency"
                     value="10177"
                   />
 
                   <SupportItem
-                    icon={
-                      Building2
-                    }
+                    icon={Building2}
                     label="Connected care"
                     value="Healthcare support through PhilaLink"
                   />
@@ -689,7 +730,6 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* BOTTOM */}
 
           <div className="footer-bottom">
             <span>
@@ -732,59 +772,38 @@ export default function LandingPage() {
   );
 }
 
-/* ========================================= */
-/* SMALL COMPONENTS */
-/* ========================================= */
 
-function HeroFeature({
-  icon: Icon,
-  title,
-  description,
-}) {
-  return (
-    <div className="hero-feature">
-      <div className="hero-feature-icon">
-        <Icon
-          size={20}
-        />
-      </div>
-
-      <div>
-        <strong>
-          {title}
-        </strong>
-
-        <span>
-          {description}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function StatCard({
+function CareSummaryCard({
+  number,
   icon: Icon,
   title,
   text,
 }) {
   return (
-    <article className="stat-card">
-      <div className="stat-icon">
-        <Icon
-          size={21}
-        />
+    <article className="care-summary-card">
+      <div className="care-summary-header">
+        <div className="care-summary-icon">
+          <Icon
+            size={22}
+          />
+        </div>
+
+        <span>
+          {number}
+        </span>
       </div>
 
-      <strong>
+      <h3>
         {title}
-      </strong>
+      </h3>
 
-      <span>
+      <p>
         {text}
-      </span>
+      </p>
     </article>
   );
 }
+
 
 function SupportItem({
   icon: Icon,
