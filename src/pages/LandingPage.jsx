@@ -97,10 +97,38 @@ const journeyItems = [
 ];
 
 
+const healthTips = [
+  {
+    number: "01",
+    title: "Take medication as directed",
+    description:
+      "Follow the dosage and timing provided by your healthcare professional, and ask for guidance whenever instructions are unclear.",
+  },
+
+  {
+    number: "02",
+    title: "Plan ahead for collections",
+    description:
+      "Keep track of your next collection date so you have enough time to arrange transport or proxy support when needed.",
+  },
+
+  {
+    number: "03",
+    title: "Keep your care information current",
+    description:
+      "Make sure important treatment, appointment and contact information stays up to date so your healthcare journey is easier to follow.",
+  },
+];
+
+
 export default function LandingPage() {
   const location =
     useLocation();
 
+
+  // =====================================================
+  // HANDLE NAVIGATION FROM ANOTHER PAGE
+  // =====================================================
 
   useEffect(() => {
     const sectionId =
@@ -119,8 +147,11 @@ export default function LandingPage() {
 
         if (section) {
           section.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
+            behavior:
+              "smooth",
+
+            block:
+              "start",
           });
         }
 
@@ -132,17 +163,25 @@ export default function LandingPage() {
       }, 120);
 
     return () =>
-      clearTimeout(timer);
+      clearTimeout(
+        timer
+      );
   }, [
     location.state,
   ]);
 
 
+  // =====================================================
+  // SCROLL HELPERS
+  // =====================================================
+
   const scrollToTop =
     () => {
       window.scrollTo({
         top: 0,
-        behavior: "smooth",
+
+        behavior:
+          "smooth",
       });
     };
 
@@ -154,10 +193,12 @@ export default function LandingPage() {
 
       {/* ===================================== */}
       {/* HERO */}
-      {/* RAW IMAGE + CENTERED TEXT */}
       {/* ===================================== */}
 
-      <section className="landing-hero">
+      <section
+        id="home"
+        className="landing-hero"
+      >
         <div
           className="landing-hero-image"
           style={{
@@ -170,6 +211,7 @@ export default function LandingPage() {
         <div className="hero-content">
           <h1>
             Your healthcare,
+
             <span>
               {" "}
               connected.
@@ -241,19 +283,27 @@ export default function LandingPage() {
                 description,
               }) => (
                 <article
-                  key={number}
+                  key={
+                    number
+                  }
                   className="journey-item"
                 >
                   <span className="journey-number">
-                    {number}
+                    {
+                      number
+                    }
                   </span>
 
                   <h3>
-                    {title}
+                    {
+                      title
+                    }
                   </h3>
 
                   <p>
-                    {description}
+                    {
+                      description
+                    }
                   </p>
                 </article>
               )
@@ -301,29 +351,107 @@ export default function LandingPage() {
                 description,
               }) => (
                 <article
-                  key={title}
+                  key={
+                    title
+                  }
                   className="service-row"
                 >
                   <div className="service-icon">
                     <Icon
-                      size={22}
+                      size={
+                        22
+                      }
                     />
                   </div>
 
                   <div className="service-content">
                     <h3>
-                      {title}
+                      {
+                        title
+                      }
                     </h3>
 
                     <p>
-                      {description}
+                      {
+                        description
+                      }
                     </p>
                   </div>
 
                   <ArrowUpRight
                     className="service-link-icon"
-                    size={19}
+                    size={
+                      19
+                    }
                   />
+                </article>
+              )
+            )}
+          </div>
+        </div>
+      </section>
+
+
+      {/* ===================================== */}
+      {/* HEALTH TIPS */}
+      {/* ===================================== */}
+
+      <section
+        id="health-tips"
+        className="access-section"
+      >
+        <div className="section-container">
+
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                HEALTH TIPS
+              </span>
+
+              <h2>
+                Small habits can make
+                healthcare easier to manage.
+              </h2>
+            </div>
+
+            <p>
+              Simple reminders that can help
+              you stay organised and more
+              informed about your healthcare.
+            </p>
+          </div>
+
+
+          <div className="journey-grid">
+            {healthTips.map(
+              ({
+                number,
+                title,
+                description,
+              }) => (
+                <article
+                  key={
+                    number
+                  }
+                  className="journey-item"
+                >
+                  <span className="journey-number">
+                    {
+                      number
+                    }
+                  </span>
+
+                  <h3>
+                    {
+                      title
+                    }
+                  </h3>
+
+                  <p>
+                    {
+                      description
+                    }
+                  </p>
                 </article>
               )
             )}
@@ -340,7 +468,9 @@ export default function LandingPage() {
         <div className="section-container patient-focus-grid">
           <div className="patient-focus-icon">
             <HeartPulse
-              size={30}
+              size={
+                30
+              }
             />
           </div>
 
@@ -397,7 +527,9 @@ export default function LandingPage() {
               Create account
 
               <ArrowRight
-                size={18}
+                size={
+                  18
+                }
               />
             </Link>
 
@@ -421,11 +553,21 @@ export default function LandingPage() {
         className="landing-footer"
       >
         <div className="section-container">
+
           <div className="footer-main">
+
+            {/* ============================= */}
+            {/* FOOTER BRAND */}
+            {/* ============================= */}
+
             <div className="footer-brand">
               <Link
                 to="/"
+                onClick={
+                  scrollToTop
+                }
                 className="footer-logo"
+                aria-label="Go to PhilaLink home"
               >
                 <img
                   src="/logo2.png"
@@ -434,6 +576,7 @@ export default function LandingPage() {
 
                 <span>
                   Phila
+
                   <strong>
                     Link
                   </strong>
@@ -450,10 +593,19 @@ export default function LandingPage() {
 
 
             <div className="footer-columns">
+
+              {/* ============================= */}
+              {/* PLATFORM */}
+              {/* ============================= */}
+
               <div>
                 <h4>
                   Platform
                 </h4>
+
+                <a href="#home">
+                  Home
+                </a>
 
                 <a href="#about">
                   About
@@ -463,11 +615,19 @@ export default function LandingPage() {
                   Services
                 </a>
 
-                <Link to="/register">
-                  Create account
-                </Link>
+                <a href="#health-tips">
+                  Health Tips
+                </a>
+
+                <a href="#contacts">
+                  Contacts
+                </a>
               </div>
 
+
+              {/* ============================= */}
+              {/* ACCESS */}
+              {/* ============================= */}
 
               <div>
                 <h4>
@@ -481,8 +641,16 @@ export default function LandingPage() {
                 <Link to="/register">
                   Register
                 </Link>
+
+                <Link to="/forgot-password">
+                  Forgot password
+                </Link>
               </div>
 
+
+              {/* ============================= */}
+              {/* SUPPORT */}
+              {/* ============================= */}
 
               <div>
                 <h4>
@@ -491,7 +659,9 @@ export default function LandingPage() {
 
                 <div className="footer-support">
                   <PhoneCall
-                    size={17}
+                    size={
+                      17
+                    }
                   />
 
                   <div>
@@ -507,7 +677,9 @@ export default function LandingPage() {
 
                 <div className="footer-support">
                   <Building2
-                    size={17}
+                    size={
+                      17
+                    }
                   />
 
                   <div>
@@ -524,6 +696,10 @@ export default function LandingPage() {
             </div>
           </div>
 
+
+          {/* ============================= */}
+          {/* FOOTER BOTTOM */}
+          {/* ============================= */}
 
           <div className="footer-bottom">
             <span>
@@ -542,7 +718,9 @@ export default function LandingPage() {
               Back to top
 
               <ArrowUpRight
-                size={15}
+                size={
+                  15
+                }
               />
             </button>
           </div>
