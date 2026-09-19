@@ -2,17 +2,84 @@ import {
   useRef,
   useState,
 } from "react";
+
 import {
   Link,
   useLocation,
   useNavigate,
 } from "react-router-dom";
+
 import logo from "../../assets/logo.png";
+
 import Button from "../../components/ui/Button.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
-import { useToast } from "../../components/ui/Toast.jsx";
-import { authApi } from "../../services/api/auth.js";
-import { ApiError } from "../../services/api/client.js";
+
+import {
+  useAuth,
+} from "../../context/AuthContext.jsx";
+
+import {
+  useToast,
+} from "../../components/ui/Toast.jsx";
+
+import {
+  authApi,
+} from "../../services/api/auth.js";
+
+import {
+  ApiError,
+} from "../../services/api/client.js";
+
+function maskEmail(
+  email
+) {
+  if (
+    !email ||
+    !email.includes(
+      "@"
+    )
+  ) {
+    return "your email address";
+  }
+
+  const [
+    name,
+    domain,
+  ] =
+    email.split(
+      "@"
+    );
+
+  if (
+    !name ||
+    !domain
+  ) {
+    return email;
+  }
+
+  const visibleCharacters =
+    name.slice(
+      0,
+      Math.min(
+        2,
+        name.length
+      )
+    );
+
+  const hiddenCharacters =
+    "*".repeat(
+      Math.max(
+        1,
+        name.length -
+          visibleCharacters.length
+      )
+    );
+
+  return (
+    `${visibleCharacters}` +
+    `${hiddenCharacters}` +
+    `@${domain}`
+  );
+}
 
 export default function PhoneVerificationPage() {
   const [
@@ -30,12 +97,16 @@ export default function PhoneVerificationPage() {
   const [
     loading,
     setLoading,
-  ] = useState(false);
+  ] = useState(
+    false
+  );
 
   const [
     resending,
     setResending,
-  ] = useState(false);
+  ] = useState(
+    false
+  );
 
   const inputsRef =
     useRef([]);
@@ -55,109 +126,139 @@ export default function PhoneVerificationPage() {
 
   const {
     userId,
-    phone,
+    email,
   } =
     location.state ||
     {};
 
-  const handleChange = (
-    index,
-    value
-  ) => {
-    if (
-      !/^\d?$/.test(
-        value
-      )
-    ) {
-      return;
-    }
+  const handleChange =
+    (
+      index,
+      value
+    ) => {
+      if (
+        !/^\d?$/.test(
+          value
+        )
+      ) {
+        return;
+      }
 
-    const next = [
-      ...digits,
-    ];
+      const next = [
+        ...digits,
+      ];
 
-    next[index] =
-      value;
+      next[index] =
+        value;
 
-    setDigits(next);
-
-    if (
-      value &&
-      index < 5
-    ) {
-      inputsRef.current[
-        index + 1
-      ]?.focus();
-    }
-  };
-
-  const handleKeyDown = (
-    index,
-    event
-  ) => {
-    if (
-      event.key ===
-        "Backspace" &&
-      !digits[index] &&
-      index > 0
-    ) {
-      inputsRef.current[
-        index - 1
-      ]?.focus();
-    }
-  };
-
-  const handlePaste = (
-    event
-  ) => {
-    const pasted =
-      event.clipboardData
-        .getData("text")
-        .replace(/\D/g, "")
-        .slice(0, 6);
-
-    if (!pasted) {
-      return;
-    }
-
-    event.preventDefault();
-
-    const next =
-      Array(6).fill("");
-
-    pasted
-      .split("")
-      .forEach(
-        (
-          value,
-          index
-        ) => {
-          next[index] =
-            value;
-        }
+      setDigits(
+        next
       );
 
-    setDigits(next);
+      if (
+        value &&
+        index <
+          5
+      ) {
+        inputsRef
+          .current[
+            index +
+              1
+          ]?.focus();
+      }
+    };
 
-    const focusIndex =
-      Math.min(
-        pasted.length,
-        5
+  const handleKeyDown =
+    (
+      index,
+      event
+    ) => {
+      if (
+        event.key ===
+          "Backspace" &&
+        !digits[index] &&
+        index >
+          0
+      ) {
+        inputsRef
+          .current[
+            index -
+              1
+          ]?.focus();
+      }
+    };
+
+  const handlePaste =
+    (
+      event
+    ) => {
+      const pasted =
+        event
+          .clipboardData
+          .getData(
+            "text"
+          )
+          .replace(
+            /\D/g,
+            ""
+          )
+          .slice(
+            0,
+            6
+          );
+
+      if (
+        !pasted
+      ) {
+        return;
+      }
+
+      event.preventDefault();
+
+      const next =
+        Array(6)
+          .fill("");
+
+      pasted
+        .split("")
+        .forEach(
+          (
+            value,
+            index
+          ) => {
+            next[index] =
+              value;
+          }
+        );
+
+      setDigits(
+        next
       );
 
-    inputsRef.current[
-      focusIndex
-    ]?.focus();
-  };
+      const focusIndex =
+        Math.min(
+          pasted.length,
+          5
+        );
+
+      inputsRef
+        .current[
+          focusIndex
+        ]?.focus();
+    };
 
   const code =
     digits.join("");
 
   const handleSubmit =
-    async (event) => {
+    async (
+      event
+    ) => {
       event.preventDefault();
 
-      if (!userId) {
+      if (
+        !userId
+      ) {
         toast.error(
           "Verification details are missing. Please register again."
         );
@@ -165,7 +266,8 @@ export default function PhoneVerificationPage() {
         navigate(
           "/register",
           {
-            replace: true,
+            replace:
+              true,
           }
         );
 
@@ -174,7 +276,7 @@ export default function PhoneVerificationPage() {
 
       if (
         code.length !==
-        6
+          6
       ) {
         toast.error(
           "Enter the full 6-digit code."
@@ -183,7 +285,9 @@ export default function PhoneVerificationPage() {
         return;
       }
 
-      setLoading(true);
+      setLoading(
+        true
+      );
 
       try {
         await verifyPhone({
@@ -192,30 +296,37 @@ export default function PhoneVerificationPage() {
         });
 
         toast.success(
-          "Your phone number has been verified."
+          "Your account has been verified."
         );
 
         navigate(
           "/register/success",
           {
-            replace: true,
+            replace:
+              true,
           }
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         toast.error(
           error instanceof
-          ApiError
+            ApiError
             ? error.message
             : "Verification failed. Try again."
         );
       } finally {
-        setLoading(false);
+        setLoading(
+          false
+        );
       }
     };
 
   const handleResend =
     async () => {
-      if (!userId) {
+      if (
+        !userId
+      ) {
         toast.error(
           "Verification details are missing. Please register again."
         );
@@ -223,12 +334,15 @@ export default function PhoneVerificationPage() {
         return;
       }
 
-      setResending(true);
+      setResending(
+        true
+      );
 
       try {
-        await authApi.resendCode(
-          userId
-        );
+        await authApi
+          .resendCode(
+            userId
+          );
 
         setDigits([
           "",
@@ -239,22 +353,27 @@ export default function PhoneVerificationPage() {
           "",
         ]);
 
-        inputsRef.current[
-          0
-        ]?.focus();
+        inputsRef
+          .current[
+            0
+          ]?.focus();
 
         toast.success(
-          "A new verification code has been sent."
+          "A new verification code has been sent to your email."
         );
-      } catch (error) {
+      } catch (
+        error
+      ) {
         toast.error(
           error instanceof
-          ApiError
+            ApiError
             ? error.message
-            : "Couldn't resend the code."
+            : "Couldn't resend the verification code."
         );
       } finally {
-        setResending(false);
+        setResending(
+          false
+        );
       }
     };
 
@@ -279,7 +398,9 @@ export default function PhoneVerificationPage() {
           className="mb-5 flex items-center justify-center gap-2.5"
         >
           <img
-            src={logo}
+            src={
+              logo
+            }
             alt="PhilaLink"
             className="h-9 w-9"
           />
@@ -295,15 +416,17 @@ export default function PhoneVerificationPage() {
         <div className="rounded-2xl border border-white/20 bg-white/95 p-7 shadow-2xl backdrop-blur-md sm:p-9">
           <div className="text-center">
             <span className="material-symbols-outlined mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary-container/10 text-3xl text-primary">
-              sms
+              mail
             </span>
 
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              Phone verification
+              Email
+              verification
             </p>
 
             <h1 className="mt-2 text-2xl font-bold text-on-surface">
-              Verify your number
+              Verify your
+              account
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-on-surface-variant">
@@ -311,23 +434,33 @@ export default function PhoneVerificationPage() {
               6-digit code
               sent to{" "}
               <span className="font-semibold text-on-surface">
-                {phone ||
-                  "your phone"}
+                {maskEmail(
+                  email
+                )}
               </span>
               .
+            </p>
+
+            <p className="mt-2 text-xs text-on-surface-variant">
+              The code
+              expires after
+              5 minutes.
             </p>
           </div>
 
           {!userId ? (
             <div className="mt-7 rounded-lg border border-error/30 bg-error/5 p-4 text-center">
               <p className="text-sm font-semibold text-on-surface">
-                Verification session missing
+                Verification
+                session
+                missing
               </p>
 
               <p className="mt-1 text-xs text-on-surface-variant">
                 Return to
-                registration and
-                start again.
+                registration
+                and start
+                again.
               </p>
 
               <Button
@@ -335,7 +468,8 @@ export default function PhoneVerificationPage() {
                 to="/register"
                 className="mt-4 w-full"
               >
-                Back to registration
+                Back to
+                registration
               </Button>
             </div>
           ) : (
@@ -440,15 +574,18 @@ export default function PhoneVerificationPage() {
               >
                 {resending
                   ? "Sending…"
-                  : "Didn't get a code? Resend"}
+                  : "Didn't get the email? Resend code"}
               </button>
 
               <p className="mt-6 text-center text-xs leading-5 text-on-surface-variant">
                 For your
-                security, account
-                verification must
-                be completed
-                before continuing.
+                security,
+                account
+                verification
+                must be
+                completed
+                before
+                logging in.
               </p>
             </>
           )}
