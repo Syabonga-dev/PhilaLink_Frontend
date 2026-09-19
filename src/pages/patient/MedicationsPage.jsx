@@ -21,9 +21,13 @@ import {
   Button,
 } from "../../components/patient/chatbot/AstraCompat.jsx";
 
-import { medicationsApi } from "../../services/api/medications.js";
+import {
+  medicationsApi,
+} from "../../services/api/medications.js";
 
-function formatTime(value) {
+function formatTime(
+  value
+) {
   if (!value) {
     return "—";
   }
@@ -45,7 +49,9 @@ function formatTime(value) {
   return text;
 }
 
-function formatDate(value) {
+function formatDate(
+  value
+) {
   if (!value) {
     return "—";
   }
@@ -71,7 +77,9 @@ function formatDate(value) {
   );
 }
 
-function formatDateTime(value) {
+function formatDateTime(
+  value
+) {
   if (!value) {
     return "—";
   }
@@ -99,6 +107,46 @@ function formatDateTime(value) {
   );
 }
 
+function hasMedicationEnded(
+  medication
+) {
+  if (
+    !medication?.endDate
+  ) {
+    return false;
+  }
+
+  const endDate =
+    new Date(
+      medication.endDate
+    );
+
+  if (
+    Number.isNaN(
+      endDate.getTime()
+    )
+  ) {
+    return false;
+  }
+
+  return (
+    endDate.getTime() <
+    Date.now()
+  );
+}
+
+function isMedicationActive(
+  medication
+) {
+  return (
+    medication?.isActive !==
+      false &&
+    !hasMedicationEnded(
+      medication
+    )
+  );
+}
+
 function getActiveSchedules(
   medication
 ) {
@@ -121,10 +169,12 @@ function getActiveSchedules(
     .sort(
       (a, b) =>
         String(
-          a?.timeOfDay ?? ""
+          a?.timeOfDay ??
+            ""
         ).localeCompare(
           String(
-            b?.timeOfDay ?? ""
+            b?.timeOfDay ??
+              ""
           )
         )
     );
@@ -146,7 +196,9 @@ function getTodayLogs(
 
   return medication.logs.filter(
     (log) => {
-      if (!log?.takenAt) {
+      if (
+        !log?.takenAt
+      ) {
         return false;
       }
 
@@ -175,9 +227,12 @@ function getTodayLogs(
   );
 }
 
-function formatQuantity(value) {
+function formatQuantity(
+  value
+) {
   if (
-    value == null ||
+    value ==
+      null ||
     Number.isNaN(
       Number(value)
     )
@@ -191,8 +246,12 @@ function formatQuantity(value) {
   return Number.isInteger(
     number
   )
-    ? String(number)
-    : number.toFixed(1);
+    ? String(
+        number
+      )
+    : number.toFixed(
+        1
+      );
 }
 
 function getSupplyMessage(
@@ -202,8 +261,10 @@ function getSupplyMessage(
     return {
       label:
         "Supply unavailable",
+
       variant:
         "default",
+
       text:
         "Supply information is not available yet.",
     };
@@ -224,21 +285,25 @@ function getSupplyMessage(
                   ? "day"
                   : "days"
               } remaining`,
+
         variant:
           supply.daysRemaining <=
           3
             ? "warning"
             : "success",
+
         text:
-          "Estimated from the most recent completed medication collection and your active dosing schedule.",
+          "Estimated from your latest completed collection, active dosing schedule and doses you have marked as taken.",
       };
 
     case "MissingUnitsPerDose":
       return {
         label:
           "Dose amount needed",
+
         variant:
           "warning",
+
         text:
           "Your dispensed quantity is recorded, but units per dose have not been captured yet.",
       };
@@ -247,8 +312,10 @@ function getSupplyMessage(
       return {
         label:
           "Schedule needed",
+
         variant:
           "warning",
+
         text:
           "Your dispensed quantity is recorded, but no active dosing schedule is available.",
       };
@@ -257,8 +324,10 @@ function getSupplyMessage(
       return {
         label:
           "No collected supply",
+
         variant:
           "default",
+
         text:
           "No completed medication collection has been recorded for this medication.",
       };
@@ -267,8 +336,10 @@ function getSupplyMessage(
       return {
         label:
           "Supply unavailable",
+
         variant:
           "default",
+
         text:
           "Supply information could not be calculated.",
       };
@@ -289,6 +360,7 @@ function LoadingState() {
 
               <div className="flex-1">
                 <div className="mb-sm h-4 w-40 rounded bg-border-secondary" />
+
                 <div className="h-3 w-56 rounded bg-border-secondary" />
               </div>
             </div>
@@ -398,13 +470,17 @@ export default function MedicationsPage() {
               ? supplyResult
               : []
           );
-        } catch (err) {
+        } catch (
+          err
+        ) {
           console.error(
             "Failed to load medication supply:",
             err
           );
 
-          setSupply([]);
+          setSupply(
+            []
+          );
 
           setSupplyError(
             err?.message ||
@@ -427,12 +503,10 @@ export default function MedicationsPage() {
             true
           );
 
-          setError("");
+          setError(
+            ""
+          );
 
-          /*
-           * Medication data is the critical path for this page.
-           * Do not make it wait for medication-supply calculation.
-           */
           const medicationResult =
             await medicationsApi
               .getMine();
@@ -444,7 +518,9 @@ export default function MedicationsPage() {
               ? medicationResult
               : []
           );
-        } catch (err) {
+        } catch (
+          err
+        ) {
           console.error(
             "Failed to load medications:",
             err
@@ -464,10 +540,6 @@ export default function MedicationsPage() {
           );
         }
 
-        /*
-         * Supply is secondary data. Start it after medication
-         * content has had a chance to resolve/render.
-         */
         await loadSupply();
       },
       [
@@ -477,7 +549,7 @@ export default function MedicationsPage() {
 
   useEffect(
     () => {
-      loadMedications();
+      void loadMedications();
     },
     [
       loadMedications,
@@ -495,31 +567,41 @@ export default function MedicationsPage() {
             ]
           )
         ),
-      [supply]
+      [
+        supply,
+      ]
     );
 
   const activeMedications =
     useMemo(
       () =>
         medications.filter(
-          (medication) =>
+          (
             medication
-              ?.isActive !==
-            false
+          ) =>
+            isMedicationActive(
+              medication
+            )
         ),
-      [medications]
+      [
+        medications,
+      ]
     );
 
   const inactiveMedications =
     useMemo(
       () =>
         medications.filter(
-          (medication) =>
+          (
             medication
-              ?.isActive ===
-            false
+          ) =>
+            !isMedicationActive(
+              medication
+            )
         ),
-      [medications]
+      [
+        medications,
+      ]
     );
 
   const todaySchedule =
@@ -551,7 +633,10 @@ export default function MedicationsPage() {
               )
           )
           .sort(
-            (a, b) =>
+            (
+              a,
+              b
+            ) =>
               String(
                 a.time
               ).localeCompare(
@@ -574,26 +659,34 @@ export default function MedicationsPage() {
         medicationId
       );
 
-      setError("");
-      setMessage("");
+      setError(
+        ""
+      );
+
+      setMessage(
+        ""
+      );
 
       await medicationsApi
         .logDose(
           medicationId,
           {
             taken,
-            notes: null,
+            notes:
+              null,
           }
         );
 
       setMessage(
         taken
-          ? "Medication marked as taken."
+          ? "Medication marked as taken. Your remaining supply has been recalculated."
           : "Medication marked as skipped."
       );
 
       await loadMedications();
-    } catch (err) {
+    } catch (
+      err
+    ) {
       console.error(
         "Failed to log medication:",
         err
@@ -616,6 +709,16 @@ export default function MedicationsPage() {
     const isSelected =
       selected ===
       medication.id;
+
+    const currentlyActive =
+      isMedicationActive(
+        medication
+      );
+
+    const ended =
+      hasMedicationEnded(
+        medication
+      );
 
     const schedules =
       getActiveSchedules(
@@ -649,7 +752,10 @@ export default function MedicationsPage() {
                 log?.takenAt
             )
             .sort(
-              (a, b) =>
+              (
+                a,
+                b
+              ) =>
                 new Date(
                   b.takenAt
                 ) -
@@ -719,7 +825,7 @@ export default function MedicationsPage() {
             </div>
 
             <div className="flex flex-wrap items-center gap-sm">
-              {medication.isActive && (
+              {currentlyActive && (
                 <Badge
                   label={
                     supplyLoading
@@ -736,12 +842,14 @@ export default function MedicationsPage() {
 
               <Badge
                 label={
-                  medication.isActive
-                    ? "Active"
-                    : "Inactive"
+                  ended
+                    ? "Ended"
+                    : medication.isActive
+                      ? "Active"
+                      : "Inactive"
                 }
                 variant={
-                  medication.isActive
+                  currentlyActive
                     ? "success"
                     : "default"
                 }
@@ -762,7 +870,7 @@ export default function MedicationsPage() {
         {isSelected && (
           <div className="px-lg pb-lg lg:px-xl lg:pb-xl">
             <div className="border-t border-border-secondary pt-lg">
-              {medication.isActive && (
+              {currentlyActive && (
                 <div className="mb-lg rounded-corner-md bg-bg-faint p-lg">
                   <div className="mb-md flex items-start gap-sm">
                     <Package
@@ -873,7 +981,9 @@ export default function MedicationsPage() {
 
                       <div className="min-w-0 flex-1">
                         <p className="text-video-title text-text-secondary">
-                          {supplyError}
+                          {
+                            supplyError
+                          }
                         </p>
 
                         <button
@@ -985,7 +1095,7 @@ export default function MedicationsPage() {
                       ? formatDate(
                           medication.endDate
                         )
-                      : "Ongoing"}
+                      : "Not recorded"}
                   </p>
                 </div>
               </div>
@@ -1025,7 +1135,7 @@ export default function MedicationsPage() {
                 </div>
               )}
 
-              {medication.isActive && (
+              {currentlyActive && (
                 <div className="mt-lg">
                   {todayLogs.length >
                     0 && (
