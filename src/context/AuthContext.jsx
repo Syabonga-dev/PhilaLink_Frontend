@@ -6,10 +6,15 @@ import {
   useEffect,
   useRef,
 } from "react";
+
 import {
   useNavigate,
 } from "react-router-dom";
-import { authApi } from "../services/api/auth.js";
+
+import {
+  authApi,
+} from "../services/api/auth.js";
+
 import {
   tokenStore,
   registerUnauthorizedHandler,
@@ -131,6 +136,7 @@ export function AuthProvider({
         tokenStore.setSession({
           token:
             data.token,
+
           user:
             data.user,
         });
@@ -148,6 +154,76 @@ export function AuthProvider({
       []
     );
 
+  // =====================================================
+  // GOOGLE OAUTH LOGIN COMPLETION
+  // =====================================================
+
+  const completeGoogleLogin =
+    useCallback(
+      async (
+        token
+      ) => {
+        if (
+          !token ||
+          typeof token !==
+            "string"
+        ) {
+          throw new Error(
+            "Google authentication token was not provided."
+          );
+        }
+
+        setStatus(
+          "loading"
+        );
+
+        /*
+         * Remove any previous session before accepting
+         * the new token returned by the backend.
+         */
+        tokenStore.clear();
+
+        tokenStore.setSession({
+          token,
+        });
+
+        try {
+          /*
+           * Do not trust user information from the browser
+           * redirect. Ask the authenticated backend for the
+           * current PhilaLink user instead.
+           */
+          const currentUser =
+            await authApi.getMe();
+
+          tokenStore.setUser(
+            currentUser
+          );
+
+          setUser(
+            currentUser
+          );
+
+          setStatus(
+            "authenticated"
+          );
+
+          return currentUser;
+        } catch (error) {
+          tokenStore.clear();
+
+          setUser(null);
+
+          setStatus(
+            "unauthenticated"
+          );
+
+          throw error;
+        }
+      },
+      []
+    );
+
   const changePassword =
     useCallback(
       async (payload) => {
@@ -159,6 +235,7 @@ export function AuthProvider({
         tokenStore.setSession({
           token:
             data.token,
+
           user:
             data.user,
         });
@@ -253,6 +330,9 @@ export function AuthProvider({
         "idle",
 
     login,
+
+    completeGoogleLogin,
+
     logout,
 
     changePassword,
