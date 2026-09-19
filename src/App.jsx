@@ -4,7 +4,9 @@ import {
   Navigate,
 } from "react-router-dom";
 
-import { useAuth } from "./context/AuthContext.jsx";
+import {
+  useAuth,
+} from "./context/AuthContext.jsx";
 
 import {
   ProtectedRoute,
@@ -17,6 +19,7 @@ import AuthenticatedLayout from "./components/layout/AuthenticatedLayout.jsx";
 
 import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
+import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
 import GoogleCallbackPage from "./pages/auth/GoogleCallbackPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import PhoneVerificationPage from "./pages/auth/PhoneVerificationPage.jsx";
@@ -50,6 +53,10 @@ import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage.jsx";
 import ManageClinicsPage from "./pages/admin/ManageClinicsPage.jsx";
 import RegisterClinicAdminPage from "./pages/admin/RegisterClinicAdminPage.jsx";
 
+// =====================================================
+// REDIRECT AUTHENTICATED USERS
+// =====================================================
+
 function RedirectIfAuthenticated({
   children,
 }) {
@@ -60,11 +67,15 @@ function RedirectIfAuthenticated({
     mustChangePassword,
   } = useAuth();
 
-  if (isLoading) {
+  if (
+    isLoading
+  ) {
     return children;
   }
 
-  if (isAuthenticated) {
+  if (
+    isAuthenticated
+  ) {
     return (
       <Navigate
         to={
@@ -82,6 +93,10 @@ function RedirectIfAuthenticated({
   return children;
 }
 
+// =====================================================
+// PATIENT LAYOUT + THEME SYNC
+// =====================================================
+
 function PatientLayoutWithTheme() {
   return (
     <ThemePreferenceSync>
@@ -90,9 +105,14 @@ function PatientLayoutWithTheme() {
   );
 }
 
+// =====================================================
+// APP ROUTES
+// =====================================================
+
 export default function App() {
   return (
     <Routes>
+
       {/* ============================= */}
       {/* PUBLIC */}
       {/* ============================= */}
@@ -111,6 +131,15 @@ export default function App() {
         element={
           <RedirectIfAuthenticated>
             <LoginPage />
+          </RedirectIfAuthenticated>
+        }
+      />
+
+      <Route
+        path="/forgot-password"
+        element={
+          <RedirectIfAuthenticated>
+            <ForgotPasswordPage />
           </RedirectIfAuthenticated>
         }
       />
@@ -152,6 +181,11 @@ export default function App() {
           <ProtectedRoute />
         }
       >
+
+        {/* ============================= */}
+        {/* REQUIRED PASSWORD CHANGE */}
+        {/* ============================= */}
+
         <Route
           element={
             <PasswordChangeRoute />
@@ -271,7 +305,7 @@ export default function App() {
         </Route>
 
         {/* ============================= */}
-        {/* NURSE + ADMIN GENERIC LAYOUT */}
+        {/* NURSE + ADMIN LAYOUT */}
         {/* ============================= */}
 
         <Route
@@ -279,7 +313,10 @@ export default function App() {
             <AuthenticatedLayout />
           }
         >
+
+          {/* ============================= */}
           {/* NURSE */}
+          {/* ============================= */}
 
           <Route
             element={
@@ -312,7 +349,9 @@ export default function App() {
             />
           </Route>
 
+          {/* ============================= */}
           {/* CLINIC ADMIN + SUPER ADMIN */}
+          {/* ============================= */}
 
           <Route
             element={
@@ -353,7 +392,9 @@ export default function App() {
             />
           </Route>
 
-          {/* SUPER ADMIN ONLY */}
+          {/* ============================= */}
+          {/* SUPER ADMIN */}
+          {/* ============================= */}
 
           <Route
             element={
@@ -380,6 +421,10 @@ export default function App() {
           </Route>
         </Route>
       </Route>
+
+      {/* ============================= */}
+      {/* FALLBACK */}
+      {/* ============================= */}
 
       <Route
         path="*"
