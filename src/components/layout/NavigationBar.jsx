@@ -4,18 +4,20 @@ import {
 } from "react";
 
 import {
-  Link,
   useLocation,
   useNavigate,
 } from "react-router-dom";
 
 import {
   ArrowRight,
+  HeartPulse,
   Home,
+  Info,
+  Lightbulb,
   Menu,
+  Phone,
   X,
 } from "lucide-react";
-
 
 const NAV_ITEMS = [
   {
@@ -24,6 +26,9 @@ const NAV_ITEMS = [
 
     sectionId:
       "about",
+
+    icon:
+      Info,
   },
 
   {
@@ -32,6 +37,9 @@ const NAV_ITEMS = [
 
     sectionId:
       "services",
+
+    icon:
+      HeartPulse,
   },
 
   {
@@ -40,6 +48,9 @@ const NAV_ITEMS = [
 
     sectionId:
       "health-tips",
+
+    icon:
+      Lightbulb,
   },
 
   {
@@ -48,9 +59,11 @@ const NAV_ITEMS = [
 
     sectionId:
       "contacts",
+
+    icon:
+      Phone,
   },
 ];
-
 
 export default function NavigationPage() {
   const location =
@@ -62,9 +75,11 @@ export default function NavigationPage() {
   const [
     mobileMenuOpen,
     setMobileMenuOpen,
-  ] =
-    useState(false);
+  ] = useState(false);
 
+  // =====================================================
+  // HOME
+  // =====================================================
 
   const goHome =
     () => {
@@ -91,6 +106,9 @@ export default function NavigationPage() {
       );
     };
 
+  // =====================================================
+  // SECTION NAVIGATION
+  // =====================================================
 
   const scrollToSection =
     (
@@ -109,7 +127,9 @@ export default function NavigationPage() {
             sectionId
           );
 
-        if (section) {
+        if (
+          section
+        ) {
           section.scrollIntoView({
             behavior:
               "smooth",
@@ -133,6 +153,9 @@ export default function NavigationPage() {
       );
     };
 
+  // =====================================================
+  // CLOSE MOBILE MENU ON ROUTE CHANGE
+  // =====================================================
 
   useEffect(
     () => {
@@ -145,6 +168,9 @@ export default function NavigationPage() {
     ]
   );
 
+  // =====================================================
+  // ESCAPE KEY
+  // =====================================================
 
   useEffect(
     () => {
@@ -185,20 +211,22 @@ export default function NavigationPage() {
     ]
   );
 
-
   return (
     <header className="fixed left-0 right-0 top-0 z-[1000] border-b border-slate-200/80 bg-white/95 backdrop-blur">
 
       <div className="mx-auto flex h-[72px] w-full max-w-[1280px] items-center justify-between px-4 sm:px-6 lg:px-12">
 
-        <Link
-          to="/"
-          onClick={() =>
-            setMobileMenuOpen(
-              false
-            )
+        {/* ============================= */}
+        {/* BRAND / HOME */}
+        {/* ============================= */}
+
+        <button
+          type="button"
+          onClick={
+            goHome
           }
-          className="flex shrink-0 items-center gap-2.5 transition-opacity hover:opacity-90"
+          className="flex shrink-0 items-center gap-2.5 border-0 bg-transparent p-0 transition-opacity hover:opacity-90"
+          aria-label="Go to PhilaLink home"
         >
           <img
             src="/logo2.png"
@@ -213,8 +241,11 @@ export default function NavigationPage() {
               Link
             </span>
           </span>
-        </Link>
+        </button>
 
+        {/* ============================= */}
+        {/* DESKTOP NAVIGATION */}
+        {/* ============================= */}
 
         <nav className="hidden items-center gap-1 lg:flex">
 
@@ -234,49 +265,75 @@ export default function NavigationPage() {
             Home
           </button>
 
-
           {NAV_ITEMS.map(
             (
               item
-            ) => (
-              <button
-                key={
-                  item.sectionId
-                }
-                type="button"
-                onClick={() =>
-                  scrollToSection(
+            ) => {
+              const Icon =
+                item.icon;
+
+              return (
+                <button
+                  key={
                     item.sectionId
-                  )
-                }
-                className="rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-teal-50 hover:text-[#0f766e]"
-              >
-                {
-                  item.label
-                }
-              </button>
-            )
+                  }
+                  type="button"
+                  onClick={() =>
+                    scrollToSection(
+                      item.sectionId
+                    )
+                  }
+                  className="flex items-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-semibold text-slate-600 transition-colors hover:bg-teal-50 hover:text-[#0f766e]"
+                >
+                  <Icon
+                    size={
+                      15
+                    }
+                  />
+
+                  {
+                    item.label
+                  }
+                </button>
+              );
+            }
           )}
         </nav>
 
+        {/* ============================= */}
+        {/* DESKTOP AUTH ACTIONS */}
+        {/* ============================= */}
 
         <div className="hidden items-center gap-2 lg:flex">
 
-          <Link
-            to="/login"
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/login"
+              )
+            }
             className="rounded-lg px-5 py-2.5 text-sm font-bold text-[#0f766e] transition-colors hover:bg-teal-50"
           >
             Log in
-          </Link>
+          </button>
 
-          <Link
-            to="/register"
+          <button
+            type="button"
+            onClick={() =>
+              navigate(
+                "/register"
+              )
+            }
             className="rounded-lg bg-[#0f766e] px-5 py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#115e59]"
           >
             Sign up
-          </Link>
+          </button>
         </div>
 
+        {/* ============================= */}
+        {/* MOBILE MENU BUTTON */}
+        {/* ============================= */}
 
         <button
           type="button"
@@ -315,6 +372,9 @@ export default function NavigationPage() {
         </button>
       </div>
 
+      {/* ============================= */}
+      {/* MOBILE NAVIGATION */}
+      {/* ============================= */}
 
       {mobileMenuOpen && (
         <>
@@ -360,69 +420,85 @@ export default function NavigationPage() {
                 />
               </button>
 
-
               {NAV_ITEMS.map(
                 (
                   item
-                ) => (
-                  <button
-                    key={
-                      item.sectionId
-                    }
-                    type="button"
-                    onClick={() =>
-                      scrollToSection(
-                        item.sectionId
-                      )
-                    }
-                    className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-teal-50 hover:text-[#0f766e]"
-                  >
-                    <span>
-                      {
-                        item.label
-                      }
-                    </span>
+                ) => {
+                  const Icon =
+                    item.icon;
 
-                    <ArrowRight
-                      size={
-                        17
+                  return (
+                    <button
+                      key={
+                        item.sectionId
                       }
-                      className="text-slate-400"
-                    />
-                  </button>
-                )
+                      type="button"
+                      onClick={() =>
+                        scrollToSection(
+                          item.sectionId
+                        )
+                      }
+                      className="flex w-full items-center justify-between rounded-lg px-3 py-3 text-left text-sm font-semibold text-slate-600 transition-colors hover:bg-teal-50 hover:text-[#0f766e]"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Icon
+                          size={
+                            17
+                          }
+                        />
+
+                        {
+                          item.label
+                        }
+                      </span>
+
+                      <ArrowRight
+                        size={
+                          17
+                        }
+                        className="text-slate-400"
+                      />
+                    </button>
+                  );
+                }
               )}
             </nav>
 
-
             <div className="my-3 border-t border-slate-200" />
-
 
             <div className="grid grid-cols-2 gap-3">
 
-              <Link
-                to="/login"
-                onClick={() =>
+              <button
+                type="button"
+                onClick={() => {
                   setMobileMenuOpen(
                     false
-                  )
-                }
+                  );
+
+                  navigate(
+                    "/login"
+                  );
+                }}
                 className="flex min-h-11 items-center justify-center rounded-lg border border-[#0f766e]/30 px-4 text-sm font-bold text-[#0f766e]"
               >
                 Log in
-              </Link>
+              </button>
 
-              <Link
-                to="/register"
-                onClick={() =>
+              <button
+                type="button"
+                onClick={() => {
                   setMobileMenuOpen(
                     false
-                  )
-                }
+                  );
+
+                  navigate(
+                    "/register"
+                  );
+                }}
                 className="flex min-h-11 items-center justify-center rounded-lg bg-[#0f766e] px-4 text-sm font-bold text-white"
               >
                 Sign up
-              </Link>
+              </button>
             </div>
           </div>
         </>
