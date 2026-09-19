@@ -1,6 +1,8 @@
 import {
+  Fragment,
   useEffect,
   useRef,
+  useState,
 } from "react";
 
 import {
@@ -20,6 +22,33 @@ function normalizeTheme(
     "dark"
     ? "dark"
     : "light";
+}
+
+function getCurrentTheme() {
+  const documentTheme =
+    document.documentElement
+      .getAttribute(
+        "data-theme"
+      );
+
+  if (
+    documentTheme ===
+      "dark" ||
+    documentTheme ===
+      "light"
+  ) {
+    return documentTheme;
+  }
+
+  try {
+    return normalizeTheme(
+      localStorage.getItem(
+        THEME_STORAGE_KEY
+      )
+    );
+  } catch {
+    return "light";
+  }
 }
 
 function applyTheme(
@@ -43,7 +72,7 @@ function applyTheme(
     );
   } catch {
     // Database remains the
-    // permanent source.
+    // persistent source.
   }
 
   return normalized;
@@ -52,6 +81,11 @@ function applyTheme(
 export default function ThemePreferenceSync({
   children,
 }) {
+  const [
+    themeRevision,
+    setThemeRevision,
+  ] = useState(0);
+
   const loadedRef =
     useRef(false);
 
@@ -71,6 +105,9 @@ export default function ThemePreferenceSync({
 
       async function loadTheme() {
         try {
+          const previousTheme =
+            getCurrentTheme();
+
           const result =
             await api.get(
               THEME_ENDPOINT
@@ -80,7 +117,7 @@ export default function ThemePreferenceSync({
             return;
           }
 
-          const theme =
+          const serverTheme =
             normalizeTheme(
               result?.theme
             );
@@ -89,22 +126,37 @@ export default function ThemePreferenceSync({
             true;
 
           applyTheme(
-            theme
+            serverTheme
           );
 
           lastSavedThemeRef.current =
-            theme;
+            serverTheme;
 
           /*
-           * Keep the flag active until the DOM mutation
-           * observer has seen the server-applied change.
+           * If the database theme differs from the
+           * theme that was present when the patient
+           * layout first rendered, remount the patient
+           * subtree.
+           *
+           * SettingsPage will then initialise from the
+           * correct database-backed theme.
            */
-          window.setTimeout(
+          if (
+            previousTheme !==
+              serverTheme
+          )
+          {
+            setThemeRevision(
+              (current) =>
+                current + 1
+            );
+          }
+
+          queueMicrotask(
             () => {
               applyingServerThemeRef.current =
                 false;
-            },
-            0
+            }
           );
         } catch (
           error
@@ -115,31 +167,11 @@ export default function ThemePreferenceSync({
           );
 
           /*
-           * If the network is temporarily unavailable,
-           * preserve the locally remembered appearance.
+           * Keep the most recently cached theme if the
+           * backend is temporarily unavailable.
            */
-          let fallback =
-            "light";
-
-          try {
-            fallback =
-              normalizeTheme(
-                localStorage.getItem(
-                  THEME_STORAGE_KEY
-                )
-              );
-          } catch {
-            fallback =
-              normalizeTheme(
-                document.documentElement
-                  .getAttribute(
-                    "data-theme"
-                  )
-              );
-          }
-
           applyTheme(
-            fallback
+            getCurrentTheme()
           );
         } finally {
           if (!cancelled) {
@@ -181,9 +213,15 @@ export default function ThemePreferenceSync({
                 )
               );
 
-            applyTheme(
-              theme
-            );
+            try {
+              localStorage.setItem(
+                THEME_STORAGE_KEY,
+                theme
+              );
+            } catch {
+              // Database save below
+              // remains authoritative.
+            }
 
             if (
               theme ===
@@ -201,8 +239,9 @@ export default function ThemePreferenceSync({
             }
 
             /*
-             * Small debounce prevents unnecessary requests
-             * if the user switches themes rapidly.
+             * Debounce theme updates so rapidly toggling
+             * the switch doesn't generate unnecessary
+             * database writes.
              */
             saveTimerRef.current =
               window.setTimeout(
@@ -216,10 +255,36 @@ export default function ThemePreferenceSync({
                         }
                       );
 
-                    lastSavedThemeRef.current =
+                    const savedTheme =
                       normalizeTheme(
                         result?.theme
                       );
+
+                    lastSavedThemeRef.current =
+                      savedTheme;
+
+                    /*
+                     * Keep local state aligned with whatever
+                     * the backend accepted.
+                     */
+                    if (
+                      savedTheme !==
+                        theme
+                    ) {
+                      applyingServerThemeRef.current =
+                        true;
+
+                      applyTheme(
+                        savedTheme
+                      );
+
+                      queueMicrotask(
+                        () => {
+                          applyingServerThemeRef.current =
+                            false;
+                        }
+                      );
+                    }
                   } catch (
                     error
                   ) {
@@ -261,5 +326,13 @@ export default function ThemePreferenceSync({
     []
   );
 
-  return children;
+  return (
+    <Fragment
+      key={
+        themeRevision
+      }
+    >
+      {children}
+    </Fragment>
+  );
 }
