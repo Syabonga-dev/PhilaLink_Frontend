@@ -41,6 +41,82 @@ const initialForm = {
   confirmPassword: "",
 };
 
+// =====================================================
+// PASSWORD POLICY
+// Must remain consistent with the backend.
+// =====================================================
+
+function getPasswordRequirements(
+  password
+) {
+  return {
+    length:
+      password.length >=
+      12,
+
+    uppercase:
+      /[A-Z]/.test(
+        password
+      ),
+
+    lowercase:
+      /[a-z]/.test(
+        password
+      ),
+
+    number:
+      /\d/.test(
+        password
+      ),
+
+    special:
+      /[^A-Za-z0-9]/.test(
+        password
+      ),
+  };
+}
+
+function passwordIsValid(
+  password
+) {
+  const requirements =
+    getPasswordRequirements(
+      password
+    );
+
+  return Object.values(
+    requirements
+  ).every(Boolean);
+}
+
+function PasswordRequirement({
+  met,
+  children,
+}) {
+  return (
+    <div
+      className={
+        met
+          ? "password-requirement met"
+          : "password-requirement"
+      }
+    >
+      <span
+        className="password-requirement-icon"
+        aria-hidden="true"
+      >
+        {met
+          ? "✓"
+          : "○"}
+      </span>
+
+      <span>
+        {children}
+      </span>
+    </div>
+  );
+}
+
 export default function RegisterPage() {
   const [
     form,
@@ -69,18 +145,43 @@ export default function RegisterPage() {
   const navigate =
     useNavigate();
 
+  const requirements =
+    getPasswordRequirements(
+      form.password
+    );
+
   const set =
     (key) =>
     (event) => {
+      const value =
+        event.target.value;
+
       setForm(
         (current) => ({
           ...current,
 
           [key]:
-            event.target.value,
+            value,
+        })
+      );
+
+      /*
+       * Clear the field error while the user
+       * corrects the value.
+       */
+      setErrors(
+        (current) => ({
+          ...current,
+
+          [key]:
+            undefined,
         })
       );
     };
+
+  // =====================================================
+  // VALIDATION
+  // =====================================================
 
   const validate =
     () => {
@@ -97,6 +198,7 @@ export default function RegisterPage() {
       if (
         !/^\d{13}$/.test(
           form.idNumber
+            .trim()
         )
       ) {
         next.idNumber =
@@ -106,6 +208,7 @@ export default function RegisterPage() {
       if (
         !/^0\d{9}$/.test(
           form.phone
+            .trim()
         )
       ) {
         next.phone =
@@ -129,15 +232,20 @@ export default function RegisterPage() {
       }
 
       if (
-        form.password
-          .length <
-        12
+        !passwordIsValid(
+          form.password
+        )
       ) {
         next.password =
-          "Password must be at least 12 characters.";
+          "Password must meet all the requirements below.";
       }
 
       if (
+        !form.confirmPassword
+      ) {
+        next.confirmPassword =
+          "Confirm your password.";
+      } else if (
         form.confirmPassword !==
         form.password
       ) {
@@ -156,6 +264,10 @@ export default function RegisterPage() {
         0
       );
     };
+
+  // =====================================================
+  // REGISTER
+  // =====================================================
 
   const handleSubmit =
     async (
@@ -200,7 +312,9 @@ export default function RegisterPage() {
           result?.userId ??
           result?.id;
 
-        if (!userId) {
+        if (
+          !userId
+        ) {
           throw new Error(
             "Registration completed but the verification session could not be created."
           );
@@ -321,6 +435,11 @@ export default function RegisterPage() {
 
         <main className="register-content">
           <div className="register-card">
+
+            {/* ============================= */}
+            {/* BRAND */}
+            {/* ============================= */}
+
             <div className="register-brand">
               <img
                 src={
@@ -337,29 +456,30 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* ============================= */}
+            {/* HEADING */}
+            {/* ============================= */}
+
             <div className="register-heading">
               <p className="register-eyebrow">
-                PATIENT
-                REGISTRATION
+                PATIENT REGISTRATION
               </p>
 
               <h1>
-                Create your
-                account.
+                Create your account.
               </h1>
 
               <p>
-                Join
-                PhilaLink to
-                manage your
-                healthcare
-                information
-                and stay
-                connected
-                with your
-                care.
+                Join PhilaLink to manage
+                your healthcare information
+                and stay connected with
+                your care.
               </p>
             </div>
+
+            {/* ============================= */}
+            {/* PROGRESS */}
+            {/* ============================= */}
 
             <div className="register-progress">
               <div className="progress-step active">
@@ -397,11 +517,16 @@ export default function RegisterPage() {
               </div>
             </div>
 
+            {/* ============================= */}
+            {/* FORM */}
+            {/* ============================= */}
+
             <form
               onSubmit={
                 handleSubmit
               }
               className="register-form"
+              noValidate
             >
               <Input
                 label="Full name"
@@ -438,6 +563,7 @@ export default function RegisterPage() {
                 maxLength={
                   13
                 }
+                autoComplete="off"
               />
 
               <Input
@@ -476,6 +602,10 @@ export default function RegisterPage() {
                 autoComplete="email"
                 hint="We'll send your 6-digit verification code to this email address."
               />
+
+              {/* ============================= */}
+              {/* PASSWORD */}
+              {/* ============================= */}
 
               <div className="register-passwords">
                 <Input
@@ -516,10 +646,68 @@ export default function RegisterPage() {
                 />
               </div>
 
+              {/* ============================= */}
+              {/* PASSWORD REQUIREMENTS */}
+              {/* ============================= */}
+
+              <div
+                className="password-requirements"
+                aria-live="polite"
+              >
+                <p className="password-requirements-title">
+                  Your password must contain:
+                </p>
+
+                <div className="password-requirements-grid">
+                  <PasswordRequirement
+                    met={
+                      requirements.length
+                    }
+                  >
+                    At least 12 characters
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements.uppercase
+                    }
+                  >
+                    1 uppercase letter
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements.lowercase
+                    }
+                  >
+                    1 lowercase letter
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements.number
+                    }
+                  >
+                    1 number
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements.special
+                    }
+                  >
+                    1 special character
+                  </PasswordRequirement>
+                </div>
+              </div>
+
               <Button
                 type="submit"
                 className="register-submit"
                 loading={
+                  loading
+                }
+                disabled={
                   loading
                 }
               >
@@ -529,4 +717,29 @@ export default function RegisterPage() {
               </Button>
             </form>
 
+            {/* ============================= */}
+            {/* LOGIN */}
+            {/* ============================= */}
+
             <div className="register-login">
+              <span>
+                Already have an account?
+              </span>
+
+              <Link to="/login">
+                Log in
+              </Link>
+            </div>
+
+            <p className="register-note">
+              Your personal information is
+              handled securely and used only
+              to provide your PhilaLink
+              healthcare services.
+            </p>
+          </div>
+        </main>
+      </div>
+    </>
+  );
+}
