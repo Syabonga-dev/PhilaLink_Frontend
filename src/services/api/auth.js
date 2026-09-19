@@ -4,6 +4,10 @@ import {
 } from "./client.js";
 
 export const authApi = {
+  // =====================================================
+  // LOGIN
+  // =====================================================
+
   login: ({
     idNumber,
     password,
@@ -19,11 +23,25 @@ export const authApi = {
       }
     ),
 
+  // =====================================================
+  // GOOGLE OAUTH
+  // =====================================================
+
   getGoogleLoginUrl: () =>
     `${API_BASE_URL}/api/auth/google-login`,
 
+  // =====================================================
+  // CURRENT USER
+  // =====================================================
+
   getMe: () =>
-    api.get("/api/auth/me"),
+    api.get(
+      "/api/auth/me"
+    ),
+
+  // =====================================================
+  // CHANGE PASSWORD
+  // =====================================================
 
   changePassword: (
     payload
@@ -32,6 +50,10 @@ export const authApi = {
       "/api/auth/change-password",
       payload
     ),
+
+  // =====================================================
+  // PATIENT REGISTRATION
+  // =====================================================
 
   registerPatient: (
     payload
@@ -43,6 +65,10 @@ export const authApi = {
         auth: false,
       }
     ),
+
+  // =====================================================
+  // ACCOUNT VERIFICATION OTP
+  // =====================================================
 
   verifyPhone: (
     userId,
@@ -79,4 +105,40 @@ export const authApi = {
       }
     );
   },
+
+  // =====================================================
+  // FORGOT PASSWORD
+  // =====================================================
+
+  requestPasswordReset: (
+    identifier
+  ) =>
+    api.post(
+      "/api/auth/password-reset/request",
+      {
+        identifier,
+      },
+      {
+        auth: false,
+      }
+    ),
+
+  resetPassword: ({
+    identifier,
+    code,
+    newPassword,
+    confirmNewPassword,
+  }) =>
+    api.post(
+      "/api/auth/password-reset/reset",
+      {
+        identifier,
+        code,
+        newPassword,
+        confirmNewPassword,
+      },
+      {
+        auth: false,
+      }
+    ),
 };
