@@ -41,8 +41,11 @@ import NavigationBar from "../../components/layout/NavigationBar.jsx";
 
 import "./LoginPage.css";
 
-import logo2 from "./../../assets/logo2.png";
+import logo2 from "../../assets/logo2.png";
 
+// =====================================================
+// GOOGLE ICON
+// =====================================================
 
 function GoogleIcon() {
   return (
@@ -75,55 +78,49 @@ function GoogleIcon() {
   );
 }
 
+// =====================================================
+// LOGIN PAGE
+// =====================================================
 
 export default function LoginPage() {
   const [
     idNumber,
     setIdNumber,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     password,
     setPassword,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     showPassword,
     setShowPassword,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     errors,
     setErrors,
-  ] =
-    useState({});
+  ] = useState({});
 
   const [
     loading,
     setLoading,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     googleLoading,
     setGoogleLoading,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     idError,
     setIdError,
-  ] =
-    useState("");
-
+  ] = useState("");
 
   const {
     login,
-  } =
-    useAuth();
+  } = useAuth();
 
   const toast =
     useToast();
@@ -134,33 +131,42 @@ export default function LoginPage() {
   const location =
     useLocation();
 
+  // =====================================================
+  // VALIDATION
+  // =====================================================
 
-  const validate = () => {
-    const next = {};
+  const validate =
+    () => {
+      const next = {};
 
-    if (
-      !idNumber.trim()
-    ) {
-      next.idNumber =
-        "Enter your ID number.";
-    }
+      if (
+        !idNumber.trim()
+      ) {
+        next.idNumber =
+          "Enter your ID number.";
+      }
 
-    if (!password) {
-      next.password =
-        "Enter your password.";
-    }
+      if (
+        !password
+      ) {
+        next.password =
+          "Enter your password.";
+      }
 
-    setErrors(
-      next
-    );
-
-    return (
-      Object.keys(
+      setErrors(
         next
-      ).length === 0
-    );
-  };
+      );
 
+      return (
+        Object.keys(
+          next
+        ).length === 0
+      );
+    };
+
+  // =====================================================
+  // LOGIN
+  // =====================================================
 
   const handleSubmit =
     async (
@@ -171,19 +177,12 @@ export default function LoginPage() {
       setIdError("");
 
       if (
-        idNumber.length !==
-          13 ||
-        isNaN(idNumber)
+        !/^\d{13}$/.test(
+          idNumber.trim()
+        )
       ) {
         setIdError(
-          "ID must be 13 digits and a number"
-        );
-
-        setTimeout(
-          () => {
-            setIdError("");
-          },
-          5000
+          "ID must be 13 digits and contain numbers only."
         );
 
         return;
@@ -202,7 +201,9 @@ export default function LoginPage() {
       try {
         const user =
           await login({
-            idNumber,
+            idNumber:
+              idNumber.trim(),
+
             password,
           });
 
@@ -229,14 +230,14 @@ export default function LoginPage() {
           }
         );
       } catch (
-        err
+        error
       ) {
         if (
-          err instanceof
+          error instanceof
           ApiError
         ) {
           if (
-            err.status ===
+            error.status ===
             401
           ) {
             toast.error(
@@ -244,7 +245,7 @@ export default function LoginPage() {
             );
           } else {
             toast.error(
-              err.message
+              error.message
             );
           }
         } else {
@@ -259,6 +260,9 @@ export default function LoginPage() {
       }
     };
 
+  // =====================================================
+  // GOOGLE LOGIN
+  // =====================================================
 
   const handleGoogleLogin =
     () => {
@@ -267,8 +271,9 @@ export default function LoginPage() {
       );
 
       /*
-       * Google OAuth begins at the ASP.NET Core backend.
-       * The Google Client Secret never enters the browser.
+       * Google OAuth begins at the backend.
+       * The Google Client Secret never enters
+       * the browser.
        */
       window.location.assign(
         authApi
@@ -276,24 +281,27 @@ export default function LoginPage() {
       );
     };
 
+  // =====================================================
+  // UI
+  // =====================================================
 
   return (
     <>
       <NavigationBar />
 
       <div className="login-page">
-
         <div className="login-background" />
 
         <div className="login-overlay" />
 
-
         <main className="login-content">
-
           <div className="login-card">
 
-            <div className="login-brand">
+            {/* ============================= */}
+            {/* BRAND */}
+            {/* ============================= */}
 
+            <div className="login-brand">
               <img
                 src={
                   logo2
@@ -309,26 +317,33 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* ============================= */}
+            {/* HEADING */}
+            {/* ============================= */}
 
             <div className="login-heading">
-
               <h1>
                 Welcome back.
               </h1>
 
               <p>
-                Sign in to access your PhilaLink healthcare dashboard.
+                Sign in to access your
+                PhilaLink healthcare
+                dashboard.
               </p>
             </div>
 
+            {/* ============================= */}
+            {/* LOGIN FORM */}
+            {/* ============================= */}
 
             <form
               onSubmit={
                 handleSubmit
               }
               className="login-form"
+              noValidate
             >
-
               <Input
                 label="ID number"
                 name="idNumber"
@@ -338,13 +353,33 @@ export default function LoginPage() {
                 onChange={(
                   event
                 ) => {
+                  const value =
+                    event.target.value
+                      .replace(
+                        /\D/g,
+                        ""
+                      )
+                      .slice(
+                        0,
+                        13
+                      );
+
                   setIdNumber(
-                    event
-                      .target
-                      .value
+                    value
                   );
 
-                  setIdError("");
+                  setIdError(
+                    ""
+                  );
+
+                  setErrors(
+                    (current) => ({
+                      ...current,
+
+                      idNumber:
+                        undefined,
+                    })
+                  );
                 }}
                 error={
                   errors.idNumber
@@ -357,15 +392,11 @@ export default function LoginPage() {
                 }
               />
 
-
               {idError && (
                 <span id="invalid-id">
-                  {
-                    idError
-                  }
+                  {idError}
                 </span>
               )}
-
 
               <Input
                 label="Password"
@@ -380,13 +411,20 @@ export default function LoginPage() {
                 }
                 onChange={(
                   event
-                ) =>
+                ) => {
                   setPassword(
-                    event
-                      .target
-                      .value
-                  )
-                }
+                    event.target.value
+                  );
+
+                  setErrors(
+                    (current) => ({
+                      ...current,
+
+                      password:
+                        undefined,
+                    })
+                  );
+                }}
                 error={
                   errors.password
                 }
@@ -430,9 +468,11 @@ export default function LoginPage() {
                 }
               />
 
+              {/* ============================= */}
+              {/* LOGIN OPTIONS */}
+              {/* ============================= */}
 
               <div className="login-options">
-
                 <label>
                   <input
                     type="checkbox"
@@ -443,15 +483,18 @@ export default function LoginPage() {
                   </span>
                 </label>
 
-
                 <button
                   type="button"
                   className="forgot-password"
+                  onClick={() =>
+                    navigate(
+                      "/forgot-password"
+                    )
+                  }
                 >
                   Forgot password?
                 </button>
               </div>
-
 
               <Button
                 type="submit"
@@ -460,6 +503,7 @@ export default function LoginPage() {
                   loading
                 }
                 disabled={
+                  loading ||
                   googleLoading
                 }
               >
@@ -469,13 +513,15 @@ export default function LoginPage() {
               </Button>
             </form>
 
+            {/* ============================= */}
+            {/* GOOGLE */}
+            {/* ============================= */}
 
             <div className="login-divider">
               <span>
                 or
               </span>
             </div>
-
 
             <button
               type="button"
@@ -501,9 +547,11 @@ export default function LoginPage() {
               </span>
             </button>
 
+            {/* ============================= */}
+            {/* REGISTER */}
+            {/* ============================= */}
 
             <div className="login-register">
-
               <span>
                 New patient?
               </span>
