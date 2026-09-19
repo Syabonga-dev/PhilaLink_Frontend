@@ -25,6 +25,8 @@ import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
 import PatientAppLayout from "./components/patient/AppLayout.jsx";
+import ThemePreferenceSync from "./components/patient/ThemePreferenceSync.jsx";
+
 import PatientDashboardPage from "./pages/patient/DashboardPage.jsx";
 import PatientMedicationsPage from "./pages/patient/MedicationsPage.jsx";
 import PatientAppointmentsPage from "./pages/patient/AppointmentsPage.jsx";
@@ -68,7 +70,9 @@ function RedirectIfAuthenticated({
         to={
           mustChangePassword
             ? "/change-password"
-            : homePathForRole(role)
+            : homePathForRole(
+                role
+              )
         }
         replace
       />
@@ -76,6 +80,14 @@ function RedirectIfAuthenticated({
   }
 
   return children;
+}
+
+function PatientLayoutWithTheme() {
+  return (
+    <ThemePreferenceSync>
+      <PatientAppLayout />
+    </ThemePreferenceSync>
+  );
 }
 
 export default function App() {
@@ -103,36 +115,53 @@ export default function App() {
         }
       />
 
-      {/* Google returns here after the backend completes OAuth. */}
       <Route
         path="/auth/google/callback"
-        element={<GoogleCallbackPage />}
+        element={
+          <GoogleCallbackPage />
+        }
       />
 
       <Route
         path="/register"
-        element={<RegisterPage />}
+        element={
+          <RegisterPage />
+        }
       />
 
       <Route
         path="/register/verify"
-        element={<PhoneVerificationPage />}
+        element={
+          <PhoneVerificationPage />
+        }
       />
 
       <Route
         path="/register/success"
-        element={<RegistrationSuccessPage />}
+        element={
+          <RegistrationSuccessPage />
+        }
       />
 
       {/* ============================= */}
       {/* AUTHENTICATED */}
       {/* ============================= */}
 
-      <Route element={<ProtectedRoute />}>
-        <Route element={<PasswordChangeRoute />}>
+      <Route
+        element={
+          <ProtectedRoute />
+        }
+      >
+        <Route
+          element={
+            <PasswordChangeRoute />
+          }
+        >
           <Route
             path="/change-password"
-            element={<ChangePasswordPage />}
+            element={
+              <ChangePasswordPage />
+            }
           />
         </Route>
 
@@ -143,42 +172,58 @@ export default function App() {
         <Route
           element={
             <RoleRoute
-              allow={["Patient"]}
+              allow={[
+                "Patient",
+              ]}
             />
           }
         >
           <Route
             path="/patient"
-            element={<PatientAppLayout />}
+            element={
+              <PatientLayoutWithTheme />
+            }
           >
             <Route
               index
-              element={<PatientDashboardPage />}
+              element={
+                <PatientDashboardPage />
+              }
             />
 
             <Route
               path="medications"
-              element={<PatientMedicationsPage />}
+              element={
+                <PatientMedicationsPage />
+              }
             />
 
             <Route
               path="appointments"
-              element={<PatientAppointmentsPage />}
+              element={
+                <PatientAppointmentsPage />
+              }
             />
 
             <Route
               path="records"
-              element={<PatientRecordsPage />}
+              element={
+                <PatientRecordsPage />
+              }
             />
 
             <Route
               path="clinics"
-              element={<PatientNearestClinicsPage />}
+              element={
+                <PatientNearestClinicsPage />
+              }
             />
 
             <Route
               path="settings"
-              element={<PatientSettingsPage />}
+              element={
+                <PatientSettingsPage />
+              }
             />
           </Route>
         </Route>
@@ -190,27 +235,37 @@ export default function App() {
         <Route
           element={
             <RoleRoute
-              allow={["Proxy"]}
+              allow={[
+                "Proxy",
+              ]}
             />
           }
         >
           <Route
             path="/proxy"
-            element={<ProxyAppLayout />}
+            element={
+              <ProxyAppLayout />
+            }
           >
             <Route
               index
-              element={<ProxyDashboard />}
+              element={
+                <ProxyDashboard />
+              }
             />
 
             <Route
               path="patients"
-              element={<ProxyPatientsPage />}
+              element={
+                <ProxyPatientsPage />
+              }
             />
 
             <Route
               path="collections"
-              element={<ProxyCollectionsPage />}
+              element={
+                <ProxyCollectionsPage />
+              }
             />
           </Route>
         </Route>
@@ -220,30 +275,40 @@ export default function App() {
         {/* ============================= */}
 
         <Route
-          element={<AuthenticatedLayout />}
+          element={
+            <AuthenticatedLayout />
+          }
         >
           {/* NURSE */}
 
           <Route
             element={
               <RoleRoute
-                allow={["Nurse"]}
+                allow={[
+                  "Nurse",
+                ]}
               />
             }
           >
             <Route
               path="/nurse"
-              element={<NurseDashboard />}
+              element={
+                <NurseDashboard />
+              }
             />
 
             <Route
               path="/nurse/patients"
-              element={<NursePatientsPage />}
+              element={
+                <NursePatientsPage />
+              }
             />
 
             <Route
               path="/nurse/collections"
-              element={<CollectionsPage />}
+              element={
+                <CollectionsPage />
+              }
             />
           </Route>
 
@@ -261,22 +326,30 @@ export default function App() {
           >
             <Route
               path="/admin"
-              element={<AdminDashboard />}
+              element={
+                <AdminDashboard />
+              }
             />
 
             <Route
               path="/admin/register-staff"
-              element={<RegisterStaffPage />}
+              element={
+                <RegisterStaffPage />
+              }
             />
 
             <Route
               path="/admin/staff"
-              element={<ManageStaffPage />}
+              element={
+                <ManageStaffPage />
+              }
             />
 
             <Route
               path="/admin/audit"
-              element={<AdminAuditLogPage />}
+              element={
+                <AdminAuditLogPage />
+              }
             />
           </Route>
 
@@ -285,18 +358,24 @@ export default function App() {
           <Route
             element={
               <RoleRoute
-                allow={["SuperAdmin"]}
+                allow={[
+                  "SuperAdmin",
+                ]}
               />
             }
           >
             <Route
               path="/admin/clinics"
-              element={<ManageClinicsPage />}
+              element={
+                <ManageClinicsPage />
+              }
             />
 
             <Route
               path="/admin/register-clinic-admin"
-              element={<RegisterClinicAdminPage />}
+              element={
+                <RegisterClinicAdminPage />
+              }
             />
           </Route>
         </Route>
@@ -304,7 +383,9 @@ export default function App() {
 
       <Route
         path="*"
-        element={<NotFound />}
+        element={
+          <NotFound />
+        }
       />
     </Routes>
   );
