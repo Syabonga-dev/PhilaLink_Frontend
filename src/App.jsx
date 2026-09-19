@@ -17,6 +17,7 @@ import AuthenticatedLayout from "./components/layout/AuthenticatedLayout.jsx";
 
 import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
+import GoogleCallbackPage from "./pages/auth/GoogleCallbackPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import PhoneVerificationPage from "./pages/auth/PhoneVerificationPage.jsx";
 import RegistrationSuccessPage from "./pages/auth/RegistrationSuccessPage.jsx";
@@ -102,6 +103,12 @@ export default function App() {
         }
       />
 
+      {/* Google returns here after the backend completes OAuth. */}
+      <Route
+        path="/auth/google/callback"
+        element={<GoogleCallbackPage />}
+      />
+
       <Route
         path="/register"
         element={<RegisterPage />}
@@ -178,10 +185,6 @@ export default function App() {
 
         {/* ============================= */}
         {/* PROXY */}
-        {/* IMPORTANT:
-            Proxy now has its own
-            Patient-style layout.
-        */}
         {/* ============================= */}
 
         <Route
