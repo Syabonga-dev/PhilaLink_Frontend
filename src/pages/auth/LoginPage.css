@@ -263,6 +263,127 @@
 
 
 /* =========================================================
+   GOOGLE OAUTH
+========================================================= */
+
+.login-divider {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 22px 0 18px;
+
+  color: #94a3a3;
+
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background: #dce5e5;
+}
+
+.login-divider span {
+  flex: 0 0 auto;
+}
+
+.login-google {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 11px;
+
+  width: 100%;
+  min-height: 48px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #ccd9d7;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #253535;
+
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.login-google:hover:not(:disabled) {
+  border-color: #9db9b4;
+
+  background: #f8fbfa;
+
+  box-shadow:
+    0 4px 12px
+    rgba(7, 59, 59, 0.08);
+}
+
+.login-google:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.login-google:focus-visible {
+  outline: none;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(0, 107, 107, 0.18);
+}
+
+.login-google:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+.login-google svg {
+  flex: 0 0 auto;
+}
+
+.login-google-spinner {
+  width: 19px;
+  height: 19px;
+
+  border: 2px solid #d7e4e1;
+  border-top-color: #006b6b;
+
+  border-radius: 50%;
+
+  animation:
+    login-google-spin
+    700ms linear infinite;
+}
+
+@keyframes login-google-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================================
    REGISTER
 ========================================================= */
 
