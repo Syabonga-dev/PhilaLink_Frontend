@@ -2,7 +2,7 @@
   position: relative;
   min-height: 100vh;
   min-height: 100dvh;
-  overflow: hidden;
+  overflow-x: hidden;
   background: #073b3b;
 }
 
@@ -94,6 +94,10 @@
   line-height: 1.6;
 }
 
+/* =====================================================
+   PROGRESS
+   ===================================================== */
+
 .register-progress {
   display: flex;
   align-items: flex-start;
@@ -134,7 +138,7 @@
 
 .progress-step.active span {
   background: #006b6b;
-  color: white;
+  color: #ffffff;
 }
 
 .progress-line {
@@ -143,6 +147,10 @@
   margin: 15px 8px 0;
   background: #d7dfdf;
 }
+
+/* =====================================================
+   FORM
+   ===================================================== */
 
 .register-form {
   display: flex;
@@ -156,12 +164,78 @@
   gap: 16px;
 }
 
+/* =====================================================
+   PASSWORD REQUIREMENTS
+   ===================================================== */
+
+.password-requirements {
+  padding: 14px 16px;
+  border: 1px solid #dbe7e5;
+  border-radius: 12px;
+  background: #f8fbfa;
+}
+
+.password-requirements-title {
+  margin: 0 0 10px;
+  color: #3d4949;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.password-requirements-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 7px 14px;
+}
+
+.password-requirement {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #718080;
+  font-size: 0.72rem;
+  line-height: 1.4;
+  transition:
+    color 0.2s ease,
+    opacity 0.2s ease;
+}
+
+.password-requirement-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  color: #8c9998;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.password-requirement.met {
+  color: #006b6b;
+  font-weight: 700;
+}
+
+.password-requirement.met
+.password-requirement-icon {
+  color: #006b6b;
+}
+
+/* =====================================================
+   SUBMIT
+   ===================================================== */
+
 .register-submit {
   width: 100%;
   min-height: 48px;
   margin-top: 4px;
   border-radius: 10px;
 }
+
+/* =====================================================
+   FOOTER
+   ===================================================== */
 
 .register-login {
   display: flex;
@@ -192,12 +266,18 @@
   text-align: center;
 }
 
+/* =====================================================
+   TABLET / SMALL SCREEN
+   ===================================================== */
+
 @media (max-width: 600px) {
   .register-content {
-    padding: 24px 16px;
+    align-items: flex-start;
+    padding: 24px 16px 40px;
   }
 
   .register-card {
+    align-self: flex-start;
     padding: 30px 26px;
     border-radius: 20px;
   }
@@ -230,9 +310,22 @@
     margin-left: 5px;
     margin-right: 5px;
   }
+
+  .password-requirements-grid {
+    grid-template-columns: 1fr;
+    gap: 7px;
+  }
 }
 
+/* =====================================================
+   PHONE
+   ===================================================== */
+
 @media (max-width: 480px) {
+  .register-content {
+    padding: 20px 12px 36px;
+  }
+
   .register-card {
     padding: 26px 20px;
   }
@@ -256,5 +349,13 @@
 
   .progress-step p {
     font-size: 0.55rem;
+  }
+
+  .password-requirements {
+    padding: 13px 14px;
+  }
+
+  .password-requirement {
+    font-size: 0.7rem;
   }
 }
