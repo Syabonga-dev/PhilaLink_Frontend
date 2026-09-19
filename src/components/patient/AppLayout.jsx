@@ -24,7 +24,9 @@ import {
   X,
 } from "lucide-react";
 
-import { useAuth } from "../../context/AuthContext.jsx";
+import {
+  useAuth,
+} from "../../context/AuthContext.jsx";
 
 import {
   notificationsApi,
@@ -69,33 +71,24 @@ const navigationItems = [
   },
 ];
 
-function initialsFromName(
-  name
-) {
+function initialsFromName(name) {
   if (!name) {
     return "PT";
   }
 
-  const parts =
-    name
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
+  const parts = name
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 
-  if (
-    parts.length ===
-      1
-  ) {
+  if (parts.length === 1) {
     return parts[0]
       .slice(0, 2)
       .toUpperCase();
   }
 
   return `${parts[0][0]}${
-    parts[
-      parts.length -
-        1
-    ][0]
+    parts[parts.length - 1][0]
   }`.toUpperCase();
 }
 
@@ -147,8 +140,7 @@ function splitNotificationMessage(
     text.indexOf(":");
 
   if (
-    separatorIndex <=
-      0
+    separatorIndex <= 0
   ) {
     return {
       title: "",
@@ -168,8 +160,7 @@ function splitNotificationMessage(
     body:
       text
         .slice(
-          separatorIndex +
-            1
+          separatorIndex + 1
         )
         .trim(),
   };
@@ -179,32 +170,27 @@ export default function AppLayout() {
   const [
     mobileOpen,
     setMobileOpen,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     notificationsOpen,
     setNotificationsOpen,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     notifications,
     setNotifications,
-  ] =
-    useState([]);
+  ] = useState([]);
 
   const [
     notificationsLoading,
     setNotificationsLoading,
-  ] =
-    useState(false);
+  ] = useState(false);
 
   const [
     notificationsError,
     setNotificationsError,
-  ] =
-    useState("");
+  ] = useState("");
 
   const location =
     useLocation();
@@ -215,8 +201,7 @@ export default function AppLayout() {
   const {
     user,
     logout,
-  } =
-    useAuth();
+  } = useAuth();
 
   const displayName =
     user?.fullName ||
@@ -305,12 +290,10 @@ export default function AppLayout() {
       []
     );
 
-  /*
-   * Initial load + one-minute refresh.
-   *
-   * Calling /api/notifications/me allows the backend to check
-   * medication schedules and appointments at the same time.
-   */
+  // =========================================================
+  // INITIAL + ONE-MINUTE NOTIFICATION REFRESH
+  // =========================================================
+
   useEffect(
     () => {
       void loadNotifications();
@@ -323,12 +306,9 @@ export default function AppLayout() {
                 .visibilityState ===
               "visible"
             ) {
-              void loadNotifications(
-                {
-                  background:
-                    true,
-                }
-              );
+              void loadNotifications({
+                background: true,
+              });
             }
           },
           NOTIFICATION_REFRESH_MS
@@ -341,12 +321,9 @@ export default function AppLayout() {
               .visibilityState ===
             "visible"
           ) {
-            void loadNotifications(
-              {
-                background:
-                  true,
-              }
-            );
+            void loadNotifications({
+              background: true,
+            });
           }
         };
 
@@ -371,6 +348,10 @@ export default function AppLayout() {
     ]
   );
 
+  // =========================================================
+  // CLOSE PANELS WHEN ROUTE CHANGES
+  // =========================================================
+
   useEffect(
     () => {
       setNotificationsOpen(
@@ -391,6 +372,10 @@ export default function AppLayout() {
       (notification) =>
         !notification.isRead
     );
+
+  // =========================================================
+  // MARK NOTIFICATION READ
+  // =========================================================
 
   const handleNotificationClick =
     async (
@@ -417,8 +402,7 @@ export default function AppLayout() {
                 notification.id
                   ? {
                       ...item,
-                      isRead:
-                        true,
+                      isRead: true,
                     }
                   : item
             )
@@ -433,6 +417,10 @@ export default function AppLayout() {
       }
     };
 
+  // =========================================================
+  // LOGOUT
+  // =========================================================
+
   const handleLogout =
     () => {
       logout();
@@ -440,16 +428,22 @@ export default function AppLayout() {
       navigate(
         "/login",
         {
-          replace:
-            true,
+          replace: true,
         }
       );
     };
 
   return (
     <div className="patient-figma-root min-h-screen bg-[#f8fafc] text-[#0f172a]">
+
+      {/* ================================================= */}
+      {/* DESKTOP SIDEBAR */}
+      {/* ================================================= */}
+
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-[270px] border-r border-[#e2e8f0] bg-white lg:flex lg:flex-col">
+
         <div className="flex h-[78px] items-center border-b border-[#e2e8f0] px-7">
+
           <button
             type="button"
             onClick={() =>
@@ -468,6 +462,7 @@ export default function AppLayout() {
             <div className="text-left">
               <div className="text-xl font-bold tracking-tight text-[#0f172a]">
                 Phila
+
                 <span className="text-[#0f766e]">
                   Link
                 </span>
@@ -479,6 +474,10 @@ export default function AppLayout() {
             </div>
           </button>
         </div>
+
+        {/* ================================================= */}
+        {/* DESKTOP NAVIGATION */}
+        {/* ================================================= */}
 
         <nav className="flex-1 space-y-2 px-4 py-6">
           {navigationItems.map(
@@ -509,7 +508,9 @@ export default function AppLayout() {
                   }
                 >
                   <Icon
-                    size={20}
+                    size={
+                      20
+                    }
                   />
 
                   <span>
@@ -523,10 +524,17 @@ export default function AppLayout() {
           )}
         </nav>
 
+        {/* ================================================= */}
+        {/* DESKTOP USER */}
+        {/* ================================================= */}
+
         <div className="border-t border-[#e2e8f0] p-4">
           <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f8fafc] p-3">
+
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white">
-              {initials}
+              {
+                initials
+              }
             </div>
 
             <div className="min-w-0 flex-1">
@@ -550,7 +558,9 @@ export default function AppLayout() {
             className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#64748b] transition hover:bg-[#fee2e2] hover:text-[#dc2626]"
           >
             <LogOut
-              size={19}
+              size={
+                19
+              }
             />
 
             Logout
@@ -558,9 +568,20 @@ export default function AppLayout() {
         </div>
       </aside>
 
+      {/* ================================================= */}
+      {/* MAIN CONTENT */}
+      {/* ================================================= */}
+
       <div className="lg:pl-[270px]">
+
+        {/* ================================================= */}
+        {/* TOP BAR */}
+        {/* ================================================= */}
+
         <header className="sticky top-0 z-[1200] flex h-[78px] items-center justify-between border-b border-[#e2e8f0] bg-white/95 px-4 backdrop-blur sm:px-6 lg:z-30 lg:px-8">
+
           <div className="flex min-w-0 items-center gap-3">
+
             <button
               type="button"
               onClick={() => {
@@ -576,7 +597,9 @@ export default function AppLayout() {
               aria-label="Open navigation"
             >
               <Menu
-                size={21}
+                size={
+                  21
+                }
               />
             </button>
 
@@ -597,22 +620,29 @@ export default function AppLayout() {
           </div>
 
           <div className="ml-3 flex shrink-0 items-center gap-2 sm:gap-3">
+
+            {/* ================================================= */}
+            {/* NOTIFICATIONS */}
+            {/* ================================================= */}
+
             <div className="relative">
+
               <button
                 type="button"
                 onClick={() => {
                   setNotificationsOpen(
-                    (current) => {
+                    (
+                      current
+                    ) => {
                       const next =
                         !current;
 
-                      if (next) {
-                        void loadNotifications(
-                          {
-                            background:
-                              true,
-                          }
-                        );
+                      if (
+                        next
+                      ) {
+                        void loadNotifications({
+                          background: true,
+                        });
                       }
 
                       return next;
@@ -626,7 +656,9 @@ export default function AppLayout() {
                 }
               >
                 <Bell
-                  size={19}
+                  size={
+                    19
+                  }
                 />
 
                 {unreadNotifications.length >
@@ -640,15 +672,23 @@ export default function AppLayout() {
                 )}
               </button>
 
+              {/* ================================================= */}
+              {/* NOTIFICATION PANEL */}
+              {/* ================================================= */}
+
               {notificationsOpen && (
                 <div className="fixed left-3 right-3 top-[68px] z-[2100] max-h-[calc(100dvh-80px)] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[min(360px,calc(100vw-2rem))] sm:max-h-none">
+
                   <div className="border-b border-[#e2e8f0] px-4 py-3 sm:px-5 sm:py-4">
+
                     <div className="flex items-center justify-between gap-3">
+
                       <h2 className="font-semibold text-[#0f172a]">
                         Notifications
                       </h2>
 
                       <div className="flex items-center gap-2">
+
                         {unreadNotifications.length >
                           0 && (
                           <span className="rounded-full bg-[#ccfbf1] px-2 py-1 text-[11px] font-semibold text-[#115e59]">
@@ -670,29 +710,34 @@ export default function AppLayout() {
                           aria-label="Close notifications"
                         >
                           <X
-                            size={15}
+                            size={
+                              15
+                            }
                           />
                         </button>
                       </div>
                     </div>
 
                     <p className="mt-1 text-xs text-[#64748b]">
-                      Your latest
-                      PhilaLink
-                      updates
+                      Your latest PhilaLink updates
                     </p>
                   </div>
 
+                  {/* ================================================= */}
+                  {/* NOTIFICATION LIST */}
+                  {/* ================================================= */}
+
                   <div className="max-h-[calc(100dvh-165px)] divide-y divide-[#e2e8f0] overflow-y-auto overscroll-contain sm:max-h-[360px]">
+
                     {notificationsLoading ? (
                       <div className="px-5 py-6 text-center">
                         <p className="text-sm text-[#64748b]">
-                          Loading
-                          notifications...
+                          Loading notifications...
                         </p>
                       </div>
                     ) : notificationsError ? (
                       <div className="px-5 py-5">
+
                         <p className="text-sm text-[#dc2626]">
                           {
                             notificationsError
@@ -712,20 +757,20 @@ export default function AppLayout() {
                     ) : notifications.length ===
                       0 ? (
                       <div className="px-5 py-8 text-center">
+
                         <Bell
-                          size={24}
+                          size={
+                            24
+                          }
                           className="mx-auto text-[#94a3b8]"
                         />
 
                         <p className="mt-3 text-sm font-medium text-[#0f172a]">
-                          No
-                          notifications
+                          No notifications
                         </p>
 
                         <p className="mt-1 text-xs text-[#64748b]">
-                          You&apos;re
-                          all caught
-                          up.
+                          You&apos;re all caught up.
                         </p>
                       </div>
                     ) : (
@@ -759,12 +804,15 @@ export default function AppLayout() {
                               }`}
                             >
                               <div className="flex items-start gap-3">
+
                                 {!notification.isRead && (
                                   <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#0f766e]" />
                                 )}
 
                                 <div className="min-w-0 flex-1">
+
                                   <p className="break-words text-sm leading-5 text-[#0f172a]">
+
                                     {title && (
                                       <span className="font-bold">
                                         {
@@ -787,9 +835,11 @@ export default function AppLayout() {
                                   </p>
 
                                   <p className="mt-1 text-xs text-[#64748b]">
-                                    {formatNotificationDate(
-                                      notification.createdAt
-                                    )}
+                                    {
+                                      formatNotificationDate(
+                                        notification.createdAt
+                                      )
+                                    }
                                   </p>
                                 </div>
                               </div>
@@ -803,5 +853,230 @@ export default function AppLayout() {
               )}
             </div>
 
+            {/* ================================================= */}
+            {/* WEATHER */}
+            {/* ================================================= */}
+
             <WeatherChip
-              onNotificationCreated={()
+              onNotificationCreated={() =>
+                loadNotifications({
+                  background: true,
+                })
+              }
+            />
+
+            {/* ================================================= */}
+            {/* PROFILE */}
+            {/* ================================================= */}
+
+            <button
+              type="button"
+              onClick={() =>
+                navigate(
+                  "/patient/settings"
+                )
+              }
+              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white"
+              title={
+                displayName
+              }
+            >
+              {
+                initials
+              }
+            </button>
+          </div>
+        </header>
+
+        {/* ================================================= */}
+        {/* ROUTED PATIENT PAGE */}
+        {/* ================================================= */}
+
+        <main className="min-h-[calc(100vh-78px)]">
+          <Outlet />
+        </main>
+      </div>
+
+      {/* ================================================= */}
+      {/* MOBILE SIDEBAR */}
+      {/* ================================================= */}
+
+      {mobileOpen && (
+        <div className="fixed inset-0 z-[3000] lg:hidden">
+
+          <button
+            type="button"
+            onClick={() =>
+              setMobileOpen(
+                false
+              )
+            }
+            className="absolute inset-0 z-0 bg-black/40"
+            aria-label="Close navigation"
+          />
+
+          <aside className="relative z-10 flex h-[100dvh] w-[290px] max-w-[85vw] flex-col overflow-hidden bg-white shadow-2xl">
+
+            {/* ================================================= */}
+            {/* MOBILE BRAND */}
+            {/* ================================================= */}
+
+            <div className="flex h-[78px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-5">
+
+              <button
+                type="button"
+                onClick={() => {
+                  setMobileOpen(
+                    false
+                  );
+
+                  navigate(
+                    "/patient"
+                  );
+                }}
+                className="flex items-center gap-3"
+              >
+                <img
+                  src="/logo2.png"
+                  alt="PhilaLink logo"
+                  className="h-10 w-10 shrink-0 object-contain"
+                />
+
+                <span className="text-lg font-bold">
+                  Phila
+
+                  <span className="text-[#0f766e]">
+                    Link
+                  </span>
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMobileOpen(
+                    false
+                  )
+                }
+                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#64748b] hover:bg-[#f1f5f9]"
+                aria-label="Close navigation"
+              >
+                <X
+                  size={
+                    20
+                  }
+                />
+              </button>
+            </div>
+
+            {/* ================================================= */}
+            {/* MOBILE NAVIGATION */}
+            {/* ================================================= */}
+
+            <nav className="flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-6">
+
+              {navigationItems.map(
+                (
+                  item
+                ) => {
+                  const Icon =
+                    item.icon;
+
+                  return (
+                    <NavLink
+                      key={
+                        item.path
+                      }
+                      to={
+                        item.path
+                      }
+                      end={
+                        item.path ===
+                        "/patient"
+                      }
+                      onClick={() =>
+                        setMobileOpen(
+                          false
+                        )
+                      }
+                      className={({
+                        isActive,
+                      }) =>
+                        `flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium ${
+                          isActive
+                            ? "bg-[#ccfbf1] text-[#115e59]"
+                            : "text-[#475569] hover:bg-[#f1f5f9]"
+                        }`
+                      }
+                    >
+                      <Icon
+                        size={
+                          20
+                        }
+                      />
+
+                      {
+                        item.label
+                      }
+                    </NavLink>
+                  );
+                }
+              )}
+            </nav>
+
+            {/* ================================================= */}
+            {/* MOBILE USER */}
+            {/* ================================================= */}
+
+            <div className="shrink-0 border-t border-[#e2e8f0] bg-white p-4">
+
+              <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f8fafc] p-3">
+
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white">
+                  {
+                    initials
+                  }
+                </div>
+
+                <div className="min-w-0 flex-1">
+
+                  <div className="truncate text-sm font-semibold text-[#0f172a]">
+                    {
+                      displayName
+                    }
+                  </div>
+
+                  <div className="text-xs text-[#64748b]">
+                    Patient
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  handleLogout
+                }
+                className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#dc2626] hover:bg-[#fee2e2]"
+              >
+                <LogOut
+                  size={
+                    19
+                  }
+                />
+
+                Logout
+              </button>
+            </div>
+          </aside>
+        </div>
+      )}
+
+      {/* ================================================= */}
+      {/* PHILA CHAT */}
+      {/* ================================================= */}
+
+      <PhilaChatBot />
+    </div>
+  );
+}
