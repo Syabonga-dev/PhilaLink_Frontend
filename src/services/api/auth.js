@@ -1,4 +1,7 @@
-import { api } from "./client.js";
+import {
+  api,
+  API_BASE_URL,
+} from "./client.js";
 
 export const authApi = {
   login: ({
@@ -15,6 +18,9 @@ export const authApi = {
         auth: false,
       }
     ),
+
+  getGoogleLoginUrl: () =>
+    `${API_BASE_URL}/api/auth/google-login`,
 
   getMe: () =>
     api.get("/api/auth/me"),
