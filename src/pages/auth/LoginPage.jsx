@@ -30,6 +30,10 @@ import {
 } from "../../services/api/client.js";
 
 import {
+  authApi,
+} from "../../services/api/auth.js";
+
+import {
   homePathForRole,
 } from "../../routes/ProtectedRoute.jsx";
 
@@ -38,6 +42,38 @@ import NavigationBar from "../../components/layout/NavigationBar.jsx";
 import "./LoginPage.css";
 
 import logo2 from "./../../assets/logo2.png";
+
+
+function GoogleIcon() {
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        fill="#4285F4"
+        d="M21.6 12.23c0-.71-.06-1.4-.18-2.07H12v3.91h5.38a4.6 4.6 0 0 1-2 3.02v2.53h3.24c1.9-1.75 2.98-4.33 2.98-7.39Z"
+      />
+
+      <path
+        fill="#34A853"
+        d="M12 22c2.7 0 4.97-.9 6.63-2.43l-3.24-2.53c-.9.6-2.05.96-3.39.96-2.6 0-4.81-1.76-5.6-4.13H3.05v2.61A10 10 0 0 0 12 22Z"
+      />
+
+      <path
+        fill="#FBBC05"
+        d="M6.4 13.87A6.02 6.02 0 0 1 6.09 12c0-.65.11-1.28.31-1.87V7.52H3.05A10 10 0 0 0 2 12c0 1.61.38 3.14 1.05 4.48l3.35-2.61Z"
+      />
+
+      <path
+        fill="#EA4335"
+        d="M12 6c1.47 0 2.79.51 3.83 1.5l2.87-2.87A9.63 9.63 0 0 0 12 2a10 10 0 0 0-8.95 5.52l3.35 2.61C7.19 7.76 9.4 6 12 6Z"
+      />
+    </svg>
+  );
+}
 
 
 export default function LoginPage() {
@@ -68,6 +104,12 @@ export default function LoginPage() {
   const [
     loading,
     setLoading,
+  ] =
+    useState(false);
+
+  const [
+    googleLoading,
+    setGoogleLoading,
   ] =
     useState(false);
 
@@ -215,6 +257,23 @@ export default function LoginPage() {
           false
         );
       }
+    };
+
+
+  const handleGoogleLogin =
+    () => {
+      setGoogleLoading(
+        true
+      );
+
+      /*
+       * Google OAuth begins at the ASP.NET Core backend.
+       * The Google Client Secret never enters the browser.
+       */
+      window.location.assign(
+        authApi
+          .getGoogleLoginUrl()
+      );
     };
 
 
@@ -400,12 +459,47 @@ export default function LoginPage() {
                 loading={
                   loading
                 }
+                disabled={
+                  googleLoading
+                }
               >
                 {loading
                   ? "Signing in…"
                   : "Log in"}
               </Button>
             </form>
+
+
+            <div className="login-divider">
+              <span>
+                or
+              </span>
+            </div>
+
+
+            <button
+              type="button"
+              className="login-google"
+              onClick={
+                handleGoogleLogin
+              }
+              disabled={
+                loading ||
+                googleLoading
+              }
+            >
+              {googleLoading ? (
+                <span className="login-google-spinner" />
+              ) : (
+                <GoogleIcon />
+              )}
+
+              <span>
+                {googleLoading
+                  ? "Connecting to Google…"
+                  : "Continue with Google"}
+              </span>
+            </button>
 
 
             <div className="login-register">
