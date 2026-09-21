@@ -1,31 +1,150 @@
 import {
   useState,
 } from "react";
+
 import {
-  Link,
-  useLocation,
+  Eye,
+  EyeOff,
+  KeyRound,
+} from "lucide-react";
+
+import {
   useNavigate,
 } from "react-router-dom";
-import logo from "../../assets/logo2.png";
+
+import logo2 from "../../assets/logo2.png";
+
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
-import { useAuth } from "../../context/AuthContext.jsx";
-import { useToast } from "../../components/ui/Toast.jsx";
-import { ApiError } from "../../services/api/client.js";
-import { homePathForRole } from "../../routes/ProtectedRoute.jsx";
+
+import {
+  useAuth,
+} from "../../context/AuthContext.jsx";
+
+import {
+  useToast,
+} from "../../components/ui/Toast.jsx";
+
+import {
+  ApiError,
+} from "../../services/api/client.js";
+
+import {
+  homePathForRole,
+} from "../../routes/ProtectedRoute.jsx";
+
 import NavigationBar from "../../components/layout/NavigationBar.jsx";
+
 import "./LoginPage.css";
+import "./RegisterPage.css";
 
-export default function LoginPage() {
+// =====================================================
+// PASSWORD POLICY
+// Must remain consistent with the backend.
+// =====================================================
+
+function getPasswordRequirements(
+  password
+) {
+  return {
+    length:
+      password.length >=
+      12,
+
+    uppercase:
+      /[A-Z]/.test(
+        password
+      ),
+
+    lowercase:
+      /[a-z]/.test(
+        password
+      ),
+
+    number:
+      /\d/.test(
+        password
+      ),
+
+    special:
+      /[^A-Za-z0-9]/.test(
+        password
+      ),
+  };
+}
+
+function passwordIsValid(
+  password
+) {
+  return Object.values(
+    getPasswordRequirements(
+      password
+    )
+  ).every(Boolean);
+}
+
+function PasswordRequirement({
+  met,
+  children,
+}) {
+  return (
+    <div
+      className={
+        met
+          ? "password-requirement met"
+          : "password-requirement"
+      }
+    >
+      <span
+        className="password-requirement-icon"
+        aria-hidden="true"
+      >
+        {met
+          ? "✓"
+          : "○"}
+      </span>
+
+      <span>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+// =====================================================
+// CHANGE PASSWORD PAGE
+// =====================================================
+
+export default function ChangePasswordPage() {
   const [
-    idNumber,
-    setIdNumber,
+    currentPassword,
+    setCurrentPassword,
   ] = useState("");
 
   const [
-    password,
-    setPassword,
+    newPassword,
+    setNewPassword,
   ] = useState("");
+
+  const [
+    confirmNewPassword,
+    setConfirmNewPassword,
+  ] = useState("");
+
+  const [
+    showCurrentPassword,
+    setShowCurrentPassword,
+  ] = useState(false);
+
+  const [
+    showNewPassword,
+    setShowNewPassword,
+  ] = useState(false);
+
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword,
+  ] = useState(false);
 
   const [
     errors,
@@ -38,11 +157,14 @@ export default function LoginPage() {
   ] = useState(false);
 
   const [
-    idError,
-    setIdError,
+    submitError,
+    setSubmitError,
   ] = useState("");
 
-  const { login } =
+  const {
+    changePassword,
+    logout,
+  } =
     useAuth();
 
   const toast =
@@ -51,134 +173,151 @@ export default function LoginPage() {
   const navigate =
     useNavigate();
 
-  const location =
-    useLocation();
+  const requirements =
+    getPasswordRequirements(
+      newPassword
+    );
 
-  const validate = () => {
+  // =====================================================
+  // VALIDATION
+  // =====================================================
+
+  function validate() {
     const next = {};
 
     if (
-      !idNumber.trim()
+      !currentPassword
     ) {
-      next.idNumber =
-        "Enter your ID number.";
+      next.currentPassword =
+        "Enter your current password.";
     }
 
-    if (!password) {
-      next.password =
-        "Enter your password.";
+    if (
+      !newPassword
+    ) {
+      next.newPassword =
+        "Enter your new password.";
+    } else if (
+      !passwordIsValid(
+        newPassword
+      )
+    ) {
+      next.newPassword =
+        "Your new password must meet all the requirements below.";
     }
 
-    setErrors(next);
+    if (
+      !confirmNewPassword
+    ) {
+      next.confirmNewPassword =
+        "Confirm your new password.";
+    } else if (
+      newPassword !==
+        confirmNewPassword
+    ) {
+      next.confirmNewPassword =
+        "Passwords don't match.";
+    }
+
+    if (
+      currentPassword &&
+      newPassword &&
+      currentPassword ===
+        newPassword
+    ) {
+      next.newPassword =
+        "Your new password must be different from your current password.";
+    }
+
+    setErrors(
+      next
+    );
 
     return (
-      Object.keys(next)
-        .length === 0
+      Object.keys(
+        next
+      ).length ===
+      0
     );
-  };
+  }
 
-  const handleSubmit =
-    async (event) => {
-      event.preventDefault();
+  // =====================================================
+  // SUBMIT
+  // =====================================================
 
-      setIdError("");
+  async function handleSubmit(
+    event
+  ) {
+    event.preventDefault();
+
+    setSubmitError("");
+
+    if (!validate()) {
+      return;
+    }
+
+    try {
+      setLoading(
+        true
+      );
+
+      const updatedUser =
+        await changePassword({
+          currentPassword,
+
+          newPassword,
+
+          confirmNewPassword,
+        });
+
+      toast.success(
+        "Your password has been changed successfully."
+      );
+
+      navigate(
+        homePathForRole(
+          updatedUser?.role
+        ),
+        {
+          replace:
+            true,
+        }
+      );
+    } catch (
+      error
+    ) {
+      console.error(
+        "Password change failed:",
+        error
+      );
 
       if (
-        idNumber.length !==
-          13 ||
-        !/^\d{13}$/.test(
-          idNumber
-        )
+        error instanceof
+        ApiError
       ) {
-        setIdError(
-          "ID must be 13 digits and contain numbers only."
+        setSubmitError(
+          error.message ||
+            "We could not change your password."
         );
-
-        return;
-      }
-
-      if (!validate()) {
-        return;
-      }
-
-      setLoading(true);
-
-      try {
-        const user =
-          await login({
-            idNumber,
-            password,
-          });
-
-        toast.success(
-          `Welcome back, ${
-            user.fullName ||
-            "there"
-          }.`
+      } else {
+        setSubmitError(
+          "We could not change your password. Please try again."
         );
-
-        if (
-          user.mustChangePassword
-        ) {
-          navigate(
-            "/change-password",
-            {
-              replace: true,
-            }
-          );
-
-          return;
-        }
-
-        const attemptedPath =
-          location.state?.from
-            ?.pathname;
-
-        const ownHome =
-          homePathForRole(
-            user.role
-          );
-
-        const destination =
-          attemptedPath &&
-          attemptedPath !==
-            "/login"
-            ? attemptedPath
-            : ownHome;
-
-        navigate(
-          destination,
-          {
-            replace: true,
-          }
-        );
-      } catch (error) {
-        if (
-          error instanceof
-          ApiError
-        ) {
-          if (
-            error.status ===
-            401
-          ) {
-            toast.error(
-              error.message ||
-                "Incorrect ID number or password."
-            );
-          } else {
-            toast.error(
-              error.message
-            );
-          }
-        } else {
-          toast.error(
-            "Something went wrong. Please try again."
-          );
-        }
-      } finally {
-        setLoading(false);
       }
-    };
+    } finally {
+      setLoading(
+        false
+      );
+    }
+  }
+
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+
+  function handleLogout() {
+    logout();
+  }
 
   return (
     <>
@@ -191,10 +330,17 @@ export default function LoginPage() {
 
         <main className="login-content">
           <div className="login-card">
+
+            {/* ============================= */}
+            {/* BRAND */}
+            {/* ============================= */}
+
             <div className="login-brand">
               <img
-                src={logo}
-                alt="PhilaLink"
+                src={
+                  logo2
+                }
+                alt="PhilaLink logo"
               />
 
               <div>
@@ -205,98 +351,345 @@ export default function LoginPage() {
               </div>
             </div>
 
+            {/* ============================= */}
+            {/* HEADING */}
+            {/* ============================= */}
+
             <div className="login-heading">
+              <div className="mb-4 flex justify-center">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#ccfbf1] text-[#0f766e]">
+                  <KeyRound
+                    size={
+                      22
+                    }
+                  />
+                </div>
+              </div>
+
+              <p className="login-eyebrow">
+                ACCOUNT SECURITY
+              </p>
+
               <h1>
-                Welcome back.
+                Change your password.
               </h1>
 
               <p>
-                Sign in to
-                access your
-                PhilaLink
-                healthcare
-                dashboard.
+                Your account requires
+                a new password before
+                you can continue to
+                PhilaLink.
               </p>
             </div>
+
+            {/* ============================= */}
+            {/* ERROR */}
+            {/* ============================= */}
+
+            {submitError && (
+              <div className="mb-5 rounded-lg border border-red-200 bg-red-50 p-3">
+                <p className="text-sm text-red-700">
+                  {
+                    submitError
+                  }
+                </p>
+              </div>
+            )}
+
+            {/* ============================= */}
+            {/* FORM */}
+            {/* ============================= */}
 
             <form
               onSubmit={
                 handleSubmit
               }
               className="login-form"
+              noValidate
             >
               <Input
-                label="ID number"
-                name="idNumber"
+                label="Current password"
+                name="currentPassword"
+                type={
+                  showCurrentPassword
+                    ? "text"
+                    : "password"
+                }
                 value={
-                  idNumber
+                  currentPassword
                 }
                 onChange={(
                   event
                 ) => {
-                  setIdNumber(
+                  setCurrentPassword(
                     event.target
                       .value
                   );
 
-                  setIdError(
+                  setErrors(
+                    (
+                      current
+                    ) => ({
+                      ...current,
+
+                      currentPassword:
+                        undefined,
+                    })
+                  );
+
+                  setSubmitError(
                     ""
                   );
                 }}
                 error={
-                  errors.idNumber
+                  errors
+                    .currentPassword
                 }
-                placeholder="e.g. 9001015800082"
-                autoComplete="username"
-                maxLength={13}
-                inputMode="numeric"
+                placeholder="••••••••••••"
+                autoComplete="current-password"
+                endAdornment={
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowCurrentPassword(
+                        (
+                          current
+                        ) =>
+                          !current
+                      )
+                    }
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-[#64748b] transition hover:bg-[#f1f5f9] hover:text-[#0f766e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]/30"
+                    aria-label={
+                      showCurrentPassword
+                        ? "Hide current password"
+                        : "Show current password"
+                    }
+                  >
+                    {showCurrentPassword ? (
+                      <EyeOff
+                        size={
+                          18
+                        }
+                      />
+                    ) : (
+                      <Eye
+                        size={
+                          18
+                        }
+                      />
+                    )}
+                  </button>
+                }
               />
 
-              {idError && (
-                <span id="invalid-id">
-                  {idError}
-                </span>
-              )}
-
               <Input
-                label="Password"
-                name="password"
-                type="password"
+                label="New password"
+                name="newPassword"
+                type={
+                  showNewPassword
+                    ? "text"
+                    : "password"
+                }
                 value={
-                  password
+                  newPassword
                 }
                 onChange={(
                   event
-                ) =>
-                  setPassword(
+                ) => {
+                  setNewPassword(
                     event.target
                       .value
-                  )
-                }
+                  );
+
+                  setErrors(
+                    (
+                      current
+                    ) => ({
+                      ...current,
+
+                      newPassword:
+                        undefined,
+                    })
+                  );
+
+                  setSubmitError(
+                    ""
+                  );
+                }}
                 error={
-                  errors.password
+                  errors
+                    .newPassword
                 }
-                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
-                autoComplete="current-password"
+                placeholder="••••••••••••"
+                autoComplete="new-password"
+                endAdornment={
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowNewPassword(
+                        (
+                          current
+                        ) =>
+                          !current
+                      )
+                    }
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-[#64748b] transition hover:bg-[#f1f5f9] hover:text-[#0f766e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]/30"
+                    aria-label={
+                      showNewPassword
+                        ? "Hide new password"
+                        : "Show new password"
+                    }
+                  >
+                    {showNewPassword ? (
+                      <EyeOff
+                        size={
+                          18
+                        }
+                      />
+                    ) : (
+                      <Eye
+                        size={
+                          18
+                        }
+                      />
+                    )}
+                  </button>
+                }
               />
 
-              <div className="login-options">
-                <label>
-                  <input
-                    type="checkbox"
-                  />
+              <Input
+                label="Confirm new password"
+                name="confirmNewPassword"
+                type={
+                  showConfirmPassword
+                    ? "text"
+                    : "password"
+                }
+                value={
+                  confirmNewPassword
+                }
+                onChange={(
+                  event
+                ) => {
+                  setConfirmNewPassword(
+                    event.target
+                      .value
+                  );
 
-                  <span>
-                    Remember me
-                  </span>
-                </label>
+                  setErrors(
+                    (
+                      current
+                    ) => ({
+                      ...current,
 
-                <button
-                  type="button"
-                  className="forgot-password"
-                >
-                  Forgot password?
-                </button>
+                      confirmNewPassword:
+                        undefined,
+                    })
+                  );
+
+                  setSubmitError(
+                    ""
+                  );
+                }}
+                error={
+                  errors
+                    .confirmNewPassword
+                }
+                placeholder="••••••••••••"
+                autoComplete="new-password"
+                endAdornment={
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowConfirmPassword(
+                        (
+                          current
+                        ) =>
+                          !current
+                      )
+                    }
+                    className="flex h-9 w-9 items-center justify-center rounded-md text-[#64748b] transition hover:bg-[#f1f5f9] hover:text-[#0f766e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0f766e]/30"
+                    aria-label={
+                      showConfirmPassword
+                        ? "Hide confirmed password"
+                        : "Show confirmed password"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff
+                        size={
+                          18
+                        }
+                      />
+                    ) : (
+                      <Eye
+                        size={
+                          18
+                        }
+                      />
+                    )}
+                  </button>
+                }
+              />
+
+              {/* ============================= */}
+              {/* PASSWORD REQUIREMENTS */}
+              {/* ============================= */}
+
+              <div
+                className="password-requirements"
+                aria-live="polite"
+              >
+                <p className="password-requirements-title">
+                  Your password must contain:
+                </p>
+
+                <div className="password-requirements-grid">
+                  <PasswordRequirement
+                    met={
+                      requirements
+                        .length
+                    }
+                  >
+                    At least 12 characters
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements
+                        .uppercase
+                    }
+                  >
+                    1 uppercase letter
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements
+                        .lowercase
+                    }
+                  >
+                    1 lowercase letter
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements
+                        .number
+                    }
+                  >
+                    1 number
+                  </PasswordRequirement>
+
+                  <PasswordRequirement
+                    met={
+                      requirements
+                        .special
+                    }
+                  >
+                    1 special character
+                  </PasswordRequirement>
+                </div>
               </div>
 
               <Button
@@ -305,22 +698,34 @@ export default function LoginPage() {
                 loading={
                   loading
                 }
+                disabled={
+                  loading
+                }
               >
                 {loading
-                  ? "Signing inâ€¦"
-                  : "Log in"}
+                  ? "Changing password…"
+                  : "Change password and continue"}
               </Button>
             </form>
 
+            {/* ============================= */}
+            {/* LOGOUT */}
+            {/* ============================= */}
+
             <div className="login-register">
               <span>
-                New patient?
+                Not your account?
               </span>
 
-              <Link to="/register">
-                Create an
-                account
-              </Link>
+              <button
+                type="button"
+                onClick={
+                  handleLogout
+                }
+                className="font-medium text-[#0f766e] hover:underline"
+              >
+                Sign out
+              </button>
             </div>
           </div>
         </main>
