@@ -224,8 +224,7 @@ export default function ForgotPasswordPage() {
         identifier.trim();
 
       if (!value) {
-        return
-          "Enter your email address or SA ID number.";
+        return "Enter your email address or SA ID number.";
       }
 
       const isIdNumber =
@@ -242,8 +241,7 @@ export default function ForgotPasswordPage() {
         !isIdNumber &&
         !isEmail
       ) {
-        return
-          "Enter a valid email address or 13-digit SA ID number.";
+        return "Enter a valid email address or 13-digit SA ID number.";
       }
 
       return null;
@@ -299,18 +297,14 @@ export default function ForgotPasswordPage() {
       } catch (
         error
       ) {
-        if (
-          error instanceof
-          ApiError
-        ) {
-          toast.error(
-            error.message
-          );
-        } else {
-          toast.error(
-            "We couldn't start the password reset. Please try again."
-          );
-        }
+        console.error(
+          "Password reset request failed:",
+          error
+        );
+
+        toast.error(
+          "We couldn't start the password reset. Please try again."
+        );
       } finally {
         setLoading(
           false
@@ -409,7 +403,8 @@ export default function ForgotPasswordPage() {
         navigate(
           "/login",
           {
-            replace: true,
+            replace:
+              true,
           }
         );
       } catch (
@@ -468,18 +463,14 @@ export default function ForgotPasswordPage() {
       } catch (
         error
       ) {
-        if (
-          error instanceof
-          ApiError
-        ) {
-          toast.error(
-            error.message
-          );
-        } else {
-          toast.error(
-            "We couldn't resend the verification code. Please try again."
-          );
-        }
+        console.error(
+          "Password reset resend failed:",
+          error
+        );
+
+        toast.error(
+          "We couldn't resend the verification code. Please try again."
+        );
       } finally {
         setResendLoading(
           false
@@ -563,10 +554,12 @@ export default function ForgotPasswordPage() {
                     address or SA ID
                     number linked to
                     your PhilaLink
-                    account. We'll send
-                    a 6-digit
+                    account. If an
+                    account matches
+                    those details,
+                    we&apos;ll send a
                     verification code
-                    to your registered
+                    to the registered
                     email address.
                   </p>
                 </div>
@@ -654,12 +647,15 @@ export default function ForgotPasswordPage() {
                   </h1>
 
                   <p>
-                    Enter the 6-digit
+                    If an account
+                    matches those
+                    details, a 6-digit
                     verification code
-                    sent to your
-                    registered email,
-                    then choose your new
-                    password.
+                    was sent to the
+                    registered email
+                    address. Enter it
+                    below, then choose
+                    your new password.
                   </p>
                 </div>
 

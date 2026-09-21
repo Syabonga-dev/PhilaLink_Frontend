@@ -6,7 +6,7 @@ import {
   useLocation,
   useNavigate,
 } from "react-router-dom";
-import logo from "../../assets/logo.png";
+import logo from "../../assets/logo2.png";
 import Button from "../../components/ui/Button.jsx";
 import Input from "../../components/ui/Input.jsx";
 import { useAuth } from "../../context/AuthContext.jsx";
@@ -276,7 +276,7 @@ export default function LoginPage() {
                 error={
                   errors.password
                 }
-                placeholder="••••••••"
+                placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢"
                 autoComplete="current-password"
               />
 
@@ -307,7 +307,7 @@ export default function LoginPage() {
                 }
               >
                 {loading
-                  ? "Signing in…"
+                  ? "Signing inâ€¦"
                   : "Log in"}
               </Button>
             </form>

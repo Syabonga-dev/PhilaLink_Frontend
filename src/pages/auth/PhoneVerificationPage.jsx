@@ -9,7 +9,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 
-import logo from "../../assets/logo.png";
+import logo2 from "../../assets/logo2.png";
 
 import Button from "../../components/ui/Button.jsx";
 
@@ -34,9 +34,7 @@ function maskEmail(
 ) {
   if (
     !email ||
-    !email.includes(
-      "@"
-    )
+    !email.includes("@")
   ) {
     return "your email address";
   }
@@ -45,9 +43,7 @@ function maskEmail(
     name,
     domain,
   ] =
-    email.split(
-      "@"
-    );
+    email.split("@");
 
   if (
     !name ||
@@ -97,23 +93,22 @@ export default function PhoneVerificationPage() {
   const [
     loading,
     setLoading,
-  ] = useState(
-    false
-  );
+  ] =
+    useState(false);
 
   const [
     resending,
     setResending,
-  ] = useState(
-    false
-  );
+  ] =
+    useState(false);
 
   const inputsRef =
     useRef([]);
 
   const {
     verifyPhone,
-  } = useAuth();
+  } =
+    useAuth();
 
   const toast =
     useToast();
@@ -162,8 +157,7 @@ export default function PhoneVerificationPage() {
       ) {
         inputsRef
           .current[
-            index +
-              1
+            index + 1
           ]?.focus();
       }
     };
@@ -182,8 +176,7 @@ export default function PhoneVerificationPage() {
       ) {
         inputsRef
           .current[
-            index -
-              1
+            index - 1
           ]?.focus();
       }
     };
@@ -195,9 +188,7 @@ export default function PhoneVerificationPage() {
       const pasted =
         event
           .clipboardData
-          .getData(
-            "text"
-          )
+          .getData("text")
           .replace(
             /\D/g,
             ""
@@ -207,9 +198,7 @@ export default function PhoneVerificationPage() {
             6
           );
 
-      if (
-        !pasted
-      ) {
+      if (!pasted) {
         return;
       }
 
@@ -256,9 +245,7 @@ export default function PhoneVerificationPage() {
     ) => {
       event.preventDefault();
 
-      if (
-        !userId
-      ) {
+      if (!userId) {
         toast.error(
           "Verification details are missing. Please register again."
         );
@@ -324,9 +311,7 @@ export default function PhoneVerificationPage() {
 
   const handleResend =
     async () => {
-      if (
-        !userId
-      ) {
+      if (!userId) {
         toast.error(
           "Verification details are missing. Please register again."
         );
@@ -399,10 +384,10 @@ export default function PhoneVerificationPage() {
         >
           <img
             src={
-              logo
+              logo2
             }
             alt="PhilaLink"
-            className="h-9 w-9"
+            className="h-9 w-9 object-contain"
           />
 
           <span className="text-xl font-bold text-white">
@@ -420,19 +405,15 @@ export default function PhoneVerificationPage() {
             </span>
 
             <p className="mt-4 text-xs font-semibold uppercase tracking-[0.18em] text-primary">
-              Email
-              verification
+              Email verification
             </p>
 
             <h1 className="mt-2 text-2xl font-bold text-on-surface">
-              Verify your
-              account
+              Verify your account
             </h1>
 
             <p className="mt-2 text-sm leading-6 text-on-surface-variant">
-              Enter the
-              6-digit code
-              sent to{" "}
+              Enter the 6-digit code sent to{" "}
               <span className="font-semibold text-on-surface">
                 {maskEmail(
                   email
@@ -442,25 +423,18 @@ export default function PhoneVerificationPage() {
             </p>
 
             <p className="mt-2 text-xs text-on-surface-variant">
-              The code
-              expires after
-              5 minutes.
+              The code expires after 5 minutes.
             </p>
           </div>
 
           {!userId ? (
             <div className="mt-7 rounded-lg border border-error/30 bg-error/5 p-4 text-center">
               <p className="text-sm font-semibold text-on-surface">
-                Verification
-                session
-                missing
+                Verification session missing
               </p>
 
               <p className="mt-1 text-xs text-on-surface-variant">
-                Return to
-                registration
-                and start
-                again.
+                Return to registration and start again.
               </p>
 
               <Button
@@ -468,8 +442,7 @@ export default function PhoneVerificationPage() {
                 to="/register"
                 className="mt-4 w-full"
               >
-                Back to
-                registration
+                Back to registration
               </Button>
             </div>
           ) : (
@@ -535,8 +508,7 @@ export default function PhoneVerificationPage() {
                           1
                         }
                         aria-label={`Verification digit ${
-                          index +
-                          1
+                          index + 1
                         }`}
                         className="h-14 w-11 rounded-lg border border-outline-variant bg-white text-center text-xl font-bold text-on-surface transition focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30 sm:w-12"
                       />
@@ -552,7 +524,8 @@ export default function PhoneVerificationPage() {
                   }
                   disabled={
                     code.length !==
-                    6
+                    6 ||
+                    loading
                   }
                 >
                   {loading
@@ -578,14 +551,7 @@ export default function PhoneVerificationPage() {
               </button>
 
               <p className="mt-6 text-center text-xs leading-5 text-on-surface-variant">
-                For your
-                security,
-                account
-                verification
-                must be
-                completed
-                before
-                logging in.
+                For your security, account verification must be completed before logging in.
               </p>
             </>
           )}
