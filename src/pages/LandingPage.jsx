@@ -8,12 +8,10 @@ import {
 } from "react-router-dom";
 
 import {
-  ArrowRight,
   ArrowUpRight,
   Bell,
   Building2,
   CalendarDays,
-  HeartPulse,
   MessageCircle,
   PhoneCall,
   Pill,
@@ -462,83 +460,30 @@ export default function LandingPage() {
 
       {/* ===================================== */}
       {/* PATIENT FOCUS */}
-      {/* ===================================== */}
-
-      <section className="patient-focus-section">
-        <div className="section-container patient-focus-grid">
-          <div className="patient-focus-icon">
-            <HeartPulse
-              size={
-                30
-              }
-            />
-          </div>
-
-          <div>
-            <span className="section-kicker section-kicker-light">
-              BUILT AROUND THE PATIENT
-            </span>
-
-            <h2>
-              One healthcare journey.
-              One connected view.
-            </h2>
-          </div>
-
-          <p>
-            Medication, collections,
-            appointments and the people
-            supporting treatment can all
-            be understood through one
-            connected platform.
-          </p>
-        </div>
-      </section>
-
-
-      {/* ===================================== */}
-      {/* ACCESS */}
+      {/* SAME STYLE AS HEALTH TIPS HEADER */}
       {/* ===================================== */}
 
       <section className="access-section">
-        <div className="section-container access-grid">
-          <div>
-            <span className="section-kicker">
-              GET STARTED
-            </span>
+        <div className="section-container">
+          <div className="section-header">
+            <div>
+              <span className="section-kicker">
+                BUILT AROUND THE PATIENT
+              </span>
 
-            <h2>
-              Stay connected to your care.
-            </h2>
+              <h2>
+                One healthcare journey.
+                One connected view.
+              </h2>
+            </div>
 
             <p>
-              Create a patient account or
-              log in to continue using
-              PhilaLink.
+              Medication, collections,
+              appointments and the people
+              supporting treatment can all
+              be understood through one
+              connected platform.
             </p>
-          </div>
-
-
-          <div className="access-actions">
-            <Link
-              to="/register"
-              className="access-primary"
-            >
-              Create account
-
-              <ArrowRight
-                size={
-                  18
-                }
-              />
-            </Link>
-
-            <Link
-              to="/login"
-              className="access-secondary"
-            >
-              Log in
-            </Link>
           </div>
         </div>
       </section>
@@ -634,12 +579,12 @@ export default function LandingPage() {
                   Access
                 </h4>
 
-                <Link to="/login">
-                  Log in
+                <Link to="/register">
+                  Create account
                 </Link>
 
-                <Link to="/register">
-                  Register
+                <Link to="/login">
+                  Log in
                 </Link>
 
                 <Link to="/forgot-password">
@@ -670,7 +615,7 @@ export default function LandingPage() {
                     </span>
 
                     <strong>
-                      10177
+                      112
                     </strong>
                   </div>
                 </div>
