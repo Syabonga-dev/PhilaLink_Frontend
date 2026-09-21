@@ -27,6 +27,7 @@ import {
 
 import {
   ApiError,
+  API_BASE_URL,
 } from "../../services/api/client.js";
 
 import {
@@ -261,24 +262,113 @@ export default function LoginPage() {
     };
 
   // =====================================================
+  // WAKE BACKEND FOR GOOGLE LOGIN
+  // =====================================================
+
+  const wakeBackend =
+    async () => {
+      /*
+       * Google OAuth requires a full-page navigation to the
+       * backend. If the Render service is sleeping and we
+       * navigate there immediately, Render may show its own
+       * wake-up screen.
+       *
+       * Calling the lightweight health endpoint first keeps
+       * the user on PhilaLink while Render starts in the
+       * background.
+       */
+      const controller =
+        new AbortController();
+
+      const timeoutId =
+        window.setTimeout(
+          () => {
+            controller.abort();
+          },
+          90000
+        );
+
+      try {
+        const response =
+          await fetch(
+            `${API_BASE_URL}/api/health`,
+            {
+              method:
+                "GET",
+
+              headers: {
+                Accept:
+                  "application/json",
+              },
+
+              cache:
+                "no-store",
+
+              signal:
+                controller.signal,
+            }
+          );
+
+        if (
+          !response.ok
+        ) {
+          throw new Error(
+            `Health check failed with status ${response.status}.`
+          );
+        }
+
+        return true;
+      } finally {
+        window.clearTimeout(
+          timeoutId
+        );
+      }
+    };
+
+  // =====================================================
   // GOOGLE LOGIN
   // =====================================================
 
   const handleGoogleLogin =
-    () => {
+    async () => {
+      if (
+        googleLoading
+      ) {
+        return;
+      }
+
       setGoogleLoading(
         true
       );
 
-      /*
-       * Google OAuth begins at the backend.
-       * The Google Client Secret never enters
-       * the browser.
-       */
-      window.location.assign(
-        authApi
-          .getGoogleLoginUrl()
-      );
+      try {
+        /*
+         * Warm Render before navigating away from PhilaLink.
+         * Once /api/health responds, the backend is ready to
+         * handle the OAuth redirect immediately.
+         */
+        await wakeBackend();
+
+        window.location.assign(
+          authApi
+            .getGoogleLoginUrl()
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Unable to prepare Google sign-in:",
+          error
+        );
+
+        toast.error(
+          "Unable to prepare secure sign-in. Please try again."
+        );
+
+        setGoogleLoading(
+          false
+        );
+      }
     };
 
   // =====================================================
@@ -542,7 +632,7 @@ export default function LoginPage() {
 
               <span>
                 {googleLoading
-                  ? "Connecting to Google…"
+                  ? "Preparing secure sign-in…"
                   : "Continue with Google"}
               </span>
             </button>
