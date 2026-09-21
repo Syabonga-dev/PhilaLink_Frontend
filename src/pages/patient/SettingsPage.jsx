@@ -184,7 +184,9 @@ function passwordIsValid(
 
 export default function SettingsPage() {
   const {
+    user,
     changePassword,
+    setUser,
   } =
     useAuth();
 
@@ -630,13 +632,69 @@ export default function SettingsPage() {
           preferences
         );
 
-      setPatientInfo(
-        updatedPatient
-      );
+setPatientInfo(
+  updatedPatient
+);
 
-      setSuccess(
-        "Your settings have been saved."
-      );
+/*
+ * Keep AuthContext synchronized with profile changes so
+ * components such as the top bar immediately display the
+ * patient's latest name and contact information.
+ *
+ * Do not replace the authenticated user with updatedPatient
+ * because PatientMeDto does not contain all authentication
+ * fields such as role and mustChangePassword.
+ */
+if (user) {
+  setUser({
+    ...user,
+
+    fullName:
+      updatedPatient
+        ?.fullName ??
+      user.fullName,
+
+    email:
+      updatedPatient
+        ?.email ??
+      user.email,
+
+    phoneNumber:
+      updatedPatient
+        ?.phoneNumber ??
+      user.phoneNumber,
+  });
+}
+
+/*
+ * Use the values returned by the backend because the server
+ * may normalize them, for example converting email to
+ * lowercase.
+ */
+setProfile(
+  (current) => ({
+    ...current,
+
+    fullName:
+      updatedPatient
+        ?.fullName ??
+      current.fullName,
+
+    email:
+      updatedPatient
+        ?.email ??
+      current.email,
+
+    phoneNumber:
+      updatedPatient
+        ?.phoneNumber ??
+      current.phoneNumber,
+  })
+);
+
+setSuccess(
+  "Your settings have been saved."
+);
     } catch (
       err
     ) {
