@@ -34,99 +34,56 @@ export default function LegalProtectedRoute() {
   } = useAuth();
 
   const [
-    legalState,
-    setLegalState,
-  ] = useState({
-    status: "checking",
-    error: "",
-  });
+    status,
+    setStatus,
+  ] = useState(
+    "checking"
+  );
 
-  // =====================================================
-  // CHECK LEGAL STATUS
-  // =====================================================
+  const [
+    error,
+    setError,
+  ] = useState("");
 
   useEffect(() => {
     let cancelled =
       false;
 
-    const checkLegalStatus =
+    const check =
       async () => {
-        // -----------------------------------------------
-        // WAIT FOR AUTH CONTEXT
-        // -----------------------------------------------
-
         if (
           isLoading
         ) {
           return;
         }
 
-        // -----------------------------------------------
-        // NOT AUTHENTICATED
-        // -----------------------------------------------
-
         if (
           !isAuthenticated
         ) {
-          if (
-            !cancelled
-          ) {
-            setLegalState({
-              status:
-                "unauthenticated",
-
-              error: "",
-            });
-          }
+          setStatus(
+            "unauthenticated"
+          );
 
           return;
         }
-
-        // -----------------------------------------------
-        // PASSWORD CHANGE HAS PRIORITY
-        // -----------------------------------------------
 
         if (
           mustChangePassword
         ) {
-          if (
-            !cancelled
-          ) {
-            setLegalState({
-              status:
-                "password-change",
-
-              error: "",
-            });
-          }
+          setStatus(
+            "password-change"
+          );
 
           return;
         }
 
-        // -----------------------------------------------
-        // CHECK BACKEND
-        // -----------------------------------------------
+        setStatus(
+          "checking"
+        );
 
-        if (
-          !cancelled
-        ) {
-          setLegalState({
-            status:
-              "checking",
-
-            error: "",
-          });
-        }
+        setError("");
 
         try {
-          /*
-           * No token parameter is required.
-           *
-           * api/client.js automatically reads
-           * philalink_token and attaches:
-           *
-           * Authorization: Bearer <token>
-           */
           const result =
             await getLegalStatus();
 
@@ -136,29 +93,15 @@ export default function LegalProtectedRoute() {
             return;
           }
 
-          if (
+          setStatus(
             result
               ?.requiresAction ===
             true
-          ) {
-            setLegalState({
-              status:
-                "legal-required",
-
-              error: "",
-            });
-
-            return;
-          }
-
-          setLegalState({
-            status:
-              "allowed",
-
-            error: "",
-          });
+              ? "legal-required"
+              : "allowed"
+          );
         } catch (
-          error
+          requestError
         ) {
           if (
             cancelled
@@ -166,51 +109,38 @@ export default function LegalProtectedRoute() {
             return;
           }
 
-          /*
-           * A 401 is already handled by
-           * api/client.js and AuthContext.
-           *
-           * Keep this branch as an additional
-           * safeguard.
-           */
           if (
-            error?.status ===
+            requestError
+              ?.status ===
             401
           ) {
-            setLegalState({
-              status:
-                "unauthenticated",
-
-              error: "",
-            });
+            setStatus(
+              "unauthenticated"
+            );
 
             return;
           }
 
-          console.error(
-            "Unable to verify legal status:",
-            error
+          setError(
+            requestError
+              ?.message ||
+              "PhilaLink could not verify your legal document status."
           );
 
           /*
            * Fail closed.
            *
-           * If PhilaLink cannot confirm whether
-           * the required documents were accepted,
-           * protected areas are not opened.
+           * Protected pages must not open if
+           * PhilaLink cannot verify the user's
+           * legal-document status.
            */
-          setLegalState({
-            status:
-              "error",
-
-            error:
-              error?.message ||
-              "PhilaLink could not verify your legal document status.",
-          });
+          setStatus(
+            "error"
+          );
         }
       };
 
-    checkLegalStatus();
+    check();
 
     return () => {
       cancelled =
@@ -223,16 +153,18 @@ export default function LegalProtectedRoute() {
   ]);
 
   // =====================================================
-  // AUTH CONTEXT LOADING
+  // LOADING
   // =====================================================
 
   if (
-    isLoading
+    isLoading ||
+    status ===
+      "checking"
   ) {
     return (
-      <LegalRouteLoader
-        label="Checking your session…"
-      />
+      <div className="flex min-h-screen w-full items-center justify-center bg-background">
+        <Spinner label="Checking legal requirements…" />
+      </div>
     );
   }
 
@@ -242,7 +174,7 @@ export default function LegalProtectedRoute() {
 
   if (
     !isAuthenticated ||
-    legalState.status ===
+    status ===
       "unauthenticated"
   ) {
     return (
@@ -258,12 +190,12 @@ export default function LegalProtectedRoute() {
   }
 
   // =====================================================
-  // REQUIRED PASSWORD CHANGE
+  // PASSWORD CHANGE
   // =====================================================
 
   if (
     mustChangePassword ||
-    legalState.status ===
+    status ===
       "password-change"
   ) {
     return (
@@ -275,39 +207,24 @@ export default function LegalProtectedRoute() {
   }
 
   // =====================================================
-  // CHECKING LEGAL STATUS
+  // LEGAL ACTION REQUIRED
   // =====================================================
 
   if (
-    legalState.status ===
-    "checking"
-  ) {
-    return (
-      <LegalRouteLoader
-        label="Checking legal requirements…"
-      />
-    );
-  }
-
-  // =====================================================
-  // LEGAL ACCEPTANCE REQUIRED
-  // =====================================================
-
-  if (
-    legalState.status ===
+    status ===
     "legal-required"
   ) {
     const returnTo =
       `${location.pathname}${location.search}${location.hash}`;
 
-    const query =
+    const params =
       new URLSearchParams({
         returnTo,
       });
 
     return (
       <Navigate
-        to={`/legal-acceptance?${query.toString()}`}
+        to={`/legal-acceptance?${params.toString()}`}
         replace
         state={{
           from:
@@ -318,215 +235,53 @@ export default function LegalProtectedRoute() {
   }
 
   // =====================================================
-  // STATUS CHECK FAILED
+  // ERROR
   // =====================================================
 
   if (
-    legalState.status ===
+    status ===
     "error"
   ) {
     return (
-      <LegalRouteError
-        message={
-          legalState.error
-        }
-      />
+      <main className="grid min-h-screen place-items-center bg-[#f5f5f2] px-5 text-black">
+        <section className="w-full max-w-lg border border-black bg-white p-7 sm:p-9">
+          <p className="text-sm font-extrabold">
+            PhilaLink
+          </p>
+
+          <h1 className="mt-6 font-serif text-3xl font-bold">
+            We couldn't verify your account
+          </h1>
+
+          <p className="mt-4 text-sm leading-6 text-neutral-600">
+            {error}
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-neutral-600">
+            Protected account access remains unavailable
+            until PhilaLink can confirm your current legal
+            status.
+          </p>
+
+          <button
+            type="button"
+            onClick={() =>
+              window.location.reload()
+            }
+            className="mt-6 border border-black bg-black px-5 py-3 text-sm font-bold text-white transition hover:bg-white hover:text-black"
+          >
+            Try again
+          </button>
+        </section>
+      </main>
     );
   }
 
   // =====================================================
-  // ACCESS ALLOWED
+  // ALLOW ACCESS
   // =====================================================
 
   return (
     <Outlet />
-  );
-}
-
-// =====================================================
-// LOADING
-// =====================================================
-
-function LegalRouteLoader({
-  label,
-}) {
-  return (
-    <div className="flex min-h-screen w-full items-center justify-center bg-background">
-      <Spinner
-        label={
-          label
-        }
-      />
-    </div>
-  );
-}
-
-// =====================================================
-// ERROR
-// =====================================================
-
-function LegalRouteError({
-  message,
-}) {
-  return (
-    <main
-      style={{
-        minHeight:
-          "100vh",
-
-        padding:
-          "24px",
-
-        display:
-          "grid",
-
-        placeItems:
-          "center",
-
-        background:
-          "#f4f4f2",
-
-        color:
-          "#111111",
-
-        fontFamily:
-          "Inter, system-ui, sans-serif",
-      }}
-    >
-      <section
-        style={{
-          width:
-            "min(100%, 520px)",
-
-          padding:
-            "32px",
-
-          border:
-            "1px solid #ccccca",
-
-          background:
-            "#ffffff",
-        }}
-      >
-        <div
-          style={{
-            marginBottom:
-              "24px",
-
-            fontSize:
-              "20px",
-
-            fontWeight:
-              "800",
-
-            letterSpacing:
-              "-0.04em",
-          }}
-        >
-          PhilaLink
-        </div>
-
-        <h1
-          style={{
-            margin:
-              "0 0 14px",
-
-            fontFamily:
-              'Georgia, "Times New Roman", serif',
-
-            fontSize:
-              "30px",
-
-            fontWeight:
-              "500",
-
-            lineHeight:
-              "1.15",
-          }}
-        >
-          We couldn't verify your account
-        </h1>
-
-        <p
-          style={{
-            margin:
-              "0",
-
-            color:
-              "#666666",
-
-            fontSize:
-              "13px",
-
-            lineHeight:
-              "1.7",
-          }}
-        >
-          {
-            message
-          }
-        </p>
-
-        <p
-          style={{
-            margin:
-              "12px 0 0",
-
-            color:
-              "#666666",
-
-            fontSize:
-              "13px",
-
-            lineHeight:
-              "1.7",
-          }}
-        >
-          Protected account access remains unavailable until
-          PhilaLink can confirm your current legal document
-          status.
-        </p>
-
-        <button
-          type="button"
-          onClick={() =>
-            window.location.reload()
-          }
-          style={{
-            minHeight:
-              "44px",
-
-            marginTop:
-              "24px",
-
-            padding:
-              "0 20px",
-
-            border:
-              "1px solid #111111",
-
-            cursor:
-              "pointer",
-
-            background:
-              "#111111",
-
-            color:
-              "#ffffff",
-
-            font:
-              "inherit",
-
-            fontSize:
-              "13px",
-
-            fontWeight:
-              "700",
-          }}
-        >
-          Try again
-        </button>
-      </section>
-    </main>
   );
 }

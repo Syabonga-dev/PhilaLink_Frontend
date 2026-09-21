@@ -27,12 +27,10 @@ import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import PhoneVerificationPage from "./pages/auth/PhoneVerificationPage.jsx";
 import RegistrationSuccessPage from "./pages/auth/RegistrationSuccessPage.jsx";
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
-
-import LegalAcceptancePage from "./pages/legal/LegalAcceptancePage.jsx";
-
 import NotFound from "./pages/NotFound.jsx";
 
 import {
+  LegalAcceptancePage,
   PrivacyPolicyPage,
   TermsOfUsePage,
 } from "./pages/legal/LegalPages.jsx";
@@ -104,65 +102,7 @@ function RedirectIfAuthenticated({
 }
 
 // =====================================================
-// LEGAL ACCEPTANCE ENTRY
-// =====================================================
-
-function LegalAcceptanceEntry() {
-  const {
-    isLoading,
-    mustChangePassword,
-  } = useAuth();
-
-  if (
-    isLoading
-  ) {
-    return (
-      <div
-        style={{
-          minHeight: "100vh",
-          display: "grid",
-          placeItems: "center",
-          background: "#f4f4f2",
-          color: "#111111",
-          fontFamily:
-            "Inter, system-ui, sans-serif",
-        }}
-      >
-        Checking your account...
-      </div>
-    );
-  }
-
-  /*
-   * Staff accounts that are required to
-   * change their temporary password must
-   * do that before legal acceptance.
-   *
-   * The backend's normal authorization
-   * policy requires:
-   *
-   * mustChangePassword = false
-   *
-   * for the legal API.
-   */
-  if (
-    mustChangePassword
-  ) {
-    return (
-      <Navigate
-        to="/change-password"
-        replace
-      />
-    );
-  }
-
-  return (
-    <LegalAcceptancePage />
-  );
-}
-
-// =====================================================
-// PATIENT LAYOUT + THEME SYNC
+// PATIENT LAYOUT + THEME
 // =====================================================
 
 function PatientLayoutWithTheme() {
@@ -174,16 +114,16 @@ function PatientLayoutWithTheme() {
 }
 
 // =====================================================
-// APP ROUTES
+// APP
 // =====================================================
 
 export default function App() {
   return (
     <Routes>
 
-      {/* ============================= */}
+      {/* ================================================= */}
       {/* PUBLIC */}
-      {/* ============================= */}
+      {/* ================================================= */}
 
       <Route
         path="/"
@@ -240,9 +180,9 @@ export default function App() {
         }
       />
 
-      {/* ============================= */}
+      {/* ================================================= */}
       {/* PUBLIC LEGAL DOCUMENTS */}
-      {/* ============================= */}
+      {/* ================================================= */}
 
       <Route
         path="/privacy-policy"
@@ -258,9 +198,9 @@ export default function App() {
         }
       />
 
-      {/* ============================= */}
+      {/* ================================================= */}
       {/* AUTHENTICATED */}
-      {/* ============================= */}
+      {/* ================================================= */}
 
       <Route
         element={
@@ -268,9 +208,9 @@ export default function App() {
         }
       >
 
-        {/* ============================= */}
+        {/* =============================================== */}
         {/* REQUIRED PASSWORD CHANGE */}
-        {/* ============================= */}
+        {/* =============================================== */}
 
         <Route
           element={
@@ -285,32 +225,29 @@ export default function App() {
           />
         </Route>
 
-        {/* ============================= */}
+        {/* =============================================== */}
         {/* REQUIRED LEGAL ACCEPTANCE */}
-        {/* ============================= */}
+        {/* =============================================== */}
 
         {/*
-         * IMPORTANT:
+         * Important:
          *
-         * This route is authenticated,
-         * but is deliberately NOT inside
-         * LegalProtectedRoute.
+         * /legal-acceptance must be authenticated,
+         * but must NOT be inside LegalProtectedRoute.
          *
-         * Otherwise a user who still has
-         * outstanding legal documents
-         * would be redirected back to this
-         * same route forever.
+         * Otherwise the legal guard would redirect
+         * back to itself forever.
          */}
         <Route
           path="/legal-acceptance"
           element={
-            <LegalAcceptanceEntry />
+            <LegalAcceptancePage />
           }
         />
 
-        {/* ============================= */}
+        {/* =============================================== */}
         {/* LEGAL-COMPLIANT APPLICATION */}
-        {/* ============================= */}
+        {/* =============================================== */}
 
         <Route
           element={
@@ -318,9 +255,9 @@ export default function App() {
           }
         >
 
-          {/* ============================= */}
+          {/* ============================================= */}
           {/* PATIENT */}
-          {/* ============================= */}
+          {/* ============================================= */}
 
           <Route
             element={
@@ -381,9 +318,9 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* ============================= */}
+          {/* ============================================= */}
           {/* PROXY */}
-          {/* ============================= */}
+          {/* ============================================= */}
 
           <Route
             element={
@@ -423,9 +360,9 @@ export default function App() {
             </Route>
           </Route>
 
-          {/* ============================= */}
+          {/* ============================================= */}
           {/* NURSE + ADMIN LAYOUT */}
-          {/* ============================= */}
+          {/* ============================================= */}
 
           <Route
             element={
@@ -433,9 +370,9 @@ export default function App() {
             }
           >
 
-            {/* ============================= */}
+            {/* =========================================== */}
             {/* NURSE */}
-            {/* ============================= */}
+            {/* =========================================== */}
 
             <Route
               element={
@@ -468,9 +405,9 @@ export default function App() {
               />
             </Route>
 
-            {/* ============================= */}
+            {/* =========================================== */}
             {/* CLINIC ADMIN + SUPER ADMIN */}
-            {/* ============================= */}
+            {/* =========================================== */}
 
             <Route
               element={
@@ -511,9 +448,9 @@ export default function App() {
               />
             </Route>
 
-            {/* ============================= */}
+            {/* =========================================== */}
             {/* SUPER ADMIN */}
-            {/* ============================= */}
+            {/* =========================================== */}
 
             <Route
               element={
@@ -545,9 +482,9 @@ export default function App() {
 
       </Route>
 
-      {/* ============================= */}
-      {/* FALLBACK */}
-      {/* ============================= */}
+      {/* ================================================= */}
+      {/* NOT FOUND */}
+      {/* ================================================= */}
 
       <Route
         path="*"

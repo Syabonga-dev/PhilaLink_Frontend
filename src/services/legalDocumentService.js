@@ -3,47 +3,21 @@ import {
 } from "./api/client.js";
 
 // =====================================================
-// GET LEGAL STATUS
+// GET CURRENT LEGAL STATUS
 // =====================================================
 
-/*
- * GET /api/legal-documents/status
- *
- * Example response:
- *
- * {
- *   requiresAction: true,
- *   documents: [
- *     {
- *       id: "...",
- *       type: "TermsOfUse",
- *       title: "PhilaLink Terms of Use",
- *       version: "1.0",
- *       effectiveDate: "...",
- *       isCurrent: true,
- *       hasAccepted: false,
- *       action: null,
- *       acceptedAt: null
- *     }
- *   ]
- * }
- *
- * Authentication is automatically handled by
- * services/api/client.js.
- */
 export const getLegalStatus =
-  async () => {
-    return api.get(
+  () =>
+    api.get(
       "/api/legal-documents/status"
     );
-  };
 
 // =====================================================
-// ACCEPT / ACKNOWLEDGE LEGAL DOCUMENT
+// RECORD LEGAL ACTION
 // =====================================================
 
 export const acceptLegalDocument =
-  async (
+  (
     legalDocumentId,
     action
   ) => {
@@ -77,28 +51,26 @@ export const acceptLegalDocument =
 // =====================================================
 
 export const acceptTermsOfUse =
-  async (
+  (
     legalDocumentId
-  ) => {
-    return acceptLegalDocument(
+  ) =>
+    acceptLegalDocument(
       legalDocumentId,
       "Accepted"
     );
-  };
 
 // =====================================================
 // ACKNOWLEDGE PRIVACY POLICY
 // =====================================================
 
 export const acknowledgePrivacyPolicy =
-  async (
+  (
     legalDocumentId
-  ) => {
-    return acceptLegalDocument(
+  ) =>
+    acceptLegalDocument(
       legalDocumentId,
       "Acknowledged"
     );
-  };
 
 // =====================================================
 // DOCUMENT TYPE HELPERS
@@ -106,8 +78,8 @@ export const acknowledgePrivacyPolicy =
 
 const normalizeDocumentType = (
   type
-) => {
-  return String(
+) =>
+  String(
     type || ""
   )
     .replace(
@@ -115,7 +87,6 @@ const normalizeDocumentType = (
       ""
     )
     .toLowerCase();
-};
 
 // =====================================================
 // FIND TERMS OF USE
@@ -178,22 +149,19 @@ export const findPrivacyPolicy =
   };
 
 // =====================================================
-// OUTSTANDING LEGAL DOCUMENTS
+// HAS OUTSTANDING LEGAL DOCUMENTS
 // =====================================================
 
 export const hasOutstandingLegalDocuments =
   (
     legalStatus
-  ) => {
-    return (
-      legalStatus
-        ?.requiresAction ===
-      true
-    );
-  };
+  ) =>
+    legalStatus
+      ?.requiresAction ===
+    true;
 
 // =====================================================
-// GET OUTSTANDING DOCUMENTS
+// GET OUTSTANDING LEGAL DOCUMENTS
 // =====================================================
 
 export const getOutstandingLegalDocuments =
@@ -220,7 +188,7 @@ export const getOutstandingLegalDocuments =
   };
 
 // =====================================================
-// GET COMPLETED DOCUMENTS
+// GET COMPLETED LEGAL DOCUMENTS
 // =====================================================
 
 export const getCompletedLegalDocuments =
@@ -247,7 +215,7 @@ export const getCompletedLegalDocuments =
   };
 
 // =====================================================
-// EXPORT
+// DEFAULT EXPORT
 // =====================================================
 
 const legalDocumentService = {
