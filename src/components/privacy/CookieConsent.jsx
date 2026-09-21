@@ -4,11 +4,6 @@ import {
 } from "react";
 
 import {
-  useLocation,
-} from "react-router-dom";
-
-import {
-  Check,
   ChevronDown,
   ChevronUp,
   X,
@@ -27,16 +22,6 @@ const COOKIE_VERSION =
 const COOKIE_MAX_AGE =
   60 * 60 * 24 * 180;
 
-const PUBLIC_PATHS = [
-  "/",
-  "/login",
-  "/register",
-  "/register/verify",
-  "/register/success",
-  "/forgot-password",
-  "/auth/google/callback",
-];
-
 // =====================================================
 // COOKIE HELPERS
 // =====================================================
@@ -52,7 +37,7 @@ function readConsentCookie() {
   const prefix =
     `${COOKIE_NAME}=`;
 
-  const rawCookie =
+  const cookie =
     document.cookie
       .split(";")
       .map(
@@ -66,20 +51,20 @@ function readConsentCookie() {
           )
       );
 
-  if (!rawCookie) {
+  if (!cookie) {
     return null;
   }
 
   try {
-    const encoded =
-      rawCookie.substring(
+    const value =
+      cookie.substring(
         prefix.length
       );
 
     const parsed =
       JSON.parse(
         decodeURIComponent(
-          encoded
+          value
         )
       );
 
@@ -101,10 +86,10 @@ function readConsentCookie() {
 }
 
 
-function writeConsentCookie({
-  preferences,
-}) {
-  const consent = {
+function writeConsentCookie(
+  preferences
+) {
+  const value = {
     version:
       COOKIE_VERSION,
 
@@ -124,7 +109,7 @@ function writeConsentCookie({
     `${COOKIE_NAME}=` +
     `${encodeURIComponent(
       JSON.stringify(
-        consent
+        value
       )
     )}; ` +
     `Path=/; ` +
@@ -134,75 +119,52 @@ function writeConsentCookie({
 }
 
 // =====================================================
-// TOGGLE
+// ACCORDION ITEM
 // =====================================================
 
-function PreferenceToggle({
-  checked,
-  onChange,
+function AccordionItem({
+  title,
+  children,
+  open,
+  onToggle,
 }) {
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={
-        checked
-      }
-      onClick={() =>
-        onChange(
-          !checked
-        )
-      }
-      className={[
-        "relative",
-        "h-7",
-        "w-12",
-        "shrink-0",
-        "rounded-full",
-        "border-0",
-        "transition-colors",
-        "duration-200",
-        "focus-visible:outline-none",
-        "focus-visible:ring-2",
-        "focus-visible:ring-[#0f766e]",
-        "focus-visible:ring-offset-2",
-        checked
-          ? "bg-[#0f766e]"
-          : "bg-slate-300",
-      ].join(" ")}
-    >
-      <span
-        className={[
-          "absolute",
-          "top-1",
-          "flex",
-          "h-5",
-          "w-5",
-          "items-center",
-          "justify-center",
-          "rounded-full",
-          "bg-white",
-          "shadow-sm",
-          "transition-transform",
-          "duration-200",
-          checked
-            ? "translate-x-6"
-            : "translate-x-1",
-        ].join(" ")}
+    <div className="border-b border-slate-200 last:border-b-0">
+
+      <button
+        type="button"
+        onClick={
+          onToggle
+        }
+        className="flex w-full items-center justify-between gap-5 bg-white px-5 py-5 text-left transition hover:bg-slate-50 sm:px-6"
       >
-        {checked && (
-          <Check
+        <span className="text-[15px] font-semibold text-slate-900 sm:text-base">
+          {title}
+        </span>
+
+        {open ? (
+          <ChevronUp
             size={
-              12
+              18
             }
-            strokeWidth={
-              3
+            className="shrink-0 text-[#0f766e]"
+          />
+        ) : (
+          <ChevronDown
+            size={
+              18
             }
-            className="text-[#0f766e]"
+            className="shrink-0 text-[#0f766e]"
           />
         )}
-      </span>
-    </button>
+      </button>
+
+      {open && (
+        <div className="px-5 pb-5 text-sm leading-7 text-slate-600 sm:px-6">
+          {children}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -210,29 +172,20 @@ function PreferenceToggle({
 // COOKIE SETTINGS
 // =====================================================
 
-function CookieSettingsModal({
+function CookieSettings({
   open,
   preferences,
   setPreferences,
   onClose,
-  onEssentialOnly,
   onSave,
   onAcceptAll,
 }) {
   const [
-    essentialOpen,
-    setEssentialOpen,
-  ] = useState(true);
-
-  const [
-    preferencesOpen,
-    setPreferencesOpen,
-  ] = useState(true);
-
-  const [
-    thirdPartyOpen,
-    setThirdPartyOpen,
-  ] = useState(false);
+    activeSection,
+    setActiveSection,
+  ] = useState(
+    "what"
+  );
 
   useEffect(
     () => {
@@ -286,50 +239,62 @@ function CookieSettingsModal({
     return null;
   }
 
+  const toggleSection =
+    (
+      name
+    ) => {
+      setActiveSection(
+        (
+          current
+        ) =>
+          current === name
+            ? null
+            : name
+      );
+    };
+
   return (
-    <div
-      className="fixed inset-0 z-[6000] flex items-end justify-center bg-slate-950/45 p-0 backdrop-blur-[2px] sm:items-center sm:p-6"
-      role="presentation"
-    >
+    <div className="fixed inset-0 z-[6000] flex items-end justify-center bg-black/35 sm:items-center sm:p-6">
+
+      {/* BACKDROP */}
+
       <button
         type="button"
-        aria-label="Close cookie settings"
         onClick={
           onClose
         }
-        className="absolute inset-0 cursor-default"
+        className="absolute inset-0"
+        aria-label="Close cookie settings"
       />
+
+      {/* PANEL */}
 
       <section
         role="dialog"
         aria-modal="true"
-        aria-labelledby="cookie-settings-title"
-        className="relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-2xl bg-white shadow-2xl sm:max-w-[720px] sm:rounded-2xl"
+        aria-labelledby="cookie-settings-heading"
+        className="relative z-10 flex max-h-[92dvh] w-full flex-col overflow-hidden rounded-t-xl bg-white shadow-2xl sm:max-w-[820px] sm:rounded-xl"
       >
-        {/* ===================================== */}
+
         {/* HEADER */}
-        {/* ===================================== */}
 
-        <div className="flex items-start justify-between gap-6 border-b border-slate-200 px-5 py-5 sm:px-7">
+        <div className="flex items-start justify-between border-b border-slate-200 px-5 py-5 sm:px-6">
+
           <div>
-            <p className="mb-1 text-xs font-extrabold uppercase tracking-[0.14em] text-[#0f766e]">
-              Privacy controls
-            </p>
-
             <h2
-              id="cookie-settings-title"
-              className="m-0 text-2xl font-extrabold tracking-tight text-slate-900"
+              id="cookie-settings-heading"
+              className="m-0 text-xl font-semibold text-slate-900"
             >
               Cookie settings
             </h2>
 
-            <p className="mt-2 max-w-[570px] text-sm leading-6 text-slate-600">
-              Choose which optional cookies
-              PhilaLink may use on this
-              browser. Essential cookies
-              cannot be disabled because
-              they support security and
-              core website operation.
+            <p className="mb-0 mt-2 max-w-[650px] text-sm leading-6 text-slate-600">
+              You can choose which optional
+              cookies PhilaLink may use.
+              Essential cookies are required
+              for the website to work
+              correctly and cannot be
+              disabled.
             </p>
           </div>
 
@@ -338,285 +303,253 @@ function CookieSettingsModal({
             onClick={
               onClose
             }
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100 hover:text-slate-900"
+            className="ml-4 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
             aria-label="Close cookie settings"
           >
             <X
               size={
-                20
+                19
               }
             />
           </button>
         </div>
 
-        {/* ===================================== */}
         {/* CONTENT */}
-        {/* ===================================== */}
 
-        <div className="overflow-y-auto px-5 py-5 sm:px-7 sm:py-6">
+        <div className="overflow-y-auto">
 
-          {/* ================================= */}
-          {/* ESSENTIAL */}
-          {/* ================================= */}
+          <AccordionItem
+            title="What are cookies?"
+            open={
+              activeSection ===
+              "what"
+            }
+            onToggle={() =>
+              toggleSection(
+                "what"
+              )
+            }
+          >
+            <p className="m-0">
+              Cookies are small text files
+              stored by your browser or device.
+              They allow websites to remember
+              certain information between
+              visits.
+            </p>
 
-          <div className="overflow-hidden rounded-xl border border-slate-200">
+            <p className="mb-0 mt-3">
+              PhilaLink uses cookies only for
+              website functionality and
+              optional preferences. Healthcare
+              information such as medication,
+              appointments and clinical
+              records is not stored in the
+              cookie consent file.
+            </p>
+          </AccordionItem>
 
-            <button
-              type="button"
-              onClick={() =>
-                setEssentialOpen(
-                  (
-                    current
-                  ) =>
-                    !current
-                )
-              }
-              className="flex w-full items-center justify-between gap-4 bg-white px-4 py-4 text-left sm:px-5"
-            >
+
+          <AccordionItem
+            title="Which cookie preferences do we use?"
+            open={
+              activeSection ===
+              "preferences"
+            }
+            onToggle={() =>
+              toggleSection(
+                "preferences"
+              )
+            }
+          >
+            <div className="flex items-start justify-between gap-6 py-1">
+
               <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="font-bold text-slate-900">
-                    Essential cookies
-                  </span>
+                <p className="m-0 font-semibold text-slate-900">
+                  Essential cookies
+                </p>
 
-                  <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[11px] font-bold text-[#0f766e]">
-                    Always active
-                  </span>
-                </div>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Required for security and
-                  basic site functionality.
+                <p className="mb-0 mt-1">
+                  These support security,
+                  remember your cookie choice
+                  and allow core PhilaLink
+                  functionality to operate.
                 </p>
               </div>
 
-              {essentialOpen ? (
-                <ChevronUp
-                  size={
-                    18
-                  }
-                  className="shrink-0 text-slate-400"
-                />
-              ) : (
-                <ChevronDown
-                  size={
-                    18
-                  }
-                  className="shrink-0 text-slate-400"
-                />
-              )}
-            </button>
-
-            {essentialOpen && (
-              <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-                <p className="m-0 text-sm leading-6 text-slate-600">
-                  These cookies support
-                  security-related flows,
-                  remember your cookie
-                  consent choice and help
-                  PhilaLink operate
-                  correctly. They cannot be
-                  switched off through this
-                  settings panel.
-                </p>
-
-                <p className="mb-0 mt-3 text-sm leading-6 text-slate-600">
-                  The consent cookie does
-                  not contain passwords,
-                  healthcare records,
-                  medication information,
-                  API keys or other
-                  clinical data.
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* ================================= */}
-          {/* PREFERENCES */}
-          {/* ================================= */}
-
-          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
-
-            <div className="flex items-center justify-between gap-4 bg-white px-4 py-4 sm:px-5">
-              <button
-                type="button"
-                onClick={() =>
-                  setPreferencesOpen(
-                    (
-                      current
-                    ) =>
-                      !current
-                  )
-                }
-                className="min-w-0 flex-1 text-left"
-              >
-                <div className="flex items-center gap-2">
-                  <span className="font-bold text-slate-900">
-                    Preference cookies
-                  </span>
-
-                  {preferencesOpen ? (
-                    <ChevronUp
-                      size={
-                        17
-                      }
-                      className="text-slate-400"
-                    />
-                  ) : (
-                    <ChevronDown
-                      size={
-                        17
-                      }
-                      className="text-slate-400"
-                    />
-                  )}
-                </div>
-
-                <p className="mt-1 text-xs text-slate-500">
-                  Optional browser
-                  preferences.
-                </p>
-              </button>
-
-              <PreferenceToggle
-                checked={
-                  preferences
-                }
-                onChange={
-                  setPreferences
-                }
-              />
+              <span className="shrink-0 text-xs font-semibold text-[#0f766e]">
+                Always on
+              </span>
             </div>
 
-            {preferencesOpen && (
-              <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-                <p className="m-0 text-sm leading-6 text-slate-600">
-                  These cookies may be used
-                  to remember optional
-                  browser preferences so
-                  your experience feels more
-                  consistent on this device.
-                </p>
 
-                <p className="mb-0 mt-3 text-sm leading-6 text-slate-600">
-                  Your account-level
-                  healthcare preferences
-                  remain stored securely by
-                  PhilaLink and are not
-                  placed inside this cookie.
-                </p>
-              </div>
-            )}
-          </div>
+            <div className="mt-5 flex items-start justify-between gap-6 border-t border-slate-200 pt-5">
 
-          {/* ================================= */}
-          {/* THIRD PARTY */}
-          {/* ================================= */}
-
-          <div className="mt-3 overflow-hidden rounded-xl border border-slate-200">
-
-            <button
-              type="button"
-              onClick={() =>
-                setThirdPartyOpen(
-                  (
-                    current
-                  ) =>
-                    !current
-                )
-              }
-              className="flex w-full items-center justify-between gap-4 bg-white px-4 py-4 text-left sm:px-5"
-            >
               <div>
-                <span className="font-bold text-slate-900">
-                  Third-party services
-                </span>
+                <p className="m-0 font-semibold text-slate-900">
+                  Preference cookies
+                </p>
 
-                <p className="mt-1 text-xs text-slate-500">
-                  Information about external
-                  sign-in services.
+                <p className="mb-0 mt-1">
+                  These may remember optional
+                  browser preferences to make
+                  PhilaLink easier to use on
+                  this device.
                 </p>
               </div>
 
-              {thirdPartyOpen ? (
-                <ChevronUp
-                  size={
-                    18
-                  }
-                  className="shrink-0 text-slate-400"
-                />
-              ) : (
-                <ChevronDown
-                  size={
-                    18
-                  }
-                  className="shrink-0 text-slate-400"
-                />
-              )}
-            </button>
+              <label className="relative mt-1 inline-flex shrink-0 cursor-pointer items-center">
 
-            {thirdPartyOpen && (
-              <div className="border-t border-slate-200 bg-slate-50/70 px-4 py-4 sm:px-5">
-                <p className="m-0 text-sm leading-6 text-slate-600">
-                  If you choose Continue
-                  with Google, Google may
-                  use cookies on its own
-                  domains as part of the
-                  authentication process.
-                  Those cookies are
-                  controlled by Google
-                  rather than by PhilaLink.
-                </p>
+                <input
+                  type="checkbox"
+                  checked={
+                    preferences
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setPreferences(
+                      event.target
+                        .checked
+                    )
+                  }
+                  className="peer sr-only"
+                />
 
-                <p className="mb-0 mt-3 text-sm leading-6 text-slate-600">
-                  This PhilaLink consent
-                  component does not enable
-                  advertising or analytics
-                  tracking cookies.
-                </p>
-              </div>
-            )}
-          </div>
+                <span className="h-6 w-11 rounded-full bg-slate-300 transition peer-checked:bg-[#0f766e]" />
+
+                <span className="absolute left-1 top-1 h-4 w-4 rounded-full bg-white transition-transform peer-checked:translate-x-5" />
+              </label>
+            </div>
+          </AccordionItem>
+
+
+          <AccordionItem
+            title="Why do we use cookies?"
+            open={
+              activeSection ===
+              "why"
+            }
+            onToggle={() =>
+              toggleSection(
+                "why"
+              )
+            }
+          >
+            <p className="m-0">
+              PhilaLink uses essential cookies
+              to support secure website
+              functionality and remember your
+              consent decision.
+            </p>
+
+            <p className="mb-0 mt-3">
+              Optional preference cookies can
+              help remember non-sensitive
+              browser choices. PhilaLink does
+              not currently use advertising
+              cookies through this consent
+              system.
+            </p>
+          </AccordionItem>
+
+
+          <AccordionItem
+            title="How do you change your cookie preferences?"
+            open={
+              activeSection ===
+              "change"
+            }
+            onToggle={() =>
+              toggleSection(
+                "change"
+              )
+            }
+          >
+            <p className="m-0">
+              You can return to Cookie settings
+              and update your preference at any
+              time. Saving a new choice replaces
+              the previous cookie preference on
+              this browser.
+            </p>
+
+            <p className="mb-0 mt-3">
+              You can also remove PhilaLink
+              cookies using your browser's
+              privacy or site-data settings.
+            </p>
+          </AccordionItem>
+
+
+          <AccordionItem
+            title="When will third parties use cookies?"
+            open={
+              activeSection ===
+              "third-party"
+            }
+            onToggle={() =>
+              toggleSection(
+                "third-party"
+              )
+            }
+          >
+            <p className="m-0">
+              If you choose to sign in with
+              Google, Google may use cookies on
+              its own services during the
+              authentication process.
+            </p>
+
+            <p className="mb-0 mt-3">
+              Those cookies are controlled by
+              Google and are separate from the
+              PhilaLink consent cookie.
+            </p>
+          </AccordionItem>
         </div>
 
-        {/* ===================================== */}
-        {/* ACTIONS */}
-        {/* ===================================== */}
+        {/* FOOTER ACTIONS */}
 
-        <div className="border-t border-slate-200 bg-white px-5 py-4 sm:px-7">
-          <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-6">
 
-            <button
-              type="button"
-              onClick={
-                onEssentialOnly
-              }
-              className="min-h-11 rounded-lg border border-slate-300 px-5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
-            >
-              Use essential only
-            </button>
+          <button
+            type="button"
+            onClick={() => {
+              setPreferences(
+                false
+              );
 
-            <button
-              type="button"
-              onClick={
-                onSave
-              }
-              className="min-h-11 rounded-lg border border-[#0f766e] px-5 text-sm font-bold text-[#0f766e] transition hover:bg-teal-50"
-            >
-              Save choices
-            </button>
+              writeConsentCookie(
+                false
+              );
 
-            <button
-              type="button"
-              onClick={
-                onAcceptAll
-              }
-              className="min-h-11 rounded-lg bg-[#0f766e] px-5 text-sm font-bold text-white transition hover:bg-[#115e59]"
-            >
-              Accept all cookies
-            </button>
-          </div>
+              onClose();
+            }}
+            className="min-h-11 rounded-full border border-[#0f766e] bg-white px-6 text-sm font-semibold text-[#0f766e] transition hover:bg-teal-50"
+          >
+            Essential only
+          </button>
+
+          <button
+            type="button"
+            onClick={
+              onSave
+            }
+            className="min-h-11 rounded-full border border-[#0f766e] bg-white px-6 text-sm font-semibold text-[#0f766e] transition hover:bg-teal-50"
+          >
+            Save settings
+          </button>
+
+          <button
+            type="button"
+            onClick={
+              onAcceptAll
+            }
+            className="min-h-11 rounded-full bg-[#0f766e] px-6 text-sm font-semibold text-white transition hover:bg-[#115e59]"
+          >
+            Accept all cookies
+          </button>
         </div>
       </section>
     </div>
@@ -628,9 +561,6 @@ function CookieSettingsModal({
 // =====================================================
 
 export default function CookieConsent() {
-  const location =
-    useLocation();
-
   const [
     initialised,
     setInitialised,
@@ -657,7 +587,7 @@ export default function CookieConsent() {
   ] = useState(false);
 
   // =====================================================
-  // READ EXISTING CONSENT
+  // INITIALISE
   // =====================================================
 
   useEffect(
@@ -699,7 +629,7 @@ export default function CookieConsent() {
   );
 
   // =====================================================
-  // GLOBAL OPEN EVENT
+  // OPEN SETTINGS EVENT
   // =====================================================
 
   useEffect(
@@ -735,17 +665,16 @@ export default function CookieConsent() {
   );
 
   // =====================================================
-  // SAVE
+  // SAVE CONSENT
   // =====================================================
 
   const saveConsent =
     (
       preferenceChoice
     ) => {
-      writeConsentCookie({
-        preferences:
-          preferenceChoice,
-      });
+      writeConsentCookie(
+        preferenceChoice
+      );
 
       setPreferences(
         preferenceChoice
@@ -764,60 +693,32 @@ export default function CookieConsent() {
       );
     };
 
-  // =====================================================
-  // PUBLIC COOKIE SETTINGS SHORTCUT
-  // =====================================================
-
-  const showSettingsShortcut =
-    hasDecision &&
-    PUBLIC_PATHS.includes(
-      location.pathname
-    );
-
-  if (!initialised) {
+  if (
+    !initialised
+  ) {
     return null;
   }
 
   return (
     <>
-      {/* ===================================== */}
-      {/* COOKIE BANNER */}
-      {/* ===================================== */}
+      {/* ================================================= */}
+      {/* BANNER */}
+      {/* ================================================= */}
 
       {showBanner && (
         <section
           aria-label="Cookie consent"
-          className="fixed bottom-0 left-0 right-0 z-[5000] border-t border-slate-200 bg-white shadow-[0_-12px_40px_rgba(15,23,42,0.12)]"
+          className="fixed bottom-0 left-0 right-0 z-[5000] border-t border-slate-200 bg-white shadow-[0_-6px_24px_rgba(15,23,42,0.10)]"
         >
-          <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-5 px-5 py-5 sm:px-7 lg:flex-row lg:items-center lg:justify-between lg:gap-10 lg:px-12">
+          <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 px-4 py-4 sm:px-6 lg:flex-row lg:items-center lg:justify-between lg:gap-8 lg:px-10">
 
-            <div className="max-w-[790px]">
-              <h2 className="m-0 text-base font-bold text-slate-900">
-                Your privacy matters
-              </h2>
-
-              <p className="mb-0 mt-2 text-sm leading-6 text-slate-600">
-                PhilaLink uses essential
-                cookies for security-related
-                website functions and to
-                remember your cookie choices.
-                With your permission, optional
-                preference cookies may also be
-                used to improve your experience.
-              </p>
-
-              <button
-                type="button"
-                onClick={() =>
-                  setSettingsOpen(
-                    true
-                  )
-                }
-                className="mt-2 border-0 bg-transparent p-0 text-sm font-bold text-[#0f766e] underline decoration-[#0f766e]/40 underline-offset-4 transition hover:text-[#115e59]"
-              >
-                Learn more about our cookie settings
-              </button>
-            </div>
+            <p className="m-0 max-w-[800px] text-sm leading-6 text-slate-600">
+              Cookies help PhilaLink work
+              properly and remember your
+              preferences. You can change
+              your cookie settings at any
+              time.
+            </p>
 
             <div className="flex shrink-0 flex-col gap-3 sm:flex-row">
 
@@ -828,7 +729,7 @@ export default function CookieConsent() {
                     true
                   )
                 }
-                className="min-h-12 rounded-full border-2 border-[#0f766e] bg-white px-7 text-sm font-bold text-[#0f766e] transition hover:bg-teal-50"
+                className="min-h-11 rounded-full border border-[#0f766e] bg-white px-6 text-sm font-semibold text-[#0f766e] transition hover:bg-teal-50"
               >
                 Cookie settings
               </button>
@@ -840,7 +741,7 @@ export default function CookieConsent() {
                     true
                   )
                 }
-                className="min-h-12 rounded-full bg-[#0f766e] px-7 text-sm font-bold text-white transition hover:bg-[#115e59]"
+                className="min-h-11 rounded-full bg-[#0f766e] px-6 text-sm font-semibold text-white transition hover:bg-[#115e59]"
               >
                 Accept all cookies
               </button>
@@ -849,31 +750,39 @@ export default function CookieConsent() {
         </section>
       )}
 
-      {/* ===================================== */}
-      {/* SMALL REOPEN CONTROL */}
-      {/* ===================================== */}
+      {/* ================================================= */}
+      {/* SMALL SETTINGS LINK AFTER A DECISION */}
+      {/* ================================================= */}
 
-      {showSettingsShortcut &&
+      {hasDecision &&
         !showBanner &&
         !settingsOpen && (
           <button
             type="button"
-            onClick={() =>
+            onClick={() => {
+              const stored =
+                readConsentCookie();
+
+              setPreferences(
+                stored?.preferences ??
+                  false
+              );
+
               setSettingsOpen(
                 true
-              )
-            }
-            className="fixed bottom-4 left-4 z-[4500] rounded-full border border-slate-300 bg-white/95 px-3.5 py-2 text-xs font-bold text-slate-600 shadow-md backdrop-blur transition hover:border-[#0f766e]/40 hover:text-[#0f766e]"
+              );
+            }}
+            className="fixed bottom-3 left-3 z-[4500] border-0 bg-white/90 px-2 py-1 text-xs font-medium text-slate-500 underline underline-offset-2 shadow-sm backdrop-blur transition hover:text-[#0f766e]"
           >
             Cookie settings
           </button>
         )}
 
-      {/* ===================================== */}
-      {/* SETTINGS */}
-      {/* ===================================== */}
+      {/* ================================================= */}
+      {/* SETTINGS PANEL */}
+      {/* ================================================= */}
 
-      <CookieSettingsModal
+      <CookieSettings
         open={
           settingsOpen
         }
@@ -885,11 +794,6 @@ export default function CookieConsent() {
         }
         onClose={() =>
           setSettingsOpen(
-            false
-          )
-        }
-        onEssentialOnly={() =>
-          saveConsent(
             false
           )
         }
