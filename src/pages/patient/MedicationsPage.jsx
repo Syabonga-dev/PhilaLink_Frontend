@@ -273,18 +273,78 @@ function getActiveSchedules(
    TODAY LOG HELPERS
 ========================================================= */
 
-function isSameLocalDay(
-  first,
-  second
-) {
-  return (
-    first.getFullYear() ===
-      second.getFullYear() &&
-    first.getMonth() ===
-      second.getMonth() &&
-    first.getDate() ===
-      second.getDate()
+const SOUTH_AFRICA_DATE_FORMATTER =
+  new Intl.DateTimeFormat(
+    "en-ZA",
+    {
+      timeZone:
+        "Africa/Johannesburg",
+
+      year:
+        "numeric",
+
+      month:
+        "2-digit",
+
+      day:
+        "2-digit",
+    }
   );
+
+function getSouthAfricaDateKey(
+  value
+) {
+  const date =
+    value instanceof Date
+      ? value
+      : new Date(
+          value
+        );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  const parts =
+    SOUTH_AFRICA_DATE_FORMATTER
+      .formatToParts(
+        date
+      );
+
+  const year =
+    parts.find(
+      (part) =>
+        part.type ===
+        "year"
+    )?.value;
+
+  const month =
+    parts.find(
+      (part) =>
+        part.type ===
+        "month"
+    )?.value;
+
+  const day =
+    parts.find(
+      (part) =>
+        part.type ===
+        "day"
+    )?.value;
+
+  if (
+    !year ||
+    !month ||
+    !day
+  ) {
+    return null;
+  }
+
+  return `${year}-${month}-${day}`;
 }
 
 function getTodayLogs(
@@ -298,35 +358,24 @@ function getTodayLogs(
     return [];
   }
 
-  const now =
-    new Date();
+  const todayKey =
+    getSouthAfricaDateKey(
+      new Date()
+    );
+
+  if (!todayKey) {
+    return [];
+  }
 
   return medication.logs.filter(
-    (log) => {
-      if (
-        !log?.takenAt
-      ) {
-        return false;
-      }
-
-      const date =
-        new Date(
-          log.takenAt
-        );
-
-      if (
-        Number.isNaN(
-          date.getTime()
-        )
-      ) {
-        return false;
-      }
-
-      return isSameLocalDay(
-        date,
-        now
-      );
-    }
+    (log) =>
+      Boolean(
+        log?.takenAt
+      ) &&
+      getSouthAfricaDateKey(
+        log.takenAt
+      ) ===
+        todayKey
   );
 }
 
