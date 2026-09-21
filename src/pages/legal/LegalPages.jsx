@@ -1,1379 +1,1851 @@
 import {
-  Link,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  useLocation,
+  useNavigate,
 } from "react-router-dom";
 
+import {
+  acknowledgePrivacyPolicy,
+  acceptTermsOfUse,
+  getLegalStatus,
+} from "../../services/legalDocumentService";
+
 // =====================================================
-// SHARED DOCUMENT LAYOUT
+// AUTH TOKEN
 // =====================================================
 
-function LegalDocument({
-  title,
-  subtitle,
-  children,
-}) {
-  const handlePrint =
-    () => {
-      window.print();
+const TOKEN_KEYS = [
+  "token",
+  "authToken",
+  "accessToken",
+  "philalink_token",
+];
+
+const getStoredToken = () => {
+  for (const key of TOKEN_KEYS) {
+    const localValue =
+      localStorage.getItem(key);
+
+    if (localValue) {
+      return localValue;
+    }
+
+    const sessionValue =
+      sessionStorage.getItem(key);
+
+    if (sessionValue) {
+      return sessionValue;
+    }
+  }
+
+  return null;
+};
+
+// =====================================================
+// LEGAL COPY
+// =====================================================
+
+const TERMS_CONTENT = [
+  {
+    title: "1. About these Terms",
+    paragraphs: [
+      `These Terms of Use govern your access to and use of PhilaLink. By accepting these Terms, you agree to use PhilaLink in accordance with these conditions and applicable law.`,
+
+      `PhilaLink is a digital healthcare-support platform intended to help patients, nominated proxies, nurses and authorised administrators coordinate healthcare-related activities such as medication management, collections, appointments, notifications and access to health-support features.`,
+    ],
+  },
+
+  {
+    title: "2. Your account",
+    paragraphs: [
+      `You are responsible for providing accurate information when creating or maintaining your PhilaLink account.`,
+
+      `You must keep your login credentials secure and must not knowingly allow another person to use your account as though they were you.`,
+
+      `Where PhilaLink provides role-based access, you may only use functionality that has been made available to your authorised role.`,
+    ],
+  },
+
+  {
+    title: "3. Healthcare information",
+    paragraphs: [
+      `Information displayed by PhilaLink is intended to support healthcare access, medication management and communication. It does not replace consultation, diagnosis or treatment by a qualified healthcare professional.`,
+
+      `Medication schedules, collection information, symptom information and other healthcare-related information should be confirmed with an appropriate healthcare professional where necessary.`,
+    ],
+  },
+
+  {
+    title: "4. PhilaChat and automated guidance",
+    paragraphs: [
+      `PhilaLink may provide automated or AI-assisted health information through features such as PhilaChat.`,
+
+      `Automated guidance is provided for informational and preliminary support purposes. It must not be treated as a definitive medical diagnosis or as a replacement for professional medical care.`,
+
+      `Where symptoms are severe, unusual, worsening or potentially life-threatening, you should seek professional medical assistance rather than relying on automated guidance.`,
+    ],
+  },
+
+  {
+    title: "5. Emergencies",
+    paragraphs: [
+      `PhilaLink is not an emergency response service.`,
+
+      `If you believe that you or another person is experiencing a medical emergency, contact the appropriate emergency service immediately. In South Africa, emergency assistance can be reached by calling 112 from a mobile phone.`,
+    ],
+  },
+
+  {
+    title: "6. Proxy and caregiver access",
+    paragraphs: [
+      `Where a patient is linked to a nominated proxy or caregiver, the proxy may receive access to information and functionality necessary to assist that patient with permitted healthcare activities.`,
+
+      `Proxy access must only be used for the patient for whom the access was authorised. A proxy must not misuse patient information or use access for purposes unrelated to the authorised care relationship.`,
+    ],
+  },
+
+  {
+    title: "7. Acceptable use",
+    paragraphs: [
+      `You must not use PhilaLink to impersonate another person, obtain unauthorised access, interfere with the operation of the service, submit malicious content, manipulate healthcare records, abuse automated features, or attempt to bypass security controls.`,
+
+      `Access may be restricted or suspended where necessary to protect users, healthcare information, the platform or other legitimate interests.`,
+    ],
+  },
+
+  {
+    title: "8. Availability",
+    paragraphs: [
+      `PhilaLink aims to provide reliable access to its services, but uninterrupted availability cannot be guaranteed.`,
+
+      `Features may temporarily be unavailable because of maintenance, internet connectivity, third-party services, infrastructure failures or other technical circumstances.`,
+    ],
+  },
+
+  {
+    title: "9. Changes to these Terms",
+    paragraphs: [
+      `PhilaLink may publish a new version of these Terms when the service, legal requirements or relevant operating practices change.`,
+
+      `When a new version requires acceptance, PhilaLink may require you to review and accept that version before continuing to use protected parts of the platform.`,
+
+      `Your previous acceptance records may be retained as part of the platform's legal and audit history.`,
+    ],
+  },
+
+  {
+    title: "10. Acceptance",
+    paragraphs: [
+      `By selecting the acceptance control after reaching the end of this document, you confirm that you have had an opportunity to read these Terms of Use and agree to the current version presented to you.`,
+    ],
+  },
+];
+
+const PRIVACY_CONTENT = [
+  {
+    title: "1. About this Privacy Policy",
+    paragraphs: [
+      `This Privacy Policy explains how PhilaLink handles personal information when you use the platform.`,
+
+      `Because PhilaLink provides healthcare-support functionality, some information processed through the platform may be sensitive or health-related personal information.`,
+    ],
+  },
+
+  {
+    title: "2. Information PhilaLink may process",
+    paragraphs: [
+      `Depending on your role and the features you use, PhilaLink may process information such as your name, contact details, identification information, account details, assigned clinic, healthcare role and account status.`,
+
+      `For patients, the platform may also process information relating to medications, medication schedules, collection records, appointments, symptoms, allergies, medical conditions, health records and other information required to provide the requested healthcare-support functionality.`,
+    ],
+  },
+
+  {
+    title: "3. Why information is used",
+    paragraphs: [
+      `Personal information is used to create and secure accounts, provide role-based access, support patient care workflows, coordinate medication collections, provide reminders and notifications, maintain health-related records and operate other PhilaLink functionality.`,
+
+      `Information may also be processed where necessary for security, troubleshooting, auditing, fraud prevention, system integrity and compliance with applicable obligations.`,
+    ],
+  },
+
+  {
+    title: "4. Patient and proxy information",
+    paragraphs: [
+      `Where a patient authorises or is validly linked to a nominated proxy, information necessary for the authorised care relationship may be made available to that proxy.`,
+
+      `Proxy access is intended to support activities such as medication collection and patient assistance and should not be used for unrelated purposes.`,
+    ],
+  },
+
+  {
+    title: "5. Nurses, clinics and administrators",
+    paragraphs: [
+      `Authorised healthcare personnel and administrators may access information required to perform the functions associated with their PhilaLink role.`,
+
+      `Role-based access is intended to limit users to information and actions relevant to their responsibilities.`,
+    ],
+  },
+
+  {
+    title: "6. External services",
+    paragraphs: [
+      `Some PhilaLink features may rely on external infrastructure or services, such as hosting providers, mapping services, weather information providers, email services, authentication providers or AI services.`,
+
+      `Only information reasonably necessary to provide the relevant functionality should be transmitted to such services.`,
+    ],
+  },
+
+  {
+    title: "7. Security",
+    paragraphs: [
+      `PhilaLink uses technical and organisational measures intended to protect personal information against unauthorised access, loss, misuse, alteration and inappropriate disclosure.`,
+
+      `No internet-based system can guarantee absolute security. Users also have a responsibility to protect their login credentials and devices.`,
+    ],
+  },
+
+  {
+    title: "8. Retention",
+    paragraphs: [
+      `Information may be retained for as long as reasonably necessary for the purposes for which it is processed, including healthcare-support, operational, security, audit and legal purposes.`,
+
+      `Certain records, including legal acceptance and audit records, may need to be retained even where an account is no longer actively used.`,
+    ],
+  },
+
+  {
+    title: "9. Cookies and similar technologies",
+    paragraphs: [
+      `PhilaLink may use cookies or similar browser storage technologies where necessary to provide functionality, maintain preferences, improve security and support the operation of the website.`,
+
+      `Where optional cookies are used, the separate cookie controls presented by PhilaLink apply to those cookies.`,
+    ],
+  },
+
+  {
+    title: "10. Your privacy choices",
+    paragraphs: [
+      `Where applicable, users may request access to or correction of personal information and may raise concerns regarding the handling of their personal information.`,
+
+      `Some information cannot immediately be deleted where continued retention is required for healthcare, security, audit, contractual or legal reasons.`,
+    ],
+  },
+
+  {
+    title: "11. Changes to this Policy",
+    paragraphs: [
+      `PhilaLink may update this Privacy Policy when its services, information practices or applicable requirements change.`,
+
+      `Where a new version requires acknowledgement, you may be asked to review it before continuing into protected areas of PhilaLink.`,
+    ],
+  },
+
+  {
+    title: "12. Acknowledgement",
+    paragraphs: [
+      `By selecting the acknowledgement control after reaching the end of this document, you confirm that you have had an opportunity to read the current PhilaLink Privacy Policy.`,
+    ],
+  },
+];
+
+// =====================================================
+// HELPERS
+// =====================================================
+
+const normalizeType = (value = "") =>
+  value
+    .replace(/[\s_-]/g, "")
+    .toLowerCase();
+
+const isTermsDocument = (document) =>
+  normalizeType(document?.type) ===
+  "termsofuse";
+
+const isPrivacyDocument = (document) =>
+  normalizeType(document?.type) ===
+  "privacypolicy";
+
+const getContentForDocument = (
+  document
+) => {
+  if (isTermsDocument(document)) {
+    return TERMS_CONTENT;
+  }
+
+  if (isPrivacyDocument(document)) {
+    return PRIVACY_CONTENT;
+  }
+
+  return [
+    {
+      title: document?.title || "Legal document",
+
+      paragraphs: [
+        `Please review this legal document carefully before continuing.`,
+      ],
+    },
+  ];
+};
+
+const getActionLabel = (document) => {
+  if (isTermsDocument(document)) {
+    return "I have read and accept these Terms of Use";
+  }
+
+  if (isPrivacyDocument(document)) {
+    return "I have read and acknowledge this Privacy Policy";
+  }
+
+  return "I have read and acknowledge this document";
+};
+
+// =====================================================
+// PAGE
+// =====================================================
+
+export default function LegalAcceptancePage() {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const scrollContainers =
+    useRef({});
+
+  const [legalStatus, setLegalStatus] =
+    useState(null);
+
+  const [reachedEnd, setReachedEnd] =
+    useState({});
+
+  const [confirmed, setConfirmed] =
+    useState({});
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [submitting, setSubmitting] =
+    useState(false);
+
+  const [error, setError] =
+    useState("");
+
+  const [notice, setNotice] =
+    useState("");
+
+  // ===================================================
+  // TOKEN
+  // ===================================================
+
+  const token = useMemo(
+    () => getStoredToken(),
+    []
+  );
+
+  // ===================================================
+  // RETURN DESTINATION
+  // ===================================================
+
+  const returnTo = useMemo(() => {
+    const params =
+      new URLSearchParams(
+        location.search
+      );
+
+    const queryReturnTo =
+      params.get("returnTo");
+
+    const stateReturnTo =
+      location.state?.from?.pathname;
+
+    const candidate =
+      queryReturnTo ||
+      stateReturnTo ||
+      "/";
+
+    /*
+     * Only allow internal paths.
+     * This prevents an open redirect.
+     */
+    if (
+      typeof candidate !== "string" ||
+      !candidate.startsWith("/") ||
+      candidate.startsWith("//") ||
+      candidate === location.pathname
+    ) {
+      return "/";
+    }
+
+    return candidate;
+  }, [
+    location.pathname,
+    location.search,
+    location.state,
+  ]);
+
+  // ===================================================
+  // DOCUMENTS
+  // ===================================================
+
+  const documents = useMemo(
+    () =>
+      Array.isArray(
+        legalStatus?.documents
+      )
+        ? legalStatus.documents
+        : [],
+    [legalStatus]
+  );
+
+  const pendingDocuments = useMemo(
+    () =>
+      documents.filter(
+        (document) =>
+          !document.hasAccepted
+      ),
+    [documents]
+  );
+
+  const completedDocuments = useMemo(
+    () =>
+      documents.filter(
+        (document) =>
+          document.hasAccepted
+      ),
+    [documents]
+  );
+
+  const requiresAction =
+    Boolean(
+      legalStatus?.requiresAction
+    );
+
+  // ===================================================
+  // LOAD LEGAL STATUS
+  // ===================================================
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      setLoading(true);
+      setError("");
+
+      if (!token) {
+        navigate(
+          "/login",
+          {
+            replace: true,
+          }
+        );
+
+        return;
+      }
+
+      try {
+        const result =
+          await getLegalStatus(
+            token
+          );
+
+        if (cancelled) {
+          return;
+        }
+
+        setLegalStatus(result);
+
+        if (
+          !result?.requiresAction
+        ) {
+          navigate(
+            returnTo,
+            {
+              replace: true,
+            }
+          );
+        }
+      } catch (requestError) {
+        if (cancelled) {
+          return;
+        }
+
+        if (
+          requestError?.status ===
+          401
+        ) {
+          navigate(
+            "/login",
+            {
+              replace: true,
+            }
+          );
+
+          return;
+        }
+
+        setError(
+          requestError?.message ||
+            "We could not load the legal documents. Please try again."
+        );
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
     };
 
-  return (
-    <div className="min-h-screen bg-white text-black">
-      <div className="mx-auto w-full max-w-[900px] px-5 py-10 sm:px-8 md:py-14 lg:px-12">
+    load();
 
-        {/* ===================================== */}
-        {/* TOP ACTIONS */}
-        {/* ===================================== */}
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    navigate,
+    returnTo,
+    token,
+  ]);
 
-        <div className="mb-10 flex flex-wrap items-center justify-between gap-4 border-b border-black pb-4 print:hidden">
+  // ===================================================
+  // PAGE LEAVE PROTECTION
+  // ===================================================
 
-          <Link
-            to="/"
-            className="text-sm font-medium text-black underline underline-offset-4"
-          >
-            Back to PhilaLink
-          </Link>
+  useEffect(() => {
+    if (
+      loading ||
+      !requiresAction ||
+      submitting
+    ) {
+      return undefined;
+    }
 
-          <button
-            type="button"
-            onClick={
-              handlePrint
-            }
-            className="border border-black bg-white px-4 py-2 text-sm font-medium text-black transition hover:bg-black hover:text-white"
-          >
-            Print
-          </button>
-        </div>
+    const handleBeforeUnload = (
+      event
+    ) => {
+      event.preventDefault();
 
-        {/* ===================================== */}
-        {/* DOCUMENT HEADER */}
-        {/* ===================================== */}
+      event.returnValue = "";
+    };
 
-        <header className="border-b-2 border-black pb-8 text-center">
+    window.addEventListener(
+      "beforeunload",
+      handleBeforeUnload
+    );
 
-          <h1
-            className="m-0 font-serif text-3xl font-bold uppercase tracking-wide sm:text-4xl"
-            style={{
-              fontFamily:
-                '"Times New Roman", Times, serif',
-            }}
-          >
-            {title}
-          </h1>
+    return () => {
+      window.removeEventListener(
+        "beforeunload",
+        handleBeforeUnload
+      );
+    };
+  }, [
+    loading,
+    requiresAction,
+    submitting,
+  ]);
 
-          {subtitle && (
-            <p
-              className="mx-auto mt-4 max-w-[700px] font-serif text-base leading-7"
-              style={{
-                fontFamily:
-                  '"Times New Roman", Times, serif',
-              }}
-            >
-              {subtitle}
+  /*
+   * Browsers do not allow a website to absolutely prevent
+   * someone from closing a tab or browser.
+   *
+   * What PhilaLink does instead is prevent the user from
+   * entering the protected application until the required
+   * legal actions have been completed.
+   */
+
+  // ===================================================
+  // CHECK WHETHER DOCUMENT REACHED BOTTOM
+  // ===================================================
+
+  const checkDocumentScroll = (
+    documentId
+  ) => {
+    const element =
+      scrollContainers.current[
+        documentId
+      ];
+
+    if (!element) {
+      return;
+    }
+
+    const remaining =
+      element.scrollHeight -
+      element.scrollTop -
+      element.clientHeight;
+
+    if (remaining <= 8) {
+      setReachedEnd(
+        (current) => ({
+          ...current,
+          [documentId]: true,
+        })
+      );
+    }
+  };
+
+  // ===================================================
+  // REGISTER SCROLL CONTAINER
+  // ===================================================
+
+  const registerScrollContainer = (
+    documentId,
+    element
+  ) => {
+    if (!element) {
+      return;
+    }
+
+    scrollContainers.current[
+      documentId
+    ] = element;
+
+    /*
+     * If the document happens to fit completely inside the
+     * container, there is nothing to scroll and it should
+     * count as having reached the end.
+     */
+    requestAnimationFrame(() => {
+      checkDocumentScroll(
+        documentId
+      );
+    });
+  };
+
+  // ===================================================
+  // CONFIRM DOCUMENT
+  // ===================================================
+
+  const handleConfirmation = (
+    documentId,
+    checked
+  ) => {
+    if (
+      !reachedEnd[documentId]
+    ) {
+      return;
+    }
+
+    setConfirmed(
+      (current) => ({
+        ...current,
+        [documentId]: checked,
+      })
+    );
+
+    setError("");
+  };
+
+  // ===================================================
+  // ALL READY
+  // ===================================================
+
+  const allPendingReady =
+    pendingDocuments.length >
+      0 &&
+    pendingDocuments.every(
+      (document) =>
+        reachedEnd[document.id] &&
+        confirmed[document.id]
+    );
+
+  // ===================================================
+  // SUBMIT ACCEPTANCES
+  // ===================================================
+
+  const handleContinue =
+    async () => {
+      if (
+        !token ||
+        !allPendingReady ||
+        submitting
+      ) {
+        return;
+      }
+
+      setSubmitting(true);
+      setError("");
+      setNotice(
+        "Saving your legal acknowledgements..."
+      );
+
+      try {
+        for (
+          const document
+          of pendingDocuments
+        ) {
+          if (
+            isTermsDocument(
+              document
+            )
+          ) {
+            await acceptTermsOfUse(
+              token,
+              document.id
+            );
+
+            continue;
+          }
+
+          if (
+            isPrivacyDocument(
+              document
+            )
+          ) {
+            await acknowledgePrivacyPolicy(
+              token,
+              document.id
+            );
+
+            continue;
+          }
+
+          throw new Error(
+            `Unsupported legal document type: ${document.type}`
+          );
+        }
+
+        /*
+         * Do not trust the local UI state alone.
+         *
+         * Ask the backend again before releasing
+         * the user into PhilaLink.
+         */
+        const refreshedStatus =
+          await getLegalStatus(
+            token
+          );
+
+        setLegalStatus(
+          refreshedStatus
+        );
+
+        if (
+          refreshedStatus
+            ?.requiresAction
+        ) {
+          throw new Error(
+            "One or more legal documents still require your attention."
+          );
+        }
+
+        setNotice(
+          "Your preferences have been saved."
+        );
+
+        navigate(
+          returnTo,
+          {
+            replace: true,
+          }
+        );
+      } catch (requestError) {
+        setNotice("");
+
+        setError(
+          requestError?.message ||
+            "We could not save your legal acknowledgement. Please try again."
+        );
+      } finally {
+        setSubmitting(false);
+      }
+    };
+
+  // ===================================================
+  // RETRY
+  // ===================================================
+
+  const handleRetry = () => {
+    window.location.reload();
+  };
+
+  // ===================================================
+  // LOADING
+  // ===================================================
+
+  if (loading) {
+    return (
+      <>
+        <style>
+          {PAGE_STYLES}
+        </style>
+
+        <main className="legal-gate legal-gate--center">
+          <div className="legal-loading">
+            <div className="legal-spinner" />
+
+            <p>
+              Loading legal documents...
             </p>
-          )}
+          </div>
+        </main>
+      </>
+    );
+  }
 
-          <p
-            className="mt-5 font-serif text-sm"
-            style={{
-              fontFamily:
-                '"Times New Roman", Times, serif',
-            }}
-          >
-            Last updated:
-            {" "}
-            21 September 2026
-          </p>
+  // ===================================================
+  // LOAD FAILURE
+  // ===================================================
+
+  if (
+    error &&
+    !legalStatus
+  ) {
+    return (
+      <>
+        <style>
+          {PAGE_STYLES}
+        </style>
+
+        <main className="legal-gate legal-gate--center">
+          <section className="legal-error-card">
+            <span className="legal-brand">
+              PhilaLink
+            </span>
+
+            <h1>
+              We couldn't load the required documents
+            </h1>
+
+            <p>
+              PhilaLink needs to confirm
+              your current legal status
+              before opening your account.
+            </p>
+
+            <div
+              className="legal-alert"
+              role="alert"
+            >
+              {error}
+            </div>
+
+            <button
+              type="button"
+              className="legal-primary-button"
+              onClick={handleRetry}
+            >
+              Try again
+            </button>
+          </section>
+        </main>
+      </>
+    );
+  }
+
+  // ===================================================
+  // PAGE
+  // ===================================================
+
+  return (
+    <>
+      <style>
+        {PAGE_STYLES}
+      </style>
+
+      <main className="legal-gate">
+        <header className="legal-header">
+          <div className="legal-header-inner">
+            <div>
+              <span className="legal-brand">
+                PhilaLink
+              </span>
+
+              <span className="legal-brand-subtitle">
+                Legal acknowledgement
+              </span>
+            </div>
+
+            <span className="legal-secure-label">
+              Secure account step
+            </span>
+          </div>
         </header>
 
-        {/* ===================================== */}
-        {/* DOCUMENT BODY */}
-        {/* ===================================== */}
+        <div className="legal-page-shell">
+          <section className="legal-intro">
+            <p className="legal-eyebrow">
+              Before you continue
+            </p>
 
-        <main
-          className="legal-document-body py-9 font-serif text-[16px] leading-[1.8]"
-          style={{
-            fontFamily:
-              '"Times New Roman", Times, serif',
-          }}
-        >
-          {children}
-        </main>
+            <h1>
+              Please review the current
+              PhilaLink documents
+            </h1>
 
-        {/* ===================================== */}
-        {/* DOCUMENT FOOTER */}
-        {/* ===================================== */}
+            <p className="legal-intro-copy">
+              We need you to review each
+              outstanding document before
+              entering your account. Scroll
+              to the end of each document
+              to unlock its acknowledgement
+              control.
+            </p>
 
-        <footer className="border-t border-black pt-5 text-center">
+            <div className="legal-progress-row">
+              <span>
+                {
+                  completedDocuments.length
+                }{" "}
+                of{" "}
+                {
+                  documents.length
+                }{" "}
+                completed
+              </span>
 
-          <p
-            className="m-0 font-serif text-sm"
-            style={{
-              fontFamily:
-                '"Times New Roman", Times, serif',
-            }}
-          >
-            PhilaLink
-          </p>
+              <div
+                className="legal-progress-track"
+                aria-hidden="true"
+              >
+                <div
+                  className="legal-progress-value"
+                  style={{
+                    width:
+                      documents.length >
+                      0
+                        ? `${
+                            (completedDocuments.length /
+                              documents.length) *
+                            100
+                          }%`
+                        : "0%",
+                  }}
+                />
+              </div>
+            </div>
+          </section>
 
-          <div className="mt-3 flex flex-wrap justify-center gap-x-5 gap-y-2 print:hidden">
+          {completedDocuments.length >
+            0 && (
+            <section className="legal-completed-panel">
+              <strong>
+                Already completed
+              </strong>
 
-            <Link
-              to="/privacy-policy"
-              className="text-sm text-black underline underline-offset-4"
-            >
-              Privacy Policy
-            </Link>
+              {completedDocuments.map(
+                (document) => (
+                  <div
+                    className="legal-completed-row"
+                    key={
+                      document.id
+                    }
+                  >
+                    <span>
+                      {
+                        document.title
+                      }
+                    </span>
 
-            <Link
-              to="/terms-of-use"
-              className="text-sm text-black underline underline-offset-4"
-            >
-              Terms of Use
-            </Link>
+                    <span>
+                      Version{" "}
+                      {
+                        document.version
+                      }{" "}
+                      · Complete
+                    </span>
+                  </div>
+                )
+              )}
+            </section>
+          )}
 
-            <Link
-              to="/"
-              className="text-sm text-black underline underline-offset-4"
-            >
-              Home
-            </Link>
+          <div className="legal-document-list">
+            {pendingDocuments.map(
+              (
+                document,
+                index
+              ) => {
+                const content =
+                  getContentForDocument(
+                    document
+                  );
+
+                const read =
+                  Boolean(
+                    reachedEnd[
+                      document.id
+                    ]
+                  );
+
+                const checked =
+                  Boolean(
+                    confirmed[
+                      document.id
+                    ]
+                  );
+
+                return (
+                  <article
+                    className="legal-document-card"
+                    key={
+                      document.id
+                    }
+                  >
+                    <div className="legal-document-heading">
+                      <div>
+                        <span className="legal-document-step">
+                          Document{" "}
+                          {index + 1}{" "}
+                          of{" "}
+                          {
+                            pendingDocuments.length
+                          }
+                        </span>
+
+                        <h2>
+                          {
+                            document.title
+                          }
+                        </h2>
+
+                        <p>
+                          Version{" "}
+                          {
+                            document.version
+                          }
+                        </p>
+                      </div>
+
+                      <div
+                        className={
+                          read
+                            ? "legal-read-badge legal-read-badge--done"
+                            : "legal-read-badge"
+                        }
+                      >
+                        {read
+                          ? "Read to end"
+                          : "Scroll required"}
+                      </div>
+                    </div>
+
+                    <div
+                      className="legal-paper"
+                      ref={(
+                        element
+                      ) =>
+                        registerScrollContainer(
+                          document.id,
+                          element
+                        )
+                      }
+                      onScroll={() =>
+                        checkDocumentScroll(
+                          document.id
+                        )
+                      }
+                      tabIndex={0}
+                      aria-label={`${document.title}, version ${document.version}`}
+                    >
+                      <div className="legal-paper-header">
+                        <strong>
+                          PhilaLink
+                        </strong>
+
+                        <span>
+                          {
+                            document.title
+                          }
+                        </span>
+
+                        <small>
+                          Version{" "}
+                          {
+                            document.version
+                          }
+                        </small>
+                      </div>
+
+                      {content.map(
+                        (
+                          section
+                        ) => (
+                          <section
+                            className="legal-copy-section"
+                            key={
+                              section.title
+                            }
+                          >
+                            <h3>
+                              {
+                                section.title
+                              }
+                            </h3>
+
+                            {section.paragraphs.map(
+                              (
+                                paragraph,
+                                paragraphIndex
+                              ) => (
+                                <p
+                                  key={`${section.title}-${paragraphIndex}`}
+                                >
+                                  {
+                                    paragraph
+                                  }
+                                </p>
+                              )
+                            )}
+                          </section>
+                        )
+                      )}
+
+                      <div className="legal-end-marker">
+                        End of{" "}
+                        {
+                          document.title
+                        }
+                      </div>
+                    </div>
+
+                    {!read && (
+                      <p className="legal-scroll-hint">
+                        Continue scrolling
+                        through the document
+                        to enable the control
+                        below.
+                      </p>
+                    )}
+
+                    <label
+                      className={
+                        read
+                          ? "legal-confirmation"
+                          : "legal-confirmation legal-confirmation--disabled"
+                      }
+                    >
+                      <input
+                        type="checkbox"
+                        checked={
+                          checked
+                        }
+                        disabled={
+                          !read ||
+                          submitting
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          handleConfirmation(
+                            document.id,
+                            event
+                              .target
+                              .checked
+                          )
+                        }
+                      />
+
+                      <span className="legal-custom-checkbox">
+                        {checked
+                          ? "✓"
+                          : ""}
+                      </span>
+
+                      <span>
+                        {getActionLabel(
+                          document
+                        )}
+                      </span>
+                    </label>
+                  </article>
+                );
+              }
+            )}
           </div>
-        </footer>
-      </div>
-    </div>
+
+          {error && (
+            <div
+              className="legal-alert"
+              role="alert"
+            >
+              {error}
+            </div>
+          )}
+
+          {notice && (
+            <div
+              className="legal-notice"
+              role="status"
+            >
+              {notice}
+            </div>
+          )}
+
+          <section className="legal-action-panel">
+            <div>
+              <strong>
+                Complete all required
+                documents
+              </strong>
+
+              <p>
+                Your account will remain
+                outside the protected
+                PhilaLink application until
+                the required legal actions
+                have been recorded.
+              </p>
+            </div>
+
+            <button
+              type="button"
+              className="legal-primary-button"
+              disabled={
+                !allPendingReady ||
+                submitting
+              }
+              onClick={
+                handleContinue
+              }
+            >
+              {submitting
+                ? "Saving..."
+                : "Accept and continue"}
+            </button>
+          </section>
+
+          <footer className="legal-footer">
+            <span>
+              PhilaLink
+            </span>
+
+            <span>
+              Emergency assistance:
+              112
+            </span>
+          </footer>
+        </div>
+      </main>
+    </>
   );
 }
 
-
 // =====================================================
-// SECTION COMPONENTS
-// =====================================================
-
-function Section({
-  number,
-  title,
-  children,
-}) {
-  return (
-    <section className="mb-8">
-
-      <h2
-        className="mb-3 mt-0 font-serif text-xl font-bold"
-        style={{
-          fontFamily:
-            '"Times New Roman", Times, serif',
-        }}
-      >
-        {number}. {title}
-      </h2>
-
-      <div className="space-y-3">
-        {children}
-      </div>
-    </section>
-  );
-}
-
-
-function BulletList({
-  children,
-}) {
-  return (
-    <ul className="ml-6 list-disc space-y-2">
-      {children}
-    </ul>
-  );
-}
-
-
-// =====================================================
-// PRIVACY POLICY
+// STYLES
 // =====================================================
 
-export function PrivacyPolicyPage() {
-  return (
-    <LegalDocument
-      title="Privacy Policy"
-      subtitle="This Privacy Policy explains how PhilaLink collects, uses, stores, shares and protects personal information when people use the PhilaLink platform."
-    >
-
-      <Section
-        number="1"
-        title="Introduction"
-      >
-        <p>
-          PhilaLink is a digital healthcare
-          support platform designed to help
-          patients, healthcare workers and
-          authorised proxies manage
-          healthcare-related information,
-          medication collections,
-          appointments and related services.
-        </p>
-
-        <p>
-          PhilaLink respects the privacy of
-          its users and aims to process
-          personal information responsibly
-          and in accordance with applicable
-          South African data protection law,
-          including the Protection of
-          Personal Information Act 4 of 2013
-          ("POPIA").
-        </p>
-
-        <p>
-          This Privacy Policy should be read
-          together with the PhilaLink Terms
-          of Use and the cookie information
-          made available through the
-          platform.
-        </p>
-      </Section>
-
-
-      <Section
-        number="2"
-        title="Personal information we may collect"
-      >
-        <p>
-          Depending on how PhilaLink is used,
-          the platform may process the
-          following categories of
-          information:
-        </p>
-
-        <BulletList>
-          <li>
-            identity information, including
-            name, identity number, date of
-            birth and gender;
-          </li>
-
-          <li>
-            contact information, including
-            email address, telephone number
-            and address information;
-          </li>
-
-          <li>
-            account information, including
-            account role, verification
-            status and security-related
-            account information;
-          </li>
-
-          <li>
-            clinic and healthcare-provider
-            information associated with the
-            user's care;
-          </li>
-
-          <li>
-            medication information,
-            medication schedules, medication
-            logs and medication collection
-            information;
-          </li>
-
-          <li>
-            appointment information;
-          </li>
-
-          <li>
-            health-related information
-            voluntarily provided or recorded
-            through PhilaLink;
-          </li>
-
-          <li>
-            symptom-assessment information
-            submitted through PhilaLink
-            features;
-          </li>
-
-          <li>
-            information about authorised
-            proxy relationships;
-          </li>
-
-          <li>
-            emergency-contact information;
-          </li>
-
-          <li>
-            location information when the
-            user chooses to allow location
-            access for location-based
-            features such as finding nearby
-            healthcare facilities;
-          </li>
-
-          <li>
-            notification and communication
-            preferences;
-          </li>
-
-          <li>
-            technical information required
-            for security, authentication and
-            operation of the platform; and
-          </li>
-
-          <li>
-            cookie choices and other
-            permitted browser preferences.
-          </li>
-        </BulletList>
-      </Section>
-
-
-      <Section
-        number="3"
-        title="Health information"
-      >
-        <p>
-          Some information processed through
-          PhilaLink concerns a person's
-          health and healthcare. Health
-          information is sensitive and is
-          treated as special personal
-          information under POPIA.
-        </p>
-
-        <p>
-          PhilaLink is designed so that
-          access to healthcare information is
-          restricted according to the user's
-          authorised role and relationship
-          with the relevant patient.
-        </p>
-      </Section>
-
-
-      <Section
-        number="4"
-        title="Why we process personal information"
-      >
-        <p>
-          Personal information may be
-          processed where necessary to
-          provide and operate PhilaLink
-          features, including:
-        </p>
-
-        <BulletList>
-          <li>
-            creating, verifying and securing
-            user accounts;
-          </li>
-
-          <li>
-            authenticating users and
-            controlling access according to
-            user roles;
-          </li>
-
-          <li>
-            displaying medication and
-            treatment-related information;
-          </li>
-
-          <li>
-            managing medication schedules,
-            logs and collection information;
-          </li>
-
-          <li>
-            managing healthcare
-            appointments;
-          </li>
-
-          <li>
-            connecting patients with
-            authorised proxies;
-          </li>
-
-          <li>
-            providing reminders and
-            notifications;
-          </li>
-
-          <li>
-            providing nearby healthcare
-            facility information where the
-            user enables location access;
-          </li>
-
-          <li>
-            providing chatbot and
-            symptom-assessment functionality;
-          </li>
-
-          <li>
-            maintaining security, audit
-            records and system integrity;
-          </li>
-
-          <li>
-            responding to user requests and
-            providing support; and
-          </li>
-
-          <li>
-            complying with applicable legal
-            obligations.
-          </li>
-        </BulletList>
-      </Section>
-
-
-      <Section
-        number="5"
-        title="How information is collected"
-      >
-        <p>
-          Information may be collected
-          directly from users when they
-          register, update their profile,
-          submit information, use PhilaLink
-          services or communicate through the
-          platform.
-        </p>
-
-        <p>
-          Information may also be added or
-          updated by authorised healthcare
-          staff or other authorised users
-          where their role permits them to
-          perform the relevant action.
-        </p>
-
-        <p>
-          Certain technical information may
-          be generated automatically when a
-          person uses the platform.
-        </p>
-      </Section>
-
-
-      <Section
-        number="6"
-        title="Who may access personal information"
-      >
-        <p>
-          Access to information within
-          PhilaLink is role-based. Depending
-          on the circumstances, information
-          may be accessible to:
-        </p>
-
-        <BulletList>
-          <li>
-            the patient to whom the
-            information relates;
-          </li>
-
-          <li>
-            an authorised proxy where the
-            proxy has been formally linked to
-            the patient;
-          </li>
-
-          <li>
-            authorised healthcare workers;
-          </li>
-
-          <li>
-            authorised clinic
-            administrators;
-          </li>
-
-          <li>
-            authorised system
-            administrators where required
-            for system administration and
-            security; and
-          </li>
-
-          <li>
-            service providers that support
-            the technical operation of the
-            platform, subject to appropriate
-            access restrictions.
-          </li>
-        </BulletList>
-
-        <p>
-          Users must not attempt to access
-          information that they are not
-          authorised to view.
-        </p>
-      </Section>
-
-
-      <Section
-        number="7"
-        title="Third-party service providers"
-      >
-        <p>
-          PhilaLink may use third-party
-          technology providers for services
-          such as hosting, database
-          infrastructure, authentication,
-          email delivery, weather
-          information and artificial
-          intelligence functionality.
-        </p>
-
-        <p>
-          Only information reasonably
-          necessary for the relevant service
-          should be shared with such
-          providers.
-        </p>
-
-        <p>
-          Some external providers may process
-          information using infrastructure
-          located outside South Africa.
-          Where applicable, cross-border
-          processing should be handled in
-          accordance with applicable data
-          protection requirements.
-        </p>
-      </Section>
-
-
-      <Section
-        number="8"
-        title="Google sign-in"
-      >
-        <p>
-          If a user chooses to use Google
-          sign-in, information required to
-          authenticate that user may be
-          exchanged with Google as part of
-          the authentication process.
-        </p>
-
-        <p>
-          Google's own processing of
-          information is subject to Google's
-          policies and services. PhilaLink
-          does not control cookies or
-          information processing performed
-          directly on Google's systems.
-        </p>
-      </Section>
-
-
-      <Section
-        number="9"
-        title="Artificial intelligence features"
-      >
-        <p>
-          PhilaLink may provide
-          AI-assisted features, including
-          chatbot functionality.
-        </p>
-
-        <p>
-          Users should avoid submitting
-          information that is not reasonably
-          necessary for the question or
-          feature they are using.
-        </p>
-
-        <p>
-          AI-generated responses may contain
-          errors and must not be treated as
-          a substitute for diagnosis,
-          treatment or advice from a
-          qualified healthcare professional.
-        </p>
-      </Section>
-
-
-      <Section
-        number="10"
-        title="Location information"
-      >
-        <p>
-          Some features may request access to
-          a device's location, for example to
-          identify nearby clinics or
-          healthcare facilities.
-        </p>
-
-        <p>
-          Location access depends on the
-          user's browser or device
-          permission. A user may refuse or
-          withdraw location permission using
-          the settings of their browser or
-          device.
-        </p>
-      </Section>
-
-
-      <Section
-        number="11"
-        title="Cookies"
-      >
-        <p>
-          PhilaLink uses a cookie to remember
-          the user's cookie preference.
-          Essential cookies may also be used
-          where required for security and
-          core website functionality.
-        </p>
-
-        <p>
-          Optional preference cookies are
-          used only where the user permits
-          them.
-        </p>
-
-        <p>
-          PhilaLink's cookie-consent file
-          does not store medication records,
-          health records, passwords or API
-          credentials.
-        </p>
-      </Section>
-
-
-      <Section
-        number="12"
-        title="Information security"
-      >
-        <p>
-          PhilaLink uses technical and
-          organisational safeguards intended
-          to protect personal information
-          against unauthorised access,
-          disclosure, alteration, loss or
-          misuse.
-        </p>
-
-        <p>
-          These safeguards may include
-          authenticated access, role-based
-          authorisation, password controls,
-          encrypted network communication,
-          audit logging, request-rate
-          controls and restricted access to
-          system credentials.
-        </p>
-
-        <p>
-          No internet-connected system can
-          guarantee absolute security.
-          Users are responsible for keeping
-          their own login credentials secure
-          and for reporting suspected
-          unauthorised access.
-        </p>
-      </Section>
-
-
-      <Section
-        number="13"
-        title="Retention of information"
-      >
-        <p>
-          Personal information should be
-          retained only for as long as it is
-          reasonably required for the purpose
-          for which it was collected, for
-          legitimate operational needs, or
-          where retention is required or
-          permitted by applicable law.
-        </p>
-
-        <p>
-          When information is no longer
-          required and there is no lawful
-          reason to retain it, appropriate
-          deletion, destruction or
-          de-identification measures should
-          be applied.
-        </p>
-      </Section>
-
-
-      <Section
-        number="14"
-        title="Your rights"
-      >
-        <p>
-          Subject to applicable law, a person
-          may have rights concerning their
-          personal information, including the
-          right to:
-        </p>
-
-        <BulletList>
-          <li>
-            ask whether PhilaLink holds
-            personal information about them;
-          </li>
-
-          <li>
-            request access to their personal
-            information;
-          </li>
-
-          <li>
-            request correction of inaccurate,
-            incomplete or outdated
-            information;
-          </li>
-
-          <li>
-            request deletion or destruction
-            where the information is no
-            longer lawfully required;
-          </li>
-
-          <li>
-            object to certain processing
-            where permitted by law;
-          </li>
-
-          <li>
-            withdraw consent where a
-            particular processing activity
-            relies on consent; and
-          </li>
-
-          <li>
-            lodge a complaint with the
-            Information Regulator of South
-            Africa where appropriate.
-          </li>
-        </BulletList>
-      </Section>
-
-
-      <Section
-        number="15"
-        title="Privacy requests"
-      >
-        <p>
-          Privacy, access or correction
-          requests should be submitted
-          through the contact or support
-          channels made available by
-          PhilaLink or through the relevant
-          clinic where appropriate.
-        </p>
-
-        <p>
-          PhilaLink may need to verify the
-          identity of the person making a
-          request before disclosing or
-          modifying personal information.
-        </p>
-      </Section>
-
-
-      <Section
-        number="16"
-        title="Children"
-      >
-        <p>
-          Where personal information relating
-          to a child is processed, additional
-          legal requirements may apply.
-          PhilaLink should not be used to
-          create or manage a child's account
-          unless the required authority or
-          legal basis for processing that
-          information exists.
-        </p>
-      </Section>
-
-
-      <Section
-        number="17"
-        title="Changes to this Privacy Policy"
-      >
-        <p>
-          This Privacy Policy may be updated
-          when PhilaLink features,
-          technologies or legal requirements
-          change.
-        </p>
-
-        <p>
-          The latest version will be made
-          available through the platform and
-          will show its most recent update
-          date.
-        </p>
-      </Section>
-
-
-      <Section
-        number="18"
-        title="Applicable law"
-      >
-        <p>
-          This Privacy Policy is intended to
-          operate within the framework of
-          applicable South African law,
-          including POPIA.
-        </p>
-      </Section>
-
-    </LegalDocument>
-  );
-}
-
-
-// =====================================================
-// TERMS OF USE
-// =====================================================
-
-export function TermsOfUsePage() {
-  return (
-    <LegalDocument
-      title="Terms of Use"
-      subtitle="These Terms of Use govern access to and use of the PhilaLink digital healthcare support platform."
-    >
-
-      <Section
-        number="1"
-        title="Acceptance of these Terms"
-      >
-        <p>
-          By creating an account or using
-          PhilaLink, you agree to comply with
-          these Terms of Use.
-        </p>
-
-        <p>
-          If you do not agree with these
-          Terms, you should not create an
-          account or continue using the
-          platform.
-        </p>
-      </Section>
-
-
-      <Section
-        number="2"
-        title="Purpose of PhilaLink"
-      >
-        <p>
-          PhilaLink is intended to support
-          healthcare administration and
-          communication by connecting
-          patients, healthcare workers,
-          clinics and authorised proxies.
-        </p>
-
-        <p>
-          Features may include medication
-          information, medication logging,
-          medication collections,
-          appointments, notifications,
-          nearby-clinic information,
-          symptom-assessment tools and
-          healthcare information provided
-          through digital assistance
-          features.
-        </p>
-      </Section>
-
-
-      <Section
-        number="3"
-        title="PhilaLink is not an emergency service"
-      >
-        <p>
-          PhilaLink is not an emergency
-          medical service.
-        </p>
-
-        <p>
-          If you believe that you or another
-          person is experiencing a medical
-          emergency, contact the appropriate
-          emergency service immediately.
-          In South Africa, the general
-          emergency number from a mobile
-          phone is 112.
-        </p>
-
-        <p>
-          Do not delay emergency medical care
-          while waiting for information from
-          PhilaLink.
-        </p>
-      </Section>
-
-
-      <Section
-        number="4"
-        title="No substitute for professional medical advice"
-      >
-        <p>
-          Information provided through
-          PhilaLink is intended to support
-          healthcare management and general
-          information.
-        </p>
-
-        <p>
-          PhilaLink does not replace a
-          qualified doctor, nurse,
-          pharmacist or other healthcare
-          professional.
-        </p>
-
-        <p>
-          Users should follow the treatment
-          instructions provided by their
-          healthcare professionals and should
-          seek professional medical advice
-          when they have questions about
-          symptoms, medication, diagnosis or
-          treatment.
-        </p>
-      </Section>
-
-
-      <Section
-        number="5"
-        title="Accounts"
-      >
-        <p>
-          Users must provide accurate
-          information when registering for
-          or using PhilaLink.
-        </p>
-
-        <p>
-          Users are responsible for
-          maintaining the confidentiality of
-          their login credentials and must
-          not knowingly allow an unauthorised
-          person to use their account.
-        </p>
-
-        <p>
-          A user must notify the appropriate
-          PhilaLink support or clinic contact
-          if they believe their account has
-          been compromised.
-        </p>
-      </Section>
-
-
-      <Section
-        number="6"
-        title="Role-based access"
-      >
-        <p>
-          PhilaLink provides different
-          permissions to different user
-          roles, including patients, proxies,
-          nurses and administrators.
-        </p>
-
-        <p>
-          Users may access only the
-          information and functions that
-          their authorised role permits.
-        </p>
-
-        <p>
-          Attempting to bypass access
-          controls, obtain another person's
-          healthcare information without
-          authority, or misuse another
-          person's account is prohibited.
-        </p>
-      </Section>
-
-
-      <Section
-        number="7"
-        title="Patient responsibilities"
-      >
-        <p>
-          Patients should keep their profile
-          and relevant healthcare information
-          reasonably accurate and current.
-        </p>
-
-        <p>
-          Medication logging and reminders
-          are intended to assist the patient
-          but do not replace the patient's
-          responsibility to follow advice
-          given by healthcare professionals.
-        </p>
-      </Section>
-
-
-      <Section
-        number="8"
-        title="Proxy access"
-      >
-        <p>
-          A proxy may access only information
-          made available through an active,
-          authorised relationship with a
-          patient.
-        </p>
-
-        <p>
-          Proxy access must be used solely
-          for legitimate healthcare-support
-          activities associated with the
-          linked patient.
-        </p>
-
-        <p>
-          A proxy must not disclose or misuse
-          patient information obtained
-          through PhilaLink.
-        </p>
-      </Section>
-
-
-      <Section
-        number="9"
-        title="Healthcare staff and administrators"
-      >
-        <p>
-          Healthcare workers and
-          administrators must use PhilaLink
-          only within the authority granted
-          by their role and organisation.
-        </p>
-
-        <p>
-          Clinic-specific users must not
-          attempt to view or modify
-          information belonging to another
-          clinic unless their authorised
-          role expressly permits such access.
-        </p>
-      </Section>
-
-
-      <Section
-        number="10"
-        title="Artificial intelligence and chatbot features"
-      >
-        <p>
-          PhilaLink may include
-          AI-generated information.
-          Artificial intelligence can make
-          mistakes, misunderstand questions
-          or provide incomplete information.
-        </p>
-
-        <p>
-          AI-generated content must not be
-          relied upon as a diagnosis,
-          prescription, emergency assessment
-          or substitute for professional
-          healthcare advice.
-        </p>
-
-        <p>
-          Users should seek appropriate
-          professional assistance where
-          healthcare decisions are required.
-        </p>
-      </Section>
-
-
-      <Section
-        number="11"
-        title="Medication information"
-      >
-        <p>
-          Medication information displayed
-          through PhilaLink is intended to
-          reflect information available to
-          the platform.
-        </p>
-
-        <p>
-          Users should not change, start or
-          stop medication solely because of
-          information displayed by PhilaLink.
-          Treatment changes should be
-          discussed with an appropriate
-          healthcare professional.
-        </p>
-      </Section>
-
-
-      <Section
-        number="12"
-        title="Location and third-party information"
-      >
-        <p>
-          Features such as nearby clinic
-          searches, maps, weather
-          information or external directions
-          may depend on third-party services.
-        </p>
-
-        <p>
-          PhilaLink cannot guarantee that
-          third-party location, mapping,
-          weather or facility information is
-          always complete, current or
-          accurate.
-        </p>
-      </Section>
-
-
-      <Section
-        number="13"
-        title="Acceptable use"
-      >
-        <p>
-          Users must not:
-        </p>
-
-        <BulletList>
-          <li>
-            use PhilaLink for unlawful
-            purposes;
-          </li>
-
-          <li>
-            attempt to gain unauthorised
-            access to another account,
-            patient record, clinic or system;
-          </li>
-
-          <li>
-            impersonate another person;
-          </li>
-
-          <li>
-            submit intentionally false or
-            harmful information;
-          </li>
-
-          <li>
-            interfere with or attempt to
-            disable platform security;
-          </li>
-
-          <li>
-            attempt to obtain passwords,
-            access tokens, API credentials or
-            other protected credentials;
-          </li>
-
-          <li>
-            automate excessive requests or
-            otherwise abuse platform
-            resources;
-          </li>
-
-          <li>
-            attempt to exploit chatbot,
-            weather or other third-party
-            integrations; or
-          </li>
-
-          <li>
-            use information obtained through
-            PhilaLink in a way that violates
-            another person's privacy or
-            applicable law.
-          </li>
-        </BulletList>
-      </Section>
-
-
-      <Section
-        number="14"
-        title="Security controls"
-      >
-        <p>
-          PhilaLink may apply authentication,
-          authorisation, request-rate limits,
-          audit logging, account
-          verification and other security
-          measures.
-        </p>
-
-        <p>
-          Attempts to circumvent these
-          controls may result in access being
-          restricted or suspended.
-        </p>
-      </Section>
-
-
-      <Section
-        number="15"
-        title="Availability of the platform"
-      >
-        <p>
-          PhilaLink may occasionally be
-          unavailable because of maintenance,
-          hosting-provider interruptions,
-          internet connectivity, technical
-          failures or third-party service
-          outages.
-        </p>
-
-        <p>
-          Continuous or uninterrupted
-          availability cannot be guaranteed.
-        </p>
-      </Section>
-
-
-      <Section
-        number="16"
-        title="Privacy"
-      >
-        <p>
-          Personal information processed
-          through PhilaLink is governed by
-          the PhilaLink Privacy Policy and
-          applicable data protection law.
-        </p>
-
-        <p>
-          Users should review the Privacy
-          Policy before submitting personal
-          or healthcare information through
-          the platform.
-        </p>
-
-        <p>
-          <Link
-            to="/privacy-policy"
-            className="text-black underline underline-offset-4"
-          >
-            Read the PhilaLink Privacy Policy
-          </Link>
-        </p>
-      </Section>
-
-
-      <Section
-        number="17"
-        title="Intellectual property"
-      >
-        <p>
-          Unless otherwise stated,
-          PhilaLink's original software,
-          branding, interface design and
-          platform content remain subject to
-          applicable intellectual-property
-          rights.
-        </p>
-
-        <p>
-          Third-party names, services,
-          libraries and content remain the
-          property of their respective
-          owners.
-        </p>
-      </Section>
-
-
-      <Section
-        number="18"
-        title="Account restriction or suspension"
-      >
-        <p>
-          Access may be restricted,
-          suspended or deactivated where
-          reasonably necessary to protect
-          patients, users, healthcare
-          information, system security or
-          platform integrity.
-        </p>
-
-        <p>
-          Access may also be restricted when
-          an account is inactive,
-          unauthorised or used in breach of
-          these Terms.
-        </p>
-      </Section>
-
-
-      <Section
-        number="19"
-        title="Limitation of responsibility"
-      >
-        <p>
-          PhilaLink is intended to support,
-          rather than replace, healthcare
-          services and professional
-          judgement.
-        </p>
-
-        <p>
-          To the extent permitted by
-          applicable law, PhilaLink is not
-          responsible for decisions made
-          solely on the basis of inaccurate,
-          incomplete or unavailable
-          third-party information,
-          AI-generated content or information
-          entered incorrectly by users.
-        </p>
-
-        <p>
-          Nothing in these Terms is intended
-          to exclude rights or protections
-          that cannot lawfully be excluded.
-        </p>
-      </Section>
-
-
-      <Section
-        number="20"
-        title="Changes to these Terms"
-      >
-        <p>
-          These Terms may be updated when
-          PhilaLink functionality,
-          technology, security requirements
-          or applicable law changes.
-        </p>
-
-        <p>
-          The most recent version will be
-          made available through the
-          platform.
-        </p>
-      </Section>
-
-
-      <Section
-        number="21"
-        title="Governing law"
-      >
-        <p>
-          These Terms are intended to be
-          interpreted in accordance with
-          applicable law in the Republic of
-          South Africa.
-        </p>
-      </Section>
-
-    </LegalDocument>
-  );
-}
+const PAGE_STYLES = `
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body,
+  #root {
+    min-height: 100%;
+    margin: 0;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  .legal-gate {
+    min-height: 100vh;
+    background: #f4f4f2;
+    color: #111111;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      -apple-system,
+      BlinkMacSystemFont,
+      "Segoe UI",
+      sans-serif;
+  }
+
+  .legal-gate--center {
+    display: grid;
+    place-items: center;
+    padding: 24px;
+  }
+
+  .legal-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    border-bottom: 1px solid #d8d8d4;
+    background: rgba(255, 255, 255, 0.96);
+    backdrop-filter: blur(14px);
+  }
+
+  .legal-header-inner {
+    width: min(100% - 32px, 1100px);
+    min-height: 72px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .legal-brand {
+    display: block;
+    color: #111111;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .legal-brand-subtitle {
+    display: block;
+    margin-top: 3px;
+    color: #737373;
+    font-size: 12px;
+  }
+
+  .legal-secure-label {
+    border: 1px solid #ccccca;
+    border-radius: 999px;
+    padding: 7px 11px;
+    color: #555555;
+    background: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .legal-page-shell {
+    width: min(100% - 32px, 920px);
+    margin: 0 auto;
+    padding: 56px 0 32px;
+  }
+
+  .legal-intro {
+    margin-bottom: 32px;
+  }
+
+  .legal-eyebrow {
+    margin: 0 0 12px;
+    color: #666666;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .legal-intro h1 {
+    max-width: 760px;
+    margin: 0;
+    color: #111111;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: clamp(34px, 6vw, 58px);
+    font-weight: 500;
+    line-height: 1.02;
+    letter-spacing: -0.045em;
+  }
+
+  .legal-intro-copy {
+    max-width: 700px;
+    margin: 20px 0 0;
+    color: #555555;
+    font-size: 15px;
+    line-height: 1.75;
+  }
+
+  .legal-progress-row {
+    margin-top: 28px;
+    display: grid;
+    grid-template-columns: auto minmax(120px, 260px);
+    align-items: center;
+    gap: 16px;
+    color: #555555;
+    font-size: 12px;
+  }
+
+  .legal-progress-track {
+    height: 4px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #dededb;
+  }
+
+  .legal-progress-value {
+    height: 100%;
+    border-radius: inherit;
+    background: #111111;
+    transition: width 0.25s ease;
+  }
+
+  .legal-completed-panel {
+    margin-bottom: 24px;
+    padding: 20px;
+    border: 1px solid #d8d8d4;
+    background: #ffffff;
+  }
+
+  .legal-completed-panel > strong {
+    display: block;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+
+  .legal-completed-row {
+    padding: 10px 0;
+    border-top: 1px solid #ececea;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    color: #555555;
+    font-size: 12px;
+  }
+
+  .legal-document-list {
+    display: grid;
+    gap: 28px;
+  }
+
+  .legal-document-card {
+    padding: 28px;
+    border: 1px solid #d5d5d2;
+    background: #ffffff;
+    box-shadow:
+      0 14px 35px
+      rgba(0, 0, 0, 0.04);
+  }
+
+  .legal-document-heading {
+    margin-bottom: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 24px;
+  }
+
+  .legal-document-step {
+    display: block;
+    margin-bottom: 7px;
+    color: #777777;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .legal-document-heading h2 {
+    margin: 0;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 27px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+
+  .legal-document-heading p {
+    margin: 6px 0 0;
+    color: #777777;
+    font-size: 12px;
+  }
+
+  .legal-read-badge {
+    flex: 0 0 auto;
+    border: 1px solid #ccccca;
+    border-radius: 999px;
+    padding: 7px 10px;
+    color: #777777;
+    background: #f7f7f5;
+    font-size: 10px;
+    font-weight: 700;
+  }
+
+  .legal-read-badge--done {
+    border-color: #111111;
+    color: #ffffff;
+    background: #111111;
+  }
+
+  .legal-paper {
+    height: min(58vh, 560px);
+    min-height: 360px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding:
+      clamp(28px, 6vw, 58px)
+      clamp(24px, 7vw, 72px);
+    border: 1px solid #bdbdb9;
+    outline: none;
+    background: #ffffff;
+    color: #111111;
+    font-family: Georgia, "Times New Roman", serif;
+    scrollbar-width: thin;
+    scrollbar-color:
+      #777777
+      #eeeeeb;
+  }
+
+  .legal-paper:focus {
+    border-color: #555555;
+    box-shadow:
+      0 0 0 2px
+      rgba(0, 0, 0, 0.05);
+  }
+
+  .legal-paper::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  .legal-paper::-webkit-scrollbar-track {
+    background: #eeeeeb;
+  }
+
+  .legal-paper::-webkit-scrollbar-thumb {
+    border: 2px solid #eeeeeb;
+    border-radius: 999px;
+    background: #777777;
+  }
+
+  .legal-paper-header {
+    padding-bottom: 28px;
+    border-bottom: 1px solid #222222;
+    text-align: center;
+  }
+
+  .legal-paper-header strong,
+  .legal-paper-header span,
+  .legal-paper-header small {
+    display: block;
+  }
+
+  .legal-paper-header strong {
+    margin-bottom: 18px;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .legal-paper-header span {
+    font-size: clamp(25px, 4vw, 36px);
+    line-height: 1.15;
+  }
+
+  .legal-paper-header small {
+    margin-top: 10px;
+    color: #666666;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    font-size: 11px;
+  }
+
+  .legal-copy-section {
+    margin-top: 34px;
+  }
+
+  .legal-copy-section h3 {
+    margin: 0 0 12px;
+    font-size: 18px;
+    line-height: 1.4;
+  }
+
+  .legal-copy-section p {
+    margin: 0 0 13px;
+    font-size: 15px;
+    line-height: 1.8;
+  }
+
+  .legal-end-marker {
+    margin-top: 46px;
+    padding: 22px 0 6px;
+    border-top: 1px solid #222222;
+    color: #555555;
+    font-family:
+      Inter,
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-align: center;
+    text-transform: uppercase;
+  }
+
+  .legal-scroll-hint {
+    margin: 12px 0 0;
+    color: #777777;
+    font-size: 11px;
+  }
+
+  .legal-confirmation {
+    margin-top: 20px;
+    padding: 17px 18px;
+    border: 1px solid #bbbbba;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    cursor: pointer;
+    background: #fafaf8;
+    color: #222222;
+    font-size: 13px;
+    line-height: 1.55;
+    transition:
+      border-color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .legal-confirmation:hover {
+    border-color: #777777;
+    background: #ffffff;
+  }
+
+  .legal-confirmation--disabled {
+    cursor: not-allowed;
+    opacity: 0.48;
+  }
+
+  .legal-confirmation input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .legal-custom-checkbox {
+    flex: 0 0 20px;
+    width: 20px;
+    height: 20px;
+    border: 1px solid #777777;
+    display: grid;
+    place-items: center;
+    color: #ffffff;
+    background: #ffffff;
+    font-family:
+      Inter,
+      sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .legal-confirmation
+    input:checked
+    + .legal-custom-checkbox {
+    border-color: #111111;
+    background: #111111;
+  }
+
+  .legal-alert,
+  .legal-notice {
+    margin-top: 22px;
+    padding: 14px 16px;
+    border: 1px solid #111111;
+    background: #ffffff;
+    font-size: 13px;
+    line-height: 1.55;
+  }
+
+  .legal-alert {
+    border-color: #8a2020;
+    color: #721c1c;
+  }
+
+  .legal-notice {
+    color: #222222;
+  }
+
+  .legal-action-panel {
+    margin-top: 30px;
+    padding: 24px;
+    border: 1px solid #ccccca;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 28px;
+    background: #ffffff;
+  }
+
+  .legal-action-panel strong {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+  }
+
+  .legal-action-panel p {
+    max-width: 570px;
+    margin: 0;
+    color: #666666;
+    font-size: 12px;
+    line-height: 1.6;
+  }
+
+  .legal-primary-button {
+    min-height: 46px;
+    padding: 0 22px;
+    border: 1px solid #111111;
+    border-radius: 0;
+    cursor: pointer;
+    white-space: nowrap;
+    background: #111111;
+    color: #ffffff;
+    font: inherit;
+    font-size: 13px;
+    font-weight: 700;
+    transition:
+      background 0.2s ease,
+      color 0.2s ease,
+      opacity 0.2s ease;
+  }
+
+  .legal-primary-button:hover:not(:disabled) {
+    background: #ffffff;
+    color: #111111;
+  }
+
+  .legal-primary-button:disabled {
+    cursor: not-allowed;
+    opacity: 0.3;
+  }
+
+  .legal-footer {
+    padding: 30px 2px 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 20px;
+    color: #777777;
+    font-size: 10px;
+  }
+
+  .legal-loading {
+    min-width: 220px;
+    text-align: center;
+    color: #555555;
+    font-size: 13px;
+  }
+
+  .legal-spinner {
+    width: 28px;
+    height: 28px;
+    margin: 0 auto 16px;
+    border: 2px solid #ddddda;
+    border-top-color: #111111;
+    border-radius: 50%;
+    animation: legal-spin 0.8s linear infinite;
+  }
+
+  .legal-error-card {
+    width: min(100%, 520px);
+    padding: 34px;
+    border: 1px solid #ccccca;
+    background: #ffffff;
+  }
+
+  .legal-error-card h1 {
+    margin: 22px 0 12px;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 30px;
+    font-weight: 500;
+  }
+
+  .legal-error-card p {
+    color: #666666;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .legal-error-card
+    .legal-primary-button {
+    margin-top: 20px;
+  }
+
+  @keyframes legal-spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  @media (max-width: 720px) {
+    .legal-header-inner,
+    .legal-page-shell {
+      width: min(100% - 24px, 920px);
+    }
+
+    .legal-header-inner {
+      min-height: 64px;
+    }
+
+    .legal-secure-label {
+      display: none;
+    }
+
+    .legal-page-shell {
+      padding-top: 36px;
+    }
+
+    .legal-intro h1 {
+      font-size: 38px;
+    }
+
+    .legal-progress-row {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+
+    .legal-document-card {
+      padding: 16px;
+    }
+
+    .legal-document-heading {
+      display: grid;
+      gap: 14px;
+    }
+
+    .legal-read-badge {
+      width: max-content;
+    }
+
+    .legal-paper {
+      height: 56vh;
+      min-height: 340px;
+      padding: 30px 20px;
+    }
+
+    .legal-copy-section p {
+      font-size: 14px;
+    }
+
+    .legal-action-panel {
+      align-items: stretch;
+      flex-direction: column;
+    }
+
+    .legal-primary-button {
+      width: 100%;
+    }
+
+    .legal-completed-row,
+    .legal-footer {
+      flex-direction: column;
+      gap: 6px;
+    }
+  }
+
+  @media (max-width: 420px) {
+    .legal-intro h1 {
+      font-size: 33px;
+    }
+
+    .legal-document-card {
+      padding: 12px;
+    }
+
+    .legal-paper {
+      height: 54vh;
+      min-height: 320px;
+      padding: 26px 17px;
+    }
+
+    .legal-confirmation {
+      padding: 14px;
+    }
+  }
+`;

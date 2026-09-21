@@ -15,6 +15,8 @@ import {
   homePathForRole,
 } from "./routes/ProtectedRoute.jsx";
 
+import LegalProtectedRoute from "./components/auth/LegalProtectedRoute.jsx";
+
 import AuthenticatedLayout from "./components/layout/AuthenticatedLayout.jsx";
 
 import LandingPage from "./pages/LandingPage.jsx";
@@ -25,6 +27,9 @@ import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import PhoneVerificationPage from "./pages/auth/PhoneVerificationPage.jsx";
 import RegistrationSuccessPage from "./pages/auth/RegistrationSuccessPage.jsx";
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
+
+import LegalAcceptancePage from "./pages/legal/LegalAcceptancePage.jsx";
+
 import NotFound from "./pages/NotFound.jsx";
 
 import {
@@ -96,6 +101,64 @@ function RedirectIfAuthenticated({
   }
 
   return children;
+}
+
+// =====================================================
+// LEGAL ACCEPTANCE ENTRY
+// =====================================================
+
+function LegalAcceptanceEntry() {
+  const {
+    isLoading,
+    mustChangePassword,
+  } = useAuth();
+
+  if (
+    isLoading
+  ) {
+    return (
+      <div
+        style={{
+          minHeight: "100vh",
+          display: "grid",
+          placeItems: "center",
+          background: "#f4f4f2",
+          color: "#111111",
+          fontFamily:
+            "Inter, system-ui, sans-serif",
+        }}
+      >
+        Checking your account...
+      </div>
+    );
+  }
+
+  /*
+   * Staff accounts that are required to
+   * change their temporary password must
+   * do that before legal acceptance.
+   *
+   * The backend's normal authorization
+   * policy requires:
+   *
+   * mustChangePassword = false
+   *
+   * for the legal API.
+   */
+  if (
+    mustChangePassword
+  ) {
+    return (
+      <Navigate
+        to="/change-password"
+        replace
+      />
+    );
+  }
+
+  return (
+    <LegalAcceptancePage />
+  );
 }
 
 // =====================================================
@@ -178,7 +241,7 @@ export default function App() {
       />
 
       {/* ============================= */}
-      {/* LEGAL */}
+      {/* PUBLIC LEGAL DOCUMENTS */}
       {/* ============================= */}
 
       <Route
@@ -223,226 +286,263 @@ export default function App() {
         </Route>
 
         {/* ============================= */}
-        {/* PATIENT */}
+        {/* REQUIRED LEGAL ACCEPTANCE */}
         {/* ============================= */}
 
+        {/*
+         * IMPORTANT:
+         *
+         * This route is authenticated,
+         * but is deliberately NOT inside
+         * LegalProtectedRoute.
+         *
+         * Otherwise a user who still has
+         * outstanding legal documents
+         * would be redirected back to this
+         * same route forever.
+         */}
         <Route
+          path="/legal-acceptance"
           element={
-            <RoleRoute
-              allow={[
-                "Patient",
-              ]}
-            />
+            <LegalAcceptanceEntry />
           }
-        >
-          <Route
-            path="/patient"
-            element={
-              <PatientLayoutWithTheme />
-            }
-          >
-            <Route
-              index
-              element={
-                <PatientDashboardPage />
-              }
-            />
-
-            <Route
-              path="medications"
-              element={
-                <PatientMedicationsPage />
-              }
-            />
-
-            <Route
-              path="appointments"
-              element={
-                <PatientAppointmentsPage />
-              }
-            />
-
-            <Route
-              path="records"
-              element={
-                <PatientRecordsPage />
-              }
-            />
-
-            <Route
-              path="clinics"
-              element={
-                <PatientNearestClinicsPage />
-              }
-            />
-
-            <Route
-              path="settings"
-              element={
-                <PatientSettingsPage />
-              }
-            />
-          </Route>
-        </Route>
+        />
 
         {/* ============================= */}
-        {/* PROXY */}
+        {/* LEGAL-COMPLIANT APPLICATION */}
         {/* ============================= */}
 
         <Route
           element={
-            <RoleRoute
-              allow={[
-                "Proxy",
-              ]}
-            />
-          }
-        >
-          <Route
-            path="/proxy"
-            element={
-              <ProxyAppLayout />
-            }
-          >
-            <Route
-              index
-              element={
-                <ProxyDashboard />
-              }
-            />
-
-            <Route
-              path="patients"
-              element={
-                <ProxyPatientsPage />
-              }
-            />
-
-            <Route
-              path="collections"
-              element={
-                <ProxyCollectionsPage />
-              }
-            />
-          </Route>
-        </Route>
-
-        {/* ============================= */}
-        {/* NURSE + ADMIN LAYOUT */}
-        {/* ============================= */}
-
-        <Route
-          element={
-            <AuthenticatedLayout />
+            <LegalProtectedRoute />
           }
         >
 
           {/* ============================= */}
-          {/* NURSE */}
+          {/* PATIENT */}
           {/* ============================= */}
 
           <Route
             element={
               <RoleRoute
                 allow={[
-                  "Nurse",
+                  "Patient",
                 ]}
               />
             }
           >
             <Route
-              path="/nurse"
+              path="/patient"
               element={
-                <NurseDashboard />
+                <PatientLayoutWithTheme />
               }
-            />
+            >
+              <Route
+                index
+                element={
+                  <PatientDashboardPage />
+                }
+              />
 
-            <Route
-              path="/nurse/patients"
-              element={
-                <NursePatientsPage />
-              }
-            />
+              <Route
+                path="medications"
+                element={
+                  <PatientMedicationsPage />
+                }
+              />
 
-            <Route
-              path="/nurse/collections"
-              element={
-                <CollectionsPage />
-              }
-            />
+              <Route
+                path="appointments"
+                element={
+                  <PatientAppointmentsPage />
+                }
+              />
+
+              <Route
+                path="records"
+                element={
+                  <PatientRecordsPage />
+                }
+              />
+
+              <Route
+                path="clinics"
+                element={
+                  <PatientNearestClinicsPage />
+                }
+              />
+
+              <Route
+                path="settings"
+                element={
+                  <PatientSettingsPage />
+                }
+              />
+            </Route>
           </Route>
 
           {/* ============================= */}
-          {/* CLINIC ADMIN + SUPER ADMIN */}
+          {/* PROXY */}
           {/* ============================= */}
 
           <Route
             element={
               <RoleRoute
                 allow={[
-                  "ClinicAdmin",
-                  "SuperAdmin",
+                  "Proxy",
                 ]}
               />
             }
           >
             <Route
-              path="/admin"
+              path="/proxy"
               element={
-                <AdminDashboard />
+                <ProxyAppLayout />
               }
-            />
+            >
+              <Route
+                index
+                element={
+                  <ProxyDashboard />
+                }
+              />
 
-            <Route
-              path="/admin/register-staff"
-              element={
-                <RegisterStaffPage />
-              }
-            />
+              <Route
+                path="patients"
+                element={
+                  <ProxyPatientsPage />
+                }
+              />
 
-            <Route
-              path="/admin/staff"
-              element={
-                <ManageStaffPage />
-              }
-            />
-
-            <Route
-              path="/admin/audit"
-              element={
-                <AdminAuditLogPage />
-              }
-            />
+              <Route
+                path="collections"
+                element={
+                  <ProxyCollectionsPage />
+                }
+              />
+            </Route>
           </Route>
 
           {/* ============================= */}
-          {/* SUPER ADMIN */}
+          {/* NURSE + ADMIN LAYOUT */}
           {/* ============================= */}
 
           <Route
             element={
-              <RoleRoute
-                allow={[
-                  "SuperAdmin",
-                ]}
-              />
+              <AuthenticatedLayout />
             }
           >
-            <Route
-              path="/admin/clinics"
-              element={
-                <ManageClinicsPage />
-              }
-            />
+
+            {/* ============================= */}
+            {/* NURSE */}
+            {/* ============================= */}
 
             <Route
-              path="/admin/register-clinic-admin"
               element={
-                <RegisterClinicAdminPage />
+                <RoleRoute
+                  allow={[
+                    "Nurse",
+                  ]}
+                />
               }
-            />
+            >
+              <Route
+                path="/nurse"
+                element={
+                  <NurseDashboard />
+                }
+              />
+
+              <Route
+                path="/nurse/patients"
+                element={
+                  <NursePatientsPage />
+                }
+              />
+
+              <Route
+                path="/nurse/collections"
+                element={
+                  <CollectionsPage />
+                }
+              />
+            </Route>
+
+            {/* ============================= */}
+            {/* CLINIC ADMIN + SUPER ADMIN */}
+            {/* ============================= */}
+
+            <Route
+              element={
+                <RoleRoute
+                  allow={[
+                    "ClinicAdmin",
+                    "SuperAdmin",
+                  ]}
+                />
+              }
+            >
+              <Route
+                path="/admin"
+                element={
+                  <AdminDashboard />
+                }
+              />
+
+              <Route
+                path="/admin/register-staff"
+                element={
+                  <RegisterStaffPage />
+                }
+              />
+
+              <Route
+                path="/admin/staff"
+                element={
+                  <ManageStaffPage />
+                }
+              />
+
+              <Route
+                path="/admin/audit"
+                element={
+                  <AdminAuditLogPage />
+                }
+              />
+            </Route>
+
+            {/* ============================= */}
+            {/* SUPER ADMIN */}
+            {/* ============================= */}
+
+            <Route
+              element={
+                <RoleRoute
+                  allow={[
+                    "SuperAdmin",
+                  ]}
+                />
+              }
+            >
+              <Route
+                path="/admin/clinics"
+                element={
+                  <ManageClinicsPage />
+                }
+              />
+
+              <Route
+                path="/admin/register-clinic-admin"
+                element={
+                  <RegisterClinicAdminPage />
+                }
+              />
+            </Route>
+
           </Route>
+
         </Route>
+
       </Route>
 
       {/* ============================= */}
@@ -455,6 +555,7 @@ export default function App() {
           <NotFound />
         }
       />
+
     </Routes>
   );
 }
