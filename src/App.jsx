@@ -27,6 +27,11 @@ import RegistrationSuccessPage from "./pages/auth/RegistrationSuccessPage.jsx";
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
 
+import {
+  PrivacyPolicyPage,
+  TermsOfUsePage,
+} from "./pages/legal/LegalPages.jsx";
+
 import PatientAppLayout from "./components/patient/AppLayout.jsx";
 import ThemePreferenceSync from "./components/patient/ThemePreferenceSync.jsx";
 
@@ -169,6 +174,24 @@ export default function App() {
         path="/register/success"
         element={
           <RegistrationSuccessPage />
+        }
+      />
+
+      {/* ============================= */}
+      {/* LEGAL */}
+      {/* ============================= */}
+
+      <Route
+        path="/privacy-policy"
+        element={
+          <PrivacyPolicyPage />
+        }
+      />
+
+      <Route
+        path="/terms-of-use"
+        element={
+          <TermsOfUsePage />
         }
       />
 
