@@ -78,6 +78,9 @@ export function AuthProvider({
         const token =
           tokenStore.getToken();
 
+        const cachedUser =
+          tokenStore.getUser();
+
         if (!token) {
           tokenStore.clear();
 
@@ -90,7 +93,9 @@ export function AuthProvider({
           return;
         }
 
-        setStatus("loading");
+        setStatus(
+          "loading"
+        );
 
         try {
           const currentUser =
@@ -107,9 +112,59 @@ export function AuthProvider({
           setStatus(
             "authenticated"
           );
-        } catch {
-          tokenStore.clear();
+        } catch (error) {
+          /*
+           * A 401 means the token is no longer valid.
+           * apiFetch already clears the session and invokes
+           * the unauthorized handler, but keep this branch
+           * explicit so authentication behaviour remains
+           * predictable.
+           */
+          if (
+            error instanceof
+              ApiError &&
+            error.status ===
+              401
+          ) {
+            tokenStore.clear();
 
+            setUser(null);
+
+            setStatus(
+              "unauthenticated"
+            );
+
+            return;
+          }
+
+          /*
+           * Do not destroy a valid-looking local session
+           * just because Render is waking up, the network
+           * is temporarily unavailable, or the API returns
+           * a transient server error.
+           *
+           * Protected API endpoints still validate the JWT.
+           * If the token really is expired, the first 401
+           * response will clear the session normally.
+           */
+          if (cachedUser) {
+            setUser(
+              cachedUser
+            );
+
+            setStatus(
+              "authenticated"
+            );
+
+            return;
+          }
+
+          /*
+           * There is a token but no cached user information.
+           * Without a confirmed user we cannot safely build
+           * an authenticated UI, but we also avoid deleting
+           * the token because the failure may be temporary.
+           */
           setUser(null);
 
           setStatus(
