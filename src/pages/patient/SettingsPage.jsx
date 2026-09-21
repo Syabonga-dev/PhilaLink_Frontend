@@ -8,6 +8,9 @@ import {
   AlertCircle,
   Bell,
   CheckCircle,
+  Eye,
+  EyeOff,
+  KeyRound,
   Mail,
   MapPin,
   Moon,
@@ -26,6 +29,10 @@ import {
 import {
   patientsApi,
 } from "../../services/api/patients.js";
+
+import {
+  useAuth,
+} from "../../context/AuthContext.jsx";
 
 const THEME_STORAGE_KEY =
   "philalink-theme";
@@ -56,6 +63,12 @@ const emptyPreferences = {
   shareHealthData: false,
   allowChatbotProfileAccess:
     false,
+};
+
+const emptyPasswords = {
+  currentPassword: "",
+  newPassword: "",
+  confirmNewPassword: "",
 };
 
 function fieldValue(value) {
@@ -129,7 +142,52 @@ function getInitialTheme() {
   }
 }
 
+function getPasswordRequirements(
+  password
+) {
+  return {
+    length:
+      password.length >=
+      12,
+
+    uppercase:
+      /[A-Z]/.test(
+        password
+      ),
+
+    lowercase:
+      /[a-z]/.test(
+        password
+      ),
+
+    number:
+      /\d/.test(
+        password
+      ),
+
+    special:
+      /[^A-Za-z0-9]/.test(
+        password
+      ),
+  };
+}
+
+function passwordIsValid(
+  password
+) {
+  return Object.values(
+    getPasswordRequirements(
+      password
+    )
+  ).every(Boolean);
+}
+
 export default function SettingsPage() {
+  const {
+    changePassword,
+  } =
+    useAuth();
+
   const [
     profile,
     setProfile,
@@ -176,6 +234,53 @@ export default function SettingsPage() {
     getInitialTheme
   );
 
+  const [
+    passwords,
+    setPasswords,
+  ] = useState(
+    emptyPasswords
+  );
+
+  const [
+    passwordErrors,
+    setPasswordErrors,
+  ] = useState({});
+
+  const [
+    passwordError,
+    setPasswordError,
+  ] = useState("");
+
+  const [
+    passwordSuccess,
+    setPasswordSuccess,
+  ] = useState("");
+
+  const [
+    changingPassword,
+    setChangingPassword,
+  ] = useState(false);
+
+  const [
+    showCurrentPassword,
+    setShowCurrentPassword,
+  ] = useState(false);
+
+  const [
+    showNewPassword,
+    setShowNewPassword,
+  ] = useState(false);
+
+  const [
+    showConfirmPassword,
+    setShowConfirmPassword,
+  ] = useState(false);
+
+  const passwordRequirements =
+    getPasswordRequirements(
+      passwords.newPassword
+    );
+
   const loadSettings =
     useCallback(
       async () => {
@@ -190,6 +295,7 @@ export default function SettingsPage() {
             await Promise.all([
               patientsApi
                 .getMe(),
+
               patientsApi
                 .getPreferences(),
             ]);
@@ -317,7 +423,9 @@ export default function SettingsPage() {
                   ?.allowChatbotProfileAccess
               ),
           });
-        } catch (err) {
+        } catch (
+          err
+        ) {
           console.error(
             "Failed to load settings:",
             err
@@ -336,31 +444,36 @@ export default function SettingsPage() {
       []
     );
 
-  useEffect(() => {
-    loadSettings();
-  }, [
-    loadSettings,
-  ]);
+  useEffect(
+    () => {
+      void loadSettings();
+    },
+    [
+      loadSettings,
+    ]
+  );
 
-  useEffect(() => {
-    document.documentElement
-      .setAttribute(
-        "data-theme",
-        theme
-      );
+  useEffect(
+    () => {
+      document.documentElement
+        .setAttribute(
+          "data-theme",
+          theme
+        );
 
-    try {
-      localStorage.setItem(
-        THEME_STORAGE_KEY,
-        theme
-      );
-    } catch {
-      // Theme still works for
-      // the current session.
-    }
-  }, [
-    theme,
-  ]);
+      try {
+        localStorage.setItem(
+          THEME_STORAGE_KEY,
+          theme
+        );
+      } catch {
+        // Theme still works for the current session.
+      }
+    },
+    [
+      theme,
+    ]
+  );
 
   function handleProfileChange(
     event
@@ -368,14 +481,18 @@ export default function SettingsPage() {
     const {
       name,
       value,
-    } = event.target;
+    } =
+      event.target;
 
     setProfile(
       (current) => ({
         ...current,
-        [name]: value,
+        [name]:
+          value,
       })
     );
+
+    setSuccess("");
   }
 
   function togglePreference(
@@ -386,6 +503,7 @@ export default function SettingsPage() {
     setPreferences(
       (current) => ({
         ...current,
+
         [key]:
           !current[key],
       })
@@ -400,6 +518,37 @@ export default function SettingsPage() {
           ? "dark"
           : "light"
     );
+  }
+
+  function handlePasswordChange(
+    event
+  ) {
+    const {
+      name,
+      value,
+    } =
+      event.target;
+
+    setPasswords(
+      (current) => ({
+        ...current,
+
+        [name]:
+          value,
+      })
+    );
+
+    setPasswordErrors(
+      (current) => ({
+        ...current,
+
+        [name]:
+          undefined,
+      })
+    );
+
+    setPasswordError("");
+    setPasswordSuccess("");
   }
 
   async function handleSave() {
@@ -488,7 +637,9 @@ export default function SettingsPage() {
       setSuccess(
         "Your settings have been saved."
       );
-    } catch (err) {
+    } catch (
+      err
+    ) {
       console.error(
         "Failed to save settings:",
         err
@@ -500,6 +651,150 @@ export default function SettingsPage() {
       );
     } finally {
       setSaving(false);
+    }
+  }
+
+  function validatePasswordChange() {
+    const next = {};
+
+    if (
+      !passwords
+        .currentPassword
+    ) {
+      next.currentPassword =
+        "Enter your current password.";
+    }
+
+    if (
+      !passwords
+        .newPassword
+    ) {
+      next.newPassword =
+        "Enter a new password.";
+    } else if (
+      !passwordIsValid(
+        passwords
+          .newPassword
+      )
+    ) {
+      next.newPassword =
+        "Your new password must meet all the requirements below.";
+    }
+
+    if (
+      !passwords
+        .confirmNewPassword
+    ) {
+      next.confirmNewPassword =
+        "Confirm your new password.";
+    } else if (
+      passwords
+        .newPassword !==
+      passwords
+        .confirmNewPassword
+    ) {
+      next.confirmNewPassword =
+        "Passwords don't match.";
+    }
+
+    if (
+      passwords
+        .currentPassword &&
+      passwords
+        .newPassword &&
+      passwords
+        .currentPassword ===
+        passwords
+          .newPassword
+    ) {
+      next.newPassword =
+        "Your new password must be different from your current password.";
+    }
+
+    setPasswordErrors(
+      next
+    );
+
+    return (
+      Object.keys(
+        next
+      ).length ===
+      0
+    );
+  }
+
+  async function handleChangePassword(
+    event
+  ) {
+    event.preventDefault();
+
+    setPasswordError("");
+    setPasswordSuccess("");
+
+    if (
+      !validatePasswordChange()
+    ) {
+      return;
+    }
+
+    try {
+      setChangingPassword(
+        true
+      );
+
+      await changePassword({
+        currentPassword:
+          passwords
+            .currentPassword,
+
+        newPassword:
+          passwords
+            .newPassword,
+
+        confirmNewPassword:
+          passwords
+            .confirmNewPassword,
+      });
+
+      setPasswords(
+        emptyPasswords
+      );
+
+      setPasswordErrors(
+        {}
+      );
+
+      setShowCurrentPassword(
+        false
+      );
+
+      setShowNewPassword(
+        false
+      );
+
+      setShowConfirmPassword(
+        false
+      );
+
+      setPasswordSuccess(
+        "Your password has been changed successfully."
+      );
+    } catch (
+      err
+    ) {
+      console.error(
+        "Failed to change password:",
+        err
+      );
+
+      setPasswordError(
+        err?.message ||
+          "We could not change your password. Please try again."
+      );
+    } finally {
+      setChangingPassword(
+        false
+      );
     }
   }
 
@@ -531,6 +826,7 @@ export default function SettingsPage() {
 
           <p className="mt-1 text-sm text-slate-500">
             Manage your profile,
+            security,
             notifications,
             privacy and appearance.
           </p>
@@ -576,6 +872,11 @@ export default function SettingsPage() {
 
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="flex min-w-0 flex-col gap-6 xl:col-span-2">
+
+            {/* ================================================= */}
+            {/* PERSONAL INFORMATION */}
+            {/* ================================================= */}
+
             <SettingsSection
               icon={User}
               title="Personal information"
@@ -678,6 +979,10 @@ export default function SettingsPage() {
               </div>
             </SettingsSection>
 
+            {/* ================================================= */}
+            {/* ADDRESS */}
+            {/* ================================================= */}
+
             <SettingsSection
               icon={MapPin}
               title="Address"
@@ -760,6 +1065,10 @@ export default function SettingsPage() {
               </div>
             </SettingsSection>
 
+            {/* ================================================= */}
+            {/* EMERGENCY CONTACT */}
+            {/* ================================================= */}
+
             <SettingsSection
               icon={Phone}
               title="Emergency contact"
@@ -806,6 +1115,209 @@ export default function SettingsPage() {
                 </div>
               </div>
             </SettingsSection>
+
+            {/* ================================================= */}
+            {/* SECURITY */}
+            {/* ================================================= */}
+
+            <SettingsSection
+              icon={KeyRound}
+              title="Account security"
+              description="Change your PhilaLink account password."
+            >
+              <form
+                onSubmit={
+                  handleChangePassword
+                }
+                noValidate
+              >
+                {passwordError && (
+                  <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
+                    <AlertCircle
+                      size={17}
+                      className="mt-0.5 shrink-0 text-red-600"
+                    />
+
+                    <p className="text-sm text-slate-900">
+                      {
+                        passwordError
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {passwordSuccess && (
+                  <div className="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
+                    <CheckCircle
+                      size={17}
+                      className="mt-0.5 shrink-0 text-green-600"
+                    />
+
+                    <p className="text-sm text-slate-900">
+                      {
+                        passwordSuccess
+                      }
+                    </p>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-1 gap-5">
+                  <PasswordField
+                    label="Current password"
+                    name="currentPassword"
+                    value={
+                      passwords
+                        .currentPassword
+                    }
+                    onChange={
+                      handlePasswordChange
+                    }
+                    error={
+                      passwordErrors
+                        .currentPassword
+                    }
+                    show={
+                      showCurrentPassword
+                    }
+                    onToggle={() =>
+                      setShowCurrentPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                    autoComplete="current-password"
+                  />
+
+                  <PasswordField
+                    label="New password"
+                    name="newPassword"
+                    value={
+                      passwords
+                        .newPassword
+                    }
+                    onChange={
+                      handlePasswordChange
+                    }
+                    error={
+                      passwordErrors
+                        .newPassword
+                    }
+                    show={
+                      showNewPassword
+                    }
+                    onToggle={() =>
+                      setShowNewPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                    autoComplete="new-password"
+                  />
+
+                  <PasswordField
+                    label="Confirm new password"
+                    name="confirmNewPassword"
+                    value={
+                      passwords
+                        .confirmNewPassword
+                    }
+                    onChange={
+                      handlePasswordChange
+                    }
+                    error={
+                      passwordErrors
+                        .confirmNewPassword
+                    }
+                    show={
+                      showConfirmPassword
+                    }
+                    onToggle={() =>
+                      setShowConfirmPassword(
+                        (current) =>
+                          !current
+                      )
+                    }
+                    autoComplete="new-password"
+                  />
+                </div>
+
+                <div className="mt-5 rounded-xl bg-slate-50 p-4">
+                  <p className="text-sm font-medium text-slate-800">
+                    Your new password must contain:
+                  </p>
+
+                  <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <PasswordRequirement
+                      met={
+                        passwordRequirements
+                          .length
+                      }
+                    >
+                      At least 12 characters
+                    </PasswordRequirement>
+
+                    <PasswordRequirement
+                      met={
+                        passwordRequirements
+                          .uppercase
+                      }
+                    >
+                      1 uppercase letter
+                    </PasswordRequirement>
+
+                    <PasswordRequirement
+                      met={
+                        passwordRequirements
+                          .lowercase
+                      }
+                    >
+                      1 lowercase letter
+                    </PasswordRequirement>
+
+                    <PasswordRequirement
+                      met={
+                        passwordRequirements
+                          .number
+                      }
+                    >
+                      1 number
+                    </PasswordRequirement>
+
+                    <PasswordRequirement
+                      met={
+                        passwordRequirements
+                          .special
+                      }
+                    >
+                      1 special character
+                    </PasswordRequirement>
+                  </div>
+                </div>
+
+                <div className="mt-5 flex justify-end">
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    iconStart={
+                      <KeyRound
+                        size={16}
+                      />
+                    }
+                    disabled={
+                      changingPassword
+                    }
+                  >
+                    {changingPassword
+                      ? "Changing password..."
+                      : "Change password"}
+                  </Button>
+                </div>
+              </form>
+            </SettingsSection>
+
+            {/* ================================================= */}
+            {/* NOTIFICATIONS */}
+            {/* ================================================= */}
 
             <SettingsSection
               icon={Bell}
@@ -871,6 +1383,10 @@ export default function SettingsPage() {
               </div>
             </SettingsSection>
 
+            {/* ================================================= */}
+            {/* PRIVACY */}
+            {/* ================================================= */}
+
             <SettingsSection
               icon={Shield}
               title="Privacy"
@@ -929,9 +1445,15 @@ export default function SettingsPage() {
             </div>
           </div>
 
+          {/* ================================================= */}
+          {/* RIGHT SIDEBAR */}
+          {/* ================================================= */}
+
           <aside className="flex min-w-0 flex-col gap-6">
             <ThemeCard
-              theme={theme}
+              theme={
+                theme
+              }
               onToggle={
                 toggleTheme
               }
@@ -1057,12 +1579,17 @@ export default function SettingsPage() {
   );
 }
 
+/* =========================================================
+   APPEARANCE CARD
+========================================================= */
+
 function ThemeCard({
   theme,
   onToggle,
 }) {
   const isDark =
-    theme === "dark";
+    theme ===
+    "dark";
 
   return (
     <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -1151,6 +1678,10 @@ function ThemeCard({
   );
 }
 
+/* =========================================================
+   GENERIC SETTINGS SECTION
+========================================================= */
+
 function SettingsSection({
   icon: Icon,
   title,
@@ -1186,6 +1717,10 @@ function SettingsSection({
     </section>
   );
 }
+
+/* =========================================================
+   STANDARD FIELD
+========================================================= */
 
 function Field({
   label,
@@ -1231,6 +1766,127 @@ function Field({
   );
 }
 
+/* =========================================================
+   PASSWORD FIELD
+========================================================= */
+
+function PasswordField({
+  label,
+  name,
+  value,
+  onChange,
+  error,
+  show,
+  onToggle,
+  autoComplete,
+}) {
+  return (
+    <div className="min-w-0">
+      <label
+        htmlFor={name}
+        className="mb-2 block text-sm font-medium text-slate-700"
+      >
+        {label}
+      </label>
+
+      <div className="relative">
+        <input
+          id={name}
+          name={name}
+          type={
+            show
+              ? "text"
+              : "password"
+          }
+          value={
+            value
+          }
+          onChange={
+            onChange
+          }
+          autoComplete={
+            autoComplete
+          }
+          className={`h-11 w-full rounded-xl bg-white pl-4 pr-12 text-sm text-slate-900 outline-none transition placeholder:text-slate-400 focus:ring-2 ${
+            error
+              ? "border border-red-400 focus:border-red-500 focus:ring-red-500/10"
+              : "border border-slate-300 focus:border-teal-600 focus:ring-teal-600/10"
+          }`}
+        />
+
+        <button
+          type="button"
+          onClick={
+            onToggle
+          }
+          className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20"
+          aria-label={
+            show
+              ? `Hide ${label.toLowerCase()}`
+              : `Show ${label.toLowerCase()}`
+          }
+        >
+          {show ? (
+            <EyeOff
+              size={17}
+            />
+          ) : (
+            <Eye
+              size={17}
+            />
+          )}
+        </button>
+      </div>
+
+      {error && (
+        <p className="mt-1.5 text-xs text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+/* =========================================================
+   PASSWORD REQUIREMENT
+========================================================= */
+
+function PasswordRequirement({
+  met,
+  children,
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span
+        aria-hidden="true"
+        className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-bold ${
+          met
+            ? "bg-green-100 text-green-700"
+            : "bg-slate-200 text-slate-500"
+        }`}
+      >
+        {met
+          ? "✓"
+          : "○"}
+      </span>
+
+      <span
+        className={`text-xs ${
+          met
+            ? "text-green-700"
+            : "text-slate-500"
+        }`}
+      >
+        {children}
+      </span>
+    </div>
+  );
+}
+
+/* =========================================================
+   INFORMATION ITEM
+========================================================= */
+
 function InfoItem({
   label,
   value,
@@ -1247,6 +1903,10 @@ function InfoItem({
     </div>
   );
 }
+
+/* =========================================================
+   TOGGLE
+========================================================= */
 
 function SettingToggle({
   title,
