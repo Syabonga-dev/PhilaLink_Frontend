@@ -14,6 +14,7 @@ import {
 import {
   Bell,
   CalendarDays,
+  CheckCheck,
   ClipboardList,
   Home,
   LogOut,
@@ -192,6 +193,16 @@ export default function AppLayout() {
     setNotificationsError,
   ] = useState("");
 
+  const [
+    notificationActionError,
+    setNotificationActionError,
+  ] = useState("");
+
+  const [
+    markingAllRead,
+    setMarkingAllRead,
+  ] = useState(false);
+
   const location =
     useLocation();
 
@@ -247,6 +258,10 @@ export default function AppLayout() {
           if (!background) {
             setNotificationsLoading(
               true
+            );
+
+            setNotificationActionError(
+              ""
             );
           }
 
@@ -374,7 +389,7 @@ export default function AppLayout() {
     );
 
   // =========================================================
-  // MARK NOTIFICATION READ
+  // MARK ONE NOTIFICATION READ
   // =========================================================
 
   const handleNotificationClick =
@@ -387,6 +402,10 @@ export default function AppLayout() {
       ) {
         return;
       }
+
+      setNotificationActionError(
+        ""
+      );
 
       try {
         await notificationsApi
@@ -413,6 +432,67 @@ export default function AppLayout() {
         console.error(
           "Failed to mark notification as read:",
           error
+        );
+
+        setNotificationActionError(
+          error?.message ||
+            "Could not mark this notification as read."
+        );
+      }
+    };
+
+  // =========================================================
+  // MARK ALL NOTIFICATIONS READ
+  // =========================================================
+
+  const handleMarkAllRead =
+    async () => {
+      if (
+        markingAllRead ||
+        unreadNotifications.length ===
+          0
+      ) {
+        return;
+      }
+
+      try {
+        setMarkingAllRead(
+          true
+        );
+
+        setNotificationActionError(
+          ""
+        );
+
+        await notificationsApi
+          .markAllRead();
+
+        setNotifications(
+          (current) =>
+            current.map(
+              (
+                notification
+              ) => ({
+                ...notification,
+                isRead: true,
+              })
+            )
+        );
+      } catch (
+        error
+      ) {
+        console.error(
+          "Failed to mark all notifications as read:",
+          error
+        );
+
+        setNotificationActionError(
+          error?.message ||
+            "Could not mark all notifications as read."
+        );
+      } finally {
+        setMarkingAllRead(
+          false
         );
       }
     };
@@ -640,6 +720,10 @@ export default function AppLayout() {
                       if (
                         next
                       ) {
+                        setNotificationActionError(
+                          ""
+                        );
+
                         void loadNotifications({
                           background: true,
                         });
@@ -677,7 +761,7 @@ export default function AppLayout() {
               {/* ================================================= */}
 
               {notificationsOpen && (
-                <div className="fixed left-3 right-3 top-[68px] z-[2100] max-h-[calc(100dvh-80px)] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[min(360px,calc(100vw-2rem))] sm:max-h-none">
+                <div className="fixed left-3 right-3 top-[68px] z-[2100] max-h-[calc(100dvh-80px)] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[min(380px,calc(100vw-2rem))] sm:max-h-none">
 
                   <div className="border-b border-[#e2e8f0] px-4 py-3 sm:px-5 sm:py-4">
 
@@ -718,16 +802,51 @@ export default function AppLayout() {
                       </div>
                     </div>
 
-                    <p className="mt-1 text-xs text-[#64748b]">
-                      Your latest PhilaLink updates
-                    </p>
+                    <div className="mt-1 flex items-center justify-between gap-3">
+
+                      <p className="min-w-0 text-xs text-[#64748b]">
+                        Your latest PhilaLink updates
+                      </p>
+
+                      {unreadNotifications.length >
+                        0 && (
+                        <button
+                          type="button"
+                          onClick={
+                            handleMarkAllRead
+                          }
+                          disabled={
+                            markingAllRead
+                          }
+                          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-[#0f766e] transition hover:bg-[#f0fdfa] disabled:cursor-not-allowed disabled:opacity-50"
+                        >
+                          <CheckCheck
+                            size={
+                              14
+                            }
+                          />
+
+                          {markingAllRead
+                            ? "Marking..."
+                            : "Mark all read"}
+                        </button>
+                      )}
+                    </div>
+
+                    {notificationActionError && (
+                      <p className="mt-2 text-xs text-[#dc2626]">
+                        {
+                          notificationActionError
+                        }
+                      </p>
+                    )}
                   </div>
 
                   {/* ================================================= */}
                   {/* NOTIFICATION LIST */}
                   {/* ================================================= */}
 
-                  <div className="max-h-[calc(100dvh-165px)] divide-y divide-[#e2e8f0] overflow-y-auto overscroll-contain sm:max-h-[360px]">
+                  <div className="max-h-[calc(100dvh-190px)] divide-y divide-[#e2e8f0] overflow-y-auto overscroll-contain sm:max-h-[360px]">
 
                     {notificationsLoading ? (
                       <div className="px-5 py-6 text-center">
