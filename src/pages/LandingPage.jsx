@@ -19,7 +19,6 @@ import {
   Users,
 } from "lucide-react";
 
-import NavigationPage from "../components/layout/NavigationBar.jsx";
 
 import heroImage from "../assets/Screenshot_20260918-165155_Chrome.jpg";
 
@@ -186,7 +185,7 @@ export default function LandingPage() {
 
   return (
     <div className="landing-page">
-      <NavigationPage />
+     
 
 
       {/* ===================================== */}
