@@ -105,10 +105,11 @@ function initialsFromName(name) {
     return "PX";
   }
 
-  const parts = String(name)
-    .trim()
-    .split(/\s+/)
-    .filter(Boolean);
+  const parts =
+    String(name)
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean);
 
   if (
     parts.length === 1
@@ -166,6 +167,30 @@ export default function ProxyAppLayout() {
     user,
     logout,
   } = useAuth();
+
+  /* ===================================== */
+  /* PROXY THEME */
+  /* ===================================== */
+
+  useEffect(() => {
+    /*
+     * The Proxy Portal currently uses a fixed light theme.
+     *
+     * Patient theme preferences are applied to the root
+     * document using data-theme. Without resetting that
+     * value here, a Patient's previously selected dark
+     * theme can carry over when a Proxy logs in using the
+     * same browser.
+     *
+     * Do not save this value to localStorage because the
+     * Patient Portal maintains its own database-backed
+     * theme preference.
+     */
+    document.documentElement.setAttribute(
+      "data-theme",
+      "light"
+    );
+  }, []);
 
   const [
     mobileOpen,
@@ -335,6 +360,7 @@ export default function ProxyAppLayout() {
 
   useEffect(() => {
     setMobileOpen(false);
+
     setNotificationsOpen(
       false
     );

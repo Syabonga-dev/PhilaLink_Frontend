@@ -234,6 +234,16 @@ export default function RegisterStaffPage() {
         "Enter the emergency contact relationship.";
     }
 
+    /*
+     * BOTH Nurses and Proxies must belong to a clinic.
+     */
+    if (!form.clinicId) {
+      next.clinicId =
+        form.role === "Proxy"
+          ? "Select the clinic where this Proxy is registered."
+          : "Select a clinic.";
+    }
+
     if (
       form.role === "Nurse"
     ) {
@@ -256,11 +266,6 @@ export default function RegisterStaffPage() {
       ) {
         next.qualification =
           "Enter the nurse's qualification.";
-      }
-
-      if (!form.clinicId) {
-        next.clinicId =
-          "Select a clinic.";
       }
 
       if (
@@ -300,6 +305,13 @@ export default function RegisterStaffPage() {
 
       email:
         form.email.trim(),
+
+      /*
+       * ClinicId is now required for
+       * both Nurse and Proxy accounts.
+       */
+      clinicId:
+        form.clinicId,
 
       addressLine1:
         form.addressLine1.trim(),
@@ -350,9 +362,6 @@ export default function RegisterStaffPage() {
 
         qualification:
           form.qualification.trim(),
-
-        clinicId:
-          form.clinicId,
 
         employmentDate:
           form.employmentDate,
@@ -528,7 +537,7 @@ export default function RegisterStaffPage() {
     <Card className="mx-auto max-w-3xl">
       <CardHeader
         title="Register a Nurse or Proxy account"
-        subtitle="Patient self-registration is separate. Staff and proxy accounts are provisioned here."
+        subtitle="Patient self-registration is separate. Nurse and Proxy accounts must be assigned to a clinic."
       />
 
       <CardBody>
@@ -666,6 +675,75 @@ export default function RegisterStaffPage() {
             </div>
           </section>
 
+          <section className="space-y-4">
+            <h3 className="text-sm font-semibold text-on-surface">
+              Clinic
+            </h3>
+
+            <p className="text-sm text-on-surface-variant">
+              {form.role === "Proxy"
+                ? "The Proxy will only be able to manage linked patients and collections from this clinic."
+                : "Select the clinic where this Nurse works."}
+            </p>
+
+            {clinicsLoading ? (
+              <div className="rounded-md border border-outline-variant/60 p-4">
+                <Spinner label="Loading clinics…" />
+              </div>
+            ) : clinicsError ? (
+              <ErrorState
+                description={
+                  clinicsError.message
+                }
+                onRetry={
+                  refetchClinics
+                }
+              />
+            ) : clinicList.length ===
+              0 ? (
+              <EmptyState
+                icon="local_hospital"
+                title="No active clinics available"
+                description={`A clinic must exist before a ${form.role} can be registered.`}
+              />
+            ) : (
+              <Select
+                label="Clinic"
+                value={
+                  form.clinicId
+                }
+                onChange={set(
+                  "clinicId"
+                )}
+                error={
+                  errors.clinicId
+                }
+              >
+                <option value="">
+                  Select clinic
+                </option>
+
+                {clinicList.map(
+                  (clinic) => (
+                    <option
+                      key={
+                        clinic.id
+                      }
+                      value={
+                        clinic.id
+                      }
+                    >
+                      {clinic.name}
+                      {clinic.type
+                        ? ` — ${clinic.type}`
+                        : ""}
+                    </option>
+                  )
+                )}
+              </Select>
+            )}
+          </section>
+
           {form.role ===
             "Nurse" && (
             <section className="space-y-4">
@@ -713,63 +791,6 @@ export default function RegisterStaffPage() {
                   errors.qualification
                 }
               />
-
-              {clinicsLoading ? (
-                <div className="rounded-md border border-outline-variant/60 p-4">
-                  <Spinner label="Loading clinics…" />
-                </div>
-              ) : clinicsError ? (
-                <ErrorState
-                  description={
-                    clinicsError.message
-                  }
-                  onRetry={
-                    refetchClinics
-                  }
-                />
-              ) : clinicList.length ===
-                0 ? (
-                <EmptyState
-                  icon="local_hospital"
-                  title="No active clinics available"
-                  description="A clinic must exist before a Nurse can be assigned."
-                />
-              ) : (
-                <Select
-                  label="Clinic"
-                  value={
-                    form.clinicId
-                  }
-                  onChange={set(
-                    "clinicId"
-                  )}
-                  error={
-                    errors.clinicId
-                  }
-                >
-                  <option value="">
-                    Select clinic
-                  </option>
-
-                  {clinicList.map(
-                    (clinic) => (
-                      <option
-                        key={
-                          clinic.id
-                        }
-                        value={
-                          clinic.id
-                        }
-                      >
-                        {clinic.name}
-                        {clinic.type
-                          ? ` — ${clinic.type}`
-                          : ""}
-                      </option>
-                    )
-                  )}
-                </Select>
-              )}
 
               <Input
                 label="Employment date"
@@ -945,11 +966,10 @@ export default function RegisterStaffPage() {
             className="w-full"
             loading={loading}
             disabled={
-              form.role === "Nurse" &&
-              (clinicsLoading ||
-                clinicsError ||
-                clinicList.length ===
-                  0)
+              clinicsLoading ||
+              Boolean(clinicsError) ||
+              clinicList.length ===
+                0
             }
           >
             {loading

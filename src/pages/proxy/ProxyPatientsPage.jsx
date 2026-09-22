@@ -39,29 +39,6 @@ const PAGE_SIZE = 20;
 /* HELPERS */
 /* ========================================= */
 
-function getInitials(name) {
-  if (!name) {
-    return "PT";
-  }
-
-  const parts =
-    String(name)
-      .trim()
-      .split(/\s+/)
-      .filter(Boolean);
-
-  if (
-    parts.length === 1
-  ) {
-    return parts[0]
-      .slice(0, 2)
-      .toUpperCase();
-  }
-
-  return `${parts[0][0]}${parts[parts.length - 1][0]}`
-    .toUpperCase();
-}
-
 function getPatientStatusKey(
   patient
 ) {
@@ -166,11 +143,6 @@ export default function ProxyPatientsPage() {
   ] = useState("");
 
   const [
-    clinic,
-    setClinic,
-  ] = useState("all");
-
-  const [
     status,
     setStatus,
   ] = useState(
@@ -262,28 +234,6 @@ export default function ProxyPatientsPage() {
       : [];
 
   /* ===================================== */
-  /* CLINICS */
-  /* ===================================== */
-
-  const clinics =
-    useMemo(
-      () =>
-        Array.from(
-          new Set(
-            patients
-              .map(
-                (patient) =>
-                  patient.clinicName
-              )
-              .filter(Boolean)
-          )
-        ).sort(),
-      [
-        patients,
-      ]
-    );
-
-  /* ===================================== */
   /* FILTER */
   /* ===================================== */
 
@@ -303,7 +253,6 @@ export default function ProxyPatientsPage() {
                 [
                   patient.patientName,
                   patient.patientNumber,
-                  patient.clinicName,
                 ]
                   .filter(Boolean)
                   .some(
@@ -314,12 +263,6 @@ export default function ProxyPatientsPage() {
                           term
                         )
                   );
-
-              const matchesClinic =
-                clinic ===
-                  "all" ||
-                patient.clinicName ===
-                  clinic;
 
               const patientStatus =
                 getPatientStatusKey(
@@ -334,7 +277,6 @@ export default function ProxyPatientsPage() {
 
               return (
                 matchesSearch &&
-                matchesClinic &&
                 matchesStatus
               );
             }
@@ -412,14 +354,13 @@ export default function ProxyPatientsPage() {
       [
         patients,
         search,
-        clinic,
         status,
         sort,
       ]
     );
 
   /* ===================================== */
-  /* FILTER ACTION */
+  /* FILTER ACTIONS */
   /* ===================================== */
 
   function handleStatusChange(
@@ -452,11 +393,15 @@ export default function ProxyPatientsPage() {
 
   function clearFilters() {
     setSearch("");
-    setClinic("all");
+
     setSort(
       "collection"
     );
-    setStatus("all");
+
+    setStatus(
+      "all"
+    );
+
     setSearchParams({});
   }
 
@@ -468,7 +413,6 @@ export default function ProxyPatientsPage() {
     setCurrentPage(1);
   }, [
     search,
-    clinic,
     status,
     sort,
   ]);
@@ -510,7 +454,6 @@ export default function ProxyPatientsPage() {
 
   const hasFilters =
     Boolean(search) ||
-    clinic !== "all" ||
     status !== "all" ||
     sort !==
       "collection";
@@ -549,8 +492,10 @@ export default function ProxyPatientsPage() {
       {/* FILTERS */}
 
       <section className="mb-lg rounded-corner-lg border border-border-secondary bg-surface-bg p-md sm:p-lg lg:p-xl">
-        <div className="grid grid-cols-1 gap-md md:grid-cols-2 xl:grid-cols-[minmax(280px,1fr)_220px_190px_190px]">
-          <div className="relative md:col-span-2 xl:col-span-1">
+        <div className="grid grid-cols-1 gap-md md:grid-cols-3">
+          {/* SEARCH */}
+
+          <div className="relative md:col-span-1">
             <Search
               size={17}
               className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-text-tertiary"
@@ -566,7 +511,7 @@ export default function ProxyPatientsPage() {
                   event.target.value
                 )
               }
-              placeholder="Search patient, number or clinic"
+              placeholder="Search patient or number"
               className="h-11 w-full rounded-corner-md border border-border-secondary bg-white pl-10 pr-10 text-label-sm text-text-primary outline-none"
             />
 
@@ -585,32 +530,7 @@ export default function ProxyPatientsPage() {
             )}
           </div>
 
-          <select
-            value={clinic}
-            onChange={(
-              event
-            ) =>
-              setClinic(
-                event.target.value
-              )
-            }
-            className="h-11 rounded-corner-md border border-border-secondary bg-white px-3 text-label-sm text-text-secondary"
-          >
-            <option value="all">
-              All clinics
-            </option>
-
-            {clinics.map(
-              (name) => (
-                <option
-                  key={name}
-                  value={name}
-                >
-                  {name}
-                </option>
-              )
-            )}
-          </select>
+          {/* STATUS */}
 
           <select
             value={status}
@@ -643,6 +563,8 @@ export default function ProxyPatientsPage() {
               No collection
             </option>
           </select>
+
+          {/* SORT */}
 
           <select
             value={sort}
