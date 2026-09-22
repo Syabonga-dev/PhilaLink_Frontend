@@ -17,6 +17,7 @@ import {
   CalendarClock,
   CircleAlert,
   Clock3,
+  Cookie,
   Home,
   LogOut,
   Menu,
@@ -33,7 +34,6 @@ import {
 import {
   notificationsApi,
 } from "../../services/api/notifications.js";
-
 /* ========================================= */
 /* SIDEBAR ITEMS */
 /* ========================================= */
@@ -434,6 +434,16 @@ export default function ProxyAppLayout() {
     }
   }
 
+  function openCookieSettings() {
+  window.dispatchEvent(
+    new Event(
+      "philalink:open-cookie-settings"
+    )
+  );
+
+  setMobileOpen(false);
+}
+
   function handleLogout() {
     logout();
 
@@ -604,6 +614,20 @@ export default function ProxyAppLayout() {
               </div>
             </div>
           </div>
+
+          <button
+              type="button"
+              onClick={
+                openCookieSettings
+              }
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#64748b] transition hover:bg-[#f1f5f9] hover:text-[#0f172a]"
+            >
+              <Cookie
+                size={19}
+              />
+
+              Cookie settings
+            </button>
 
           <button
             type="button"

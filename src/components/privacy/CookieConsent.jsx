@@ -4,6 +4,10 @@ import {
 } from "react";
 
 import {
+  useLocation,
+} from "react-router-dom";
+
+import {
   ChevronDown,
   ChevronUp,
   X,
@@ -586,6 +590,16 @@ export default function CookieConsent() {
     setHasDecision,
   ] = useState(false);
 
+  const location =
+  useLocation();
+
+const hideFloatingSettings =
+  location.pathname ===
+    "/proxy" ||
+  location.pathname.startsWith(
+    "/proxy/"
+  );
+
   // =====================================================
   // INITIALISE
   // =====================================================
@@ -756,7 +770,8 @@ export default function CookieConsent() {
 
       {hasDecision &&
         !showBanner &&
-        !settingsOpen && (
+        !settingsOpen &&
+        !hideFloatingSettings && (
           <button
             type="button"
             onClick={() => {
