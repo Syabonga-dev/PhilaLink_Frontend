@@ -12,7 +12,6 @@ import {
 import {
   AlertCircle,
   CalendarDays,
-  CheckCircle2,
   ChevronLeft,
   ChevronRight,
   Clock3,
@@ -53,23 +52,26 @@ function getCollectionStatusKey(
       .trim()
       .toLowerCase();
 
+  /*
+   * "completed" is supported defensively
+   * for any legacy response that may still
+   * exist outside the cleaned database.
+   */
   if (
-    status ===
-    "collected"
+    status === "collected" ||
+    status === "completed"
   ) {
     return "collected";
   }
 
   if (
-    status ===
-    "cancelled"
+    status === "cancelled"
   ) {
     return "cancelled";
   }
 
   if (
-    status ===
-    "overdue"
+    status === "overdue"
   ) {
     return "overdue";
   }
@@ -118,20 +120,83 @@ function getCollectionStatusKey(
   return "upcoming";
 }
 
-function getInitials(name) {
-  if (!name) {
-    return "PT";
+/* ========================================= */
+/* COLLECTION DISPLAY HELPERS */
+/* ========================================= */
+
+function isCollected(
+  collection
+) {
+  return (
+    getCollectionStatusKey(
+      collection
+    ) === "collected"
+  );
+}
+
+function getCollectedBy(
+  collection
+) {
+  /*
+   * If collection hasn't happened yet,
+   * a Proxy may be assigned to collect it,
+   * but we must not describe them as the
+   * person who already collected it.
+   */
+  if (
+    !isCollected(
+      collection
+    )
+  ) {
+    return "Not collected";
   }
 
-  return String(name)
-    .split(/\s+/)
-    .filter(Boolean)
-    .slice(0, 2)
-    .map(
-      (part) =>
-        part[0]?.toUpperCase()
+  /*
+   * Completed with a Proxy means the Proxy
+   * collected on behalf of the Patient.
+   *
+   * Completed without a Proxy means the
+   * Patient collected the medication.
+   */
+  return (
+    collection.proxyName ||
+    "Patient"
+  );
+}
+
+function getProcessedBy(
+  collection
+) {
+  if (
+    !isCollected(
+      collection
     )
-    .join("");
+  ) {
+    return "—";
+  }
+
+  return (
+    collection
+      .processedByNurseName ||
+    "—"
+  );
+}
+
+function getCollectedDate(
+  collection
+) {
+  if (
+    !isCollected(
+      collection
+    ) ||
+    !collection.collectedAt
+  ) {
+    return "—";
+  }
+
+  return formatDate(
+    collection.collectedAt
+  );
 }
 
 /* ========================================= */
@@ -463,6 +528,7 @@ export default function ProxyCollectionsPage() {
     setSearch("");
     setPatientId("");
     setStatus("all");
+
     setSort(
       "scheduled-asc"
     );
@@ -923,8 +989,21 @@ export default function ProxyCollectionsPage() {
                           </div>
 
                           <p className="mt-xs text-label-sm">
-                            {collection.proxyName ||
-                              "Patient / unassigned"}
+                            {getCollectedBy(
+                              collection
+                            )}
+                          </p>
+                        </div>
+
+                        <div>
+                          <p className="text-[10px] uppercase text-text-tertiary">
+                            Processed by
+                          </p>
+
+                          <p className="mt-xs text-label-sm">
+                            {getProcessedBy(
+                              collection
+                            )}
                           </p>
                         </div>
 
@@ -934,11 +1013,9 @@ export default function ProxyCollectionsPage() {
                           </p>
 
                           <p className="mt-xs text-label-sm">
-                            {collection.collectedAt
-                              ? formatDate(
-                                  collection.collectedAt
-                                )
-                              : "Not collected"}
+                            {getCollectedDate(
+                              collection
+                            )}
                           </p>
                         </div>
                       </div>
@@ -1005,13 +1082,15 @@ export default function ProxyCollectionsPage() {
 
                         <TableCell>
                           {
-                            collection.medicationName
+                            collection.medicationName ||
+                            "—"
                           }
                         </TableCell>
 
                         <TableCell>
                           {
-                            collection.clinicName
+                            collection.clinicName ||
+                            "—"
                           }
                         </TableCell>
 
@@ -1033,18 +1112,20 @@ export default function ProxyCollectionsPage() {
                         </TableCell>
 
                         <TableCell>
-                          {collection.proxyName ||
-                            "Patient / unassigned"}
+                          {getCollectedBy(
+                            collection
+                          )}
                         </TableCell>
 
                         <TableCell>
-                          {collection.processedByNurseName ||
-                            "—"}
+                          {getProcessedBy(
+                            collection
+                          )}
                         </TableCell>
 
                         <TableCell>
-                          {formatDate(
-                            collection.collectedAt
+                          {getCollectedDate(
+                            collection
                           )}
                         </TableCell>
                       </tr>
@@ -1177,6 +1258,7 @@ function Pagination({
 
       <div className="flex items-center gap-sm">
         <button
+          type="button"
           disabled={
             currentPage === 1
           }
@@ -1198,6 +1280,7 @@ function Pagination({
         </span>
 
         <button
+          type="button"
           disabled={
             currentPage ===
             totalPages
