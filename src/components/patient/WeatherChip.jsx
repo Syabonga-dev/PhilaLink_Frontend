@@ -1229,19 +1229,34 @@ export default function WeatherChip({
     );
 
 
+  /*
+   * Use the location name returned by the backend for both
+   * current-location and clinic weather.
+   *
+   * When device coordinates are supplied, the backend asks
+   * OpenWeather for the weather at those coordinates and
+   * returns OpenWeather's location name in locationName.
+   *
+   * "Current location" remains only as a fallback if the
+   * weather provider does not return a location name.
+   */
   const locationText =
-    weatherSource ===
+    weather
+      .locationName ||
+    (weatherSource ===
     "current"
       ? "Current location"
-      : weather
-          .locationName ||
-        "Assigned clinic area";
+      : "Assigned clinic area");
 
 
   const title =
     weatherSource ===
     "current"
-      ? "Weather at your current location"
+      ? `Weather at ${
+          weather
+            .locationName ||
+          "your current location"
+        }`
       : `Using assigned clinic weather${
           weather
             .locationName
