@@ -878,6 +878,378 @@ export default function DashboardPage() {
       <div className="grid grid-cols-1 gap-lg md:grid-cols-2 lg:grid-cols-3 lg:gap-xl">
         <div className="col-span-1 flex flex-col gap-lg md:col-span-2 lg:gap-xl">
           <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="flex items-start gap-md">
+              <div
+                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full ${
+                  collectionState.type ===
+                  "overdue"
+                    ? "bg-warning/10"
+                    : "bg-brand-tertiary"
+                }`}
+              >
+                {collectionState.type ===
+                "overdue" ? (
+                  <AlertCircle
+                    size={17}
+                    className="text-warning"
+                  />
+                ) : (
+                  <Package
+                    size={17}
+                    className="text-brand-primary"
+                  />
+                )}
+              </div>
+
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-col gap-xs">
+                  <div className="flex flex-wrap items-center gap-sm">
+                    <h2 className="text-label font-semibold text-text-primary">
+                      Next medication collection
+                    </h2>
+
+                    {dashboard
+                      ?.nextCollection && (
+                      <span className="inline-flex shrink-0">
+                        <Badge
+                          label={
+                            collectionState.label
+                          }
+                          variant={getCollectionBadgeVariant(
+                            collectionState.type
+                          )}
+                        />
+                      </span>
+                    )}
+                  </div>
+
+                  <p className="text-label-sm text-text-secondary">
+                    {
+                      collectionState.message
+                    }
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {dashboard
+              ?.nextCollection ? (
+              <div className="mt-lg flex flex-col gap-sm">
+                <div className="flex items-center gap-xs">
+                  <Calendar
+                    size={13}
+                    className={
+                      collectionState.type ===
+                      "overdue"
+                        ? "shrink-0 text-warning"
+                        : "shrink-0 text-text-tertiary"
+                    }
+                  />
+
+                  <span className="text-label-sm font-medium text-text-primary">
+                    {formatDate(
+                      dashboard
+                        .nextCollection
+                        .scheduledCollectionDate
+                    )}
+                  </span>
+                </div>
+
+                {dashboard
+                  .nextCollection
+                  .clinicName && (
+                  <div className="flex items-start gap-xs">
+                    <MapPin
+                      size={13}
+                      className="mt-[2px] shrink-0 text-text-tertiary"
+                    />
+
+                    <span className="text-label-sm text-text-secondary">
+                      {
+                        dashboard
+                          .nextCollection
+                          .clinicName
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {dashboard
+                  .nextCollection
+                  .medicationName && (
+                  <div className="flex items-start gap-xs">
+                    <Pill
+                      size={13}
+                      className="mt-[2px] shrink-0 text-text-tertiary"
+                    />
+
+                    <span className="text-label-sm text-text-secondary">
+                      {
+                        dashboard
+                          .nextCollection
+                          .medicationName
+                      }
+                    </span>
+                  </div>
+                )}
+
+                {Array.isArray(
+                  dashboard
+                    .nextCollection
+                    .items
+                ) &&
+                  dashboard
+                    .nextCollection
+                    .items.length >
+                    0 && (
+                    <div className="mt-sm border-t border-border-secondary pt-md">
+                      <p className="mb-sm text-video-title text-text-tertiary">
+                        Medication collection
+                      </p>
+
+                      <div className="flex flex-col gap-xs">
+                        {dashboard
+                          .nextCollection
+                          .items.map(
+                            (
+                              item
+                            ) => (
+                              <div
+                                key={
+                                  item.id
+                                }
+                                className="flex items-start justify-between gap-md"
+                              >
+                                <span className="min-w-0 text-label-sm text-text-secondary">
+                                  {
+                                    item.medicationName
+                                  }
+
+                                  {item.dosage
+                                    ? ` ${item.dosage}`
+                                    : ""}
+                                </span>
+
+                                <span className="shrink-0 text-video-title text-text-tertiary">
+                                  Qty{" "}
+                                  {
+                                    item.quantity
+                                  }
+                                </span>
+                              </div>
+                            )
+                          )}
+                      </div>
+                    </div>
+                  )}
+
+                {dashboard
+                  .nextCollection
+                  .notes && (
+                  <div className="mt-sm rounded-corner-md bg-bg-faint p-md">
+                    <p className="text-video-title text-text-tertiary">
+                      Collection note
+                    </p>
+
+                    <p className="mt-xs text-label-sm text-text-secondary">
+                      {
+                        dashboard
+                          .nextCollection
+                          .notes
+                      }
+                    </p>
+                  </div>
+                )}
+
+                {collectionState.type ===
+                  "overdue" && (
+                  <div className="mt-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
+                    <div className="flex items-start gap-sm">
+                      <AlertCircle
+                        size={15}
+                        className="mt-[2px] shrink-0 text-warning"
+                      />
+
+                      <p className="text-label-sm text-text-secondary">
+                        Please contact your clinic if you are unable to collect your medication as scheduled.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="mt-lg rounded-corner-md bg-bg-faint p-lg text-center">
+                <Package
+                  size={24}
+                  className="mx-auto text-text-tertiary"
+                />
+
+                <p className="mt-md text-label-sm font-medium text-text-primary">
+                  Nothing scheduled
+                </p>
+
+                <p className="mt-xs text-video-title text-text-secondary">
+                  When your clinic schedules your next medication collection, it will appear here.
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+            <div className="mb-lg flex items-center gap-sm">
+              <UserRound
+                size={16}
+                className="text-brand-primary"
+              />
+
+              <h2 className="text-label font-semibold text-text-primary">
+                Assigned Primary Health Care Worker
+              </h2>
+            </div>
+
+            {workerLoading ? (
+              <div className="animate-pulse">
+                <div className="mb-md flex items-center gap-md">
+                  <div className="h-11 w-11 shrink-0 rounded-corner-full bg-border-secondary" />
+
+                  <div className="flex-1">
+                    <div className="mb-xs h-4 w-32 rounded bg-border-secondary" />
+                    <div className="h-3 w-24 rounded bg-border-secondary" />
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-sm">
+                  <div className="h-3 w-full rounded bg-border-secondary" />
+                  <div className="h-3 w-3/4 rounded bg-border-secondary" />
+                </div>
+              </div>
+            ) : workerError ? (
+              <div className="rounded-corner-md border border-danger/20 bg-danger/10 p-md">
+                <div className="flex items-start gap-sm">
+                  <AlertCircle
+                    size={16}
+                    className="mt-[2px] shrink-0 text-danger"
+                  />
+
+                  <div>
+                    <p className="text-label-sm text-text-primary">
+                      {
+                        workerError
+                      }
+                    </p>
+
+                    <button
+                      type="button"
+                      onClick={
+                        loadAssignedWorker
+                      }
+                      className="mt-sm text-label-sm text-brand-primary hover:opacity-70"
+                    >
+                      Try again
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ) : assignedWorker ? (
+              <div className="flex flex-col gap-md">
+                <div className="flex min-w-0 items-center gap-md">
+                  <Avatar
+                    type="initial"
+                    initials={getInitials(
+                      assignedWorker.fullName
+                    )}
+                    size="large"
+                    shape="square"
+                    className="!rounded-[10px]"
+                  />
+
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-label-sm font-medium text-text-primary">
+                      {
+                        assignedWorker.fullName
+                      }
+                    </p>
+
+                    <div className="mt-xs flex items-center gap-xs">
+                      <span className="h-2 w-2 rounded-corner-full bg-success" />
+
+                      <span className="text-video-title text-text-secondary">
+                        Active assignment
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {assignedWorker
+                  .phoneNumber && (
+                  <div className="flex items-center gap-sm">
+                    <Phone
+                      size={13}
+                      className="shrink-0 text-text-tertiary"
+                    />
+
+                    <a
+                      href={`tel:${assignedWorker.phoneNumber}`}
+                      className="min-w-0 break-all text-label-sm text-text-secondary hover:text-brand-primary"
+                    >
+                      {
+                        assignedWorker.phoneNumber
+                      }
+                    </a>
+                  </div>
+                )}
+
+                {assignedWorker
+                  .email && (
+                  <div className="flex items-start gap-sm">
+                    <Mail
+                      size={13}
+                      className="mt-[2px] shrink-0 text-text-tertiary"
+                    />
+
+                    <a
+                      href={`mailto:${assignedWorker.email}`}
+                      className="min-w-0 break-all text-label-sm text-text-secondary hover:text-brand-primary"
+                    >
+                      {
+                        assignedWorker.email
+                      }
+                    </a>
+                  </div>
+                )}
+
+                <div className="border-t border-border-secondary pt-md">
+                  <p className="text-video-title text-text-tertiary">
+                    Assigned
+                  </p>
+
+                  <p className="mt-xs text-label-sm text-text-secondary">
+                    {formatAssignedDate(
+                      assignedWorker
+                        .assignedAt
+                    )}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-corner-md bg-bg-faint p-lg text-center">
+                <UserRound
+                  size={24}
+                  className="mx-auto text-text-tertiary"
+                />
+
+                <p className="mt-md text-label-sm font-medium text-text-primary">
+                  No Primary Health Care Worker assigned
+                </p>
+
+                <p className="mt-xs text-video-title text-text-secondary">
+                  Your clinic has not assigned an active health care worker to your profile yet.
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
             <div className="mb-lg flex items-center justify-between">
               <div className="flex items-center gap-sm">
                 <Pill
@@ -1183,224 +1555,6 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
-
-          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
-            <div className="flex items-start gap-md">
-              <div
-                className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full ${
-                  collectionState.type ===
-                  "overdue"
-                    ? "bg-warning/10"
-                    : "bg-brand-tertiary"
-                }`}
-              >
-                {collectionState.type ===
-                "overdue" ? (
-                  <AlertCircle
-                    size={17}
-                    className="text-warning"
-                  />
-                ) : (
-                  <Package
-                    size={17}
-                    className="text-brand-primary"
-                  />
-                )}
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <div className="flex flex-col gap-xs">
-                  <div className="flex flex-wrap items-center gap-sm">
-                    <h2 className="text-label font-semibold text-text-primary">
-                      Next medication collection
-                    </h2>
-
-                    {dashboard
-                      ?.nextCollection && (
-                      <span className="inline-flex shrink-0">
-                        <Badge
-                          label={
-                            collectionState.label
-                          }
-                          variant={getCollectionBadgeVariant(
-                            collectionState.type
-                          )}
-                        />
-                      </span>
-                    )}
-                  </div>
-
-                  <p className="text-label-sm text-text-secondary">
-                    {
-                      collectionState.message
-                    }
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {dashboard
-              ?.nextCollection ? (
-              <div className="mt-lg flex flex-col gap-sm">
-                <div className="flex items-center gap-xs">
-                  <Calendar
-                    size={13}
-                    className={
-                      collectionState.type ===
-                      "overdue"
-                        ? "shrink-0 text-warning"
-                        : "shrink-0 text-text-tertiary"
-                    }
-                  />
-
-                  <span className="text-label-sm font-medium text-text-primary">
-                    {formatDate(
-                      dashboard
-                        .nextCollection
-                        .scheduledCollectionDate
-                    )}
-                  </span>
-                </div>
-
-                {dashboard
-                  .nextCollection
-                  .clinicName && (
-                  <div className="flex items-start gap-xs">
-                    <MapPin
-                      size={13}
-                      className="mt-[2px] shrink-0 text-text-tertiary"
-                    />
-
-                    <span className="text-label-sm text-text-secondary">
-                      {
-                        dashboard
-                          .nextCollection
-                          .clinicName
-                      }
-                    </span>
-                  </div>
-                )}
-
-                {dashboard
-                  .nextCollection
-                  .medicationName && (
-                  <div className="flex items-start gap-xs">
-                    <Pill
-                      size={13}
-                      className="mt-[2px] shrink-0 text-text-tertiary"
-                    />
-
-                    <span className="text-label-sm text-text-secondary">
-                      {
-                        dashboard
-                          .nextCollection
-                          .medicationName
-                      }
-                    </span>
-                  </div>
-                )}
-
-                {Array.isArray(
-                  dashboard
-                    .nextCollection
-                    .items
-                ) &&
-                  dashboard
-                    .nextCollection
-                    .items.length >
-                    0 && (
-                    <div className="mt-sm border-t border-border-secondary pt-md">
-                      <p className="mb-sm text-video-title text-text-tertiary">
-                        Medication collection
-                      </p>
-
-                      <div className="flex flex-col gap-xs">
-                        {dashboard
-                          .nextCollection
-                          .items.map(
-                            (
-                              item
-                            ) => (
-                              <div
-                                key={
-                                  item.id
-                                }
-                                className="flex items-start justify-between gap-md"
-                              >
-                                <span className="min-w-0 text-label-sm text-text-secondary">
-                                  {
-                                    item.medicationName
-                                  }
-
-                                  {item.dosage
-                                    ? ` ${item.dosage}`
-                                    : ""}
-                                </span>
-
-                                <span className="shrink-0 text-video-title text-text-tertiary">
-                                  Qty{" "}
-                                  {
-                                    item.quantity
-                                  }
-                                </span>
-                              </div>
-                            )
-                          )}
-                      </div>
-                    </div>
-                  )}
-
-                {dashboard
-                  .nextCollection
-                  .notes && (
-                  <div className="mt-sm rounded-corner-md bg-bg-faint p-md">
-                    <p className="text-video-title text-text-tertiary">
-                      Collection note
-                    </p>
-
-                    <p className="mt-xs text-label-sm text-text-secondary">
-                      {
-                        dashboard
-                          .nextCollection
-                          .notes
-                      }
-                    </p>
-                  </div>
-                )}
-
-                {collectionState.type ===
-                  "overdue" && (
-                  <div className="mt-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
-                    <div className="flex items-start gap-sm">
-                      <AlertCircle
-                        size={15}
-                        className="mt-[2px] shrink-0 text-warning"
-                      />
-
-                      <p className="text-label-sm text-text-secondary">
-                        Please contact your clinic if you are unable to collect your medication as scheduled.
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="mt-lg rounded-corner-md bg-bg-faint p-lg text-center">
-                <Package
-                  size={24}
-                  className="mx-auto text-text-tertiary"
-                />
-
-                <p className="mt-md text-label-sm font-medium text-text-primary">
-                  Nothing scheduled
-                </p>
-
-                <p className="mt-xs text-video-title text-text-secondary">
-                  When your clinic schedules your next medication collection, it will appear here.
-                </p>
-              </div>
-            )}
-          </section>
         </div>
 
         <div className="flex flex-col gap-lg lg:gap-xl">
@@ -1597,160 +1751,6 @@ export default function DashboardPage() {
               <p className="text-label-sm text-text-secondary">
                 No clinic has been assigned to your profile.
               </p>
-            )}
-          </section>
-
-          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
-            <div className="mb-lg flex items-center gap-sm">
-              <UserRound
-                size={16}
-                className="text-brand-primary"
-              />
-
-              <h2 className="text-label font-semibold text-text-primary">
-                Assigned Primary Health Care Worker
-              </h2>
-            </div>
-
-            {workerLoading ? (
-              <div className="animate-pulse">
-                <div className="mb-md flex items-center gap-md">
-                  <div className="h-11 w-11 shrink-0 rounded-corner-full bg-border-secondary" />
-
-                  <div className="flex-1">
-                    <div className="mb-xs h-4 w-32 rounded bg-border-secondary" />
-                    <div className="h-3 w-24 rounded bg-border-secondary" />
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-sm">
-                  <div className="h-3 w-full rounded bg-border-secondary" />
-                  <div className="h-3 w-3/4 rounded bg-border-secondary" />
-                </div>
-              </div>
-            ) : workerError ? (
-              <div className="rounded-corner-md border border-danger/20 bg-danger/10 p-md">
-                <div className="flex items-start gap-sm">
-                  <AlertCircle
-                    size={16}
-                    className="mt-[2px] shrink-0 text-danger"
-                  />
-
-                  <div>
-                    <p className="text-label-sm text-text-primary">
-                      {
-                        workerError
-                      }
-                    </p>
-
-                    <button
-                      type="button"
-                      onClick={
-                        loadAssignedWorker
-                      }
-                      className="mt-sm text-label-sm text-brand-primary hover:opacity-70"
-                    >
-                      Try again
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ) : assignedWorker ? (
-              <div className="flex flex-col gap-md">
-                <div className="flex min-w-0 items-center gap-md">
-                  <Avatar
-                    type="initial"
-                    initials={getInitials(
-                      assignedWorker.fullName
-                    )}
-                    size="large"
-                    shape="square"
-                    className="!rounded-[10px]"
-                  />
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-label-sm font-medium text-text-primary">
-                      {
-                        assignedWorker.fullName
-                      }
-                    </p>
-
-                    <div className="mt-xs flex items-center gap-xs">
-                      <span className="h-2 w-2 rounded-corner-full bg-success" />
-
-                      <span className="text-video-title text-text-secondary">
-                        Active assignment
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                {assignedWorker
-                  .phoneNumber && (
-                  <div className="flex items-center gap-sm">
-                    <Phone
-                      size={13}
-                      className="shrink-0 text-text-tertiary"
-                    />
-
-                    <a
-                      href={`tel:${assignedWorker.phoneNumber}`}
-                      className="min-w-0 break-all text-label-sm text-text-secondary hover:text-brand-primary"
-                    >
-                      {
-                        assignedWorker.phoneNumber
-                      }
-                    </a>
-                  </div>
-                )}
-
-                {assignedWorker
-                  .email && (
-                  <div className="flex items-start gap-sm">
-                    <Mail
-                      size={13}
-                      className="mt-[2px] shrink-0 text-text-tertiary"
-                    />
-
-                    <a
-                      href={`mailto:${assignedWorker.email}`}
-                      className="min-w-0 break-all text-label-sm text-text-secondary hover:text-brand-primary"
-                    >
-                      {
-                        assignedWorker.email
-                      }
-                    </a>
-                  </div>
-                )}
-
-                <div className="border-t border-border-secondary pt-md">
-                  <p className="text-video-title text-text-tertiary">
-                    Assigned
-                  </p>
-
-                  <p className="mt-xs text-label-sm text-text-secondary">
-                    {formatAssignedDate(
-                      assignedWorker
-                        .assignedAt
-                    )}
-                  </p>
-                </div>
-              </div>
-            ) : (
-              <div className="rounded-corner-md bg-bg-faint p-lg text-center">
-                <UserRound
-                  size={24}
-                  className="mx-auto text-text-tertiary"
-                />
-
-                <p className="mt-md text-label-sm font-medium text-text-primary">
-                  No Primary Health Care Worker assigned
-                </p>
-
-                <p className="mt-xs text-video-title text-text-secondary">
-                  Your clinic has not assigned an active health care worker to your profile yet.
-                </p>
-              </div>
             )}
           </section>
 
