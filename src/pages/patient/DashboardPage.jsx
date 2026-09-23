@@ -1557,8 +1557,8 @@ export default function DashboardPage() {
           </section>
         </div>
 
-        <div className="flex flex-col gap-lg lg:gap-xl">
-          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+        <div className="grid gap-lg md:col-span-2 md:grid-cols-2 lg:col-span-1 lg:grid-cols-1 lg:gap-xl">
+          <section className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg md:row-span-2 lg:row-span-1 lg:p-xl">
             <div className="mb-lg flex items-center justify-between">
               <div className="flex items-center gap-sm">
                 <Calendar
