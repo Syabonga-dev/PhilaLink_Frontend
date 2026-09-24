@@ -29,6 +29,12 @@ import {
   ApiError,
 } from "../../services/api/client.js";
 
+const PENDING_REGISTRATION_USER_ID =
+  "philalink_pending_registration_user_id";
+
+const PENDING_REGISTRATION_EMAIL =
+  "philalink_pending_registration_email";
+
 function maskEmail(
   email
 ) {
@@ -119,12 +125,22 @@ export default function PhoneVerificationPage() {
   const location =
     useLocation();
 
-  const {
-    userId,
-    email,
-  } =
+  const state =
     location.state ||
     {};
+
+  const userId =
+    state.userId ||
+    sessionStorage.getItem(
+      PENDING_REGISTRATION_USER_ID
+    );
+
+  const email =
+    state.email ||
+    sessionStorage.getItem(
+      PENDING_REGISTRATION_EMAIL
+    ) ||
+    "";
 
   const handleChange =
     (
@@ -282,15 +298,38 @@ export default function PhoneVerificationPage() {
           code,
         });
 
+        /*
+         * Keep the verified registration available for the
+         * final clinic-selection step.
+         */
+        sessionStorage.setItem(
+          PENDING_REGISTRATION_USER_ID,
+          userId
+        );
+
+        if (
+          email
+        ) {
+          sessionStorage.setItem(
+            PENDING_REGISTRATION_EMAIL,
+            email
+          );
+        }
+
         toast.success(
           "Your account has been verified."
         );
 
         navigate(
-          "/register/success",
+          "/register/clinic",
           {
             replace:
               true,
+
+            state: {
+              userId,
+              email,
+            },
           }
         );
       } catch (
@@ -551,7 +590,7 @@ export default function PhoneVerificationPage() {
               </button>
 
               <p className="mt-6 text-center text-xs leading-5 text-on-surface-variant">
-                For your security, account verification must be completed before logging in.
+                For your security, account verification must be completed before continuing.
               </p>
             </>
           )}
