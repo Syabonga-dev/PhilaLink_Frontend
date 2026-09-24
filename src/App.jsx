@@ -25,6 +25,7 @@ import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
 import GoogleCallbackPage from "./pages/auth/GoogleCallbackPage.jsx";
 import RegisterPage from "./pages/auth/RegisterPage.jsx";
 import PhoneVerificationPage from "./pages/auth/PhoneVerificationPage.jsx";
+import RegistrationClinicPage from "./pages/auth/RegistrationClinicPage.jsx";
 import RegistrationSuccessPage from "./pages/auth/RegistrationSuccessPage.jsx";
 import ChangePasswordPage from "./pages/auth/ChangePasswordPage.jsx";
 import NotFound from "./pages/NotFound.jsx";
@@ -52,7 +53,7 @@ import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
 import ProxyAppLayout from "./components/proxy/ProxyAppLayout.jsx";
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
-import ProxyCollectionsPage from "./pages/proxy/ProxyCollectionsPage.jsx";
+import ProxyCollectionsPage from "./pages/proxy/CollectionsPage.jsx";
 
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
@@ -170,6 +171,13 @@ export default function App() {
         path="/register/verify"
         element={
           <PhoneVerificationPage />
+        }
+      />
+
+      <Route
+        path="/register/clinic"
+        element={
+          <RegistrationClinicPage />
         }
       />
 
