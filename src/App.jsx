@@ -53,7 +53,7 @@ import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
 import ProxyAppLayout from "./components/proxy/ProxyAppLayout.jsx";
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
-import ProxyCollectionsPage from "./pages/proxy/CollectionsPage.jsx";
+import ProxyCollectionsPage from "./pages/proxy/ProxyCollectionsPage.jsx";
 
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
