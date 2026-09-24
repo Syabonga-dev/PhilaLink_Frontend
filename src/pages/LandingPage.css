@@ -5,6 +5,7 @@
 .landing-page {
   width: 100%;
   min-width: 0;
+  display: none;
 
   min-height: 100vh;
   min-height: 100dvh;
