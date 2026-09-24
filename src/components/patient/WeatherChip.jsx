@@ -23,7 +23,6 @@ import {
   weatherApi,
 } from "../../services/api/weather.js";
 
-
 const WEATHER_REFRESH_INTERVAL_MS =
   60 * 60 * 1000;
 
@@ -36,10 +35,9 @@ const GPS_COLLECTION_WINDOW_MS =
 const GPS_TARGET_ACCURACY_METRES =
   20;
 
-
-/* =========================================================
-   DAY / NIGHT
-========================================================= */
+// =========================================================
+// DAY / NIGHT
+// =========================================================
 
 function isNightTime(
   date
@@ -53,20 +51,17 @@ function isNightTime(
   );
 }
 
-
-/* =========================================================
-   WEATHER CONDITION
-========================================================= */
+// =========================================================
+// WEATHER CONDITION
+// =========================================================
 
 function getWeatherKind(
   description
 ) {
   const value =
     String(
-      description ||
-        ""
+      description || ""
     ).toLowerCase();
-
 
   if (
     value.includes(
@@ -78,7 +73,6 @@ function getWeatherKind(
   ) {
     return "thunder";
   }
-
 
   if (
     value.includes(
@@ -94,7 +88,6 @@ function getWeatherKind(
     return "rain";
   }
 
-
   if (
     value.includes(
       "snow"
@@ -105,7 +98,6 @@ function getWeatherKind(
   ) {
     return "snow";
   }
-
 
   if (
     value.includes(
@@ -124,7 +116,6 @@ function getWeatherKind(
     return "fog";
   }
 
-
   if (
     value.includes(
       "clear"
@@ -132,7 +123,6 @@ function getWeatherKind(
   ) {
     return "clear";
   }
-
 
   if (
     value.includes(
@@ -142,7 +132,6 @@ function getWeatherKind(
     return "overcast";
   }
 
-
   if (
     value.includes(
       "cloud"
@@ -151,14 +140,12 @@ function getWeatherKind(
     return "partly-cloudy";
   }
 
-
   return "cloud";
 }
 
-
-/* =========================================================
-   WEATHER ICON
-========================================================= */
+// =========================================================
+// WEATHER ICON
+// =========================================================
 
 function WeatherVisual({
   description,
@@ -170,40 +157,29 @@ function WeatherVisual({
       description
     );
 
-
   if (
     kind === "clear"
   ) {
     if (isNight) {
       return (
         <Moon
-          size={
-            size
-          }
-          strokeWidth={
-            2
-          }
+          size={size}
+          strokeWidth={2}
           className="shrink-0 text-[#2563eb]"
           aria-hidden="true"
         />
       );
     }
 
-
     return (
       <Sun
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#f59e0b]"
         aria-hidden="true"
       />
     );
   }
-
 
   if (
     kind ===
@@ -212,143 +188,102 @@ function WeatherVisual({
     if (isNight) {
       return (
         <CloudMoon
-          size={
-            size
-          }
-          strokeWidth={
-            2
-          }
+          size={size}
+          strokeWidth={2}
           className="shrink-0 text-[#2563eb]"
           aria-hidden="true"
         />
       );
     }
 
-
     return (
       <CloudSun
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#f59e0b]"
         aria-hidden="true"
       />
     );
   }
 
-
   if (
-    kind ===
-    "overcast"
+    kind === "overcast"
   ) {
     return (
       <Cloud
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#64748b]"
         aria-hidden="true"
       />
     );
   }
 
-
   if (
     kind === "rain"
   ) {
     return (
       <CloudRain
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#0284c7]"
         aria-hidden="true"
       />
     );
   }
 
-
   if (
     kind === "thunder"
   ) {
     return (
       <CloudLightning
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#7c3aed]"
         aria-hidden="true"
       />
     );
   }
 
-
   if (
     kind === "snow"
   ) {
     return (
       <Snowflake
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#38bdf8]"
         aria-hidden="true"
       />
     );
   }
 
-
   if (
     kind === "fog"
   ) {
     return (
       <CloudFog
-        size={
-          size
-        }
-        strokeWidth={
-          2
-        }
+        size={size}
+        strokeWidth={2}
         className="shrink-0 text-[#94a3b8]"
         aria-hidden="true"
       />
     );
   }
 
-
   return (
     <Cloud
-      size={
-        size
-      }
-      strokeWidth={
-        2
-      }
+      size={size}
+      strokeWidth={2}
       className="shrink-0 text-[#64748b]"
       aria-hidden="true"
     />
   );
 }
 
-
-/* =========================================================
-   DESCRIPTION
-========================================================= */
+// =========================================================
+// DESCRIPTION
+// =========================================================
 
 function formatDescription(
   description
@@ -359,12 +294,9 @@ function formatDescription(
     return "Weather";
   }
 
-
   return description
     .split(" ")
-    .filter(
-      Boolean
-    )
+    .filter(Boolean)
     .map(
       (
         word
@@ -377,57 +309,81 @@ function formatDescription(
     .join(" ");
 }
 
+// =========================================================
+// HUMAN-READABLE LOCATION
+// =========================================================
 
-/* =========================================================
-   LOCATION ACCURACY
-========================================================= */
-
-function formatLocationAccuracy(
-  accuracy
+function formatLocationName(
+  locationName
 ) {
-  const value =
-    Number(
-      accuracy
-    );
+  let value =
+    String(
+      locationName || ""
+    )
+      .trim()
+      .replace(
+        /\s+/g,
+        " "
+      );
 
-
-  if (
-    !Number.isFinite(
-      value
-    ) ||
-    value < 0
-  ) {
+  if (!value) {
     return "";
   }
 
+  /*
+   * Weather providers sometimes return the nearest
+   * observing station instead of a useful city/locality.
+   *
+   * Remove station-style suffixes before displaying
+   * the name to the patient.
+   */
+  value =
+    value
+      .replace(
+        /\s+international\s+airport$/i,
+        ""
+      )
+      .replace(
+        /\s+airport$/i,
+        ""
+      )
+      .replace(
+        /\s+airfield$/i,
+        ""
+      )
+      .replace(
+        /\s+aerodrome$/i,
+        ""
+      )
+      .replace(
+        /\s+weather\s+station$/i,
+        ""
+      )
+      .replace(
+        /\s+meteorological\s+station$/i,
+        ""
+      )
+      .trim();
 
+  /*
+   * The weather provider may still use the historical
+   * Port Elizabeth place name.
+   *
+   * PhilaLink displays the current city name.
+   */
   if (
-    value <
-    1000
+    value.toLowerCase() ===
+      "port elizabeth"
   ) {
-    return `±${Math.round(
-      value
-    )} m`;
+    return "Gqeberha";
   }
 
-
-  return `±${(
-    value /
-    1000
-  ).toFixed(
-    value >= 10000
-      ? 0
-      : 1
-  )} km`;
+  return value;
 }
 
-
-/* =========================================================
-   HIGH ACCURACY POSITION
-
-   Collect more than one location sample and keep the
-   best accuracy reading returned by the browser.
-========================================================= */
+// =========================================================
+// HIGH-ACCURACY POSITION
+// =========================================================
 
 function getBestCurrentPosition() {
   return new Promise(
@@ -449,7 +405,6 @@ function getBestCurrentPosition() {
         return;
       }
 
-
       let watchId =
         null;
 
@@ -465,12 +420,10 @@ function getBestCurrentPosition() {
       let lastError =
         null;
 
-
       const cleanup =
         () => {
           if (
-            watchId !==
-            null
+            watchId !== null
           ) {
             navigator
               .geolocation
@@ -480,8 +433,7 @@ function getBestCurrentPosition() {
           }
 
           if (
-            timerId !==
-            null
+            timerId !== null
           ) {
             window
               .clearTimeout(
@@ -489,7 +441,6 @@ function getBestCurrentPosition() {
               );
           }
         };
-
 
       const finish =
         () => {
@@ -504,7 +455,6 @@ function getBestCurrentPosition() {
 
           cleanup();
 
-
           if (
             bestPosition
           ) {
@@ -515,7 +465,6 @@ function getBestCurrentPosition() {
             return;
           }
 
-
           reject(
             lastError ||
               new Error(
@@ -523,7 +472,6 @@ function getBestCurrentPosition() {
               )
           );
         };
-
 
       watchId =
         navigator
@@ -539,7 +487,6 @@ function getBestCurrentPosition() {
                     .accuracy
                 );
 
-
               if (
                 !bestPosition
               ) {
@@ -552,7 +499,6 @@ function getBestCurrentPosition() {
                       .coords
                       .accuracy
                   );
-
 
                 if (
                   Number.isFinite(
@@ -571,7 +517,6 @@ function getBestCurrentPosition() {
                 }
               }
 
-
               if (
                 Number.isFinite(
                   accuracy
@@ -583,7 +528,6 @@ function getBestCurrentPosition() {
               }
             },
 
-
             (
               geoError
             ) => {
@@ -592,12 +536,12 @@ function getBestCurrentPosition() {
 
               if (
                 geoError.code ===
-                geoError.PERMISSION_DENIED
+                  geoError
+                    .PERMISSION_DENIED
               ) {
                 finish();
               }
             },
-
 
             {
               enableHighAccuracy:
@@ -611,7 +555,6 @@ function getBestCurrentPosition() {
             }
           );
 
-
       timerId =
         window
           .setTimeout(
@@ -622,10 +565,9 @@ function getBestCurrentPosition() {
   );
 }
 
-
-/* =========================================================
-   LOCATION ERROR
-========================================================= */
+// =========================================================
+// LOCATION ERROR
+// =========================================================
 
 function getLocationErrorMessage(
   error
@@ -638,7 +580,6 @@ function getLocationErrorMessage(
     );
   }
 
-
   if (
     error.code === 1
   ) {
@@ -646,7 +587,6 @@ function getLocationErrorMessage(
       "Precise location access was denied."
     );
   }
-
 
   if (
     error.code === 2
@@ -656,7 +596,6 @@ function getLocationErrorMessage(
     );
   }
 
-
   if (
     error.code === 3
   ) {
@@ -665,17 +604,15 @@ function getLocationErrorMessage(
     );
   }
 
-
   return (
     error.message ||
     "Location unavailable."
   );
 }
 
-
-/* =========================================================
-   WEATHER CHIP
-========================================================= */
+// =========================================================
+// WEATHER CHIP
+// =========================================================
 
 export default function WeatherChip({
   onNotificationCreated,
@@ -691,12 +628,6 @@ export default function WeatherChip({
     setWeatherSource,
   ] =
     useState("");
-
-  const [
-    locationAccuracy,
-    setLocationAccuracy,
-  ] =
-    useState(null);
 
   const [
     loading,
@@ -717,8 +648,8 @@ export default function WeatherChip({
     useState("");
 
   const [
-    mobileDetailsOpen,
-    setMobileDetailsOpen,
+    detailsOpen,
+    setDetailsOpen,
   ] =
     useState(false);
 
@@ -731,13 +662,15 @@ export default function WeatherChip({
         Date.now()
     );
 
-
   const lastRefreshRef =
     useRef(0);
 
   const containerRef =
     useRef(null);
 
+  // =======================================================
+  // WEATHER HEALTH TIP
+  // =======================================================
 
   const generateWeatherTip =
     useCallback(
@@ -773,10 +706,9 @@ export default function WeatherChip({
       ]
     );
 
-
-  /* =======================================================
-     CLINIC FALLBACK WEATHER
-  ======================================================= */
+  // =======================================================
+  // CLINIC FALLBACK WEATHER
+  // =======================================================
 
   const loadClinicWeather =
     useCallback(
@@ -788,7 +720,6 @@ export default function WeatherChip({
           await weatherApi
             .getCurrent();
 
-
         setWeather(
           result
         );
@@ -797,19 +728,10 @@ export default function WeatherChip({
           "clinic"
         );
 
-        /*
-         * Clinic fallback is not using the browser's
-         * current GPS coordinates.
-         */
-        setLocationAccuracy(
-          null
-        );
-
         setError("");
 
         lastRefreshRef.current =
           Date.now();
-
 
         if (
           !background
@@ -819,9 +741,7 @@ export default function WeatherChip({
           );
         }
 
-
         void generateWeatherTip();
-
 
         return result;
       },
@@ -830,10 +750,9 @@ export default function WeatherChip({
       ]
     );
 
-
-  /* =======================================================
-     CURRENT LOCATION WEATHER
-  ======================================================= */
+  // =======================================================
+  // CURRENT-LOCATION WEATHER
+  // =======================================================
 
   const loadWeather =
     useCallback(
@@ -853,7 +772,6 @@ export default function WeatherChip({
 
         setLocationError("");
 
-
         const useClinicFallback =
           async (
             geoError
@@ -867,12 +785,6 @@ export default function WeatherChip({
                 )
               );
             }
-
-
-            setLocationAccuracy(
-              null
-            );
-
 
             try {
               await loadClinicWeather({
@@ -897,10 +809,6 @@ export default function WeatherChip({
                   ""
                 );
 
-                setLocationAccuracy(
-                  null
-                );
-
                 setError(
                   clinicError
                     ?.message ||
@@ -918,11 +826,9 @@ export default function WeatherChip({
             }
           };
 
-
         try {
           const position =
             await getBestCurrentPosition();
-
 
           const latitude =
             Number(
@@ -938,14 +844,6 @@ export default function WeatherChip({
                 .longitude
             );
 
-          const accuracy =
-            Number(
-              position
-                .coords
-                .accuracy
-            );
-
-
           if (
             !Number.isFinite(
               latitude
@@ -959,37 +857,12 @@ export default function WeatherChip({
             );
           }
 
-
-          if (
-            Number.isFinite(
-              accuracy
-            )
-          ) {
-            setLocationAccuracy(
-              accuracy
-            );
-          } else {
-            setLocationAccuracy(
-              null
-            );
-          }
-
-
-          /*
-           * The backend receives the actual browser
-           * latitude and longitude.
-           *
-           * Any place name returned by the weather provider
-           * is deliberately NOT used as the user's physical
-           * location.
-           */
           const result =
             await weatherApi
               .getCurrent(
                 latitude,
                 longitude
               );
-
 
           setWeather(
             result
@@ -1006,15 +879,13 @@ export default function WeatherChip({
           lastRefreshRef.current =
             Date.now();
 
-
           if (
             !background
           ) {
             setLoading(
               false
-          );
-        }
-
+            );
+          }
 
           void generateWeatherTip(
             latitude,
@@ -1047,15 +918,13 @@ export default function WeatherChip({
       ]
     );
 
-
-  /* =======================================================
-     INITIAL WEATHER + PERIODIC REFRESH
-  ======================================================= */
+  // =======================================================
+  // INITIAL + PERIODIC WEATHER REFRESH
+  // =======================================================
 
   useEffect(
     () => {
       void loadWeather();
-
 
       const intervalId =
         window
@@ -1069,7 +938,6 @@ export default function WeatherChip({
             WEATHER_REFRESH_INTERVAL_MS
           );
 
-
       const handleVisibilityChange =
         () => {
           if (
@@ -1080,16 +948,14 @@ export default function WeatherChip({
             return;
           }
 
-
           const elapsed =
             Date.now() -
             lastRefreshRef
               .current;
 
-
           if (
             elapsed >=
-            WEATHER_REFRESH_INTERVAL_MS
+              WEATHER_REFRESH_INTERVAL_MS
           ) {
             void loadWeather({
               background:
@@ -1098,13 +964,11 @@ export default function WeatherChip({
           }
         };
 
-
       document
         .addEventListener(
           "visibilitychange",
           handleVisibilityChange
         );
-
 
       return () => {
         window
@@ -1124,10 +988,9 @@ export default function WeatherChip({
     ]
   );
 
-
-  /* =======================================================
-     CLOCK REFRESH
-  ======================================================= */
+  // =======================================================
+  // CLOCK
+  // =======================================================
 
   useEffect(
     () => {
@@ -1142,7 +1005,6 @@ export default function WeatherChip({
             CLOCK_REFRESH_INTERVAL_MS
           );
 
-
       const handleVisibilityChange =
         () => {
           if (
@@ -1156,13 +1018,11 @@ export default function WeatherChip({
           }
         };
 
-
       document
         .addEventListener(
           "visibilitychange",
           handleVisibilityChange
         );
-
 
       return () => {
         window
@@ -1180,19 +1040,17 @@ export default function WeatherChip({
     []
   );
 
-
-  /* =======================================================
-     MOBILE DETAILS CLOSE HANDLERS
-  ======================================================= */
+  // =======================================================
+  // CLOSE DETAILS
+  // =======================================================
 
   useEffect(
     () => {
       if (
-        !mobileDetailsOpen
+        !detailsOpen
       ) {
         return undefined;
       }
-
 
       const handlePointerDown =
         (
@@ -1206,12 +1064,11 @@ export default function WeatherChip({
                 event.target
               )
           ) {
-            setMobileDetailsOpen(
+            setDetailsOpen(
               false
             );
           }
         };
-
 
       const handleKeyDown =
         (
@@ -1221,12 +1078,11 @@ export default function WeatherChip({
             event.key ===
             "Escape"
           ) {
-            setMobileDetailsOpen(
+            setDetailsOpen(
               false
             );
           }
         };
-
 
       document
         .addEventListener(
@@ -1239,7 +1095,6 @@ export default function WeatherChip({
           "keydown",
           handleKeyDown
         );
-
 
       return () => {
         document
@@ -1256,14 +1111,13 @@ export default function WeatherChip({
       };
     },
     [
-      mobileDetailsOpen,
+      detailsOpen,
     ]
   );
 
-
-  /* =======================================================
-     LOADING
-  ======================================================= */
+  // =======================================================
+  // LOADING
+  // =======================================================
 
   if (
     loading
@@ -1275,9 +1129,7 @@ export default function WeatherChip({
         title="Loading weather"
       >
         <MapPin
-          size={
-            17
-          }
+          size={17}
           className="shrink-0 animate-pulse text-[#2563eb]"
         />
 
@@ -1288,10 +1140,9 @@ export default function WeatherChip({
     );
   }
 
-
-  /* =======================================================
-     ERROR
-  ======================================================= */
+  // =======================================================
+  // ERROR
+  // =======================================================
 
   if (
     error ||
@@ -1308,9 +1159,7 @@ export default function WeatherChip({
         aria-label="Weather unavailable. Retry weather."
       >
         <Cloud
-          size={
-            18
-          }
+          size={18}
           className="shrink-0 text-[#64748b]"
         />
 
@@ -1321,10 +1170,9 @@ export default function WeatherChip({
     );
   }
 
-
-  /* =======================================================
-     DISPLAY VALUES
-  ======================================================= */
+  // =======================================================
+  // DISPLAY VALUES
+  // =======================================================
 
   const isNight =
     isNightTime(
@@ -1333,13 +1181,11 @@ export default function WeatherChip({
       )
     );
 
-
   const temperatureValue =
     Number(
       weather
         .temperatureC
     );
-
 
   const temperature =
     Number.isFinite(
@@ -1350,60 +1196,48 @@ export default function WeatherChip({
         )
       : null;
 
-
   const description =
     formatDescription(
       weather
         .description
     );
 
-
-  const formattedAccuracy =
-    formatLocationAccuracy(
-      locationAccuracy
+  const providerLocation =
+    formatLocationName(
+      weather
+        .locationName
     );
 
-
   /*
-   * IMPORTANT:
+   * The user asked for only a useful human-readable
+   * city, suburb or locality here.
    *
-   * Do not use weather.locationName as the patient's
-   * physical location.
-   *
-   * Weather providers may attach nearby station, airport,
-   * suburb or municipality names to coordinates.
-   *
-   * The weather itself is still requested using the
-   * browser-provided latitude and longitude.
+   * No GPS accuracy value is shown.
    */
   const locationText =
-    weatherSource ===
-    "current"
-      ? "Current location"
-      : "Assigned clinic area";
-
+    providerLocation ||
+    (
+      weatherSource ===
+        "current"
+        ? "Current location"
+        : "Assigned clinic area"
+    );
 
   const title =
     weatherSource ===
-    "current"
-      ? formattedAccuracy
-        ? `Weather at your current location · Location accuracy ${formattedAccuracy}`
-        : "Weather at your current location"
-      : "Using assigned clinic weather";
+      "current"
+      ? `Weather in ${locationText}`
+      : `Clinic-area weather: ${locationText}`;
 
-
-  /* =======================================================
-     UI
-  ======================================================= */
+  // =======================================================
+  // UI
+  // =======================================================
 
   return (
     <div
-      ref={
-        containerRef
-      }
+      ref={containerRef}
       className="relative"
     >
-
       {/* ================================================= */}
       {/* WEATHER CHIP */}
       {/* ================================================= */}
@@ -1411,7 +1245,7 @@ export default function WeatherChip({
       <button
         type="button"
         onClick={() =>
-          setMobileDetailsOpen(
+          setDetailsOpen(
             (
               current
             ) =>
@@ -1419,15 +1253,12 @@ export default function WeatherChip({
           )
         }
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#334155] transition hover:bg-[#f8fafc] sm:w-auto sm:min-w-0 sm:gap-2 sm:px-3"
-        title={
-          title
-        }
+        title={title}
         aria-label={`${title}. ${description}. ${
-          temperature ??
-          ""
+          temperature ?? ""
         } degrees Celsius.`}
         aria-expanded={
-          mobileDetailsOpen
+          detailsOpen
         }
       >
         <WeatherVisual
@@ -1438,29 +1269,20 @@ export default function WeatherChip({
           isNight={
             isNight
           }
-          size={
-            20
-          }
+          size={20}
         />
-
 
         {temperature !==
           null && (
           <span className="hidden shrink-0 text-sm font-semibold text-[#0f172a] sm:inline">
-            {
-              temperature
-            }
+            {temperature}
             °C
           </span>
         )}
 
-
         <span className="hidden max-w-[120px] truncate text-xs text-[#64748b] xl:block">
-          {
-            description
-          }
+          {description}
         </span>
-
 
         {weatherSource ===
           "clinic" && (
@@ -1470,19 +1292,18 @@ export default function WeatherChip({
         )}
       </button>
 
-
       {/* ================================================= */}
-      {/* MOBILE DETAILS */}
+      {/* PHONE + TABLET WEATHER DETAILS */}
       {/* ================================================= */}
 
-      {mobileDetailsOpen && (
+      {detailsOpen && (
         <div className="absolute right-0 top-12 z-50 w-[260px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl xl:hidden">
+
           {/* ============================================= */}
           {/* HEADER */}
           {/* ============================================= */}
 
           <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
-
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-[#64748b]">
                 Weather
@@ -1496,11 +1317,10 @@ export default function WeatherChip({
               </p>
             </div>
 
-
             <button
               type="button"
               onClick={() =>
-                setMobileDetailsOpen(
+                setDetailsOpen(
                   false
                 )
               }
@@ -1508,20 +1328,16 @@ export default function WeatherChip({
               aria-label="Close weather details"
             >
               <X
-                size={
-                  15
-                }
+                size={15}
               />
             </button>
           </div>
 
-
           {/* ============================================= */}
-          {/* WEATHER DETAILS */}
+          {/* DETAILS */}
           {/* ============================================= */}
 
           <div className="p-4">
-
             <div className="flex items-center gap-3">
 
               <div
@@ -1539,51 +1355,36 @@ export default function WeatherChip({
                   isNight={
                     isNight
                   }
-                  size={
-                    31
-                  }
+                  size={31}
                 />
               </div>
-
 
               <div className="min-w-0">
 
                 {temperature !==
                   null && (
                   <p className="text-2xl font-bold leading-none text-[#0f172a]">
-                    {
-                      temperature
-                    }
+                    {temperature}
                     °C
                   </p>
                 )}
 
-
                 <p className="mt-1 text-sm font-medium text-[#475569]">
-                  {
-                    description
-                  }
+                  {description}
                 </p>
 
-
                 <div className="mt-1 flex items-center gap-1.5">
-
                   {isNight ? (
                     <Moon
-                      size={
-                        12
-                      }
+                      size={12}
                       className="text-[#2563eb]"
                     />
                   ) : (
                     <Sun
-                      size={
-                        12
-                      }
+                      size={12}
                       className="text-[#f59e0b]"
                     />
                   )}
-
 
                   <span className="text-[11px] font-medium text-[#64748b]">
                     {isNight
@@ -1594,7 +1395,6 @@ export default function WeatherChip({
               </div>
             </div>
 
-
             {/* =========================================== */}
             {/* LOCATION */}
             {/* =========================================== */}
@@ -1602,77 +1402,39 @@ export default function WeatherChip({
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f8fafc] px-3 py-3">
 
               <MapPin
-                size={
-                  15
-                }
+                size={15}
                 className="mt-0.5 shrink-0 text-[#2563eb]"
               />
 
-
               <div className="min-w-0">
-
                 <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
                   Location
                 </p>
 
-
-                <p className="mt-0.5 text-xs font-semibold text-[#475569]">
-                  {
-                    locationText
-                  }
+                <p className="mt-0.5 text-sm font-semibold text-[#334155]">
+                  {locationText}
                 </p>
-
-
-                {weatherSource ===
-                  "current" &&
-                  formattedAccuracy && (
-                    <p className="mt-1 text-[11px] leading-4 text-[#64748b]">
-                      Browser accuracy{" "}
-                      <span className="font-semibold text-[#334155]">
-                        {
-                          formattedAccuracy
-                        }
-                      </span>
-                    </p>
-                  )}
               </div>
             </div>
 
-
             {/* =========================================== */}
-            {/* CURRENT LOCATION EXPLANATION */}
-            {/* =========================================== */}
-
-            {weatherSource ===
-              "current" && (
-              <p className="mt-3 text-[11px] leading-4 text-[#64748b]">
-                Weather is requested using the latitude and longitude reported by your device. Nearby weather-station or airport names are not used as your location.
-              </p>
-            )}
-
-
-            {/* =========================================== */}
-            {/* LOCATION FAILURE / CLINIC FALLBACK */}
+            {/* CLINIC FALLBACK */}
             {/* =========================================== */}
 
             {locationError &&
               weatherSource ===
                 "clinic" && (
                 <div className="mt-3 rounded-xl bg-[#fff7ed] px-3 py-2.5">
-
                   <p className="text-[11px] leading-4 text-[#9a3412]">
-                    {
-                      locationError
-                    }
+                    {locationError}
                   </p>
                 </div>
               )}
 
-
             {weatherSource ===
               "clinic" && (
               <p className="mt-3 text-[11px] leading-4 text-[#64748b]">
-                Precise location was unavailable, so PhilaLink is showing weather for your assigned clinic area.
+                Your device location was unavailable, so PhilaLink is showing weather for your assigned clinic area.
               </p>
             )}
           </div>
