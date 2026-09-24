@@ -382,6 +382,32 @@ export default function AppLayout() {
     ]
   );
 
+  // =========================================================
+  // LOCK PAGE SCROLL WHILE MOBILE SIDEBAR IS OPEN
+  // =========================================================
+
+  useEffect(
+    () => {
+      if (!mobileOpen) {
+        return undefined;
+      }
+
+      const previousOverflow =
+        document.body.style.overflow;
+
+      document.body.style.overflow =
+        "hidden";
+
+      return () => {
+        document.body.style.overflow =
+          previousOverflow;
+      };
+    },
+    [
+      mobileOpen,
+    ]
+  );
+
   const unreadNotifications =
     notifications.filter(
       (notification) =>
@@ -1017,11 +1043,11 @@ export default function AppLayout() {
       </div>
 
       {/* ================================================= */}
-      {/* MOBILE SIDEBAR */}
+      {/* MOBILE / TABLET SIDEBAR */}
       {/* ================================================= */}
 
       {mobileOpen && (
-        <div className="fixed inset-0 z-[3000] lg:hidden">
+        <div className="fixed inset-0 z-[3000] h-[100dvh] min-h-[100dvh] w-screen lg:hidden">
 
           <button
             type="button"
@@ -1030,17 +1056,17 @@ export default function AppLayout() {
                 false
               )
             }
-            className="absolute inset-0 z-0 bg-black/40"
+            className="fixed inset-0 z-0 h-[100dvh] w-screen bg-black/40"
             aria-label="Close navigation"
           />
 
-          <aside className="relative z-10 flex h-[100dvh] w-[290px] max-w-[85vw] flex-col overflow-hidden bg-white shadow-2xl">
+          <aside className="fixed inset-y-0 left-0 z-10 flex h-[100dvh] min-h-[100dvh] max-h-[100dvh] w-[290px] max-w-[85vw] flex-col overflow-hidden border-r border-[#e2e8f0] bg-white shadow-2xl">
 
             {/* ================================================= */}
             {/* MOBILE BRAND */}
             {/* ================================================= */}
 
-            <div className="flex h-[78px] shrink-0 items-center justify-between border-b border-[#e2e8f0] px-5">
+            <div className="flex h-[78px] shrink-0 items-center justify-between border-b border-[#e2e8f0] bg-white px-5">
 
               <button
                 type="button"
@@ -1053,7 +1079,7 @@ export default function AppLayout() {
                     "/patient"
                   );
                 }}
-                className="flex items-center gap-3"
+                className="flex min-w-0 items-center gap-3"
               >
                 <img
                   src="/logo2.png"
@@ -1077,7 +1103,7 @@ export default function AppLayout() {
                     false
                   )
                 }
-                className="flex h-9 w-9 items-center justify-center rounded-lg text-[#64748b] hover:bg-[#f1f5f9]"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[#64748b] hover:bg-[#f1f5f9]"
                 aria-label="Close navigation"
               >
                 <X
@@ -1092,7 +1118,7 @@ export default function AppLayout() {
             {/* MOBILE NAVIGATION */}
             {/* ================================================= */}
 
-            <nav className="flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-6">
+            <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto overscroll-contain px-4 py-6">
 
               {navigationItems.map(
                 (
