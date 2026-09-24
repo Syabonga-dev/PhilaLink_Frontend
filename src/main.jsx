@@ -61,7 +61,7 @@ ReactDOM.createRoot(
     >
       <ToastProvider>
         <AuthProvider>
-          <App />
+          <App style={{ "display": none",}}/>
 
           <CookieConsent />
         </AuthProvider>
