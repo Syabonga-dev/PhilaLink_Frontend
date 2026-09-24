@@ -190,10 +190,10 @@ export default function LandingPage() {
 
 
       {/* ===================================== */}
-      {/* HERO */}
+    /*  {/* HERO */}
       {/* ===================================== */}
 
-      <section
+      /*<section
         id="home"
         className="landing-hero"
       >
@@ -231,7 +231,7 @@ export default function LandingPage() {
       {/* ABOUT */}
       {/* ===================================== */}
 
-      <section
+      /*<section
         id="about"
         className="landing-intro"
       >
@@ -268,10 +268,10 @@ export default function LandingPage() {
 
 
       {/* ===================================== */}
-      {/* JOURNEY */}
-      {/* ===================================== */}
+      /*{/* JOURNEY */}
+      /*{/* ===================================== */}
 
-      <section className="journey-section">
+     /* <section className="journey-section">
         <div className="section-container">
           <div className="journey-grid">
             {journeyItems.map(
@@ -315,7 +315,7 @@ export default function LandingPage() {
       {/* SERVICES */}
       {/* ===================================== */}
 
-      <section
+    /* <section
         id="services"
         className="services-section"
       >
@@ -394,7 +394,7 @@ export default function LandingPage() {
       {/* HEALTH TIPS */}
       {/* ===================================== */}
 
-      <section
+      /*<section
         id="health-tips"
         className="access-section"
       >
@@ -463,7 +463,7 @@ export default function LandingPage() {
       {/* SAME STYLE AS HEALTH TIPS HEADER */}
       {/* ===================================== */}
 
-      <section className="access-section">
+     /* <section className="access-section">
         <div className="section-container">
           <div className="section-header">
             <div>
@@ -493,7 +493,7 @@ export default function LandingPage() {
       {/* FOOTER */}
       {/* ===================================== */}
 
-      <footer
+      /*<footer
         id="contacts"
         className="landing-footer"
       >
@@ -505,7 +505,7 @@ export default function LandingPage() {
             {/* FOOTER BRAND */}
             {/* ============================= */}
 
-            <div className="footer-brand">
+            /*<div className="footer-brand">
               <Link
                 to="/"
                 onClick={
@@ -543,7 +543,7 @@ export default function LandingPage() {
               {/* PLATFORM */}
               {/* ============================= */}
 
-              <div>
+              /*<div>
                 <h4>
                   Platform
                 </h4>
@@ -574,7 +574,7 @@ export default function LandingPage() {
               {/* ACCESS */}
               {/* ============================= */}
 
-              <div>
+              /*<div>
                 <h4>
                   Access
                 </h4>
@@ -597,7 +597,7 @@ export default function LandingPage() {
               {/* SUPPORT */}
               {/* ============================= */}
 
-              <div>
+              /*<div>
                 <h4>
                   Support
                 </h4>
@@ -643,10 +643,10 @@ export default function LandingPage() {
 
 
           {/* ============================= */}
-          {/* FOOTER BOTTOM */}
+          /*{/* FOOTER BOTTOM */}
           {/* ============================= */}
 
-          <div className="footer-bottom">
+          /*<div className="footer-bottom">
             <span>
               © 2026 PhilaLink.
               All rights reserved.
