@@ -93,11 +93,26 @@ export default function Sidebar({
       role
     ] || [];
 
+  const homePath =
+    role === "Nurse"
+      ? "/nurse"
+      : role === "Proxy"
+        ? "/proxy"
+        : "/admin";
+
   return (
     <>
       {open && (
         <div
-          className="fixed inset-0 z-30 bg-black/30 lg:hidden"
+          className="
+            fixed
+            inset-0
+            z-30
+            h-[100dvh]
+            w-screen
+            bg-black/30
+            lg:hidden
+          "
           onClick={
             onClose
           }
@@ -106,31 +121,78 @@ export default function Sidebar({
       )}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-40 flex w-64 flex-col border-r border-outline-variant/60 bg-surface-container-lowest transition-transform duration-200 lg:static lg:translate-x-0 ${
-          open
-            ? "translate-x-0"
-            : "-translate-x-full"
-        }`}
+        className={`
+          fixed
+          left-0
+          top-0
+          bottom-0
+          z-40
+
+          flex
+          h-[100dvh]
+          min-h-[100dvh]
+          max-h-[100dvh]
+          w-64
+          shrink-0
+          flex-col
+
+          overflow-hidden
+
+          border-r
+          border-outline-variant/60
+          bg-surface-container-lowest
+
+          transition-transform
+          duration-200
+
+          lg:static
+          lg:h-screen
+          lg:min-h-screen
+          lg:max-h-screen
+          lg:translate-x-0
+
+          ${
+            open
+              ? "translate-x-0"
+              : "-translate-x-full"
+          }
+        `}
       >
-        <div className="flex h-16 items-center border-b border-outline-variant/60 px-5">
+        <div
+          className="
+            flex
+            h-16
+            shrink-0
+            items-center
+            border-b
+            border-outline-variant/60
+            px-5
+          "
+        >
           <NavLink
             to={
-              role === "Nurse"
-                ? "/nurse"
-                : role === "Proxy"
-                  ? "/proxy"
-                  : "/admin"
+              homePath
             }
             onClick={
               onClose
             }
-            className="flex min-w-0 items-center gap-3"
+            className="
+              flex
+              min-w-0
+              items-center
+              gap-3
+            "
             aria-label="PhilaLink home"
           >
             <img
               src="./logo2.png"
               alt="PhilaLink logo"
-              className="h-11 w-11 shrink-0 object-contain"
+              className="
+                h-11
+                w-11
+                shrink-0
+                object-contain
+              "
             />
 
             <span className="text-lg font-bold text-on-surface">
@@ -142,9 +204,20 @@ export default function Sidebar({
           </NavLink>
         </div>
 
-        <nav className="flex-1 space-y-1 overflow-y-auto p-3">
+        <nav
+          className="
+            min-h-0
+            flex-1
+            space-y-1
+            overflow-y-auto
+            overscroll-contain
+            p-3
+          "
+        >
           {items.map(
-            (item) => (
+            (
+              item
+            ) => (
               <NavLink
                 key={
                   item.to
@@ -161,11 +234,24 @@ export default function Sidebar({
                 className={({
                   isActive,
                 }) =>
-                  `flex items-center gap-3 rounded-md border-l-[3px] px-3 py-2.5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "border-primary bg-primary-container/10 text-primary"
-                      : "border-transparent text-on-surface-variant hover:bg-surface-container"
-                  }`
+                  `
+                    flex
+                    items-center
+                    gap-3
+                    rounded-md
+                    border-l-[3px]
+                    px-3
+                    py-2.5
+                    text-sm
+                    font-medium
+                    transition-colors
+
+                    ${
+                      isActive
+                        ? "border-primary bg-primary-container/10 text-primary"
+                        : "border-transparent text-on-surface-variant hover:bg-surface-container"
+                    }
+                  `
                 }
               >
                 <span className="material-symbols-outlined text-[20px]">
@@ -174,7 +260,11 @@ export default function Sidebar({
                   }
                 </span>
 
-                {item.label}
+                <span>
+                  {
+                    item.label
+                  }
+                </span>
               </NavLink>
             )
           )}
