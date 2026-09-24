@@ -1,4 +1,4 @@
-/*import {
+import {
   useEffect,
 } from "react";
 
@@ -124,10 +124,6 @@ export default function LandingPage() {
     useLocation();
 
 
-  // =====================================================
-  // HANDLE NAVIGATION FROM ANOTHER PAGE
-  // =====================================================
-
   useEffect(() => {
     const sectionId =
       location.state?.scrollTo;
@@ -169,10 +165,6 @@ export default function LandingPage() {
   ]);
 
 
-  // =====================================================
-  // SCROLL HELPERS
-  // =====================================================
-
   const scrollToTop =
     () => {
       window.scrollTo({
@@ -185,15 +177,11 @@ export default function LandingPage() {
 
 
   return (
-    <div className="landing-page" >
+    <div className="landing-page">
       <NavigationPage />
 
 
-      {/* ===================================== */}
-    /*  {/* HERO */}
-      {/* ===================================== */}
-
-      /*<section
+      <section
         id="home"
         className="landing-hero"
       >
@@ -227,11 +215,7 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ===================================== */}
-      {/* ABOUT */}
-      {/* ===================================== */}
-
-      /*<section
+      <section
         id="about"
         className="landing-intro"
       >
@@ -267,11 +251,7 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ===================================== */}
-      /*{/* JOURNEY */}
-      /*{/* ===================================== */}
-
-     /* <section className="journey-section">
+      <section className="journey-section">
         <div className="section-container">
           <div className="journey-grid">
             {journeyItems.map(
@@ -311,11 +291,7 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ===================================== */}
-      {/* SERVICES */}
-      {/* ===================================== */}
-
-    /* <section
+      <section
         id="services"
         className="services-section"
       >
@@ -390,16 +366,11 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ===================================== */}
-      {/* HEALTH TIPS */}
-      {/* ===================================== */}
-
-      /*<section
+      <section
         id="health-tips"
         className="access-section"
       >
         <div className="section-container">
-
           <div className="section-header">
             <div>
               <span className="section-kicker">
@@ -458,12 +429,7 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ===================================== */}
-      {/* PATIENT FOCUS */}
-      {/* SAME STYLE AS HEALTH TIPS HEADER */}
-      {/* ===================================== */}
-
-     /* <section className="access-section">
+      <section className="access-section">
         <div className="section-container">
           <div className="section-header">
             <div>
@@ -489,23 +455,13 @@ export default function LandingPage() {
       </section>
 
 
-      {/* ===================================== */}
-      {/* FOOTER */}
-      {/* ===================================== */}
-
-      /*<footer
+      <footer
         id="contacts"
         className="landing-footer"
       >
         <div className="section-container">
-
           <div className="footer-main">
-
-            {/* ============================= */}
-            {/* FOOTER BRAND */}
-            {/* ============================= */}
-
-            /*<div className="footer-brand">
+            <div className="footer-brand">
               <Link
                 to="/"
                 onClick={
@@ -538,12 +494,7 @@ export default function LandingPage() {
 
 
             <div className="footer-columns">
-
-              {/* ============================= */}
-              {/* PLATFORM */}
-              {/* ============================= */}
-
-              /*<div>
+              <div>
                 <h4>
                   Platform
                 </h4>
@@ -570,11 +521,7 @@ export default function LandingPage() {
               </div>
 
 
-              {/* ============================= */}
-              {/* ACCESS */}
-              {/* ============================= */}
-
-              /*<div>
+              <div>
                 <h4>
                   Access
                 </h4>
@@ -593,11 +540,7 @@ export default function LandingPage() {
               </div>
 
 
-              {/* ============================= */}
-              {/* SUPPORT */}
-              {/* ============================= */}
-
-              /*<div>
+              <div>
                 <h4>
                   Support
                 </h4>
@@ -642,11 +585,7 @@ export default function LandingPage() {
           </div>
 
 
-          {/* ============================= */}
-          /*{/* FOOTER BOTTOM */}
-          {/* ============================= */}
-
-          /*<div className="footer-bottom">
+          <div className="footer-bottom">
             <span>
               © 2026 PhilaLink.
               All rights reserved.
