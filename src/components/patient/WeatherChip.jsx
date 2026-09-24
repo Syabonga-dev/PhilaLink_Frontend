@@ -1476,8 +1476,7 @@ export default function WeatherChip({
       {/* ================================================= */}
 
       {mobileDetailsOpen && (
-        <div className="absolute right-0 top-12 z-50 w-[260px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:hidden">
-
+        <div className="absolute right-0 top-12 z-50 w-[260px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl xl:hidden">
           {/* ============================================= */}
           {/* HEADER */}
           {/* ============================================= */}
