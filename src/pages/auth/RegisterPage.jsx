@@ -41,6 +41,12 @@ const initialForm = {
   confirmPassword: "",
 };
 
+const PENDING_REGISTRATION_USER_ID =
+  "philalink_pending_registration_user_id";
+
+const PENDING_REGISTRATION_EMAIL =
+  "philalink_pending_registration_email";
+
 // =====================================================
 // PASSWORD POLICY
 // Must remain consistent with the backend.
@@ -320,6 +326,22 @@ export default function RegisterPage() {
           );
         }
 
+        /*
+         * Keep the unfinished registration available if the
+         * user refreshes either the verification page or the
+         * clinic-selection page.
+         */
+        sessionStorage.setItem(
+          PENDING_REGISTRATION_USER_ID,
+          userId
+        );
+
+        sessionStorage.setItem(
+          PENDING_REGISTRATION_EMAIL,
+          form.email
+            .trim()
+        );
+
         let codeSent =
           false;
 
@@ -500,7 +522,7 @@ export default function RegisterPage() {
                 </span>
 
                 <p>
-                  Verify email
+                  Email code
                 </p>
               </div>
 
@@ -512,7 +534,19 @@ export default function RegisterPage() {
                 </span>
 
                 <p>
-                  Complete
+                  Verify
+                </p>
+              </div>
+
+              <div className="progress-line" />
+
+              <div className="progress-step">
+                <span>
+                  4
+                </span>
+
+                <p>
+                  Clinic
                 </p>
               </div>
             </div>
