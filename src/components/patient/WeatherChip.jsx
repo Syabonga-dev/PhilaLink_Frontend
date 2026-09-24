@@ -379,6 +379,50 @@ function formatDescription(
 
 
 /* =========================================================
+   LOCATION ACCURACY
+========================================================= */
+
+function formatLocationAccuracy(
+  accuracy
+) {
+  const value =
+    Number(
+      accuracy
+    );
+
+
+  if (
+    !Number.isFinite(
+      value
+    ) ||
+    value < 0
+  ) {
+    return "";
+  }
+
+
+  if (
+    value <
+    1000
+  ) {
+    return `±${Math.round(
+      value
+    )} m`;
+  }
+
+
+  return `±${(
+    value /
+    1000
+  ).toFixed(
+    value >= 10000
+      ? 0
+      : 1
+  )} km`;
+}
+
+
+/* =========================================================
    HIGH ACCURACY POSITION
 
    Collect more than one location sample and keep the
@@ -649,6 +693,12 @@ export default function WeatherChip({
     useState("");
 
   const [
+    locationAccuracy,
+    setLocationAccuracy,
+  ] =
+    useState(null);
+
+  const [
     loading,
     setLoading,
   ] =
@@ -724,6 +774,10 @@ export default function WeatherChip({
     );
 
 
+  /* =======================================================
+     CLINIC FALLBACK WEATHER
+  ======================================================= */
+
   const loadClinicWeather =
     useCallback(
       async ({
@@ -741,6 +795,14 @@ export default function WeatherChip({
 
         setWeatherSource(
           "clinic"
+        );
+
+        /*
+         * Clinic fallback is not using the browser's
+         * current GPS coordinates.
+         */
+        setLocationAccuracy(
+          null
         );
 
         setError("");
@@ -768,6 +830,10 @@ export default function WeatherChip({
       ]
     );
 
+
+  /* =======================================================
+     CURRENT LOCATION WEATHER
+  ======================================================= */
 
   const loadWeather =
     useCallback(
@@ -803,6 +869,11 @@ export default function WeatherChip({
             }
 
 
+            setLocationAccuracy(
+              null
+            );
+
+
             try {
               await loadClinicWeather({
                 background,
@@ -824,6 +895,10 @@ export default function WeatherChip({
 
                 setWeatherSource(
                   ""
+                );
+
+                setLocationAccuracy(
+                  null
                 );
 
                 setError(
@@ -863,6 +938,13 @@ export default function WeatherChip({
                 .longitude
             );
 
+          const accuracy =
+            Number(
+              position
+                .coords
+                .accuracy
+            );
+
 
           if (
             !Number.isFinite(
@@ -878,6 +960,29 @@ export default function WeatherChip({
           }
 
 
+          if (
+            Number.isFinite(
+              accuracy
+            )
+          ) {
+            setLocationAccuracy(
+              accuracy
+            );
+          } else {
+            setLocationAccuracy(
+              null
+            );
+          }
+
+
+          /*
+           * The backend receives the actual browser
+           * latitude and longitude.
+           *
+           * Any place name returned by the weather provider
+           * is deliberately NOT used as the user's physical
+           * location.
+           */
           const result =
             await weatherApi
               .getCurrent(
@@ -907,8 +1012,8 @@ export default function WeatherChip({
           ) {
             setLoading(
               false
-            );
-          }
+          );
+        }
 
 
           void generateWeatherTip(
@@ -942,6 +1047,10 @@ export default function WeatherChip({
       ]
     );
 
+
+  /* =======================================================
+     INITIAL WEATHER + PERIODIC REFRESH
+  ======================================================= */
 
   useEffect(
     () => {
@@ -1016,6 +1125,10 @@ export default function WeatherChip({
   );
 
 
+  /* =======================================================
+     CLOCK REFRESH
+  ======================================================= */
+
   useEffect(
     () => {
       const intervalId =
@@ -1067,6 +1180,10 @@ export default function WeatherChip({
     []
   );
 
+
+  /* =======================================================
+     MOBILE DETAILS CLOSE HANDLERS
+  ======================================================= */
 
   useEffect(
     () => {
@@ -1144,6 +1261,10 @@ export default function WeatherChip({
   );
 
 
+  /* =======================================================
+     LOADING
+  ======================================================= */
+
   if (
     loading
   ) {
@@ -1167,6 +1288,10 @@ export default function WeatherChip({
     );
   }
 
+
+  /* =======================================================
+     ERROR
+  ======================================================= */
 
   if (
     error ||
@@ -1196,6 +1321,10 @@ export default function WeatherChip({
     );
   }
 
+
+  /* =======================================================
+     DISPLAY VALUES
+  ======================================================= */
 
   const isNight =
     isNightTime(
@@ -1229,44 +1358,43 @@ export default function WeatherChip({
     );
 
 
+  const formattedAccuracy =
+    formatLocationAccuracy(
+      locationAccuracy
+    );
+
+
   /*
-   * Use the location name returned by the backend for both
-   * current-location and clinic weather.
+   * IMPORTANT:
    *
-   * When device coordinates are supplied, the backend asks
-   * OpenWeather for the weather at those coordinates and
-   * returns OpenWeather's location name in locationName.
+   * Do not use weather.locationName as the patient's
+   * physical location.
    *
-   * "Current location" remains only as a fallback if the
-   * weather provider does not return a location name.
+   * Weather providers may attach nearby station, airport,
+   * suburb or municipality names to coordinates.
+   *
+   * The weather itself is still requested using the
+   * browser-provided latitude and longitude.
    */
   const locationText =
-    weather
-      .locationName ||
-    (weatherSource ===
+    weatherSource ===
     "current"
       ? "Current location"
-      : "Assigned clinic area");
+      : "Assigned clinic area";
 
 
   const title =
     weatherSource ===
     "current"
-      ? `Weather at ${
-          weather
-            .locationName ||
-          "your current location"
-        }`
-      : `Using assigned clinic weather${
-          weather
-            .locationName
-            ? `: ${
-                weather
-                  .locationName
-              }`
-            : ""
-        }`;
+      ? formattedAccuracy
+        ? `Weather at your current location · Location accuracy ${formattedAccuracy}`
+        : "Weather at your current location"
+      : "Using assigned clinic weather";
 
+
+  /* =======================================================
+     UI
+  ======================================================= */
 
   return (
     <div
@@ -1275,6 +1403,10 @@ export default function WeatherChip({
       }
       className="relative"
     >
+
+      {/* ================================================= */}
+      {/* WEATHER CHIP */}
+      {/* ================================================= */}
 
       <button
         type="button"
@@ -1339,8 +1471,16 @@ export default function WeatherChip({
       </button>
 
 
+      {/* ================================================= */}
+      {/* MOBILE DETAILS */}
+      {/* ================================================= */}
+
       {mobileDetailsOpen && (
-        <div className="absolute right-0 top-12 z-50 w-[240px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:hidden">
+        <div className="absolute right-0 top-12 z-50 w-[260px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:hidden">
+
+          {/* ============================================= */}
+          {/* HEADER */}
+          {/* ============================================= */}
 
           <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
 
@@ -1376,6 +1516,10 @@ export default function WeatherChip({
             </button>
           </div>
 
+
+          {/* ============================================= */}
+          {/* WEATHER DETAILS */}
+          {/* ============================================= */}
 
           <div className="p-4">
 
@@ -1452,6 +1596,10 @@ export default function WeatherChip({
             </div>
 
 
+            {/* =========================================== */}
+            {/* LOCATION */}
+            {/* =========================================== */}
+
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f8fafc] px-3 py-3">
 
               <MapPin
@@ -1469,14 +1617,44 @@ export default function WeatherChip({
                 </p>
 
 
-                <p className="mt-0.5 text-xs font-medium text-[#475569]">
+                <p className="mt-0.5 text-xs font-semibold text-[#475569]">
                   {
                     locationText
                   }
                 </p>
+
+
+                {weatherSource ===
+                  "current" &&
+                  formattedAccuracy && (
+                    <p className="mt-1 text-[11px] leading-4 text-[#64748b]">
+                      Browser accuracy{" "}
+                      <span className="font-semibold text-[#334155]">
+                        {
+                          formattedAccuracy
+                        }
+                      </span>
+                    </p>
+                  )}
               </div>
             </div>
 
+
+            {/* =========================================== */}
+            {/* CURRENT LOCATION EXPLANATION */}
+            {/* =========================================== */}
+
+            {weatherSource ===
+              "current" && (
+              <p className="mt-3 text-[11px] leading-4 text-[#64748b]">
+                Weather is requested using the latitude and longitude reported by your device. Nearby weather-station or airport names are not used as your location.
+              </p>
+            )}
+
+
+            {/* =========================================== */}
+            {/* LOCATION FAILURE / CLINIC FALLBACK */}
+            {/* =========================================== */}
 
             {locationError &&
               weatherSource ===
