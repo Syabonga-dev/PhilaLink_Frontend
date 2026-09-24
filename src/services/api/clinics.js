@@ -1,6 +1,12 @@
-import { api } from "./client.js";
+import {
+  api,
+} from "./client.js";
 
 export const clinicsApi = {
+  // =====================================================
+  // AUTHENTICATED CLINIC ENDPOINTS
+  // =====================================================
+
   getAll: () =>
     api.get(
       "/api/clinics"
@@ -20,7 +26,9 @@ export const clinicsApi = {
     );
   },
 
-  create: (payload) =>
+  create: (
+    payload
+  ) =>
     api.post(
       "/api/clinics",
       payload
@@ -67,6 +75,79 @@ export const clinicsApi = {
 
     return api.patch(
       `/api/clinics/${clinicId}/activate`
+    );
+  },
+
+  // =====================================================
+  // PUBLIC REGISTRATION CLINIC SEARCH
+  // =====================================================
+
+  searchForRegistration: ({
+    search = "",
+    limit = 30,
+    signal,
+  } = {}) => {
+    const params =
+      new URLSearchParams();
+
+    const normalizedSearch =
+      search.trim();
+
+    if (
+      normalizedSearch
+    ) {
+      params.set(
+        "search",
+        normalizedSearch
+      );
+    }
+
+    params.set(
+      "limit",
+      String(limit)
+    );
+
+    return api.get(
+      `/api/registration/clinics?${params.toString()}`,
+      {
+        auth:
+          false,
+
+        signal,
+      }
+    );
+  },
+
+  // =====================================================
+  // PUBLIC REGISTRATION CLINIC SELECTION
+  // =====================================================
+
+  selectForRegistration: ({
+    userId,
+    clinicId,
+  }) => {
+    if (!userId) {
+      throw new Error(
+        "A registration user ID is required."
+      );
+    }
+
+    if (!clinicId) {
+      throw new Error(
+        "Please select a clinic."
+      );
+    }
+
+    return api.post(
+      "/api/registration/clinic-selection",
+      {
+        userId,
+        clinicId,
+      },
+      {
+        auth:
+          false,
+      }
     );
   },
 };
