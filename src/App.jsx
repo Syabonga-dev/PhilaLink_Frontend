@@ -36,6 +36,8 @@ import {
   TermsOfUsePage,
 } from "./pages/legal/LegalPages.jsx";
 
+/* PATIENT */
+
 import PatientAppLayout from "./components/patient/AppLayout.jsx";
 import ThemePreferenceSync from "./components/patient/ThemePreferenceSync.jsx";
 
@@ -46,15 +48,26 @@ import PatientRecordsPage from "./pages/patient/RecordsPage.jsx";
 import PatientNearestClinicsPage from "./pages/patient/NearestClinicsPage.jsx";
 import PatientSettingsPage from "./pages/patient/SettingsPage.jsx";
 
-import NurseDashboard from "./pages/nurse/NurseDashboard.jsx";
-import NursePatientsPage from "./pages/nurse/NursePatientsPage.jsx";
-import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
+/* PROXY */
 
 import ProxyAppLayout from "./components/proxy/ProxyAppLayout.jsx";
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
 import ProxyCollectionsPage from "./pages/proxy/ProxyCollectionsPage.jsx";
 import ProxySettingsPage from "./pages/proxy/ProxySettingsPage.jsx";
+
+/* NURSE */
+
+import NurseAppLayout from "./components/nurse/NurseAppLayout.jsx";
+
+import NurseDashboard from "./pages/nurse/NurseDashboard.jsx";
+import NursePatientsPage from "./pages/nurse/NursePatientsPage.jsx";
+import NursePatientCarePage from "./pages/nurse/NursePatientCarePage.jsx";
+import NurseAppointmentsPage from "./pages/nurse/NurseAppointmentsPage.jsx";
+import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
+import NurseSettingsPage from "./pages/nurse/NurseSettingsPage.jsx";
+
+/* ADMIN */
 
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
@@ -75,9 +88,12 @@ function RedirectIfAuthenticated({
     role,
     isLoading,
     mustChangePassword,
-  } = useAuth();
+  } =
+    useAuth();
 
-  if (isLoading) {
+  if (
+    isLoading
+  ) {
     return children;
   }
 
@@ -212,12 +228,14 @@ export default function App() {
             <PasswordChangeRoute />
           }
         >
+
           <Route
             path="/change-password"
             element={
               <ChangePasswordPage />
             }
           />
+
         </Route>
 
         <Route
@@ -233,7 +251,9 @@ export default function App() {
           }
         >
 
-          {/* PATIENT */}
+          {/* =============================================== */}
+          {/* PATIENT                                         */}
+          {/* =============================================== */}
 
           <Route
             element={
@@ -244,6 +264,7 @@ export default function App() {
               />
             }
           >
+
             <Route
               path="/patient"
               element={
@@ -294,9 +315,12 @@ export default function App() {
               />
 
             </Route>
+
           </Route>
 
-          {/* PROXY */}
+          {/* =============================================== */}
+          {/* PROXY                                           */}
+          {/* =============================================== */}
 
           <Route
             element={
@@ -307,6 +331,7 @@ export default function App() {
               />
             }
           >
+
             <Route
               path="/proxy"
               element={
@@ -343,52 +368,85 @@ export default function App() {
               />
 
             </Route>
+
           </Route>
 
-          {/* NURSE / ADMIN SHELL */}
+          {/* =============================================== */}
+          {/* NURSE                                           */}
+          {/* =============================================== */}
 
           <Route
             element={
-              <AuthenticatedLayout />
+              <RoleRoute
+                allow={[
+                  "Nurse",
+                ]}
+              />
             }
           >
 
-            {/* NURSE */}
-
             <Route
+              path="/nurse"
               element={
-                <RoleRoute
-                  allow={[
-                    "Nurse",
-                  ]}
-                />
+                <NurseAppLayout />
               }
             >
 
               <Route
-                path="/nurse"
+                index
                 element={
                   <NurseDashboard />
                 }
               />
 
               <Route
-                path="/nurse/patients"
+                path="patients"
                 element={
                   <NursePatientsPage />
                 }
               />
 
               <Route
-                path="/nurse/collections"
+                path="patients/:patientId"
+                element={
+                  <NursePatientCarePage />
+                }
+              />
+
+              <Route
+                path="appointments"
+                element={
+                  <NurseAppointmentsPage />
+                }
+              />
+
+              <Route
+                path="collections"
                 element={
                   <CollectionsPage />
                 }
               />
 
+              <Route
+                path="settings"
+                element={
+                  <NurseSettingsPage />
+                }
+              />
+
             </Route>
 
-            {/* ADMIN */}
+          </Route>
+
+          {/* =============================================== */}
+          {/* ADMIN SHELL                                     */}
+          {/* =============================================== */}
+
+          <Route
+            element={
+              <AuthenticatedLayout />
+            }
+          >
 
             <Route
               element={
