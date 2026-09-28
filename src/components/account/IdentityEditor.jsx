@@ -132,10 +132,10 @@ export default function IdentityEditor({
     );
   }
 
-  async function handleDobSubmit(
-    event
-  ) {
-    event.preventDefault();
+  async function handleDobSubmit() {
+    if (savingDob) {
+      return;
+    }
 
     if (!dob) {
       setError(
@@ -170,6 +170,11 @@ export default function IdentityEditor({
         "Date of birth updated. Only the first six digits of the ID number were changed."
       );
     } catch (updateError) {
+      console.error(
+        "Failed to update date of birth:",
+        updateError
+      );
+
       setError(
         updateError?.message ||
           "Could not update the date of birth."
@@ -181,10 +186,10 @@ export default function IdentityEditor({
     }
   }
 
-  async function handleIdSubmit(
-    event
-  ) {
-    event.preventDefault();
+  async function handleIdSubmit() {
+    if (savingId) {
+      return;
+    }
 
     const normalized =
       fullIdNumber.trim();
@@ -226,6 +231,11 @@ export default function IdentityEditor({
         "Full ID number updated. Date of birth was synchronized from its first six digits."
       );
     } catch (updateError) {
+      console.error(
+        "Failed to update ID number:",
+        updateError
+      );
+
       setError(
         updateError?.message ||
           "Could not update the ID number."
@@ -235,6 +245,38 @@ export default function IdentityEditor({
         false
       );
     }
+  }
+
+  function handleDobKeyDown(
+    event
+  ) {
+    if (
+      event.key !==
+      "Enter"
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    handleDobSubmit();
+  }
+
+  function handleIdKeyDown(
+    event
+  ) {
+    if (
+      event.key !==
+      "Enter"
+    ) {
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+
+    handleIdSubmit();
   }
 
   return (
@@ -315,12 +357,11 @@ export default function IdentityEditor({
 
         </div>
 
-        <form
-          onSubmit={
-            handleDobSubmit
-          }
-          className="space-y-4"
-        >
+        {/* ================================================= */}
+        {/* DATE OF BIRTH                                     */}
+        {/* ================================================= */}
+
+        <div className="space-y-4">
 
           <div>
 
@@ -348,6 +389,9 @@ export default function IdentityEditor({
             value={
               dob
             }
+            onKeyDown={
+              handleDobKeyDown
+            }
             onChange={(
               event
             ) => {
@@ -367,7 +411,10 @@ export default function IdentityEditor({
           />
 
           <button
-            type="submit"
+            type="button"
+            onClick={
+              handleDobSubmit
+            }
             disabled={
               savingDob
             }
@@ -384,16 +431,15 @@ export default function IdentityEditor({
 
           </button>
 
-        </form>
+        </div>
 
         <div className="border-t border-[#e2e8f0]" />
 
-        <form
-          onSubmit={
-            handleIdSubmit
-          }
-          className="space-y-4"
-        >
+        {/* ================================================= */}
+        {/* FULL ID NUMBER                                    */}
+        {/* ================================================= */}
+
+        <div className="space-y-4">
 
           <div>
 
@@ -411,7 +457,7 @@ export default function IdentityEditor({
             </div>
 
             <p className="mt-1 text-xs leading-5 text-[#64748b]">
-              Use this only when digits outside the date prefix are also wrong. Your date of birth will be updated from the new ID's first six digits.
+              Use this only when digits outside the date prefix are also wrong. Your date of birth will be updated from the new ID&apos;s first six digits.
             </p>
 
           </div>
@@ -422,6 +468,9 @@ export default function IdentityEditor({
             maxLength={13}
             value={
               fullIdNumber
+            }
+            onKeyDown={
+              handleIdKeyDown
             }
             onChange={(
               event
@@ -451,7 +500,10 @@ export default function IdentityEditor({
           />
 
           <button
-            type="submit"
+            type="button"
+            onClick={
+              handleIdSubmit
+            }
             disabled={
               savingId
             }
@@ -472,7 +524,7 @@ export default function IdentityEditor({
             Your SA ID number is also your login identifier, so use the corrected number the next time you sign in.
           </p>
 
-        </form>
+        </div>
 
       </div>
 
