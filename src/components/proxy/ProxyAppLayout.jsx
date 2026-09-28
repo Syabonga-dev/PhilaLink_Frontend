@@ -13,16 +13,10 @@ import {
 
 import {
   Bell,
-  CalendarCheck,
-  CalendarClock,
-  CircleAlert,
-  Clock3,
   Cookie,
   Home,
   LogOut,
-  Menu,
   PackageCheck,
-  UserRoundCheck,
   Users,
   X,
 } from "lucide-react";
@@ -34,73 +28,53 @@ import {
 import {
   notificationsApi,
 } from "../../services/api/notifications.js";
-/* ========================================= */
-/* SIDEBAR ITEMS */
-/* ========================================= */
 
-const patientItems = [
+/* ========================================================= */
+/* PRIMARY NAVIGATION                                        */
+/* ========================================================= */
+
+const navigationItems = [
   {
-    label: "All Patients",
-    path: "/proxy/patients",
-    icon: Users,
+    label:
+      "Dashboard",
+
+    path:
+      "/proxy",
+
+    icon:
+      Home,
   },
+
   {
-    label: "Due Today",
-    path: "/proxy/patients?status=today",
-    icon: CalendarCheck,
-    status: "today",
+    label:
+      "Patients",
+
+    path:
+      "/proxy/patients",
+
+    icon:
+      Users,
   },
+
   {
-    label: "Upcoming",
-    path: "/proxy/patients?status=upcoming",
-    icon: CalendarClock,
-    status: "upcoming",
-  },
-  {
-    label: "Overdue",
-    path: "/proxy/patients?status=overdue",
-    icon: CircleAlert,
-    status: "overdue",
-  },
-  {
-    label: "No Collection",
-    path: "/proxy/patients?status=none",
-    icon: UserRoundCheck,
-    status: "none",
+    label:
+      "Collections",
+
+    path:
+      "/proxy/collections",
+
+    icon:
+      PackageCheck,
   },
 ];
 
-const collectionItems = [
-  {
-    label: "All Collections",
-    path: "/proxy/collections",
-    icon: PackageCheck,
-  },
-  {
-    label: "Due Today",
-    path: "/proxy/collections?status=today",
-    icon: CalendarCheck,
-    status: "today",
-  },
-  {
-    label: "Upcoming",
-    path: "/proxy/collections?status=upcoming",
-    icon: CalendarClock,
-    status: "upcoming",
-  },
-  {
-    label: "Overdue",
-    path: "/proxy/collections?status=overdue",
-    icon: Clock3,
-    status: "overdue",
-  },
-];
+/* ========================================================= */
+/* HELPERS                                                   */
+/* ========================================================= */
 
-/* ========================================= */
-/* HELPERS */
-/* ========================================= */
-
-function initialsFromName(name) {
+function initialsFromName(
+  name
+) {
   if (!name) {
     return "PX";
   }
@@ -112,10 +86,21 @@ function initialsFromName(name) {
       .filter(Boolean);
 
   if (
-    parts.length === 1
+    parts.length ===
+    0
+  ) {
+    return "PX";
+  }
+
+  if (
+    parts.length ===
+    1
   ) {
     return parts[0]
-      .slice(0, 2)
+      .slice(
+        0,
+        2
+      )
       .toUpperCase();
   }
 
@@ -144,17 +129,44 @@ function formatNotificationDate(
   return date.toLocaleString(
     "en-ZA",
     {
-      day: "numeric",
-      month: "short",
-      hour: "2-digit",
-      minute: "2-digit",
+      day:
+        "numeric",
+
+      month:
+        "short",
+
+      hour:
+        "2-digit",
+
+      minute:
+        "2-digit",
     }
   );
 }
 
-/* ========================================= */
-/* COMPONENT */
-/* ========================================= */
+function getPageTitle(
+  pathname
+) {
+  if (
+    pathname ===
+    "/proxy/patients"
+  ) {
+    return "Patients";
+  }
+
+  if (
+    pathname ===
+    "/proxy/collections"
+  ) {
+    return "Collections";
+  }
+
+  return "Dashboard";
+}
+
+/* ========================================================= */
+/* COMPONENT                                                 */
+/* ========================================================= */
 
 export default function ProxyAppLayout() {
   const location =
@@ -168,38 +180,41 @@ export default function ProxyAppLayout() {
     logout,
   } = useAuth();
 
-  /* ===================================== */
-  /* PROXY THEME */
-  /* ===================================== */
+  /* ===================================================== */
+  /* PROXY THEME                                           */
+  /* ===================================================== */
 
-  useEffect(() => {
-    /*
-     * The Proxy Portal currently uses a fixed light theme.
-     *
-     * Patient theme preferences are applied to the root
-     * document using data-theme. Without resetting that
-     * value here, a Patient's previously selected dark
-     * theme can carry over when a Proxy logs in using the
-     * same browser.
-     *
-     * Do not save this value to localStorage because the
-     * Patient Portal maintains its own database-backed
-     * theme preference.
-     */
-    document.documentElement.setAttribute(
-      "data-theme",
-      "light"
-    );
-  }, []);
+  useEffect(
+    () => {
+      /*
+       * The Proxy Portal currently has its own fixed
+       * light appearance.
+       *
+       * Patient theme preferences may have previously
+       * changed the root document theme in the same browser.
+       */
+      document
+        .documentElement
+        .setAttribute(
+          "data-theme",
+          "light"
+        );
+    },
+    []
+  );
 
-  const [
-    mobileOpen,
-    setMobileOpen,
-  ] = useState(false);
+  /* ===================================================== */
+  /* STATE                                                 */
+  /* ===================================================== */
 
   const [
     notificationsOpen,
     setNotificationsOpen,
+  ] = useState(false);
+
+  const [
+    accountOpen,
+    setAccountOpen,
   ] = useState(false);
 
   const [
@@ -217,6 +232,10 @@ export default function ProxyAppLayout() {
     setNotificationsError,
   ] = useState("");
 
+  /* ===================================================== */
+  /* USER                                                  */
+  /* ===================================================== */
+
   const displayName =
     user?.fullName ||
     user?.name ||
@@ -227,86 +246,40 @@ export default function ProxyAppLayout() {
       displayName
     );
 
-  const query =
-    new URLSearchParams(
-      location.search
+  const currentPageTitle =
+    getPageTitle(
+      location.pathname
     );
 
-  const activeStatus =
-    query.get("status");
+  /* ===================================================== */
+  /* ACTIVE NAVIGATION                                     */
+  /* ===================================================== */
 
-  /* ===================================== */
-  /* PAGE TITLE */
-  /* ===================================== */
-
-  let currentPageTitle =
-    "Dashboard";
-
-  if (
-    location.pathname ===
-    "/proxy/patients"
+  function routeIsActive(
+    path
   ) {
     if (
-      activeStatus ===
-      "today"
+      path ===
+      "/proxy"
     ) {
-      currentPageTitle =
-        "Patients · Due Today";
-    } else if (
-      activeStatus ===
-      "upcoming"
-    ) {
-      currentPageTitle =
-        "Patients · Upcoming";
-    } else if (
-      activeStatus ===
-      "overdue"
-    ) {
-      currentPageTitle =
-        "Patients · Overdue";
-    } else if (
-      activeStatus ===
-      "none"
-    ) {
-      currentPageTitle =
-        "Patients · No Collection";
-    } else {
-      currentPageTitle =
-        "Patients";
+      return (
+        location.pathname ===
+        "/proxy"
+      );
     }
+
+    return (
+      location.pathname ===
+        path ||
+      location.pathname.startsWith(
+        `${path}/`
+      )
+    );
   }
 
-  if (
-    location.pathname ===
-    "/proxy/collections"
-  ) {
-    if (
-      activeStatus ===
-      "today"
-    ) {
-      currentPageTitle =
-        "Collections · Due Today";
-    } else if (
-      activeStatus ===
-      "upcoming"
-    ) {
-      currentPageTitle =
-        "Collections · Upcoming";
-    } else if (
-      activeStatus ===
-      "overdue"
-    ) {
-      currentPageTitle =
-        "Collections · Overdue";
-    } else {
-      currentPageTitle =
-        "Collections";
-    }
-  }
-
-  /* ===================================== */
-  /* NOTIFICATIONS */
-  /* ===================================== */
+  /* ===================================================== */
+  /* NOTIFICATIONS                                         */
+  /* ===================================================== */
 
   const loadNotifications =
     useCallback(
@@ -325,7 +298,9 @@ export default function ProxyAppLayout() {
               .getMine();
 
           setNotifications(
-            Array.isArray(result)
+            Array.isArray(
+              result
+            )
               ? result
               : []
           );
@@ -352,26 +327,20 @@ export default function ProxyAppLayout() {
       []
     );
 
-  useEffect(() => {
-    loadNotifications();
-  }, [
-    loadNotifications,
-  ]);
-
-  useEffect(() => {
-    setMobileOpen(false);
-
-    setNotificationsOpen(
-      false
-    );
-  }, [
-    location.pathname,
-    location.search,
-  ]);
+  useEffect(
+    () => {
+      loadNotifications();
+    },
+    [
+      loadNotifications,
+    ]
+  );
 
   const unreadNotifications =
     notifications.filter(
-      (notification) =>
+      (
+        notification
+      ) =>
         !notification.isRead
     );
 
@@ -392,14 +361,19 @@ export default function ProxyAppLayout() {
         );
 
       setNotifications(
-        (current) =>
+        (
+          current
+        ) =>
           current.map(
-            (item) =>
+            (
+              item
+            ) =>
               item.id ===
               notification.id
                 ? {
                     ...item,
-                    isRead: true,
+                    isRead:
+                      true,
                   }
                 : item
           )
@@ -418,11 +392,17 @@ export default function ProxyAppLayout() {
         .markAllRead();
 
       setNotifications(
-        (current) =>
+        (
+          current
+        ) =>
           current.map(
-            (item) => ({
+            (
+              item
+            ) => ({
               ...item,
-              isRead: true,
+
+              isRead:
+                true,
             })
           )
       );
@@ -434,62 +414,116 @@ export default function ProxyAppLayout() {
     }
   }
 
-  function openCookieSettings() {
-  window.dispatchEvent(
-    new Event(
-      "philalink:open-cookie-settings"
-    )
+  /* ===================================================== */
+  /* CLOSE MENUS ON ROUTE CHANGE                           */
+  /* ===================================================== */
+
+  useEffect(
+    () => {
+      setNotificationsOpen(
+        false
+      );
+
+      setAccountOpen(
+        false
+      );
+    },
+    [
+      location.pathname,
+      location.search,
+    ]
   );
 
-  setMobileOpen(false);
-}
+  /* ===================================================== */
+  /* ESCAPE KEY                                            */
+  /* ===================================================== */
+
+  useEffect(
+    () => {
+      if (
+        !notificationsOpen &&
+        !accountOpen
+      ) {
+        return undefined;
+      }
+
+      function handleKeyDown(
+        event
+      ) {
+        if (
+          event.key ===
+          "Escape"
+        ) {
+          setNotificationsOpen(
+            false
+          );
+
+          setAccountOpen(
+            false
+          );
+        }
+      }
+
+      window.addEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      return () =>
+        window.removeEventListener(
+          "keydown",
+          handleKeyDown
+        );
+    },
+    [
+      notificationsOpen,
+      accountOpen,
+    ]
+  );
+
+  /* ===================================================== */
+  /* ACCOUNT ACTIONS                                       */
+  /* ===================================================== */
+
+  function openCookieSettings() {
+    window.dispatchEvent(
+      new Event(
+        "philalink:open-cookie-settings"
+      )
+    );
+
+    setAccountOpen(
+      false
+    );
+  }
 
   function handleLogout() {
+    setAccountOpen(
+      false
+    );
+
     logout();
 
     navigate(
       "/login",
       {
-        replace: true,
+        replace:
+          true,
       }
     );
   }
 
-  /* ===================================== */
-  /* ACTIVE SIDEBAR LOGIC */
-  /* ===================================== */
+  /* ===================================================== */
+  /* DESKTOP SIDEBAR                                       */
+  /* ===================================================== */
 
-  function itemIsActive(
-    basePath,
-    status = null
-  ) {
-    if (
-      location.pathname !==
-      basePath
-    ) {
-      return false;
-    }
-
-    if (!status) {
-      return !activeStatus;
-    }
-
+  function DesktopSidebar() {
     return (
-      activeStatus ===
-      status
-    );
-  }
+      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[248px] flex-col border-r border-[#e2e8f0] bg-white lg:flex">
 
-  /* ===================================== */
-  /* NAV CONTENT */
-  /* ===================================== */
-
-  function NavigationContent() {
-    return (
-      <>
         {/* LOGO */}
 
-        <div className="flex h-[78px] items-center border-b border-[#e2e8f0] px-7">
+        <div className="flex h-[72px] shrink-0 items-center border-b border-[#e2e8f0] px-6">
           <button
             type="button"
             onClick={() =>
@@ -497,212 +531,178 @@ export default function ProxyAppLayout() {
                 "/proxy"
               )
             }
-            className="flex items-center gap-3"
+            className="flex min-w-0 items-center gap-3 rounded-lg text-left focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20"
           >
             <img
               src="/logo2.png"
-              alt="PhilaLink logo"
-              className="h-11 w-11 shrink-0 object-contain"
+              alt="PhilaLink"
+              className="h-10 w-10 shrink-0 object-contain"
             />
 
-            <div className="text-left">
-              <div className="text-xl font-bold tracking-tight text-[#0f172a]">
+            <div className="min-w-0">
+              <div className="truncate text-lg font-bold tracking-tight text-[#0f172a]">
                 Phila
                 <span className="text-[#0f766e]">
                   Link
                 </span>
               </div>
 
-              <div className="text-xs text-[#64748b]">
+              <div className="truncate text-xs text-[#64748b]">
                 Proxy Portal
               </div>
             </div>
           </button>
         </div>
 
-        {/* NAVIGATION */}
+        {/* NAV */}
 
-        <nav className="flex-1 overflow-y-auto px-4 py-5">
-          {/* DASHBOARD */}
+        <nav className="flex-1 overflow-y-auto px-3 py-5">
 
-          <SidebarLink
-            path="/proxy"
-            label="Dashboard"
-            icon={Home}
-            active={
-              location.pathname ===
-              "/proxy"
+          <SidebarSectionLabel>
+            Workspace
+          </SidebarSectionLabel>
+
+          <DesktopNavLink
+            item={
+              navigationItems[0]
             }
+            active={routeIsActive(
+              navigationItems[0]
+                .path
+            )}
           />
 
-          {/* PATIENTS */}
-
           <SidebarSectionLabel>
-            Patients
+            Care
           </SidebarSectionLabel>
 
-          {patientItems.map(
-            (item) => (
-              <SidebarLink
-                key={
-                  item.path
-                }
-                path={
-                  item.path
-                }
-                label={
-                  item.label
-                }
-                icon={
-                  item.icon
-                }
-                nested
-                active={itemIsActive(
-                  "/proxy/patients",
-                  item.status
-                )}
-              />
-            )
-          )}
+          {navigationItems
+            .slice(1)
+            .map(
+              (
+                item
+              ) => (
+                <DesktopNavLink
+                  key={
+                    item.path
+                  }
+                  item={
+                    item
+                  }
+                  active={routeIsActive(
+                    item.path
+                  )}
+                />
+              )
+            )}
 
-          {/* COLLECTIONS */}
-
-          <SidebarSectionLabel>
-            Collections
-          </SidebarSectionLabel>
-
-          {collectionItems.map(
-            (item) => (
-              <SidebarLink
-                key={
-                  item.path
-                }
-                path={
-                  item.path
-                }
-                label={
-                  item.label
-                }
-                icon={
-                  item.icon
-                }
-                nested
-                active={itemIsActive(
-                  "/proxy/collections",
-                  item.status
-                )}
-              />
-            )
-          )}
         </nav>
 
         {/* ACCOUNT */}
 
-        <div className="border-t border-[#e2e8f0] p-4">
-          <div className="mb-3 flex items-center gap-3 rounded-xl bg-[#f8fafc] p-3">
+        <div className="shrink-0 border-t border-[#e2e8f0] p-3">
+
+          <div className="mb-2 flex items-center gap-3 rounded-xl bg-[#f8fafc] p-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white">
               {initials}
             </div>
 
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold text-[#0f172a]">
+              <p className="truncate text-sm font-semibold text-[#0f172a]">
                 {displayName}
-              </div>
+              </p>
 
-              <div className="text-xs text-[#64748b]">
+              <p className="mt-0.5 text-xs text-[#64748b]">
                 Proxy
-              </div>
-            </div>
-          </div>
-
-          <button
-              type="button"
-              onClick={
-                openCookieSettings
-              }
-              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#64748b] transition hover:bg-[#f1f5f9] hover:text-[#0f172a]"
-            >
-              <Cookie
-                size={19}
-              />
-
-              Cookie settings
-            </button>
-
-          <button
-            type="button"
-            onClick={
-              handleLogout
-            }
-            className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-medium text-[#64748b] transition hover:bg-[#fee2e2] hover:text-[#dc2626]"
-          >
-            <LogOut
-              size={19}
-            />
-
-            Logout
-          </button>
-        </div>
-      </>
-    );
-  }
-
-  return (
-    <div className="patient-figma-root min-h-screen bg-[#f8fafc] text-[#0f172a]">
-      {/* DESKTOP SIDEBAR */}
-
-      <aside className="fixed inset-y-0 left-0 z-40 hidden w-[270px] flex-col border-r border-[#e2e8f0] bg-white lg:flex">
-        <NavigationContent />
-      </aside>
-
-      {/* CONTENT */}
-
-      <div className="lg:pl-[270px]">
-        <header className="sticky top-0 z-30 flex h-[78px] items-center justify-between border-b border-[#e2e8f0] bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
-          <div className="flex min-w-0 items-center gap-3">
-            <button
-              type="button"
-              onClick={() => {
-                setNotificationsOpen(
-                  false
-                );
-
-                setMobileOpen(
-                  true
-                );
-              }}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[#e2e8f0] text-[#475569] lg:hidden"
-              aria-label="Open navigation"
-            >
-              <Menu
-                size={21}
-              />
-            </button>
-
-            <div className="min-w-0">
-              <h1 className="truncate text-lg font-semibold text-[#0f172a] sm:text-xl">
-                {
-                  currentPageTitle
-                }
-              </h1>
-
-              <p className="hidden truncate text-sm text-[#64748b] sm:block">
-                Welcome back,{" "}
-                {displayName}
               </p>
             </div>
           </div>
 
-          {/* HEADER ACTIONS */}
+          <AccountAction
+            icon={
+              Cookie
+            }
+            label="Cookie settings"
+            onClick={
+              openCookieSettings
+            }
+          />
 
-          <div className="ml-3 flex shrink-0 items-center gap-3">
+          <AccountAction
+            icon={
+              LogOut
+            }
+            label="Logout"
+            danger
+            onClick={
+              handleLogout
+            }
+          />
+
+        </div>
+
+      </aside>
+    );
+  }
+
+  /* ===================================================== */
+  /* RENDER                                                */
+  /* ===================================================== */
+
+  return (
+    <div className="patient-figma-root min-h-screen bg-[#f8fafc] text-[#0f172a]">
+
+      <DesktopSidebar />
+
+      {/* ================================================= */}
+      {/* APPLICATION                                      */}
+      {/* ================================================= */}
+
+      <div className="min-h-screen lg:pl-[248px]">
+
+        {/* =============================================== */}
+        {/* TOP HEADER                                      */}
+        {/* =============================================== */}
+
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-[#e2e8f0] bg-white/95 px-4 backdrop-blur sm:px-5 lg:h-[72px] lg:px-8">
+
+          {/* PAGE */}
+
+          <div className="min-w-0">
+            <h1 className="truncate text-base font-semibold text-[#0f172a] sm:text-lg lg:text-xl">
+              {currentPageTitle}
+            </h1>
+
+            <p className="mt-0.5 hidden truncate text-xs text-[#64748b] sm:block lg:text-sm">
+              Welcome back,{" "}
+              {displayName}
+            </p>
+          </div>
+
+          {/* ACTIONS */}
+
+          <div className="ml-3 flex shrink-0 items-center gap-2 sm:gap-3">
+
+            {/* NOTIFICATIONS */}
+
             <div className="relative">
+
               <button
                 type="button"
+                aria-label="Notifications"
+                aria-expanded={
+                  notificationsOpen
+                }
                 onClick={() => {
+                  setAccountOpen(
+                    false
+                  );
+
                   setNotificationsOpen(
-                    (value) =>
-                      !value
+                    (
+                      current
+                    ) =>
+                      !current
                   );
 
                   if (
@@ -711,16 +711,15 @@ export default function ProxyAppLayout() {
                     loadNotifications();
                   }
                 }}
-                className="relative flex h-10 w-10 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#475569] transition hover:bg-[#f8fafc]"
-                aria-label="Notifications"
+                className="relative flex h-10 w-10 items-center justify-center rounded-xl border border-[#e2e8f0] bg-white text-[#475569] transition hover:bg-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20"
               >
                 <Bell
-                  size={19}
+                  size={18}
                 />
 
                 {unreadNotifications.length >
                   0 && (
-                  <span className="absolute right-[3px] top-[2px] flex h-4 min-w-4 items-center justify-center rounded-full bg-[#dc2626] px-1 text-[9px] font-bold text-white">
+                  <span className="absolute -right-1 -top-1 flex h-[18px] min-w-[18px] items-center justify-center rounded-full border-2 border-white bg-[#dc2626] px-1 text-[9px] font-bold leading-none text-white">
                     {unreadNotifications.length >
                     9
                       ? "9+"
@@ -730,227 +729,518 @@ export default function ProxyAppLayout() {
               </button>
 
               {notificationsOpen && (
-                <div className="fixed left-3 right-3 top-[68px] z-[2100] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[380px]">
-                  <div className="border-b border-[#e2e8f0] px-5 py-4">
-                    <div className="flex items-center justify-between gap-3">
-                      <div>
-                        <h2 className="font-semibold text-[#0f172a]">
-                          Notifications
-                        </h2>
-
-                        <p className="mt-1 text-xs text-[#64748b]">
-                          Collection reminders
-                          and PhilaLink updates
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setNotificationsOpen(
-                            false
-                          )
-                        }
-                        className="flex h-8 w-8 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"
-                      >
-                        <X
-                          size={16}
-                        />
-                      </button>
-                    </div>
-
-                    {unreadNotifications.length >
-                      0 && (
-                      <button
-                        type="button"
-                        onClick={
-                          markAllRead
-                        }
-                        className="mt-3 text-xs font-semibold text-[#0f766e]"
-                      >
-                        Mark all as read
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="max-h-[380px] divide-y divide-[#e2e8f0] overflow-y-auto">
-                    {notificationsLoading ? (
-                      <div className="px-5 py-8 text-center text-sm text-[#64748b]">
-                        Loading
-                        notifications...
-                      </div>
-                    ) : notificationsError ? (
-                      <div className="px-5 py-6">
-                        <p className="text-sm text-[#dc2626]">
-                          {
-                            notificationsError
-                          }
-                        </p>
-                      </div>
-                    ) : notifications.length ===
-                      0 ? (
-                      <div className="px-5 py-10 text-center">
-                        <Bell
-                          size={25}
-                          className="mx-auto text-[#94a3b8]"
-                        />
-
-                        <p className="mt-3 text-sm font-medium text-[#0f172a]">
-                          No notifications
-                        </p>
-                      </div>
-                    ) : (
-                      notifications.map(
-                        (
-                          notification
-                        ) => (
-                          <button
-                            key={
-                              notification.id
-                            }
-                            type="button"
-                            onClick={() =>
-                              handleNotificationClick(
-                                notification
-                              )
-                            }
-                            className={`w-full px-5 py-4 text-left transition hover:bg-[#f8fafc] ${
-                              notification.isRead
-                                ? "bg-white"
-                                : "bg-[#f0fdfa]"
-                            }`}
-                          >
-                            <div className="flex items-start gap-3">
-                              {!notification.isRead && (
-                                <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#0f766e]" />
-                              )}
-
-                              <div className="min-w-0 flex-1">
-                                <p className="text-sm leading-5 text-[#0f172a]">
-                                  {
-                                    notification.message
-                                  }
-                                </p>
-
-                                <p className="mt-1 text-xs text-[#64748b]">
-                                  {formatNotificationDate(
-                                    notification.createdAt
-                                  )}
-                                </p>
-                              </div>
-                            </div>
-                          </button>
-                        )
-                      )
-                    )}
-                  </div>
-                </div>
+                <NotificationPanel
+                  notifications={
+                    notifications
+                  }
+                  loading={
+                    notificationsLoading
+                  }
+                  error={
+                    notificationsError
+                  }
+                  unreadCount={
+                    unreadNotifications.length
+                  }
+                  onClose={() =>
+                    setNotificationsOpen(
+                      false
+                    )
+                  }
+                  onNotificationClick={
+                    handleNotificationClick
+                  }
+                  onMarkAllRead={
+                    markAllRead
+                  }
+                />
               )}
+
             </div>
 
+            {/* MOBILE ACCOUNT */}
+
+            <div className="relative lg:hidden">
+
+              <button
+                type="button"
+                aria-label="Account menu"
+                aria-expanded={
+                  accountOpen
+                }
+                onClick={() => {
+                  setNotificationsOpen(
+                    false
+                  );
+
+                  setAccountOpen(
+                    (
+                      current
+                    ) =>
+                      !current
+                  );
+                }}
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white transition focus:outline-none focus:ring-2 focus:ring-[#0f766e]/30 focus:ring-offset-2"
+              >
+                {initials}
+              </button>
+
+              {accountOpen && (
+                <MobileAccountPanel
+                  displayName={
+                    displayName
+                  }
+                  initials={
+                    initials
+                  }
+                  onCookieSettings={
+                    openCookieSettings
+                  }
+                  onLogout={
+                    handleLogout
+                  }
+                  onClose={() =>
+                    setAccountOpen(
+                      false
+                    )
+                  }
+                />
+              )}
+
+            </div>
+
+            {/* DESKTOP HEADER AVATAR */}
+
             <div
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white"
+              className="hidden h-10 w-10 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white lg:flex"
               title={
                 displayName
               }
             >
               {initials}
             </div>
+
           </div>
+
         </header>
 
-        <main className="min-h-[calc(100vh-78px)]">
+        {/* =============================================== */}
+        {/* CONTENT                                         */}
+        {/* =============================================== */}
+
+        <main className="min-h-[calc(100vh-64px)] pb-24 lg:min-h-[calc(100vh-72px)] lg:pb-0">
           <Outlet />
         </main>
+
       </div>
 
-      {/* MOBILE SIDEBAR */}
+      {/* ================================================= */}
+      {/* MOBILE BOTTOM NAVIGATION                         */}
+      {/* ================================================= */}
 
-      {mobileOpen && (
-        <div className="fixed inset-0 z-[3000] lg:hidden">
-          <button
-            type="button"
-            onClick={() =>
-              setMobileOpen(
-                false
-              )
-            }
-            className="absolute inset-0 bg-black/30"
-            aria-label="Close navigation"
-          />
-
-          <aside className="absolute inset-y-0 left-0 flex w-[min(310px,88vw)] flex-col bg-white shadow-2xl">
-            <button
-              type="button"
-              onClick={() =>
-                setMobileOpen(
-                  false
-                )
-              }
-              className="absolute right-3 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full text-[#64748b] hover:bg-[#f1f5f9]"
-            >
-              <X
-                size={18}
+      <nav
+        aria-label="Proxy navigation"
+        className="fixed inset-x-0 bottom-0 z-40 border-t border-[#e2e8f0] bg-white/95 px-2 pt-2 shadow-[0_-6px_24px_rgba(15,23,42,0.06)] backdrop-blur lg:hidden"
+        style={{
+          paddingBottom:
+            "max(env(safe-area-inset-bottom), 0.5rem)",
+        }}
+      >
+        <div className="mx-auto grid max-w-md grid-cols-3 gap-1">
+          {navigationItems.map(
+            (
+              item
+            ) => (
+              <MobileNavLink
+                key={
+                  item.path
+                }
+                item={
+                  item
+                }
+                active={routeIsActive(
+                  item.path
+                )}
               />
-            </button>
-
-            <NavigationContent />
-          </aside>
+            )
+          )}
         </div>
-      )}
+      </nav>
+
     </div>
   );
 }
 
-/* ========================================= */
-/* SIDEBAR SECTION */
-/* ========================================= */
+/* ========================================================= */
+/* DESKTOP NAV LINK                                          */
+/* ========================================================= */
+
+function DesktopNavLink({
+  item,
+  active,
+}) {
+  const Icon =
+    item.icon;
+
+  return (
+    <Link
+      to={
+        item.path
+      }
+      aria-current={
+        active
+          ? "page"
+          : undefined
+      }
+      className={[
+        "mb-1 flex min-h-[44px] items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-medium transition focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20",
+        active
+          ? "bg-[#ccfbf1] text-[#115e59]"
+          : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]",
+      ].join(" ")}
+    >
+      <Icon
+        size={19}
+        strokeWidth={
+          active
+            ? 2.2
+            : 2
+        }
+      />
+
+      <span>
+        {item.label}
+      </span>
+    </Link>
+  );
+}
+
+/* ========================================================= */
+/* MOBILE NAV LINK                                           */
+/* ========================================================= */
+
+function MobileNavLink({
+  item,
+  active,
+}) {
+  const Icon =
+    item.icon;
+
+  return (
+    <Link
+      to={
+        item.path
+      }
+      aria-current={
+        active
+          ? "page"
+          : undefined
+      }
+      className={[
+        "flex min-h-[54px] flex-col items-center justify-center gap-1 rounded-xl px-2 py-1 text-[11px] font-semibold transition focus:outline-none focus:ring-2 focus:ring-[#0f766e]/20",
+        active
+          ? "bg-[#f0fdfa] text-[#0f766e]"
+          : "text-[#64748b] active:bg-[#f1f5f9]",
+      ].join(" ")}
+    >
+      <Icon
+        size={20}
+        strokeWidth={
+          active
+            ? 2.3
+            : 2
+        }
+      />
+
+      <span>
+        {item.label}
+      </span>
+    </Link>
+  );
+}
+
+/* ========================================================= */
+/* SIDEBAR SECTION LABEL                                     */
+/* ========================================================= */
 
 function SidebarSectionLabel({
   children,
 }) {
   return (
-    <div className="mb-2 mt-6 px-4 text-[10px] font-bold uppercase tracking-[0.14em] text-[#94a3b8]">
+    <div className="mb-2 mt-4 px-3.5 text-[10px] font-bold uppercase tracking-[0.14em] text-[#94a3b8] first:mt-0">
       {children}
     </div>
   );
 }
 
-/* ========================================= */
-/* SIDEBAR LINK */
-/* ========================================= */
+/* ========================================================= */
+/* ACCOUNT ACTION                                            */
+/* ========================================================= */
 
-function SidebarLink({
-  path,
-  label,
+function AccountAction({
   icon: Icon,
-  active,
-  nested = false,
+  label,
+  onClick,
+  danger = false,
 }) {
   return (
-    <Link
-      to={path}
-      className={`mb-1 flex items-center gap-3 rounded-xl text-sm font-medium transition ${
-        nested
-          ? "px-4 py-2.5"
-          : "px-4 py-3"
-      } ${
-        active
-          ? "bg-[#ccfbf1] text-[#115e59]"
-          : "text-[#475569] hover:bg-[#f1f5f9] hover:text-[#0f172a]"
-      }`}
+    <button
+      type="button"
+      onClick={
+        onClick
+      }
+      className={[
+        "flex min-h-[44px] w-full items-center gap-3 rounded-xl px-3.5 py-2.5 text-left text-sm font-medium transition focus:outline-none focus:ring-2",
+        danger
+          ? "text-[#64748b] hover:bg-[#fee2e2] hover:text-[#dc2626] focus:ring-[#dc2626]/20"
+          : "text-[#64748b] hover:bg-[#f1f5f9] hover:text-[#0f172a] focus:ring-[#0f766e]/20",
+      ].join(" ")}
     >
       <Icon
-        size={
-          nested
-            ? 17
-            : 20
-        }
+        size={18}
       />
 
-      <span>
-        {label}
-      </span>
-    </Link>
+      {label}
+    </button>
+  );
+}
+
+/* ========================================================= */
+/* MOBILE ACCOUNT PANEL                                      */
+/* ========================================================= */
+
+function MobileAccountPanel({
+  displayName,
+  initials,
+  onCookieSettings,
+  onLogout,
+  onClose,
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Close account menu"
+        onClick={
+          onClose
+        }
+        className="fixed inset-0 z-[1990] bg-transparent"
+      />
+
+      <div className="fixed left-3 right-3 top-[72px] z-[2000] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[300px]">
+
+        <div className="flex items-center gap-3 border-b border-[#e2e8f0] p-4">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#0f766e] text-sm font-semibold text-white">
+            {initials}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-semibold text-[#0f172a]">
+              {displayName}
+            </p>
+
+            <p className="mt-0.5 text-xs text-[#64748b]">
+              Proxy account
+            </p>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Close account menu"
+            onClick={
+              onClose
+            }
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#64748b] hover:bg-[#f1f5f9]"
+          >
+            <X
+              size={16}
+            />
+          </button>
+        </div>
+
+        <div className="p-2">
+
+          <AccountAction
+            icon={
+              Cookie
+            }
+            label="Cookie settings"
+            onClick={
+              onCookieSettings
+            }
+          />
+
+          <AccountAction
+            icon={
+              LogOut
+            }
+            label="Logout"
+            danger
+            onClick={
+              onLogout
+            }
+          />
+
+        </div>
+
+      </div>
+    </>
+  );
+}
+
+/* ========================================================= */
+/* NOTIFICATION PANEL                                        */
+/* ========================================================= */
+
+function NotificationPanel({
+  notifications,
+  loading,
+  error,
+  unreadCount,
+  onClose,
+  onNotificationClick,
+  onMarkAllRead,
+}) {
+  return (
+    <>
+      <button
+        type="button"
+        aria-label="Close notifications"
+        onClick={
+          onClose
+        }
+        className="fixed inset-0 z-[1990] bg-transparent"
+      />
+
+      <div className="fixed left-3 right-3 top-[72px] z-[2000] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl sm:absolute sm:left-auto sm:right-0 sm:top-12 sm:w-[380px]">
+
+        {/* HEADER */}
+
+        <div className="border-b border-[#e2e8f0] px-4 py-4 sm:px-5">
+
+          <div className="flex items-start justify-between gap-3">
+
+            <div>
+              <h2 className="font-semibold text-[#0f172a]">
+                Notifications
+              </h2>
+
+              <p className="mt-1 text-xs leading-5 text-[#64748b]">
+                Collection reminders and PhilaLink updates
+              </p>
+            </div>
+
+            <button
+              type="button"
+              aria-label="Close notifications"
+              onClick={
+                onClose
+              }
+              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#64748b] transition hover:bg-[#f1f5f9]"
+            >
+              <X
+                size={16}
+              />
+            </button>
+
+          </div>
+
+          {unreadCount >
+            0 && (
+            <button
+              type="button"
+              onClick={
+                onMarkAllRead
+              }
+              className="mt-3 text-xs font-semibold text-[#0f766e]"
+            >
+              Mark all as read
+            </button>
+          )}
+
+        </div>
+
+        {/* CONTENT */}
+
+        <div className="max-h-[65vh] divide-y divide-[#e2e8f0] overflow-y-auto sm:max-h-[420px]">
+
+          {loading ? (
+            <div className="px-5 py-10 text-center text-sm text-[#64748b]">
+              Loading notifications...
+            </div>
+          ) : error ? (
+            <div className="px-5 py-6">
+              <p className="text-sm leading-6 text-[#dc2626]">
+                {error}
+              </p>
+            </div>
+          ) : notifications.length ===
+            0 ? (
+            <div className="px-5 py-10 text-center">
+              <Bell
+                size={24}
+                className="mx-auto text-[#94a3b8]"
+              />
+
+              <p className="mt-3 text-sm font-medium text-[#0f172a]">
+                No notifications
+              </p>
+
+              <p className="mt-1 text-xs text-[#64748b]">
+                New reminders will appear here.
+              </p>
+            </div>
+          ) : (
+            notifications.map(
+              (
+                notification
+              ) => (
+                <button
+                  key={
+                    notification.id
+                  }
+                  type="button"
+                  onClick={() =>
+                    onNotificationClick(
+                      notification
+                    )
+                  }
+                  className={[
+                    "w-full px-4 py-4 text-left transition hover:bg-[#f8fafc] sm:px-5",
+                    notification.isRead
+                      ? "bg-white"
+                      : "bg-[#f0fdfa]",
+                  ].join(" ")}
+                >
+                  <div className="flex items-start gap-3">
+
+                    {!notification.isRead && (
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-[#0f766e]" />
+                    )}
+
+                    <div className="min-w-0 flex-1">
+
+                      <p className="text-sm leading-5 text-[#0f172a]">
+                        {notification.message}
+                      </p>
+
+                      <p className="mt-1.5 text-xs text-[#64748b]">
+                        {formatNotificationDate(
+                          notification.createdAt
+                        )}
+                      </p>
+
+                    </div>
+
+                  </div>
+                </button>
+              )
+            )
+          )}
+
+        </div>
+
+      </div>
+    </>
   );
 }
