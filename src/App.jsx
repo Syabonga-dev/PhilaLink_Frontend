@@ -54,6 +54,7 @@ import ProxyAppLayout from "./components/proxy/ProxyAppLayout.jsx";
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
 import ProxyCollectionsPage from "./pages/proxy/ProxyCollectionsPage.jsx";
+import ProxySettingsPage from "./pages/proxy/ProxySettingsPage.jsx";
 
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
@@ -62,9 +63,9 @@ import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage.jsx";
 import ManageClinicsPage from "./pages/admin/ManageClinicsPage.jsx";
 import RegisterClinicAdminPage from "./pages/admin/RegisterClinicAdminPage.jsx";
 
-// =====================================================
-// REDIRECT AUTHENTICATED USERS
-// =====================================================
+/* ========================================================= */
+/* AUTH REDIRECT                                             */
+/* ========================================================= */
 
 function RedirectIfAuthenticated({
   children,
@@ -76,9 +77,7 @@ function RedirectIfAuthenticated({
     mustChangePassword,
   } = useAuth();
 
-  if (
-    isLoading
-  ) {
+  if (isLoading) {
     return children;
   }
 
@@ -102,9 +101,9 @@ function RedirectIfAuthenticated({
   return children;
 }
 
-// =====================================================
-// PATIENT LAYOUT + THEME
-// =====================================================
+/* ========================================================= */
+/* PATIENT THEME                                             */
+/* ========================================================= */
 
 function PatientLayoutWithTheme() {
   return (
@@ -114,17 +113,15 @@ function PatientLayoutWithTheme() {
   );
 }
 
-// =====================================================
-// APP
-// =====================================================
+/* ========================================================= */
+/* APP                                                       */
+/* ========================================================= */
 
 export default function App() {
   return (
     <Routes>
 
-      {/* ================================================= */}
       {/* PUBLIC */}
-      {/* ================================================= */}
 
       <Route
         path="/"
@@ -188,10 +185,6 @@ export default function App() {
         }
       />
 
-      {/* ================================================= */}
-      {/* PUBLIC LEGAL DOCUMENTS */}
-      {/* ================================================= */}
-
       <Route
         path="/privacy-policy"
         element={
@@ -206,19 +199,13 @@ export default function App() {
         }
       />
 
-      {/* ================================================= */}
       {/* AUTHENTICATED */}
-      {/* ================================================= */}
 
       <Route
         element={
           <ProtectedRoute />
         }
       >
-
-        {/* =============================================== */}
-        {/* REQUIRED PASSWORD CHANGE */}
-        {/* =============================================== */}
 
         <Route
           element={
@@ -233,19 +220,6 @@ export default function App() {
           />
         </Route>
 
-        {/* =============================================== */}
-        {/* REQUIRED LEGAL ACCEPTANCE */}
-        {/* =============================================== */}
-
-        {/*
-         * Important:
-         *
-         * /legal-acceptance must be authenticated,
-         * but must NOT be inside LegalProtectedRoute.
-         *
-         * Otherwise the legal guard would redirect
-         * back to itself forever.
-         */}
         <Route
           path="/legal-acceptance"
           element={
@@ -253,19 +227,13 @@ export default function App() {
           }
         />
 
-        {/* =============================================== */}
-        {/* LEGAL-COMPLIANT APPLICATION */}
-        {/* =============================================== */}
-
         <Route
           element={
             <LegalProtectedRoute />
           }
         >
 
-          {/* ============================================= */}
           {/* PATIENT */}
-          {/* ============================================= */}
 
           <Route
             element={
@@ -282,6 +250,7 @@ export default function App() {
                 <PatientLayoutWithTheme />
               }
             >
+
               <Route
                 index
                 element={
@@ -323,12 +292,11 @@ export default function App() {
                   <PatientSettingsPage />
                 }
               />
+
             </Route>
           </Route>
 
-          {/* ============================================= */}
           {/* PROXY */}
-          {/* ============================================= */}
 
           <Route
             element={
@@ -345,6 +313,7 @@ export default function App() {
                 <ProxyAppLayout />
               }
             >
+
               <Route
                 index
                 element={
@@ -365,12 +334,18 @@ export default function App() {
                   <ProxyCollectionsPage />
                 }
               />
+
+              <Route
+                path="settings"
+                element={
+                  <ProxySettingsPage />
+                }
+              />
+
             </Route>
           </Route>
 
-          {/* ============================================= */}
-          {/* NURSE + ADMIN LAYOUT */}
-          {/* ============================================= */}
+          {/* NURSE / ADMIN SHELL */}
 
           <Route
             element={
@@ -378,9 +353,7 @@ export default function App() {
             }
           >
 
-            {/* =========================================== */}
             {/* NURSE */}
-            {/* =========================================== */}
 
             <Route
               element={
@@ -391,6 +364,7 @@ export default function App() {
                 />
               }
             >
+
               <Route
                 path="/nurse"
                 element={
@@ -411,11 +385,10 @@ export default function App() {
                   <CollectionsPage />
                 }
               />
+
             </Route>
 
-            {/* =========================================== */}
-            {/* CLINIC ADMIN + SUPER ADMIN */}
-            {/* =========================================== */}
+            {/* ADMIN */}
 
             <Route
               element={
@@ -427,6 +400,7 @@ export default function App() {
                 />
               }
             >
+
               <Route
                 path="/admin"
                 element={
@@ -454,11 +428,10 @@ export default function App() {
                   <AdminAuditLogPage />
                 }
               />
+
             </Route>
 
-            {/* =========================================== */}
             {/* SUPER ADMIN */}
-            {/* =========================================== */}
 
             <Route
               element={
@@ -469,6 +442,7 @@ export default function App() {
                 />
               }
             >
+
               <Route
                 path="/admin/clinics"
                 element={
@@ -482,6 +456,7 @@ export default function App() {
                   <RegisterClinicAdminPage />
                 }
               />
+
             </Route>
 
           </Route>
@@ -489,10 +464,6 @@ export default function App() {
         </Route>
 
       </Route>
-
-      {/* ================================================= */}
-      {/* NOT FOUND */}
-      {/* ================================================= */}
 
       <Route
         path="*"

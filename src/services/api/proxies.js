@@ -1,4 +1,6 @@
-import { api } from "./client.js";
+import {
+  api,
+} from "./client.js";
 
 /* ========================================================= */
 /* QUERY STRING                                              */
@@ -53,6 +55,28 @@ export const proxiesApi = {
   getMyAssignedWorker: () =>
     api.get(
       "/api/proxies/me"
+    ),
+
+  // =====================================================
+  // PROXY PROFILE
+  // =====================================================
+
+  getProfile: ({
+    signal,
+  } = {}) =>
+    api.get(
+      "/api/proxies/me/profile",
+      {
+        signal,
+      }
+    ),
+
+  updateProfile: (
+    payload
+  ) =>
+    api.put(
+      "/api/proxies/me/profile",
+      payload
     ),
 
   // =====================================================
