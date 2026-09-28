@@ -54,7 +54,6 @@ const emptyProfile = {
   gender:
     "",
 
-
   addressLine1:
     "",
 
@@ -349,7 +348,6 @@ export default function ProxySettingsPage() {
                 data?.gender
               ),
 
-
             addressLine1:
               valueOrEmpty(
                 data?.addressLine1
@@ -478,7 +476,6 @@ export default function ProxySettingsPage() {
       return "Email address is required.";
     }
 
-
     return "";
   }
 
@@ -528,11 +525,9 @@ export default function ProxySettingsPage() {
               profile.email
                 .trim(),
 
-
             gender:
               profile.gender
                 .trim(),
-
 
             addressLine1:
               profile.addressLine1
@@ -871,7 +866,6 @@ export default function ProxySettingsPage() {
                   required
                 />
 
-
                 <Field
                   label="Gender"
                   name="gender"
@@ -882,7 +876,6 @@ export default function ProxySettingsPage() {
                     handleProfileChange
                   }
                 />
-
 
               </div>
             </SettingsSection>
@@ -900,8 +893,10 @@ export default function ProxySettingsPage() {
                 setProfileInfo(
                   (current) => ({
                     ...current,
+
                     idNumber:
                       identity.idNumber,
+
                     dateOfBirth:
                       identity.dateOfBirth,
                   })
@@ -910,6 +905,7 @@ export default function ProxySettingsPage() {
                 setProfile(
                   (current) => ({
                     ...current,
+
                     dateOfBirth:
                       dateInputValue(
                         identity.dateOfBirth
@@ -1128,6 +1124,7 @@ export default function ProxySettingsPage() {
             <section className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white">
 
               <div className="border-b border-[#e2e8f0] px-5 py-5">
+
                 <h2 className="font-semibold text-[#0f172a]">
                   Account details
                 </h2>
@@ -1135,6 +1132,7 @@ export default function ProxySettingsPage() {
                 <p className="mt-1 text-sm leading-5 text-[#64748b]">
                   Managed account information.
                 </p>
+
               </div>
 
               <div className="space-y-5 p-5">
@@ -1202,9 +1200,11 @@ export default function ProxySettingsPage() {
               </div>
 
               <div className="border-t border-[#e2e8f0] bg-[#f8fafc] px-5 py-4">
+
                 <p className="text-xs leading-5 text-[#64748b]">
-                  Your ID number and registered clinic cannot be changed from this page. Clinic reassignment is handled administratively.
+                  Your registered clinic cannot be changed from this page. Clinic reassignment is handled administratively.
                 </p>
+
               </div>
 
             </section>
@@ -1229,6 +1229,7 @@ export default function ProxySettingsPage() {
                   </div>
 
                   <div>
+
                     <h2 className="font-semibold text-[#0f172a]">
                       Security
                     </h2>
@@ -1236,6 +1237,7 @@ export default function ProxySettingsPage() {
                     <p className="mt-1 text-sm leading-5 text-[#64748b]">
                       Change your account password.
                     </p>
+
                   </div>
 
                 </div>
@@ -1445,6 +1447,7 @@ function SettingsSection({
           </div>
 
           <div className="min-w-0">
+
             <h2 className="font-semibold text-[#0f172a]">
               {title}
             </h2>
@@ -1452,6 +1455,7 @@ function SettingsSection({
             <p className="mt-1 text-sm leading-5 text-[#64748b]">
               {description}
             </p>
+
           </div>
 
         </div>
@@ -1604,6 +1608,7 @@ function PasswordField({
           }
           className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#64748b] transition hover:bg-[#f1f5f9]"
         >
+
           {show ? (
             <EyeOff
               size={17}
@@ -1613,6 +1618,7 @@ function PasswordField({
               size={17}
             />
           )}
+
         </button>
 
       </div>
@@ -1642,9 +1648,11 @@ function Requirement({
           " "
         )}
       >
+
         {met
           ? "✓"
           : "○"}
+
       </span>
 
       <span
@@ -1685,6 +1693,7 @@ function InfoItem({
       )}
 
       <div className="min-w-0">
+
         <p className="text-xs font-medium text-[#94a3b8]">
           {label}
         </p>
@@ -1692,6 +1701,7 @@ function InfoItem({
         <p className="mt-1 break-words text-sm font-medium text-[#334155]">
           {value}
         </p>
+
       </div>
 
     </div>
@@ -1738,6 +1748,7 @@ function Feedback({
       <p className="text-sm leading-5">
         {message}
       </p>
+
     </div>
   );
 }

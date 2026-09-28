@@ -260,6 +260,10 @@ export default function IdentityEditor({
               Correct your date of birth or, when necessary, replace the complete South African ID number.
             </p>
 
+            <p className="mt-2 text-xs leading-5 text-[#64748b]">
+              Identity changes are saved separately from the rest of your profile. Use the relevant update button below.
+            </p>
+
           </div>
 
         </div>
@@ -270,6 +274,7 @@ export default function IdentityEditor({
 
         {error && (
           <div className="flex items-start gap-3 rounded-xl bg-[#fee2e2] p-4 text-[#b91c1c]">
+
             <AlertCircle
               size={18}
               className="mt-0.5 shrink-0"
@@ -278,11 +283,13 @@ export default function IdentityEditor({
             <p className="text-sm leading-5">
               {error}
             </p>
+
           </div>
         )}
 
         {success && (
           <div className="flex items-start gap-3 rounded-xl bg-[#dcfce7] p-4 text-[#166534]">
+
             <CheckCircle2
               size={18}
               className="mt-0.5 shrink-0"
@@ -291,6 +298,7 @@ export default function IdentityEditor({
             <p className="text-sm leading-5">
               {success}
             </p>
+
           </div>
         )}
 
@@ -317,6 +325,7 @@ export default function IdentityEditor({
           <div>
 
             <div className="flex items-center gap-2">
+
               <CalendarDays
                 size={16}
                 className="text-[#0f766e]"
@@ -325,6 +334,7 @@ export default function IdentityEditor({
               <h3 className="text-sm font-semibold text-[#0f172a]">
                 Correct date of birth
               </h3>
+
             </div>
 
             <p className="mt-1 text-xs leading-5 text-[#64748b]">
@@ -363,6 +373,7 @@ export default function IdentityEditor({
             }
             className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-4 text-sm font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
+
             <Save
               size={16}
             />
@@ -370,6 +381,7 @@ export default function IdentityEditor({
             {savingDob
               ? "Updating..."
               : "Update date of birth"}
+
           </button>
 
         </form>
@@ -386,6 +398,7 @@ export default function IdentityEditor({
           <div>
 
             <div className="flex items-center gap-2">
+
               <IdCard
                 size={16}
                 className="text-[#0f766e]"
@@ -394,6 +407,7 @@ export default function IdentityEditor({
               <h3 className="text-sm font-semibold text-[#0f172a]">
                 Correct full ID number
               </h3>
+
             </div>
 
             <p className="mt-1 text-xs leading-5 text-[#64748b]">
@@ -443,6 +457,7 @@ export default function IdentityEditor({
             }
             className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#0f766e] px-4 text-sm font-semibold text-[#0f766e] transition hover:bg-[#f0fdfa] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
+
             <IdCard
               size={16}
             />
@@ -450,6 +465,7 @@ export default function IdentityEditor({
             {savingId
               ? "Updating..."
               : "Update full ID number"}
+
           </button>
 
           <p className="text-xs leading-5 text-[#64748b]">
