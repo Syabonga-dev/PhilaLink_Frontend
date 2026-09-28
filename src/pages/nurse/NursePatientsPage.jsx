@@ -2,6 +2,10 @@ import {
   useState,
 } from "react";
 
+import {
+  useNavigate,
+} from "react-router-dom";
+
 import Card, {
   CardBody,
   CardHeader,
@@ -49,20 +53,19 @@ function formatDate(
     return value;
   }
 
-  return date
-    .toLocaleDateString(
-      "en-ZA",
-      {
-        day:
-          "2-digit",
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      day:
+        "2-digit",
 
-        month:
-          "short",
+      month:
+        "short",
 
-        year:
-          "numeric",
-      }
-    );
+      year:
+        "numeric",
+    }
+  );
 }
 
 /* ========================================================= */
@@ -70,6 +73,9 @@ function formatDate(
 /* ========================================================= */
 
 export default function NursePatientsPage() {
+  const navigate =
+    useNavigate();
+
   const [
     search,
     setSearch,
@@ -142,6 +148,20 @@ export default function NursePatientsPage() {
       }
     );
 
+  function openPatient(
+    patientId
+  ) {
+    if (
+      !patientId
+    ) {
+      return;
+    }
+
+    navigate(
+      `/nurse/patients/${patientId}`
+    );
+  }
+
   return (
     <div className="space-y-6">
 
@@ -184,7 +204,9 @@ export default function NursePatientsPage() {
           {loading ? (
             <div className="py-12">
 
-              <Spinner label="Loading patients…" />
+              <Spinner
+                label="Loading patients…"
+              />
 
             </div>
           ) : error ? (
@@ -212,126 +234,401 @@ export default function NursePatientsPage() {
               }
             />
           ) : (
-            <div className="overflow-x-auto">
+            <>
 
-              <table className="w-full text-left text-sm">
+              {/* =========================================== */}
+              {/* DESKTOP TABLE                               */}
+              {/* =========================================== */}
 
-                <thead>
+              <div className="hidden overflow-x-auto md:block">
 
-                  <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
+                <table className="w-full text-left text-sm">
 
-                    <th className="py-3 pr-4 font-medium">
-                      Patient
-                    </th>
+                  <thead>
 
-                    <th className="py-3 pr-4 font-medium">
-                      Patient number
-                    </th>
+                    <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
 
-                    <th className="py-3 pr-4 font-medium">
-                      Date of birth
-                    </th>
+                      <th className="py-3 pr-4 font-medium">
+                        Patient
+                      </th>
 
-                    <th className="py-3 pr-4 font-medium">
-                      Gender
-                    </th>
+                      <th className="py-3 pr-4 font-medium">
+                        Patient number
+                      </th>
 
-                    <th className="py-3 pr-4 font-medium">
-                      Phone
-                    </th>
+                      <th className="py-3 pr-4 font-medium">
+                        Date of birth
+                      </th>
 
-                  </tr>
+                      <th className="py-3 pr-4 font-medium">
+                        Gender
+                      </th>
 
-                </thead>
+                      <th className="py-3 pr-4 font-medium">
+                        Phone
+                      </th>
 
-                <tbody className="divide-y divide-outline-variant/50">
+                      <th className="py-3 pr-4 font-medium">
+                        Medication
+                      </th>
 
-                  {filtered.map(
-                    (
-                      patient
-                    ) => (
-                      <tr
-                        key={
-                          patient.patientId
-                        }
-                        className="transition-colors hover:bg-surface-container-low"
-                      >
+                      <th className="py-3 pr-4 font-medium">
+                        Allergies
+                      </th>
 
-                        <td className="py-4 pr-4">
+                      <th className="py-3 pr-4 font-medium">
+                        Collections
+                      </th>
 
-                          <div className="flex items-center gap-3">
+                      <th className="py-3 text-right font-medium">
+                        Action
+                      </th>
 
-                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-container/10 text-primary">
+                    </tr>
 
-                              <span className="material-symbols-outlined text-[18px]">
-                                person
+                  </thead>
+
+                  <tbody className="divide-y divide-outline-variant/50">
+
+                    {filtered.map(
+                      (
+                        patient
+                      ) => (
+                        <tr
+                          key={
+                            patient.patientId
+                          }
+                          onClick={() =>
+                            openPatient(
+                              patient.patientId
+                            )
+                          }
+                          className="cursor-pointer transition-colors hover:bg-surface-container-low"
+                        >
+
+                          <td className="py-4 pr-4">
+
+                            <div className="flex items-center gap-3">
+
+                              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-primary-container/10 text-primary">
+
+                                <span className="material-symbols-outlined text-[18px]">
+                                  person
+                                </span>
+
+                              </div>
+
+                              <div className="min-w-0">
+
+                                <p className="font-semibold text-on-surface">
+                                  {
+                                    patient.fullName
+                                  }
+                                </p>
+
+                              </div>
+
+                            </div>
+
+                          </td>
+
+                          <td className="py-4 pr-4 text-on-surface-variant">
+                            {patient.patientNumber ||
+                              "—"}
+                          </td>
+
+                          <td className="py-4 pr-4 text-on-surface-variant">
+                            {
+                              formatDate(
+                                patient.dateOfBirth
+                              )
+                            }
+                          </td>
+
+                          <td className="py-4 pr-4 text-on-surface-variant">
+                            {patient.gender ||
+                              "—"}
+                          </td>
+
+                          <td
+                            className="py-4 pr-4 text-on-surface-variant"
+                            onClick={(
+                              event
+                            ) =>
+                              event.stopPropagation()
+                            }
+                          >
+
+                            {patient.phoneNumber ? (
+                              <a
+                                href={`tel:${patient.phoneNumber}`}
+                                className="font-medium hover:text-primary hover:underline"
+                              >
+                                {
+                                  patient.phoneNumber
+                                }
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+
+                          </td>
+
+                          <td className="py-4 pr-4 text-on-surface-variant">
+
+                            <div className="flex items-center gap-2">
+
+                              <span className="material-symbols-outlined text-[17px] text-primary">
+                                medication
+                              </span>
+
+                              <span>
+                                {
+                                  patient.activeMedicationCount ??
+                                  0
+                                }
                               </span>
 
                             </div>
 
-                            <div className="min-w-0">
+                          </td>
 
-                              <p className="font-semibold text-on-surface">
+                          <td className="py-4 pr-4 text-on-surface-variant">
+
+                            <div className="flex items-center gap-2">
+
+                              <span className="material-symbols-outlined text-[17px] text-primary">
+                                allergy
+                              </span>
+
+                              <span>
                                 {
-                                  patient.fullName
+                                  patient.allergyCount ??
+                                  0
                                 }
-                              </p>
+                              </span>
 
                             </div>
 
+                          </td>
+
+                          <td className="py-4 pr-4">
+
+                            {patient.overdueCollectionCount >
+                            0 ? (
+                              <span className="inline-flex items-center gap-1 rounded-full bg-error-container/20 px-2.5 py-1 text-xs font-semibold text-error">
+
+                                <span className="material-symbols-outlined text-[14px]">
+                                  warning
+                                </span>
+
+                                {
+                                  patient.overdueCollectionCount
+                                }{" "}
+                                overdue
+
+                              </span>
+                            ) : (
+                              <span className="inline-flex rounded-full bg-primary-container/10 px-2.5 py-1 text-xs font-semibold text-primary">
+                                Up to date
+                              </span>
+                            )}
+
+                          </td>
+
+                          <td
+                            className="py-4 text-right"
+                            onClick={(
+                              event
+                            ) =>
+                              event.stopPropagation()
+                            }
+                          >
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                openPatient(
+                                  patient.patientId
+                                )
+                              }
+                              className="inline-flex min-h-[38px] items-center gap-2 rounded-xl bg-primary px-4 py-2 text-xs font-semibold text-on-primary transition hover:opacity-90"
+                            >
+
+                              <span className="material-symbols-outlined text-[17px]">
+                                clinical_notes
+                              </span>
+
+                              Manage care
+
+                            </button>
+
+                          </td>
+
+                        </tr>
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              {/* =========================================== */}
+              {/* MOBILE CARDS                                */}
+              {/* =========================================== */}
+
+              <div className="space-y-3 md:hidden">
+
+                {filtered.map(
+                  (
+                    patient
+                  ) => (
+                    <button
+                      key={
+                        patient.patientId
+                      }
+                      type="button"
+                      onClick={() =>
+                        openPatient(
+                          patient.patientId
+                        )
+                      }
+                      className="w-full rounded-2xl border border-outline-variant/60 bg-surface p-4 text-left transition hover:bg-surface-container-low"
+                    >
+
+                      <div className="flex items-start justify-between gap-3">
+
+                        <div className="flex min-w-0 items-center gap-3">
+
+                          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary-container/10 text-primary">
+
+                            <span className="material-symbols-outlined text-[19px]">
+                              person
+                            </span>
+
                           </div>
 
-                        </td>
+                          <div className="min-w-0">
 
-                        <td className="py-4 pr-4 text-on-surface-variant">
-                          {patient.patientNumber ||
-                            "—"}
-                        </td>
-
-                        <td className="py-4 pr-4 text-on-surface-variant">
-                          {
-                            formatDate(
-                              patient.dateOfBirth
-                            )
-                          }
-                        </td>
-
-                        <td className="py-4 pr-4 text-on-surface-variant">
-                          {patient.gender ||
-                            "—"}
-                        </td>
-
-                        <td className="py-4 pr-4 text-on-surface-variant">
-
-                          {patient.phoneNumber ? (
-                            <a
-                              href={`tel:${patient.phoneNumber}`}
-                              className="font-medium hover:text-primary hover:underline"
-                            >
+                            <p className="truncate font-semibold text-on-surface">
                               {
-                                patient.phoneNumber
+                                patient.fullName
                               }
-                            </a>
-                          ) : (
-                            "—"
-                          )}
+                            </p>
 
-                        </td>
+                            <p className="mt-1 text-xs text-on-surface-variant">
+                              {patient.patientNumber ||
+                                "No patient number"}
+                            </p>
 
-                      </tr>
-                    )
-                  )}
+                          </div>
 
-                </tbody>
+                        </div>
 
-              </table>
+                        <span className="material-symbols-outlined text-on-surface-variant">
+                          chevron_right
+                        </span>
 
-            </div>
+                      </div>
+
+                      <div className="mt-4 grid grid-cols-2 gap-3">
+
+                        <MobileStat
+                          icon="medication"
+                          label="Medication"
+                          value={
+                            patient.activeMedicationCount ??
+                            0
+                          }
+                        />
+
+                        <MobileStat
+                          icon="allergy"
+                          label="Allergies"
+                          value={
+                            patient.allergyCount ??
+                            0
+                          }
+                        />
+
+                      </div>
+
+                      {patient.overdueCollectionCount >
+                        0 && (
+                        <div className="mt-3 flex items-center gap-2 rounded-xl bg-error-container/20 px-3 py-2 text-xs font-semibold text-error">
+
+                          <span className="material-symbols-outlined text-[16px]">
+                            warning
+                          </span>
+
+                          {
+                            patient.overdueCollectionCount
+                          }{" "}
+                          overdue medication collection
+                          {patient.overdueCollectionCount ===
+                          1
+                            ? ""
+                            : "s"}
+
+                        </div>
+                      )}
+
+                      <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-primary px-4 py-2.5 text-xs font-semibold text-on-primary">
+
+                        <span className="material-symbols-outlined text-[17px]">
+                          clinical_notes
+                        </span>
+
+                        Manage patient care
+
+                      </div>
+
+                    </button>
+                  )
+                )}
+
+              </div>
+
+            </>
           )}
 
         </CardBody>
 
       </Card>
+
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* MOBILE STAT                                               */
+/* ========================================================= */
+
+function MobileStat({
+  icon,
+  label,
+  value,
+}) {
+  return (
+    <div className="rounded-xl bg-surface-container-low p-3">
+
+      <div className="flex items-center gap-2 text-on-surface-variant">
+
+        <span className="material-symbols-outlined text-[16px] text-primary">
+          {icon}
+        </span>
+
+        <span className="text-xs">
+          {label}
+        </span>
+
+      </div>
+
+      <p className="mt-1 text-lg font-semibold text-on-surface">
+        {value}
+      </p>
 
     </div>
   );
