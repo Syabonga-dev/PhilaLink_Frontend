@@ -46,7 +46,6 @@ const initialForm = {
   clinicId: "",
   employmentDate: "",
 
-  relationshipToPatient: "",
 };
 
 function mapApiErrors(errors) {
@@ -172,7 +171,10 @@ export default function RegisterStaffPage() {
         "Enter a valid email address.";
     }
 
-    if (!form.dateOfBirth) {
+    if (
+      form.role === "Nurse" &&
+      !form.dateOfBirth
+    ) {
       next.dateOfBirth =
         "Enter the date of birth.";
     }
@@ -276,13 +278,6 @@ export default function RegisterStaffPage() {
       }
     }
 
-    if (
-      form.role === "Proxy" &&
-      !form.relationshipToPatient.trim()
-    ) {
-      next.relationshipToPatient =
-        "Enter the relationship to the patient.";
-    }
 
     setErrors(next);
 
@@ -332,8 +327,6 @@ export default function RegisterStaffPage() {
       postalCode:
         form.postalCode.trim(),
 
-      dateOfBirth:
-        form.dateOfBirth,
 
       gender:
         form.gender,
@@ -363,17 +356,15 @@ export default function RegisterStaffPage() {
         qualification:
           form.qualification.trim(),
 
+        dateOfBirth:
+          form.dateOfBirth,
+
         employmentDate:
           form.employmentDate,
       };
     }
 
-    return {
-      ...shared,
-
-      relationshipToPatient:
-        form.relationshipToPatient.trim(),
-    };
+    return shared;
   };
 
   const handleSubmit =
@@ -634,19 +625,26 @@ export default function RegisterStaffPage() {
             />
 
             <div className="grid gap-4 sm:grid-cols-2">
-              <Input
-                label="Date of birth"
-                type="date"
-                value={
-                  form.dateOfBirth
-                }
-                onChange={set(
-                  "dateOfBirth"
-                )}
-                error={
-                  errors.dateOfBirth
-                }
-              />
+              {form.role ===
+              "Nurse" ? (
+                <Input
+                  label="Date of birth"
+                  type="date"
+                  value={
+                    form.dateOfBirth
+                  }
+                  onChange={set(
+                    "dateOfBirth"
+                  )}
+                  error={
+                    errors.dateOfBirth
+                  }
+                />
+              ) : (
+                <div className="rounded-md border border-outline-variant/60 bg-surface-container-low p-3 text-sm text-on-surface-variant">
+                  Date of birth is derived from the first six digits of the SA ID number.
+                </div>
+              )}
 
               <Select
                 label="Gender"
@@ -808,28 +806,6 @@ export default function RegisterStaffPage() {
             </section>
           )}
 
-          {form.role ===
-            "Proxy" && (
-            <section className="space-y-4">
-              <h3 className="text-sm font-semibold text-on-surface">
-                Proxy details
-              </h3>
-
-              <Input
-                label="Relationship to patient"
-                value={
-                  form.relationshipToPatient
-                }
-                onChange={set(
-                  "relationshipToPatient"
-                )}
-                error={
-                  errors.relationshipToPatient
-                }
-                placeholder="Parent, spouse, sibling, caregiver…"
-              />
-            </section>
-          )}
 
           <section className="space-y-4">
             <h3 className="text-sm font-semibold text-on-surface">

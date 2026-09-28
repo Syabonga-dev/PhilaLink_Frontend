@@ -34,6 +34,8 @@ import {
   useAuth,
 } from "../../context/AuthContext.jsx";
 
+import IdentityEditor from "../../components/account/IdentityEditor.jsx";
+
 const THEME_STORAGE_KEY =
   "philalink-theme";
 
@@ -575,9 +577,6 @@ export default function SettingsPage() {
                 .phoneNumber
                 .trim(),
 
-            dateOfBirth:
-              profile
-                .dateOfBirth,
 
             gender:
               profile.gender
@@ -981,18 +980,6 @@ setSuccess(
                   icon={Phone}
                 />
 
-                <Field
-                  label="Date of birth"
-                  name="dateOfBirth"
-                  type="date"
-                  value={
-                    profile
-                      .dateOfBirth
-                  }
-                  onChange={
-                    handleProfileChange
-                  }
-                />
 
                 <div className="md:col-span-2">
                   <label
@@ -1036,6 +1023,38 @@ setSuccess(
                 </div>
               </div>
             </SettingsSection>
+
+            <IdentityEditor
+              idNumber={
+                patientInfo?.idNumber
+              }
+              dateOfBirth={
+                profile.dateOfBirth
+              }
+              onUpdated={(
+                identity
+              ) => {
+                setPatientInfo(
+                  (current) => ({
+                    ...current,
+                    idNumber:
+                      identity.idNumber,
+                    dateOfBirth:
+                      identity.dateOfBirth,
+                  })
+                );
+
+                setProfile(
+                  (current) => ({
+                    ...current,
+                    dateOfBirth:
+                      dateInputValue(
+                        identity.dateOfBirth
+                      ),
+                  })
+                );
+              }}
+            />
 
             {/* ================================================= */}
             {/* ADDRESS */}

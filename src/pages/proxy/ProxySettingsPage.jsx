@@ -32,6 +32,8 @@ import {
   proxiesApi,
 } from "../../services/api/proxies.js";
 
+import IdentityEditor from "../../components/account/IdentityEditor.jsx";
+
 /* ========================================================= */
 /* INITIAL STATE                                             */
 /* ========================================================= */
@@ -52,8 +54,6 @@ const emptyProfile = {
   gender:
     "",
 
-  relationshipToPatient:
-    "",
 
   addressLine1:
     "",
@@ -349,10 +349,6 @@ export default function ProxySettingsPage() {
                 data?.gender
               ),
 
-            relationshipToPatient:
-              valueOrEmpty(
-                data?.relationshipToPatient
-              ),
 
             addressLine1:
               valueOrEmpty(
@@ -482,11 +478,6 @@ export default function ProxySettingsPage() {
       return "Email address is required.";
     }
 
-    if (
-      !profile.dateOfBirth
-    ) {
-      return "Date of birth is required.";
-    }
 
     return "";
   }
@@ -537,17 +528,11 @@ export default function ProxySettingsPage() {
               profile.email
                 .trim(),
 
-            dateOfBirth:
-              profile.dateOfBirth,
 
             gender:
               profile.gender
                 .trim(),
 
-            relationshipToPatient:
-              profile
-                .relationshipToPatient
-                .trim(),
 
             addressLine1:
               profile.addressLine1
@@ -886,18 +871,6 @@ export default function ProxySettingsPage() {
                   required
                 />
 
-                <Field
-                  label="Date of birth"
-                  name="dateOfBirth"
-                  type="date"
-                  value={
-                    profile.dateOfBirth
-                  }
-                  onChange={
-                    handleProfileChange
-                  }
-                  required
-                />
 
                 <Field
                   label="Gender"
@@ -910,23 +883,41 @@ export default function ProxySettingsPage() {
                   }
                 />
 
-                <Field
-                  label="Relationship to patient"
-                  name="relationshipToPatient"
-                  value={
-                    profile
-                      .relationshipToPatient
-                  }
-                  onChange={
-                    handleProfileChange
-                  }
-                  icon={
-                    UsersRound
-                  }
-                />
 
               </div>
             </SettingsSection>
+
+            <IdentityEditor
+              idNumber={
+                profileInfo?.idNumber
+              }
+              dateOfBirth={
+                profile.dateOfBirth
+              }
+              onUpdated={(
+                identity
+              ) => {
+                setProfileInfo(
+                  (current) => ({
+                    ...current,
+                    idNumber:
+                      identity.idNumber,
+                    dateOfBirth:
+                      identity.dateOfBirth,
+                  })
+                );
+
+                setProfile(
+                  (current) => ({
+                    ...current,
+                    dateOfBirth:
+                      dateInputValue(
+                        identity.dateOfBirth
+                      ),
+                  })
+                );
+              }}
+            />
 
             <SettingsSection
               icon={
