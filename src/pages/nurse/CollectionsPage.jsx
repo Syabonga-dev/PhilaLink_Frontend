@@ -1,546 +1,733 @@
 import {
+  useCallback,
+  useEffect,
+  useMemo,
   useState,
 } from "react";
 
-import Card, {
-  CardBody,
-  CardHeader,
-} from "../../components/ui/Card.jsx";
-
-import Button from "../../components/ui/Button.jsx";
-import Spinner from "../../components/ui/Spinner.jsx";
+import {
+  CheckCircle2,
+  Clock3,
+  PackageCheck,
+  RefreshCw,
+  Search,
+  X,
+} from "lucide-react";
 
 import {
-  ErrorState,
-  EmptyState,
-} from "../../components/ui/EmptyState.jsx";
-
-import StatusChip from "../../components/ui/StatusChip.jsx";
-
-import {
-  useApi,
-} from "../../lib/useApi.js";
-
-import {
-  collectionsApi,
-} from "../../services/api/clinics.js";
-
-import {
-  useToast,
-} from "../../components/ui/Toast.jsx";
-
-/* ========================================================= */
-/* HELPERS                                                   */
-/* ========================================================= */
-
-function statusTone(
-  status
-) {
-  switch (
-    status
-  ) {
-    case "Collected":
-      return "success-soft";
-
-    case "Overdue":
-      return "error-soft";
-
-    case "Pending":
-      return "warning-soft";
-
-    case "Scheduled":
-      return "warning-soft";
-
-    case "Cancelled":
-      return "neutral";
-
-    default:
-      return "neutral";
-  }
-}
+  nursesApi,
+} from "../../services/api/nurses.js";
 
 function formatDate(
   value
 ) {
-  if (
-    !value
-  ) {
+  if (!value) {
     return "—";
   }
 
   const date =
-    new Date(
-      value
-    );
+    new Date(value);
 
   if (
     Number.isNaN(
       date.getTime()
     )
   ) {
-    return value;
+    return "—";
   }
 
-  return date
-    .toLocaleDateString(
-      "en-ZA",
-      {
-        day:
-          "2-digit",
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      day:
+        "2-digit",
 
-        month:
-          "short",
+      month:
+        "short",
 
-        year:
-          "numeric",
-      }
-    );
+      year:
+        "numeric",
+    }
+  );
 }
-
-const SUMMARY_CARDS = [
-  {
-    key:
-      "dueToday",
-
-    label:
-      "Due today",
-
-    icon:
-      "today",
-  },
-
-  {
-    key:
-      "overdue",
-
-    label:
-      "Overdue",
-
-    icon:
-      "warning",
-  },
-
-  {
-    key:
-      "collectedThisWeek",
-
-    label:
-      "Collected this week",
-
-    icon:
-      "task_alt",
-  },
-
-  {
-    key:
-      "totalActive",
-
-    label:
-      "Active medication scripts",
-
-    icon:
-      "medication",
-  },
-];
-
-/* ========================================================= */
-/* PAGE                                                      */
-/* ========================================================= */
 
 export default function CollectionsPage() {
   const [
-    workingId,
-    setWorkingId,
+    collections,
+    setCollections,
+  ] =
+    useState([]);
+
+  const [
+    summary,
+    setSummary,
+  ] =
+    useState(null);
+
+  const [
+    search,
+    setSearch,
+  ] =
+    useState("");
+
+  const [
+    status,
+    setStatus,
   ] =
     useState(
-      null
+      "active"
     );
 
-  const {
-    data:
-      summary,
-
-    loading:
-      summaryLoading,
-
-    error:
-      summaryError,
-
-    refetch:
-      refetchSummary,
-  } =
-    useApi(
-      () =>
-        collectionsApi
-          .getSummary(),
-      []
-    );
-
-  const {
-    data:
-      collections,
-
+  const [
     loading,
+    setLoading,
+  ] =
+    useState(true);
 
+  const [
     error,
+    setError,
+  ] =
+    useState("");
 
-    refetch,
+  const [
+    message,
+    setMessage,
+  ] =
+    useState("");
 
-    setData,
-  } =
-    useApi(
-      () =>
-        collectionsApi
-          .list(),
+  const [
+    selected,
+    setSelected,
+  ] =
+    useState(null);
+
+  const [
+    notes,
+    setNotes,
+  ] =
+    useState("");
+
+  const [
+    completing,
+    setCompleting,
+  ] =
+    useState(false);
+
+  const load =
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
+
+          setError(
+            ""
+          );
+
+          const [
+            records,
+            totals,
+          ] =
+            await Promise.all([
+              nursesApi
+                .getCollections(),
+
+              nursesApi
+                .getCollectionSummary(),
+            ]);
+
+          setCollections(
+            Array.isArray(
+              records
+            )
+              ? records
+              : []
+          );
+
+          setSummary(
+            totals
+          );
+        } catch (loadError) {
+          setError(
+            loadError?.message ||
+              "Could not load medication collections."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
       []
     );
 
-  const toast =
-    useToast();
+  useEffect(
+    () => {
+      load();
+    },
+    [
+      load,
+    ]
+  );
 
-  const collectionList =
-    Array.isArray(
-      collections
-    )
-      ? collections
-      : [];
+  const filtered =
+    useMemo(
+      () => {
+        const term =
+          search
+            .trim()
+            .toLowerCase();
 
-  /* ======================================================= */
-  /* COMPLETE COLLECTION                                     */
-  /* ======================================================= */
-
-  const markCollected =
-    async (
-      id
-    ) => {
-      if (
-        !id ||
-        workingId
-      ) {
-        return;
-      }
-
-      try {
-        setWorkingId(
-          id
-        );
-
-        const updated =
-          await collectionsApi
-            .markCollected(
-              id,
-              {
-                proxyId:
-                  null,
-
-                notes:
-                  null,
-              }
-            );
-
-        setData(
+        return collections.filter(
           (
-            current
-          ) =>
-            Array.isArray(
-              current
-            )
-              ? current.map(
+            collection
+          ) => {
+            const collectionStatus =
+              String(
+                collection.status ||
+                  ""
+              ).toLowerCase();
+
+            const active =
+              ![
+                "collected",
+                "cancelled",
+              ].includes(
+                collectionStatus
+              );
+
+            const matchesStatus =
+              status ===
+                "all" ||
+              (
+                status ===
+                  "active" &&
+                active
+              ) ||
+              collectionStatus ===
+                status;
+
+            const matchesSearch =
+              !term ||
+              [
+                collection.patientName,
+                collection.medicationName,
+                collection.clinicName,
+                collection.proxyName,
+              ]
+                .filter(Boolean)
+                .some(
                   (
-                    collection
+                    value
                   ) =>
-                    collection.id ===
-                    id
-                      ? updated
-                      : collection
-                )
-              : []
+                    String(
+                      value
+                    )
+                      .toLowerCase()
+                      .includes(
+                        term
+                      )
+                );
+
+            return (
+              matchesStatus &&
+              matchesSearch
+            );
+          }
+        );
+      },
+      [
+        collections,
+        search,
+        status,
+      ]
+    );
+
+  async function complete(
+    event
+  ) {
+    event.preventDefault();
+
+    if (!selected) {
+      return;
+    }
+
+    try {
+      setCompleting(
+        true
+      );
+
+      setError(
+        ""
+      );
+
+      await nursesApi
+        .completeCollection(
+          selected.id,
+          {
+            proxyId:
+              selected.proxyId ??
+              null,
+
+            notes:
+              notes ||
+              null,
+          }
         );
 
-        await refetchSummary();
+      setSelected(
+        null
+      );
 
-        toast.success(
-          "Collection marked as completed."
-        );
-      } catch (
-        updateError
-      ) {
-        console.error(
-          "Failed to complete collection:",
-          updateError
-        );
+      setNotes(
+        ""
+      );
 
-        toast.error(
-          updateError?.message ||
-            "Couldn't update this collection."
-        );
+      setMessage(
+        "Medication collection completed successfully."
+      );
 
-        await Promise.allSettled(
-          [
-            refetch(),
-            refetchSummary(),
-          ]
-        );
-      } finally {
-        setWorkingId(
-          null
-        );
-      }
-    };
+      await load();
+    } catch (actionError) {
+      setError(
+        actionError?.message ||
+          "Could not complete collection."
+      );
+    } finally {
+      setCompleting(
+        false
+      );
+    }
+  }
 
   return (
-    <div className="space-y-6">
+    <div className="p-4 sm:p-6 lg:p-8">
 
-      {/* =================================================== */}
-      {/* SUMMARY                                             */}
-      {/* =================================================== */}
+      <div className="mx-auto max-w-[1500px]">
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:justify-between">
 
-        {summaryLoading ? (
-          <div className="col-span-full py-6">
+          <div>
 
-            <Spinner label="Loading collection summary…" />
+            <h2 className="text-2xl font-bold">
+              Medication collections
+            </h2>
+
+            <p className="mt-1 text-sm text-[#64748b]">
+              Process medication handed to patients or authorised Proxies.
+            </p>
 
           </div>
-        ) : summaryError ? (
-          <div className="col-span-full">
 
-            <ErrorState
-              description={
-                summaryError
-                  .message
-              }
-              onRetry={
-                refetchSummary
-              }
+          <button
+            type="button"
+            onClick={
+              load
+            }
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-4 py-2.5 text-sm font-semibold text-[#475569]"
+          >
+            <RefreshCw
+              size={16}
             />
 
+            Refresh
+          </button>
+
+        </div>
+
+        <div className="mb-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
+
+          <Summary
+            label="Due today"
+            value={
+              summary?.dueToday ??
+              0
+            }
+          />
+
+          <Summary
+            label="Overdue"
+            value={
+              summary?.overdue ??
+              0
+            }
+            danger
+          />
+
+          <Summary
+            label="Collected this week"
+            value={
+              summary?.collectedThisWeek ??
+              0
+            }
+          />
+
+          <Summary
+            label="Active medication"
+            value={
+              summary?.totalActive ??
+              0
+            }
+          />
+
+        </div>
+
+        {message && (
+          <div className="mb-5 rounded-xl bg-[#f0fdf4] p-4 text-sm text-[#166534]">
+            {message}
           </div>
-        ) : (
-          SUMMARY_CARDS.map(
-            (
-              item
-            ) => (
-              <Card
-                key={
-                  item.key
-                }
-                className="p-5"
-              >
-
-                <span className="material-symbols-outlined flex h-10 w-10 items-center justify-center rounded-md bg-primary-container/10 text-primary">
-                  {
-                    item.icon
-                  }
-                </span>
-
-                <p className="mt-3 text-2xl font-bold text-on-surface">
-                  {summary?.[
-                    item.key
-                  ] ??
-                    0}
-                </p>
-
-                <p className="mt-1 text-xs text-on-surface-variant">
-                  {
-                    item.label
-                  }
-                </p>
-
-              </Card>
-            )
-          )
         )}
 
-      </div>
+        {error && (
+          <div className="mb-5 rounded-xl bg-[#fef2f2] p-4 text-sm text-[#b91c1c]">
+            {error}
+          </div>
+        )}
 
-      {/* =================================================== */}
-      {/* COLLECTION LIST                                     */}
-      {/* =================================================== */}
+        <section className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white">
 
-      <Card>
+          <div className="flex flex-col gap-3 border-b border-[#e2e8f0] p-4 sm:flex-row">
 
-        <CardHeader
-          title="Medication collections"
-          subtitle="Scheduled and completed collections for your clinic"
-        />
+            <div className="relative flex-1">
 
-        <CardBody className="pt-0">
+              <Search
+                size={16}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#94a3b8]"
+              />
 
-          {loading ? (
-            <div className="py-12">
-
-              <Spinner label="Loading collections…" />
+              <input
+                value={
+                  search
+                }
+                onChange={(
+                  event
+                ) =>
+                  setSearch(
+                    event.target.value
+                  )
+                }
+                placeholder="Search patient or medication..."
+                className="h-11 w-full rounded-xl border border-[#cbd5e1] pl-10 pr-4 text-sm outline-none focus:border-[#0f766e]"
+              />
 
             </div>
-          ) : error ? (
-            <ErrorState
-              description={
-                error.message
+
+            <select
+              value={
+                status
               }
-              onRetry={
-                refetch
+              onChange={(
+                event
+              ) =>
+                setStatus(
+                  event.target.value
+                )
               }
-            />
-          ) : collectionList.length ===
+              className="h-11 rounded-xl border border-[#cbd5e1] px-3 text-sm"
+            >
+              <option value="active">
+                Active
+              </option>
+
+              <option value="overdue">
+                Overdue
+              </option>
+
+              <option value="pending">
+                Pending
+              </option>
+
+              <option value="collected">
+                Collected
+              </option>
+
+              <option value="cancelled">
+                Cancelled
+              </option>
+
+              <option value="all">
+                All
+              </option>
+            </select>
+
+          </div>
+
+          {loading ? (
+            <div className="p-12 text-center text-sm text-[#64748b]">
+              Loading collections...
+            </div>
+          ) : filtered.length ===
             0 ? (
-            <EmptyState
-              icon="inventory_2"
-              title="No collections scheduled"
-              description="There are currently no medication collections for your clinic."
-            />
+            <div className="p-12 text-center text-sm text-[#64748b]">
+              No collections found.
+            </div>
           ) : (
-            <div className="overflow-x-auto">
+            <div className="divide-y divide-[#e2e8f0]">
 
-              <table className="w-full text-left text-sm">
+              {filtered.map(
+                (
+                  collection
+                ) => {
+                  const complete =
+                    String(
+                      collection.status
+                    ).toLowerCase() ===
+                    "collected";
 
-                <thead>
+                  const cancelled =
+                    String(
+                      collection.status
+                    ).toLowerCase() ===
+                    "cancelled";
 
-                  <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
+                  return (
+                    <div
+                      key={
+                        collection.id
+                      }
+                      className="p-5"
+                    >
 
-                    <th className="py-3 pr-4 font-medium">
-                      Patient
-                    </th>
+                      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
-                    <th className="py-3 pr-4 font-medium">
-                      Medication
-                    </th>
+                        <div>
 
-                    <th className="py-3 pr-4 font-medium">
-                      Collection date
-                    </th>
+                          <div className="flex flex-wrap items-center gap-2">
 
-                    <th className="py-3 pr-4 font-medium">
-                      Status
-                    </th>
+                            <h3 className="font-semibold">
+                              {collection.patientName}
+                            </h3>
 
-                    <th className="py-3 pr-4 font-medium">
-                      Processed by
-                    </th>
+                            <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[10px] font-semibold text-[#475569]">
+                              {collection.status}
+                            </span>
 
-                    <th className="py-3 text-right font-medium">
-                      Action
-                    </th>
+                          </div>
 
-                  </tr>
-
-                </thead>
-
-                <tbody className="divide-y divide-outline-variant/50">
-
-                  {collectionList.map(
-                    (
-                      collection
-                    ) => {
-                      const canComplete =
-                        collection.status ===
-                          "Pending" ||
-                        collection.status ===
-                          "Overdue" ||
-                        collection.status ===
-                          "Scheduled";
-
-                      return (
-                        <tr
-                          key={
-                            collection.id
-                          }
-                          className="transition-colors hover:bg-surface-container-low"
-                        >
-
-                          <td className="py-4 pr-4">
-
-                            <p className="font-semibold text-on-surface">
-                              {
-                                collection.patientName
-                              }
-                            </p>
-
-                          </td>
-
-                          <td className="py-4 pr-4 text-on-surface-variant">
+                          <p className="mt-2 text-sm text-[#475569]">
                             {collection.medicationName ||
-                              "—"}
-                          </td>
+                              "Medication"}
+                          </p>
 
-                          <td className="py-4 pr-4 text-on-surface-variant">
-                            {
-                              formatDate(
-                                collection.scheduledCollectionDate ||
-                                  collection.date
-                              )
-                            }
-                          </td>
+                          <p className="mt-2 flex items-center gap-1.5 text-xs text-[#64748b]">
+                            <Clock3
+                              size={13}
+                            />
 
-                          <td className="py-4 pr-4">
-
-                            <StatusChip
-                              tone={
-                                statusTone(
-                                  collection.status
-                                )
-                              }
-                            >
-                              {collection.status ||
-                                "Unknown"}
-                            </StatusChip>
-
-                          </td>
-
-                          <td className="py-4 pr-4 text-on-surface-variant">
-                            {collection.processedByNurseName ||
-                              "—"}
-                          </td>
-
-                          <td className="py-4 text-right">
-
-                            {canComplete ? (
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() =>
-                                  markCollected(
-                                    collection.id
-                                  )
-                                }
-                                loading={
-                                  workingId ===
-                                  collection.id
-                                }
-                                disabled={
-                                  workingId !==
-                                    null &&
-                                  workingId !==
-                                    collection.id
-                                }
-                                icon="task_alt"
-                              >
-                                Mark collected
-                              </Button>
-                            ) : (
-                              <span className="text-xs text-on-surface-variant">
-                                —
-                              </span>
+                            Collection date:{" "}
+                            {formatDate(
+                              collection.scheduledCollectionDate
                             )}
+                          </p>
 
-                          </td>
+                          <p className="mt-1 text-xs text-[#64748b]">
+                            Collector:{" "}
+                            {collection.proxyName
+                              ? `Proxy · ${collection.proxyName}`
+                              : "Patient"}
+                          </p>
 
-                        </tr>
-                      );
-                    }
-                  )}
+                        </div>
 
-                </tbody>
+                        {!complete &&
+                          !cancelled && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setSelected(
+                                collection
+                              );
 
-              </table>
+                              setNotes(
+                                ""
+                              );
+                            }}
+                            className="inline-flex items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white hover:bg-[#115e59]"
+                          >
+                            <CheckCircle2
+                              size={16}
+                            />
+
+                            Mark collected
+                          </button>
+                        )}
+
+                      </div>
+
+                    </div>
+                  );
+                }
+              )}
 
             </div>
           )}
 
-        </CardBody>
+        </section>
 
-      </Card>
+      </div>
+
+      {selected && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#0f172a]/40 p-4">
+
+          <form
+            onSubmit={
+              complete
+            }
+            className="w-full max-w-md rounded-2xl bg-white shadow-xl"
+          >
+
+            <div className="flex items-center justify-between border-b border-[#e2e8f0] p-5">
+
+              <div>
+
+                <h3 className="font-semibold">
+                  Complete collection
+                </h3>
+
+                <p className="mt-1 text-xs text-[#64748b]">
+                  {selected.patientName}
+                  {" · "}
+                  {selected.medicationName}
+                </p>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setSelected(
+                    null
+                  )
+                }
+              >
+                <X
+                  size={18}
+                />
+              </button>
+
+            </div>
+
+            <div className="p-5">
+
+              <div className="rounded-xl bg-[#f8fafc] p-4 text-sm text-[#475569]">
+
+                <p>
+                  Collected by:{" "}
+                  <strong>
+                    {selected.proxyName ||
+                      "Patient"}
+                  </strong>
+                </p>
+
+                <p className="mt-2">
+                  Scheduled:{" "}
+                  <strong>
+                    {formatDate(
+                      selected.scheduledCollectionDate
+                    )}
+                  </strong>
+                </p>
+
+              </div>
+
+              <label className="mb-2 mt-5 block text-sm font-medium text-[#334155]">
+                Collection notes
+              </label>
+
+              <textarea
+                rows={3}
+                value={
+                  notes
+                }
+                onChange={(
+                  event
+                ) =>
+                  setNotes(
+                    event.target
+                      .value
+                  )
+                }
+                className="w-full rounded-xl border border-[#cbd5e1] px-3 py-3 text-sm outline-none focus:border-[#0f766e]"
+              />
+
+              <p className="mt-3 text-xs leading-5 text-[#64748b]">
+                Completing the collection automatically deducts the collected quantity from clinic stock.
+              </p>
+
+              <div className="mt-5 flex justify-end gap-2">
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelected(
+                      null
+                    )
+                  }
+                  className="rounded-xl border border-[#cbd5e1] px-4 py-2.5 text-sm font-semibold"
+                >
+                  Cancel
+                </button>
+
+                <button
+                  type="submit"
+                  disabled={
+                    completing
+                  }
+                  className="rounded-xl bg-[#0f766e] px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50"
+                >
+                  {completing
+                    ? "Completing..."
+                    : "Confirm collection"}
+                </button>
+
+              </div>
+
+            </div>
+
+          </form>
+
+        </div>
+      )}
+
+    </div>
+  );
+}
+
+function Summary({
+  label,
+  value,
+  danger = false,
+}) {
+  return (
+    <div className="rounded-2xl border border-[#e2e8f0] bg-white p-5">
+
+      <PackageCheck
+        size={18}
+        className={
+          danger
+            ? "text-[#dc2626]"
+            : "text-[#0f766e]"
+        }
+      />
+
+      <p
+        className={[
+          "mt-4 text-2xl font-bold",
+          danger
+            ? "text-[#dc2626]"
+            : "text-[#0f172a]",
+        ].join(
+          " "
+        )}
+      >
+        {value}
+      </p>
+
+      <p className="mt-1 text-xs text-[#64748b]">
+        {label}
+      </p>
 
     </div>
   );
