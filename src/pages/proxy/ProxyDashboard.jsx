@@ -7,6 +7,7 @@ import {
 
 import {
   useNavigate,
+  useSearchParams,
 } from "react-router-dom";
 
 import {
@@ -14,15 +15,18 @@ import {
   ArrowRight,
   CalendarCheck2,
   CalendarClock,
+  CalendarDays,
+  CalendarRange,
   CheckCircle2,
-  Clock3,
   History,
   MapPin,
   PackageCheck,
+  Pill,
   RefreshCw,
-  ShieldCheck,
-  UserRoundCheck,
+  Search,
+  UserRound,
   Users,
+  X,
 } from "lucide-react";
 
 import {
@@ -36,29 +40,66 @@ import {
 import {
   CollectionStatus,
   formatDate,
+  formatDateRange,
+  formatLongDate,
+  getCollectionStatusKey,
+  getNextWeekRange,
   parseDate,
+  toApiDate,
 } from "./ProxyUtils.jsx";
 
-/* ========================================= */
-/* HELPERS */
-/* ========================================= */
+/* ========================================================= */
+/* CONSTANTS                                                 */
+/* ========================================================= */
 
-function getInitials(name) {
-  if (!name) {
-    return "PT";
-  }
+const VALID_RANGES =
+  new Set([
+    "today",
+    "tomorrow",
+    "next-week",
+    "custom",
+  ]);
 
+const MAX_DASHBOARD_COLLECTIONS =
+  6;
+
+const MAX_DASHBOARD_PATIENTS =
+  5;
+
+const MAX_ACTIVITY =
+  5;
+
+/* ========================================================= */
+/* HELPERS                                                   */
+/* ========================================================= */
+
+function getInitials(
+  name
+) {
   const parts =
-    String(name)
+    String(
+      name || ""
+    )
       .trim()
       .split(/\s+/)
       .filter(Boolean);
 
   if (
-    parts.length === 1
+    parts.length ===
+    0
+  ) {
+    return "PT";
+  }
+
+  if (
+    parts.length ===
+    1
   ) {
     return parts[0]
-      .slice(0, 2)
+      .slice(
+        0,
+        2
+      )
       .toUpperCase();
   }
 
@@ -66,89 +107,13 @@ function getInitials(name) {
     .toUpperCase();
 }
 
-function getCollectionStatusKey(
-  collection
-) {
-  if (!collection) {
-    return "none";
-  }
-
-  const status =
-    String(
-      collection.status || ""
-    )
-      .trim()
-      .toLowerCase();
-
-  if (
-    status === "collected" ||
-    status === "completed"
-  ) {
-    return "collected";
-  }
-
-  if (
-    status === "cancelled"
-  ) {
-    return "cancelled";
-  }
-
-  if (
-    status === "overdue"
-  ) {
-    return "overdue";
-  }
-
-  const date =
-    parseDate(
-      collection
-        .scheduledCollectionDate
-    );
-
-  if (!date) {
-    return "none";
-  }
-
-  const now =
-    new Date();
-
-  const today =
-    new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate()
-    );
-
-  const scheduled =
-    new Date(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate()
-    );
-
-  if (
-    scheduled.getTime() <
-    today.getTime()
-  ) {
-    return "overdue";
-  }
-
-  if (
-    scheduled.getTime() ===
-    today.getTime()
-  ) {
-    return "today";
-  }
-
-  return "upcoming";
-}
-
 function getActivityDate(
   collection
 ) {
   return (
     parseDate(
-      collection?.collectedAt
+      collection
+        ?.collectedAt
     ) ||
     parseDate(
       collection
@@ -157,7 +122,7 @@ function getActivityDate(
   );
 }
 
-function formatActivityLabel(
+function getActivityLabel(
   collection
 ) {
   const key =
@@ -166,19 +131,18 @@ function formatActivityLabel(
     );
 
   if (
-    key === "collected"
+    key ===
+    "collected"
   ) {
-    if (
-      collection.proxyName
-    ) {
-      return `Collected by ${collection.proxyName}`;
-    }
-
-    return "Collected by patient";
+    return collection
+      ?.proxyName
+      ? `Collected by ${collection.proxyName}`
+      : "Collected by patient";
   }
 
   if (
-    key === "cancelled"
+    key ===
+    "cancelled"
   ) {
     return "Collection cancelled";
   }
@@ -186,48 +150,217 @@ function formatActivityLabel(
   return "Collection updated";
 }
 
-/* ========================================= */
-/* LOADING */
-/* ========================================= */
+function formatRefreshTime(
+  value
+) {
+  if (!value) {
+    return "Not yet refreshed";
+  }
 
-function LoadingDashboard() {
-  return (
-    <div className="animate-pulse p-lg md:p-xl lg:p-2xl">
-      <div className="mb-xl">
-        <div className="mb-sm h-8 w-56 rounded bg-border-secondary" />
+  return `Updated ${value.toLocaleTimeString(
+    "en-ZA",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  )}`;
+}
 
-        <div className="h-4 w-72 rounded bg-border-secondary" />
-      </div>
+function dateOnlyForDisplay(
+  value
+) {
+  if (!value) {
+    return null;
+  }
 
-      <div className="mb-xl h-44 rounded-corner-lg bg-surface-bg" />
-
-      <div className="grid grid-cols-2 gap-md lg:grid-cols-4 lg:gap-lg">
-        <div className="h-28 rounded-corner-lg bg-surface-bg" />
-        <div className="h-28 rounded-corner-lg bg-surface-bg" />
-        <div className="h-28 rounded-corner-lg bg-surface-bg" />
-        <div className="h-28 rounded-corner-lg bg-surface-bg" />
-      </div>
-
-      <div className="mt-xl grid grid-cols-1 gap-lg lg:grid-cols-3 lg:gap-xl">
-        <div className="h-96 rounded-corner-lg bg-surface-bg lg:col-span-2" />
-
-        <div className="h-96 rounded-corner-lg bg-surface-bg" />
-      </div>
-    </div>
+  return new Date(
+    `${value}T12:00:00`
   );
 }
 
-/* ========================================= */
-/* PAGE */
-/* ========================================= */
+function getMedicationSummary(
+  collection
+) {
+  const items =
+    Array.isArray(
+      collection?.items
+    )
+      ? collection.items
+      : [];
+
+  if (
+    items.length ===
+    1
+  ) {
+    const item =
+      items[0];
+
+    return [
+      item.medicationName,
+      item.dosage,
+      item.form,
+    ]
+      .filter(Boolean)
+      .join(" · ");
+  }
+
+  if (
+    items.length >
+    1
+  ) {
+    return (
+      collection
+        ?.medicationName ||
+      `${items.length} medications`
+    );
+  }
+
+  return (
+    collection
+      ?.medicationName ||
+    "Medication collection"
+  );
+}
+
+function getEmptyCopy(
+  range,
+  customFrom,
+  customTo
+) {
+  if (
+    range ===
+    "today"
+  ) {
+    return {
+      title:
+        "Nothing due today",
+      description:
+        "None of your linked patients has an active medication collection scheduled for today.",
+    };
+  }
+
+  if (
+    range ===
+    "tomorrow"
+  ) {
+    return {
+      title:
+        "Nothing scheduled for tomorrow",
+      description:
+        "There are no active patient collections scheduled for tomorrow.",
+    };
+  }
+
+  if (
+    range ===
+    "next-week"
+  ) {
+    return {
+      title:
+        "No collections next week",
+      description:
+        "There are no active patient collections scheduled for next calendar week.",
+    };
+  }
+
+  if (
+    range ===
+      "custom" &&
+    (!customFrom ||
+      !customTo)
+  ) {
+    return {
+      title:
+        "Choose a date range",
+      description:
+        "Select a start and end date to view active patient collections for that period.",
+    };
+  }
+
+  return {
+    title:
+      "No collections in this range",
+    description:
+      "There are no active patient collections matching the selected dates and search.",
+  };
+}
+
+/* ========================================================= */
+/* PAGE                                                      */
+/* ========================================================= */
 
 export default function ProxyDashboard() {
   const navigate =
     useNavigate();
 
+  const [
+    searchParams,
+    setSearchParams,
+  ] = useSearchParams();
+
   const {
     user,
   } = useAuth();
+
+  const urlRange =
+    searchParams.get(
+      "range"
+    );
+
+  const selectedRange =
+    VALID_RANGES.has(
+      urlRange
+    )
+      ? urlRange
+      : "today";
+
+  const customFrom =
+    searchParams.get(
+      "from"
+    ) || "";
+
+  const customTo =
+    searchParams.get(
+      "to"
+    ) || "";
+
+  const urlSearch =
+    searchParams.get(
+      "q"
+    ) || "";
+
+  const [
+    searchInput,
+    setSearchInput,
+  ] = useState(
+    urlSearch
+  );
+
+  const [
+    debouncedSearch,
+    setDebouncedSearch,
+  ] = useState(
+    urlSearch
+  );
+
+  const [
+    customFromDraft,
+    setCustomFromDraft,
+  ] = useState(
+    customFrom
+  );
+
+  const [
+    customToDraft,
+    setCustomToDraft,
+  ] = useState(
+    customTo
+  );
+
+  const [
+    customError,
+    setCustomError,
+  ] = useState("");
 
   const [
     care,
@@ -240,13 +373,28 @@ export default function ProxyDashboard() {
   ] = useState([]);
 
   const [
-    loading,
-    setLoading,
+    recentActivity,
+    setRecentActivity,
+  ] = useState([]);
+
+  const [
+    careLoading,
+    setCareLoading,
   ] = useState(true);
 
   const [
-    error,
-    setError,
+    collectionsLoading,
+    setCollectionsLoading,
+  ] = useState(true);
+
+  const [
+    refreshing,
+    setRefreshing,
+  ] = useState(false);
+
+  const [
+    careError,
+    setCareError,
   ] = useState("");
 
   const [
@@ -254,89 +402,739 @@ export default function ProxyDashboard() {
     setCollectionsError,
   ] = useState("");
 
-  /* ===================================== */
-  /* LOAD */
-  /* ===================================== */
+  const [
+    activityError,
+    setActivityError,
+  ] = useState("");
 
-  const loadDashboard =
+  const [
+    lastUpdated,
+    setLastUpdated,
+  ] = useState(null);
+
+  const [
+    selectedCollection,
+    setSelectedCollection,
+  ] = useState(null);
+
+  const [
+    detailLoading,
+    setDetailLoading,
+  ] = useState(false);
+
+  const [
+    detailError,
+    setDetailError,
+  ] = useState("");
+
+  /* ===================================================== */
+  /* URL / INPUT SYNC                                      */
+  /* ===================================================== */
+
+  useEffect(
+    () => {
+      if (
+        urlSearch !==
+        searchInput
+      ) {
+        setSearchInput(
+          urlSearch
+        );
+
+        setDebouncedSearch(
+          urlSearch
+        );
+      }
+    },
+    [
+      urlSearch,
+    ]
+  );
+
+  useEffect(
+    () => {
+      if (
+        selectedRange !==
+        "custom"
+      ) {
+        return;
+      }
+
+      setCustomFromDraft(
+        customFrom
+      );
+
+      setCustomToDraft(
+        customTo
+      );
+    },
+    [
+      selectedRange,
+      customFrom,
+      customTo,
+    ]
+  );
+
+  useEffect(
+    () => {
+      const timer =
+        window.setTimeout(
+          () => {
+            const value =
+              searchInput
+                .trim();
+
+            setDebouncedSearch(
+              value
+            );
+
+            setSearchParams(
+              (previous) => {
+                const next =
+                  new URLSearchParams(
+                    previous
+                  );
+
+                if (value) {
+                  next.set(
+                    "q",
+                    value
+                  );
+                } else {
+                  next.delete(
+                    "q"
+                  );
+                }
+
+                return next;
+              },
+              {
+                replace:
+                  true,
+              }
+            );
+          },
+          300
+        );
+
+      return () =>
+        window.clearTimeout(
+          timer
+        );
+    },
+    [
+      searchInput,
+      setSearchParams,
+    ]
+  );
+
+  /* ===================================================== */
+  /* NEXT WEEK                                             */
+  /* ===================================================== */
+
+  const nextWeek =
+    useMemo(
+      () =>
+        getNextWeekRange(),
+      []
+    );
+
+  const nextWeekLabel =
+    useMemo(
+      () =>
+        formatDateRange(
+          nextWeek.start,
+          nextWeek.end
+        ),
+      [
+        nextWeek,
+      ]
+    );
+
+  /* ===================================================== */
+  /* FILTER QUERY                                          */
+  /* ===================================================== */
+
+  const collectionQuery =
+    useMemo(
+      () => {
+        const base = {
+          search:
+            debouncedSearch ||
+            undefined,
+
+          sort:
+            "scheduled-asc",
+        };
+
+        if (
+          selectedRange ===
+          "today"
+        ) {
+          return {
+            ...base,
+            status:
+              "today",
+          };
+        }
+
+        if (
+          selectedRange ===
+          "tomorrow"
+        ) {
+          return {
+            ...base,
+            status:
+              "tomorrow",
+          };
+        }
+
+        if (
+          selectedRange ===
+          "next-week"
+        ) {
+          return {
+            ...base,
+
+            status:
+              "pending",
+
+            from:
+              toApiDate(
+                nextWeek.start
+              ),
+
+            to:
+              toApiDate(
+                nextWeek.end
+              ),
+          };
+        }
+
+        if (
+          selectedRange ===
+          "custom"
+        ) {
+          if (
+            !customFrom ||
+            !customTo
+          ) {
+            return null;
+          }
+
+          return {
+            ...base,
+
+            status:
+              "pending",
+
+            from:
+              customFrom,
+
+            to:
+              customTo,
+          };
+        }
+
+        return base;
+      },
+      [
+        selectedRange,
+        customFrom,
+        customTo,
+        debouncedSearch,
+        nextWeek,
+      ]
+    );
+
+  /* ===================================================== */
+  /* LOAD CARE + ACTIVITY                                  */
+  /* ===================================================== */
+
+  const loadCareAndActivity =
     useCallback(
-      async () => {
-        setLoading(true);
-        setError("");
-        setCollectionsError("");
+      async ({
+        showLoading =
+          true,
+      } = {}) => {
+        if (
+          showLoading
+        ) {
+          setCareLoading(
+            true
+          );
+        }
+
+        setCareError("");
+        setActivityError("");
 
         const [
           careResult,
-          collectionsResult,
+          collectedResult,
+          cancelledResult,
         ] =
-          await Promise.allSettled([
-            proxiesApi.getCare(),
-            proxiesApi.getCollections(),
-          ]);
+          await Promise.allSettled(
+            [
+              proxiesApi
+                .getCare(),
+
+              proxiesApi
+                .getCollections({
+                  status:
+                    "collected",
+
+                  sort:
+                    "scheduled-desc",
+                }),
+
+              proxiesApi
+                .getCollections({
+                  status:
+                    "cancelled",
+
+                  sort:
+                    "scheduled-desc",
+                }),
+            ]
+          );
 
         if (
           careResult.status ===
           "fulfilled"
         ) {
           setCare(
-            careResult.value ||
-              null
+            careResult.value || {
+              patients:
+                [],
+            }
+          );
+
+          setLastUpdated(
+            new Date()
           );
         } else {
-          console.error(
-            "Failed to load proxy care dashboard:",
-            careResult.reason
-          );
-
-          setCare(null);
-
-          setError(
+          setCareError(
             careResult.reason
               ?.message ||
-              "We could not load your proxy dashboard."
+              "We could not load your Proxy care overview."
+          );
+        }
+
+        const activity =
+          [];
+
+        if (
+          collectedResult.status ===
+            "fulfilled" &&
+          Array.isArray(
+            collectedResult.value
+          )
+        ) {
+          activity.push(
+            ...collectedResult.value
           );
         }
 
         if (
-          collectionsResult.status ===
-          "fulfilled"
+          cancelledResult.status ===
+            "fulfilled" &&
+          Array.isArray(
+            cancelledResult.value
+          )
         ) {
-          setCollections(
-            Array.isArray(
-              collectionsResult.value
-            )
-              ? collectionsResult.value
-              : []
-          );
-        } else {
-          console.error(
-            "Failed to load dashboard collections:",
-            collectionsResult.reason
-          );
-
-          setCollections([]);
-
-          setCollectionsError(
-            collectionsResult.reason
-              ?.message ||
-              "Collection activity could not be loaded."
+          activity.push(
+            ...cancelledResult.value
           );
         }
 
-        setLoading(false);
+        activity.sort(
+          (
+            left,
+            right
+          ) =>
+            (
+              getActivityDate(
+                right
+              )?.getTime() ||
+              0
+            ) -
+            (
+              getActivityDate(
+                left
+              )?.getTime() ||
+              0
+            )
+        );
+
+        setRecentActivity(
+          activity.slice(
+            0,
+            MAX_ACTIVITY
+          )
+        );
+
+        if (
+          collectedResult.status ===
+            "rejected" &&
+          cancelledResult.status ===
+            "rejected"
+        ) {
+          setActivityError(
+            "Recent collection activity could not be loaded."
+          );
+        }
+
+        setCareLoading(
+          false
+        );
       },
       []
     );
 
-  useEffect(() => {
-    loadDashboard();
-  }, [
-    loadDashboard,
-  ]);
+  /* ===================================================== */
+  /* LOAD FILTERED COLLECTIONS                             */
+  /* ===================================================== */
 
-  /* ===================================== */
-  /* DATA */
-  /* ===================================== */
+  const loadFilteredCollections =
+    useCallback(
+      async (
+        signal
+      ) => {
+        if (
+          !collectionQuery
+        ) {
+          setCollections([]);
+          setCollectionsError("");
+          setCollectionsLoading(
+            false
+          );
+
+          return;
+        }
+
+        try {
+          setCollectionsLoading(
+            true
+          );
+
+          setCollectionsError("");
+
+          const result =
+            await proxiesApi
+              .getCollections({
+                ...collectionQuery,
+                signal,
+              });
+
+          setCollections(
+            Array.isArray(
+              result
+            )
+              ? result
+              : []
+          );
+        } catch (err) {
+          if (
+            err?.name ===
+            "AbortError"
+          ) {
+            return;
+          }
+
+          console.error(
+            "Failed to load Proxy collections:",
+            err
+          );
+
+          setCollectionsError(
+            err?.message ||
+              "Collections could not be loaded."
+          );
+        } finally {
+          if (
+            !signal?.aborted
+          ) {
+            setCollectionsLoading(
+              false
+            );
+          }
+        }
+      },
+      [
+        collectionQuery,
+      ]
+    );
+
+  /* ===================================================== */
+  /* INITIAL LOAD                                          */
+  /* ===================================================== */
+
+  useEffect(
+    () => {
+      loadCareAndActivity();
+    },
+    [
+      loadCareAndActivity,
+    ]
+  );
+
+  useEffect(
+    () => {
+      const controller =
+        new AbortController();
+
+      loadFilteredCollections(
+        controller.signal
+      );
+
+      return () =>
+        controller.abort();
+    },
+    [
+      loadFilteredCollections,
+    ]
+  );
+
+  /* ===================================================== */
+  /* REFRESH                                               */
+  /* ===================================================== */
+
+  const handleRefresh =
+    useCallback(
+      async () => {
+        try {
+          setRefreshing(
+            true
+          );
+
+          await Promise.all([
+            loadCareAndActivity({
+              showLoading:
+                false,
+            }),
+
+            loadFilteredCollections(),
+          ]);
+
+          setLastUpdated(
+            new Date()
+          );
+        } finally {
+          setRefreshing(
+            false
+          );
+        }
+      },
+      [
+        loadCareAndActivity,
+        loadFilteredCollections,
+      ]
+    );
+
+  /* ===================================================== */
+  /* RANGE ACTIONS                                         */
+  /* ===================================================== */
+
+  function handleRangeChange(
+    range
+  ) {
+    setCustomError("");
+
+    setSearchParams(
+      (previous) => {
+        const next =
+          new URLSearchParams(
+            previous
+          );
+
+        next.set(
+          "range",
+          range
+        );
+
+        if (
+          range !==
+          "custom"
+        ) {
+          next.delete(
+            "from"
+          );
+
+          next.delete(
+            "to"
+          );
+        }
+
+        return next;
+      }
+    );
+  }
+
+  function applyCustomRange() {
+    if (
+      !customFromDraft ||
+      !customToDraft
+    ) {
+      setCustomError(
+        "Choose both a start and end date."
+      );
+
+      return;
+    }
+
+    if (
+      customFromDraft >
+      customToDraft
+    ) {
+      setCustomError(
+        "The end date cannot be before the start date."
+      );
+
+      return;
+    }
+
+    setCustomError("");
+
+    setSearchParams(
+      (previous) => {
+        const next =
+          new URLSearchParams(
+            previous
+          );
+
+        next.set(
+          "range",
+          "custom"
+        );
+
+        next.set(
+          "from",
+          customFromDraft
+        );
+
+        next.set(
+          "to",
+          customToDraft
+        );
+
+        return next;
+      }
+    );
+  }
+
+  /* ===================================================== */
+  /* COLLECTION DETAILS                                    */
+  /* ===================================================== */
+
+  const openCollection =
+    useCallback(
+      async (
+        collection
+      ) => {
+        setSelectedCollection(
+          collection
+        );
+
+        setDetailError("");
+        setDetailLoading(
+          true
+        );
+
+        try {
+          const result =
+            await proxiesApi
+              .getCollectionById(
+                collection.id
+              );
+
+          if (result) {
+            setSelectedCollection(
+              result
+            );
+          }
+        } catch (err) {
+          console.error(
+            "Failed to load collection details:",
+            err
+          );
+
+          setDetailError(
+            err?.message ||
+              "Some collection details could not be refreshed."
+          );
+        } finally {
+          setDetailLoading(
+            false
+          );
+        }
+      },
+      []
+    );
+
+  function closeCollection() {
+    setSelectedCollection(
+      null
+    );
+
+    setDetailError("");
+    setDetailLoading(
+      false
+    );
+  }
+
+  useEffect(
+    () => {
+      if (
+        !selectedCollection
+      ) {
+        return undefined;
+      }
+
+      const previousOverflow =
+        document.body
+          .style
+          .overflow;
+
+      document.body
+        .style
+        .overflow =
+        "hidden";
+
+      const handleKeyDown =
+        (event) => {
+          if (
+            event.key ===
+            "Escape"
+          ) {
+            closeCollection();
+          }
+        };
+
+      window.addEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      return () => {
+        document.body
+          .style
+          .overflow =
+          previousOverflow;
+
+        window.removeEventListener(
+          "keydown",
+          handleKeyDown
+        );
+      };
+    },
+    [
+      selectedCollection,
+    ]
+  );
+
+  /* ===================================================== */
+  /* DERIVED DATA                                          */
+  /* ===================================================== */
 
   const patients =
     Array.isArray(
@@ -345,277 +1143,53 @@ export default function ProxyDashboard() {
       ? care.patients
       : [];
 
-  const fullName =
-    user?.fullName ||
-    user?.name ||
-    "Proxy";
-
-  const firstName =
-    fullName
-      .split(" ")
-      .filter(Boolean)[0] ||
-    "Proxy";
-
-  const activeCollections =
-    useMemo(
-      () =>
-        collections.filter(
-          (collection) => {
-            const status =
-              getCollectionStatusKey(
-                collection
-              );
-
-            return (
-              status !==
-                "collected" &&
-              status !==
-                "cancelled"
-            );
-          }
-        ),
-      [
-        collections,
-      ]
-    );
-
-  const overdueCollections =
-    useMemo(
-      () =>
-        activeCollections.filter(
-          (collection) =>
-            getCollectionStatusKey(
-              collection
-            ) ===
-            "overdue"
-        ),
-      [
-        activeCollections,
-      ]
-    );
-
-  const dueTodayCollections =
-    useMemo(
-      () =>
-        activeCollections.filter(
-          (collection) =>
-            getCollectionStatusKey(
-              collection
-            ) ===
-            "today"
-        ),
-      [
-        activeCollections,
-      ]
-    );
-
-  const upcomingCollections =
-    useMemo(
-      () =>
-        activeCollections.filter(
-          (collection) =>
-            getCollectionStatusKey(
-              collection
-            ) ===
-            "upcoming"
-        ),
-      [
-        activeCollections,
-      ]
-    );
-
-  const collectedCollections =
-    useMemo(
-      () =>
-        collections.filter(
-          (collection) =>
-            getCollectionStatusKey(
-              collection
-            ) ===
-            "collected"
-        ),
-      [
-        collections,
-      ]
-    );
-
-  const priorityCollections =
-    useMemo(
-      () =>
-        [...activeCollections]
-          .sort(
-            (
-              a,
-              b
-            ) => {
-              const priority = {
-                overdue: 0,
-                today: 1,
-                upcoming: 2,
-                none: 3,
-              };
-
-              const aStatus =
-                getCollectionStatusKey(
-                  a
-                );
-
-              const bStatus =
-                getCollectionStatusKey(
-                  b
-                );
-
-              if (
-                priority[aStatus] !==
-                priority[bStatus]
-              ) {
-                return (
-                  priority[aStatus] -
-                  priority[bStatus]
-                );
-              }
-
-              const aDate =
-                parseDate(
-                  a.scheduledCollectionDate
-                );
-
-              const bDate =
-                parseDate(
-                  b.scheduledCollectionDate
-                );
-
-              return (
-                (aDate?.getTime() ||
-                  Number.MAX_SAFE_INTEGER) -
-                (bDate?.getTime() ||
-                  Number.MAX_SAFE_INTEGER)
-              );
-            }
-          )
-          .slice(
-            0,
-            5
-          ),
-      [
-        activeCollections,
-      ]
-    );
-
-  const recentActivity =
-    useMemo(
-      () =>
-        collections
-          .filter(
-            (collection) => {
-              const status =
-                getCollectionStatusKey(
-                  collection
-                );
-
-              return (
-                status ===
-                  "collected" ||
-                status ===
-                  "cancelled"
-              );
-            }
-          )
-          .sort(
-            (
-              a,
-              b
-            ) =>
-              (
-                getActivityDate(
-                  b
-                )?.getTime() ||
-                0
-              ) -
-              (
-                getActivityDate(
-                  a
-                )?.getTime() ||
-                0
-              )
-          )
-          .slice(
-            0,
-            5
-          ),
-      [
-        collections,
-      ]
-    );
-
-  const patientsWithActiveCollection =
-    useMemo(
-      () =>
-        new Set(
-          activeCollections
-            .map(
-              (
-                collection
-              ) =>
-                collection.patientId
-            )
-            .filter(Boolean)
-        ).size,
-      [
-        activeCollections,
-      ]
-    );
-
-  const patientsWithoutCollection =
-    Math.max(
-      0,
-      patients.length -
-        patientsWithActiveCollection
-    );
-
   const sortedPatients =
     useMemo(
       () =>
         [...patients]
           .sort(
             (
-              a,
-              b
+              left,
+              right
             ) => {
-              const aDate =
+              const leftDate =
                 parseDate(
-                  a.nextCollectionDate
+                  left
+                    .nextCollectionDate
                 );
 
-              const bDate =
+              const rightDate =
                 parseDate(
-                  b.nextCollectionDate
+                  right
+                    .nextCollectionDate
                 );
 
               if (
-                aDate &&
-                bDate
+                leftDate &&
+                rightDate
               ) {
                 return (
-                  aDate.getTime() -
-                  bDate.getTime()
+                  leftDate.getTime() -
+                  rightDate.getTime()
                 );
               }
 
-              if (aDate) {
+              if (leftDate) {
                 return -1;
               }
 
-              if (bDate) {
+              if (rightDate) {
                 return 1;
               }
 
               return String(
-                a.patientName ||
+                left
+                  .patientName ||
                   ""
               ).localeCompare(
                 String(
-                  b.patientName ||
+                  right
+                    .patientName ||
                     ""
                 )
               );
@@ -623,58 +1197,98 @@ export default function ProxyDashboard() {
           )
           .slice(
             0,
-            6
+            MAX_DASHBOARD_PATIENTS
           ),
       [
         patients,
       ]
     );
 
-  /* ===================================== */
-  /* LOADING + ERROR */
-  /* ===================================== */
+  const visibleCollections =
+    collections.slice(
+      0,
+      MAX_DASHBOARD_COLLECTIONS
+    );
 
-  if (loading) {
+  const fullName =
+    user?.fullName ||
+    user?.name ||
+    "";
+
+  const firstName =
+    String(
+      fullName
+    )
+      .trim()
+      .split(/\s+/)
+      .filter(Boolean)[0] ||
+    "";
+
+  const customRangeLabel =
+    customFrom &&
+    customTo
+      ? formatDateRange(
+          dateOnlyForDisplay(
+            customFrom
+          ),
+          dateOnlyForDisplay(
+            customTo
+          )
+        )
+      : "Custom range";
+
+  const emptyCopy =
+    getEmptyCopy(
+      selectedRange,
+      customFrom,
+      customTo
+    );
+
+  /* ===================================================== */
+  /* INITIAL PAGE STATE                                    */
+  /* ===================================================== */
+
+  if (
+    careLoading &&
+    !care
+  ) {
     return (
-      <LoadingDashboard />
+      <DashboardSkeleton />
     );
   }
 
   if (
-    error ||
     !care
   ) {
     return (
       <div className="p-lg md:p-xl lg:p-2xl">
-        <div className="mx-auto max-w-2xl rounded-corner-lg border border-danger/20 bg-surface-bg p-xl">
+        <div className="mx-auto max-w-2xl rounded-xl border border-[#fecaca] bg-white p-xl shadow-sm">
           <div className="flex items-start gap-md">
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-full bg-danger/10">
+            <div className="mt-0.5 text-[#dc2626]">
               <AlertCircle
-                size={18}
-                className="text-danger"
+                size={22}
               />
             </div>
 
             <div className="min-w-0 flex-1">
-              <h1 className="text-label font-semibold text-text-primary">
-                We could not load
-                your dashboard
+              <h1 className="text-base font-semibold text-text-primary">
+                Dashboard unavailable
               </h1>
 
-              <p className="mt-xs text-label-sm text-text-secondary">
-                {error ||
-                  "Your proxy dashboard data is currently unavailable."}
+              <p className="mt-2 text-sm leading-6 text-text-secondary">
+                {careError ||
+                  "Your Proxy care information could not be loaded."}
               </p>
 
               <button
                 type="button"
-                onClick={
-                  loadDashboard
+                onClick={() =>
+                  loadCareAndActivity()
                 }
-                className="mt-lg inline-flex items-center gap-2 rounded-lg border border-border-secondary bg-white px-4 py-2 text-sm font-medium text-text-primary transition hover:bg-[#f8fafc]"
+                className="mt-lg inline-flex min-h-[42px] items-center gap-2 rounded-lg border border-border-secondary bg-white px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
               >
                 <RefreshCw
-                  size={15}
+                  size={16}
                 />
 
                 Try again
@@ -686,389 +1300,231 @@ export default function ProxyDashboard() {
     );
   }
 
-  /* ===================================== */
-  /* RENDER */
-  /* ===================================== */
-
-  const needsAttention =
-    overdueCollections.length +
-    dueTodayCollections.length;
+  /* ===================================================== */
+  /* RENDER                                                */
+  /* ===================================================== */
 
   return (
-    <div className="p-lg md:p-xl lg:p-2xl">
+    <>
+      <div className="p-lg md:p-xl lg:p-2xl">
 
-      {/* ================================= */}
-      {/* PAGE HEADER */}
-      {/* ================================= */}
+        {/* ================================================= */}
+        {/* PAGE HEADER                                       */}
+        {/* ================================================= */}
 
-      <div className="mb-lg flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between lg:mb-xl">
-        <div>
-          <h1 className="text-title text-text-primary">
-            Welcome,{" "}
-            {firstName}
-          </h1>
+        <header className="mb-xl flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <h1 className="text-xl font-semibold tracking-[-0.02em] text-text-primary sm:text-2xl">
+              Care overview
+            </h1>
 
-          <div className="mt-xs flex flex-wrap items-center gap-2 text-label-sm text-text-secondary">
-            <span>
-              Your proxy care overview
+            <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-text-secondary">
+              {firstName && (
+                <>
+                  <span>
+                    {firstName}
+                  </span>
+
+                  <span
+                    aria-hidden="true"
+                    className="text-text-tertiary"
+                  >
+                    ·
+                  </span>
+                </>
+              )}
+
+              <span>
+                Proxy account
+              </span>
+
+              {care.clinicName && (
+                <>
+                  <span
+                    aria-hidden="true"
+                    className="text-text-tertiary"
+                  >
+                    ·
+                  </span>
+
+                  <span className="inline-flex items-center gap-1.5">
+                    <MapPin
+                      size={14}
+                    />
+
+                    {
+                      care.clinicName
+                    }
+                  </span>
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-md">
+            <span className="hidden text-xs text-text-tertiary sm:block">
+              {formatRefreshTime(
+                lastUpdated
+              )}
             </span>
 
-            {care.clinicName && (
-              <>
-                <span className="text-text-tertiary">
-                  •
-                </span>
-
-                <span className="inline-flex items-center gap-1">
-                  <MapPin
-                    size={13}
-                  />
-
-                  {
-                    care.clinicName
-                  }
-                </span>
-              </>
-            )}
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={
-            loadDashboard
-          }
-          className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-border-secondary bg-white px-4 py-2 text-sm font-medium text-text-primary transition hover:bg-[#f8fafc] sm:w-fit"
-        >
-          <RefreshCw
-            size={15}
-          />
-
-          Refresh
-        </button>
-      </div>
-
-      {/* ================================= */}
-      {/* TODAY HERO */}
-      {/* ================================= */}
-
-      <section className="relative mb-xl overflow-hidden rounded-corner-lg border border-[#99f6e4] bg-gradient-to-br from-[#f0fdfa] via-white to-[#ecfeff] p-lg sm:p-xl lg:p-2xl">
-
-        <div className="pointer-events-none absolute -right-16 -top-20 h-56 w-56 rounded-full bg-[#99f6e4]/30 blur-3xl" />
-
-        <div className="relative grid grid-cols-1 gap-xl lg:grid-cols-[1.35fr_0.65fr] lg:items-center">
-
-          <div>
-            <div className="mb-md inline-flex items-center gap-2 rounded-full border border-[#99f6e4] bg-white/80 px-3 py-1.5 text-xs font-semibold text-[#0f766e]">
-              <ShieldCheck
-                size={14}
+            <button
+              type="button"
+              disabled={
+                refreshing
+              }
+              onClick={
+                handleRefresh
+              }
+              className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-lg border border-border-secondary bg-white px-4 py-2 text-sm font-semibold text-text-primary transition hover:bg-[#f8fafc] focus:outline-none focus:ring-2 focus:ring-brand-primary/30 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <RefreshCw
+                size={15}
+                className={
+                  refreshing
+                    ? "animate-spin"
+                    : ""
+                }
               />
 
-              Today's care overview
-            </div>
-
-            {needsAttention >
-            0 ? (
-              <>
-                <h2 className="max-w-2xl text-[24px] font-semibold leading-tight text-[#0f172a] sm:text-[28px]">
-                  {needsAttention ===
-                  1
-                    ? "1 collection needs your attention today."
-                    : `${needsAttention} collections need your attention today.`}
-                </h2>
-
-                <p className="mt-sm max-w-xl text-sm leading-6 text-[#64748b]">
-                  Start with overdue and
-                  due-today collections,
-                  then review what is
-                  coming next.
-                </p>
-              </>
-            ) : (
-              <>
-                <h2 className="max-w-2xl text-[24px] font-semibold leading-tight text-[#0f172a] sm:text-[28px]">
-                  You're up to date
-                  for today.
-                </h2>
-
-                <p className="mt-sm max-w-xl text-sm leading-6 text-[#64748b]">
-                  None of your linked
-                  patients currently has
-                  an overdue or due-today
-                  medication collection.
-                </p>
-              </>
-            )}
-
-            <div className="mt-lg flex flex-col gap-sm sm:flex-row">
-              <button
-                type="button"
-                onClick={() =>
-                  navigate(
-                    "/proxy/collections"
-                  )
-                }
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg bg-[#0f766e] px-5 text-sm font-semibold text-white transition hover:bg-[#115e59]"
-              >
-                View collections
-
-                <ArrowRight
-                  size={16}
-                />
-              </button>
-
-              <button
-                type="button"
-                onClick={() =>
-                  navigate(
-                    "/proxy/patients"
-                  )
-                }
-                className="inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-[#cbd5e1] bg-white px-5 text-sm font-semibold text-[#334155] transition hover:bg-[#f8fafc]"
-              >
-                <Users
-                  size={16}
-                />
-
-                View patients
-              </button>
-            </div>
+              {refreshing
+                ? "Refreshing"
+                : "Refresh"}
+            </button>
           </div>
+        </header>
 
-          <div className="rounded-corner-lg border border-white/80 bg-white/85 p-lg shadow-sm backdrop-blur">
+        {careError && (
+          <div className="mb-lg flex items-start gap-3 rounded-lg border border-[#fde68a] bg-[#fffbeb] px-4 py-3 text-sm text-[#92400e]">
+            <AlertCircle
+              size={17}
+              className="mt-0.5 shrink-0"
+            />
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.1em] text-[#94a3b8]">
-                  Current clinic
-                </p>
-
-                <p className="mt-2 text-base font-semibold text-[#0f172a]">
-                  {care.clinicName ||
-                    "Clinic unavailable"}
-                </p>
-              </div>
-
-              <div className="flex h-11 w-11 items-center justify-center rounded-full bg-[#ccfbf1] text-[#0f766e]">
-                <MapPin
-                  size={19}
-                />
-              </div>
-            </div>
-
-            <div className="mt-lg grid grid-cols-2 gap-md border-t border-[#e2e8f0] pt-lg">
-              <div>
-                <p className="text-[11px] text-[#94a3b8]">
-                  Linked patients
-                </p>
-
-                <p className="mt-1 text-xl font-semibold text-[#0f172a]">
-                  {care.totalPatients ??
-                    patients.length}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-[11px] text-[#94a3b8]">
-                  Active collections
-                </p>
-
-                <p className="mt-1 text-xl font-semibold text-[#0f172a]">
-                  {
-                    activeCollections.length
-                  }
-                </p>
-              </div>
-            </div>
+            <span>
+              {careError}
+            </span>
           </div>
+        )}
 
-        </div>
-      </section>
+        {/* ================================================= */}
+        {/* SUMMARY                                           */}
+        {/* ================================================= */}
 
-      {/* ================================= */}
-      {/* SUMMARY CARDS */}
-      {/* ================================= */}
-
-      <div className="mb-xl grid grid-cols-2 gap-md lg:grid-cols-4 lg:gap-lg">
-
-        <MetricCard
-          icon={Users}
-          label="Linked patients"
-          value={
-            care.totalPatients ??
-            patients.length
-          }
-          helper="Under your care"
-          onClick={() =>
-            navigate(
-              "/proxy/patients"
-            )
-          }
-        />
-
-        <MetricCard
-          icon={
-            CalendarCheck2
-          }
-          label="Due today"
-          value={
-            dueTodayCollections.length
-          }
-          helper="Collections today"
-          accent="success"
-          onClick={() =>
-            navigate(
-              "/proxy/collections?status=today"
-            )
-          }
-        />
-
-        <MetricCard
-          icon={
-            CalendarClock
-          }
-          label="Upcoming"
-          value={
-            upcomingCollections.length
-          }
-          helper="Future collections"
-          onClick={() =>
-            navigate(
-              "/proxy/collections?status=upcoming"
-            )
-          }
-        />
-
-        <MetricCard
-          icon={Clock3}
-          label="Overdue"
-          value={
-            overdueCollections.length
-          }
-          helper={
-            overdueCollections.length >
-            0
-              ? "Needs attention"
-              : "Nothing overdue"
-          }
-          accent={
-            overdueCollections.length >
-            0
-              ? "danger"
-              : "default"
-          }
-          onClick={() =>
-            navigate(
-              "/proxy/collections?status=overdue"
-            )
-          }
-        />
-
-      </div>
-
-      {/* ================================= */}
-      {/* COLLECTION API WARNING */}
-      {/* ================================= */}
-
-      {collectionsError && (
-        <div className="mb-xl flex items-start gap-md rounded-corner-lg border border-warning/20 bg-warning/10 p-md">
-          <AlertCircle
-            size={17}
-            className="mt-0.5 shrink-0 text-warning"
-          />
-
-          <div className="min-w-0 flex-1">
-            <p className="text-label-sm font-medium text-text-primary">
-              Some collection activity
-              could not be loaded.
-            </p>
-
-            <p className="mt-xs text-video-title text-text-secondary">
-              {collectionsError}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              loadDashboard
+        <section
+          aria-label="Collection overview"
+          className="mb-xl grid grid-cols-2 gap-md lg:grid-cols-5"
+        >
+          <SummaryMetric
+            icon={Users}
+            label="Linked patients"
+            value={
+              care.totalPatients ??
+              patients.length
             }
-            className="shrink-0 text-label-sm font-medium text-brand-primary"
-          >
-            Retry
-          </button>
-        </div>
-      )}
-
-      {/* ================================= */}
-      {/* MAIN GRID */}
-      {/* ================================= */}
-
-      <div className="grid grid-cols-1 gap-lg lg:grid-cols-3 lg:gap-xl">
-
-        {/* ============================= */}
-        {/* PRIORITY COLLECTIONS */}
-        {/* ============================= */}
-
-        <section className="overflow-hidden rounded-corner-lg border border-border-secondary bg-surface-bg lg:col-span-2">
-
-          <SectionHeader
-            icon={
-              PackageCheck
-            }
-            title="Collection priorities"
-            subtitle="The next collections requiring your attention."
-            action="View all"
-            onAction={() =>
+            onClick={() =>
               navigate(
-                "/proxy/collections"
+                "/proxy/patients"
               )
             }
           />
 
-          {priorityCollections.length >
-          0 ? (
-            <div className="divide-y divide-border-secondary">
-              {priorityCollections.map(
-                (
-                  collection
-                ) => (
-                  <PriorityCollectionRow
-                    key={
-                      collection.id
-                    }
-                    collection={
-                      collection
-                    }
-                    onOpen={() =>
-                      navigate(
-                        `/proxy/collections?patientId=${collection.patientId}`
-                      )
-                    }
+          <SummaryMetric
+            icon={CalendarCheck2}
+            label="Due today"
+            value={
+              care.dueToday ??
+              0
+            }
+            accent={
+              (care.dueToday ||
+                0) >
+              0
+                ? "warning"
+                : "default"
+            }
+            onClick={() =>
+              handleRangeChange(
+                "today"
+              )
+            }
+          />
+
+          <SummaryMetric
+            icon={CalendarClock}
+            label="Tomorrow"
+            value={
+              care.tomorrow ??
+              0
+            }
+            onClick={() =>
+              handleRangeChange(
+                "tomorrow"
+              )
+            }
+          />
+
+          <SummaryMetric
+            icon={CalendarDays}
+            label="Upcoming"
+            value={
+              care.upcoming ??
+              0
+            }
+            onClick={() =>
+              navigate(
+                "/proxy/collections?status=upcoming"
+              )
+            }
+          />
+
+          <SummaryMetric
+            icon={AlertCircle}
+            label="Overdue"
+            value={
+              care.overdue ??
+              0
+            }
+            accent={
+              (care.overdue ||
+                0) >
+              0
+                ? "danger"
+                : "default"
+            }
+            onClick={() =>
+              navigate(
+                "/proxy/collections?status=overdue"
+              )
+            }
+          />
+        </section>
+
+        {/* ================================================= */}
+        {/* NEXT COLLECTIONS                                  */}
+        {/* ================================================= */}
+
+        <section className="overflow-hidden rounded-xl border border-border-secondary bg-white shadow-sm">
+
+          <div className="border-b border-border-secondary px-lg py-lg lg:px-xl">
+            <div className="flex flex-col gap-md lg:flex-row lg:items-start lg:justify-between">
+
+              <div>
+                <div className="flex items-center gap-2">
+                  <PackageCheck
+                    size={19}
+                    className="text-brand-primary"
                   />
-                )
-              )}
-            </div>
-          ) : (
-            <div className="px-lg py-2xl text-center lg:px-xl">
-              <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-[#dcfce7] text-[#166534]">
-                <CheckCircle2
-                  size={25}
-                />
+
+                  <h2 className="text-base font-semibold text-text-primary">
+                    Next collections
+                  </h2>
+                </div>
+
+                <p className="mt-1.5 text-sm text-text-secondary">
+                  Review upcoming medication collections for patients linked to your account.
+                </p>
               </div>
-
-              <h3 className="mt-md text-label font-semibold text-text-primary">
-                No active collections
-                need attention
-              </h3>
-
-              <p className="mx-auto mt-xs max-w-md text-label-sm leading-6 text-text-secondary">
-                Your current linked
-                patients have no
-                overdue, due-today or
-                upcoming collections
-                requiring action.
-              </p>
 
               <button
                 type="button"
@@ -1077,395 +1533,628 @@ export default function ProxyDashboard() {
                     "/proxy/collections"
                   )
                 }
-                className="mt-lg inline-flex items-center gap-xs text-label-sm font-semibold text-brand-primary"
+                className="inline-flex w-fit items-center gap-1.5 text-sm font-semibold text-brand-primary transition hover:opacity-70"
               >
-                View collection history
+                View all collections
 
                 <ArrowRight
-                  size={14}
+                  size={15}
                 />
               </button>
+
             </div>
-          )}
 
-        </section>
+            {/* ============================================= */}
+            {/* FILTERS                                       */}
+            {/* ============================================= */}
 
-        {/* ============================= */}
-        {/* CARE SNAPSHOT */}
-        {/* ============================= */}
+            <div className="mt-lg flex flex-col gap-md xl:flex-row xl:items-center xl:justify-between">
 
-        <section className="rounded-corner-lg border border-border-secondary bg-surface-bg">
+              <div className="overflow-x-auto pb-1">
+                <div className="flex min-w-max items-center gap-2">
+                  <RangeButton
+                    active={
+                      selectedRange ===
+                      "today"
+                    }
+                    onClick={() =>
+                      handleRangeChange(
+                        "today"
+                      )
+                    }
+                  >
+                    Today
+                  </RangeButton>
 
-          <div className="border-b border-border-secondary p-lg">
-            <div className="flex items-center gap-sm">
-              <UserRoundCheck
-                size={17}
-                className="text-brand-primary"
-              />
+                  <RangeButton
+                    active={
+                      selectedRange ===
+                      "tomorrow"
+                    }
+                    onClick={() =>
+                      handleRangeChange(
+                        "tomorrow"
+                      )
+                    }
+                  >
+                    Tomorrow
+                  </RangeButton>
 
-              <div>
-                <h2 className="text-label font-semibold text-text-primary">
-                  Care snapshot
-                </h2>
+                  <RangeButton
+                    active={
+                      selectedRange ===
+                      "next-week"
+                    }
+                    onClick={() =>
+                      handleRangeChange(
+                        "next-week"
+                      )
+                    }
+                  >
+                    Next week ·{" "}
+                    {
+                      nextWeekLabel
+                    }
+                  </RangeButton>
 
-                <p className="mt-xs text-video-title text-text-secondary">
-                  Your current patient
-                  coverage.
-                </p>
-              </div>
-            </div>
-          </div>
+                  <RangeButton
+                    active={
+                      selectedRange ===
+                      "custom"
+                    }
+                    onClick={() =>
+                      handleRangeChange(
+                        "custom"
+                      )
+                    }
+                  >
+                    <CalendarRange
+                      size={14}
+                    />
 
-          <div className="p-lg">
-
-            <SnapshotRow
-              label="Linked patients"
-              value={
-                patients.length
-              }
-            />
-
-            <SnapshotRow
-              label="With active collection"
-              value={
-                patientsWithActiveCollection
-              }
-            />
-
-            <SnapshotRow
-              label="No current collection"
-              value={
-                patientsWithoutCollection
-              }
-            />
-
-            <SnapshotRow
-              label="Collected records"
-              value={
-                collectedCollections.length
-              }
-              last
-            />
-
-            <div className="mt-lg rounded-corner-md bg-[#f8fafc] p-md">
-              <div className="flex items-start gap-sm">
-                <ShieldCheck
-                  size={17}
-                  className="mt-0.5 shrink-0 text-[#0f766e]"
-                />
-
-                <div>
-                  <p className="text-label-sm font-semibold text-text-primary">
-                    Clinic-restricted care
-                  </p>
-
-                  <p className="mt-xs text-video-title leading-5 text-text-secondary">
-                    Your Proxy account
-                    only displays patients
-                    and collections from{" "}
-                    <span className="font-medium text-text-primary">
-                      {care.clinicName ||
-                        "your assigned clinic"}
-                    </span>
-                    .
-                  </p>
+                    {
+                      customRangeLabel
+                    }
+                  </RangeButton>
                 </div>
               </div>
+
+              <div className="relative w-full xl:max-w-sm">
+                <Search
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary"
+                />
+
+                <input
+                  type="search"
+                  value={
+                    searchInput
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    setSearchInput(
+                      event.target
+                        .value
+                    )
+                  }
+                  placeholder="Search patient, number or medication"
+                  className="h-10 w-full rounded-lg border border-border-secondary bg-white pl-9 pr-9 text-sm text-text-primary outline-none transition placeholder:text-text-tertiary focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10"
+                />
+
+                {searchInput && (
+                  <button
+                    type="button"
+                    aria-label="Clear search"
+                    onClick={() =>
+                      setSearchInput(
+                        ""
+                      )
+                    }
+                    className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-md text-text-tertiary transition hover:bg-[#f1f5f9] hover:text-text-primary"
+                  >
+                    <X
+                      size={14}
+                    />
+                  </button>
+                )}
+              </div>
+
             </div>
+
+            {/* ============================================= */}
+            {/* CUSTOM RANGE                                  */}
+            {/* ============================================= */}
+
+            {selectedRange ===
+              "custom" && (
+              <div className="mt-md rounded-lg border border-border-secondary bg-[#f8fafc] p-md">
+                <div className="flex flex-col gap-md lg:flex-row lg:items-end">
+
+                  <div className="grid flex-1 grid-cols-1 gap-md sm:grid-cols-2">
+
+                    <label className="block">
+                      <span className="mb-1.5 block text-xs font-semibold text-text-secondary">
+                        From
+                      </span>
+
+                      <input
+                        type="date"
+                        value={
+                          customFromDraft
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setCustomFromDraft(
+                            event.target
+                              .value
+                          )
+                        }
+                        className="h-10 w-full rounded-lg border border-border-secondary bg-white px-3 text-sm text-text-primary outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="mb-1.5 block text-xs font-semibold text-text-secondary">
+                        To
+                      </span>
+
+                      <input
+                        type="date"
+                        value={
+                          customToDraft
+                        }
+                        onChange={(
+                          event
+                        ) =>
+                          setCustomToDraft(
+                            event.target
+                              .value
+                          )
+                        }
+                        className="h-10 w-full rounded-lg border border-border-secondary bg-white px-3 text-sm text-text-primary outline-none transition focus:border-brand-primary focus:ring-2 focus:ring-brand-primary/10"
+                      />
+                    </label>
+
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={
+                      applyCustomRange
+                    }
+                    className="inline-flex h-10 items-center justify-center rounded-lg bg-brand-primary px-4 text-sm font-semibold text-white transition hover:opacity-90 focus:outline-none focus:ring-2 focus:ring-brand-primary/30"
+                  >
+                    Apply range
+                  </button>
+
+                </div>
+
+                {customError && (
+                  <p className="mt-2 text-xs font-medium text-[#b91c1c]">
+                    {customError}
+                  </p>
+                )}
+
+                <p className="mt-2 text-xs text-text-tertiary">
+                  The dashboard shows active collections within the selected dates.
+                </p>
+              </div>
+            )}
 
           </div>
 
-        </section>
+          {/* =============================================== */}
+          {/* TABLE HEADER                                    */}
+          {/* =============================================== */}
 
-      </div>
+          <div className="hidden grid-cols-12 gap-md border-b border-border-secondary bg-[#f8fafc] px-xl py-2.5 text-xs font-semibold uppercase tracking-[0.04em] text-text-tertiary lg:grid">
+            <span className="col-span-4">
+              Patient
+            </span>
 
-      {/* ================================= */}
-      {/* PATIENTS + ACTIVITY */}
-      {/* ================================= */}
+            <span className="col-span-3">
+              Medication
+            </span>
 
-      <div className="mt-lg grid grid-cols-1 gap-lg lg:mt-xl lg:grid-cols-3 lg:gap-xl">
+            <span className="col-span-2">
+              Collection
+            </span>
 
-        {/* ============================= */}
-        {/* PATIENTS */}
-        {/* ============================= */}
+            <span className="col-span-2">
+              Status
+            </span>
 
-        <section className="overflow-hidden rounded-corner-lg border border-border-secondary bg-surface-bg lg:col-span-2">
+            <span className="col-span-1" />
+          </div>
 
-          <SectionHeader
-            icon={Users}
-            title="People under your care"
-            subtitle="A quick view of your linked patients and their next collection."
-            action="All patients"
-            onAction={() =>
-              navigate(
-                "/proxy/patients"
-              )
-            }
-          />
+          {/* =============================================== */}
+          {/* CONTENT                                         */}
+          {/* =============================================== */}
 
-          {sortedPatients.length ===
-          0 ? (
-            <div className="px-lg py-2xl text-center">
-              <Users
-                size={27}
-                className="mx-auto text-text-tertiary"
-              />
+          {collectionsLoading ? (
+            <CollectionRowsSkeleton />
+          ) : collectionsError ? (
+            <InlineError
+              message={
+                collectionsError
+              }
+              onRetry={() =>
+                loadFilteredCollections()
+              }
+            />
+          ) : visibleCollections.length >
+            0 ? (
+            <>
+              <div className="divide-y divide-border-secondary">
+                {visibleCollections.map(
+                  (
+                    collection
+                  ) => (
+                    <CollectionRow
+                      key={
+                        collection.id
+                      }
+                      collection={
+                        collection
+                      }
+                      onOpen={() =>
+                        openCollection(
+                          collection
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
 
-              <p className="mt-md text-label-sm font-semibold text-text-primary">
-                No linked patients
-              </p>
-
-              <p className="mt-xs text-video-title text-text-secondary">
-                Patients assigned to
-                your Proxy account will
-                appear here.
-              </p>
-            </div>
-          ) : (
-            <div className="divide-y divide-border-secondary">
-              {sortedPatients.map(
-                (
-                  patient
-                ) => (
-                  <PatientRow
-                    key={
-                      patient.proxyLinkId ||
-                      patient.patientId
-                    }
-                    patient={
-                      patient
-                    }
-                    onOpen={() =>
+              {collections.length >
+                MAX_DASHBOARD_COLLECTIONS && (
+                <div className="border-t border-border-secondary bg-[#f8fafc] px-lg py-3 text-center lg:px-xl">
+                  <button
+                    type="button"
+                    onClick={() =>
                       navigate(
-                        `/proxy/collections?patientId=${patient.patientId}`
+                        "/proxy/collections"
                       )
                     }
-                  />
-                )
+                    className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary transition hover:opacity-70"
+                  >
+                    View remaining collections
+
+                    <ArrowRight
+                      size={14}
+                    />
+                  </button>
+                </div>
               )}
-            </div>
-          )}
-
-        </section>
-
-        {/* ============================= */}
-        {/* RECENT ACTIVITY */}
-        {/* ============================= */}
-
-        <section className="overflow-hidden rounded-corner-lg border border-border-secondary bg-surface-bg">
-
-          <SectionHeader
-            icon={
-              History
-            }
-            title="Recent activity"
-            subtitle="Latest completed and cancelled collection records."
-          />
-
-          {recentActivity.length >
-          0 ? (
-            <div className="divide-y divide-border-secondary">
-              {recentActivity.map(
-                (
-                  collection
-                ) => (
-                  <ActivityRow
-                    key={
-                      collection.id
-                    }
-                    collection={
-                      collection
-                    }
-                  />
-                )
-              )}
-            </div>
+            </>
           ) : (
-            <div className="px-lg py-2xl text-center">
-              <History
-                size={26}
-                className="mx-auto text-text-tertiary"
-              />
-
-              <p className="mt-md text-label-sm font-medium text-text-primary">
-                No recent activity
-              </p>
-
-              <p className="mt-xs text-video-title text-text-secondary">
-                Completed and
-                cancelled collections
-                will appear here.
-              </p>
-            </div>
+            <EmptyCollections
+              title={
+                emptyCopy.title
+              }
+              description={
+                emptyCopy.description
+              }
+              hasSearch={
+                Boolean(
+                  debouncedSearch
+                )
+              }
+              onClearSearch={() =>
+                setSearchInput(
+                  ""
+                )
+              }
+            />
           )}
 
         </section>
+
+        {/* ================================================= */}
+        {/* PATIENTS + ACTIVITY                                */}
+        {/* ================================================= */}
+
+        <div className="mt-xl grid grid-cols-1 gap-xl lg:grid-cols-3">
+
+          {/* =============================================== */}
+          {/* MY PATIENTS                                     */}
+          {/* =============================================== */}
+
+          <section className="overflow-hidden rounded-xl border border-border-secondary bg-white shadow-sm lg:col-span-2">
+
+            <SectionHeading
+              icon={Users}
+              title="My patients"
+              description="Patients currently linked to your Proxy account."
+              action="View all"
+              onAction={() =>
+                navigate(
+                  "/proxy/patients"
+                )
+              }
+            />
+
+            {sortedPatients.length >
+            0 ? (
+              <div className="divide-y divide-border-secondary">
+                {sortedPatients.map(
+                  (
+                    patient
+                  ) => (
+                    <PatientRow
+                      key={
+                        patient.proxyLinkId ||
+                        patient.patientId
+                      }
+                      patient={
+                        patient
+                      }
+                      onOpen={() =>
+                        navigate(
+                          `/proxy/collections?patientId=${patient.patientId}`
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="px-lg py-2xl text-center">
+                <Users
+                  size={25}
+                  className="mx-auto text-text-tertiary"
+                />
+
+                <h3 className="mt-md text-sm font-semibold text-text-primary">
+                  No linked patients
+                </h3>
+
+                <p className="mx-auto mt-1 max-w-md text-sm leading-6 text-text-secondary">
+                  Patients assigned to your Proxy account by the clinic will appear here.
+                </p>
+              </div>
+            )}
+
+          </section>
+
+          {/* =============================================== */}
+          {/* RECENT ACTIVITY                                  */}
+          {/* =============================================== */}
+
+          <section className="overflow-hidden rounded-xl border border-border-secondary bg-white shadow-sm">
+
+            <SectionHeading
+              icon={History}
+              title="Recent activity"
+              description="Latest completed and cancelled collection records."
+            />
+
+            {activityError ? (
+              <div className="px-lg py-xl">
+                <div className="flex items-start gap-2 text-sm text-text-secondary">
+                  <AlertCircle
+                    size={16}
+                    className="mt-0.5 shrink-0 text-[#d97706]"
+                  />
+
+                  {
+                    activityError
+                  }
+                </div>
+              </div>
+            ) : recentActivity.length >
+              0 ? (
+              <div className="divide-y divide-border-secondary">
+                {recentActivity.map(
+                  (
+                    collection
+                  ) => (
+                    <ActivityRow
+                      key={
+                        collection.id
+                      }
+                      collection={
+                        collection
+                      }
+                      onOpen={() =>
+                        openCollection(
+                          collection
+                        )
+                      }
+                    />
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="px-lg py-2xl text-center">
+                <History
+                  size={24}
+                  className="mx-auto text-text-tertiary"
+                />
+
+                <h3 className="mt-md text-sm font-semibold text-text-primary">
+                  No recent activity
+                </h3>
+
+                <p className="mt-1 text-sm leading-6 text-text-secondary">
+                  Completed and cancelled collection records will appear here.
+                </p>
+              </div>
+            )}
+
+          </section>
+
+        </div>
 
       </div>
 
-      {/* ================================= */}
-      {/* QUICK ACTIONS */}
-      {/* ================================= */}
+      {/* =================================================== */}
+      {/* DETAILS DRAWER                                      */}
+      {/* =================================================== */}
 
-      <section className="mt-lg lg:mt-xl">
-
-        <div className="mb-md">
-          <h2 className="text-label font-semibold text-text-primary">
-            Quick access
-          </h2>
-
-          <p className="mt-xs text-video-title text-text-secondary">
-            Jump directly to the
-            information you use most.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-
-          <QuickAction
-            icon={Users}
-            title="Manage patient view"
-            description="Search and review all patients currently linked to you."
-            onClick={() =>
-              navigate(
-                "/proxy/patients"
-              )
-            }
-          />
-
-          <QuickAction
-            icon={
-              PackageCheck
-            }
-            title="Collection records"
-            description="Review upcoming, overdue, collected and cancelled records."
-            onClick={() =>
-              navigate(
-                "/proxy/collections"
-              )
-            }
-          />
-
-        </div>
-
-      </section>
-
-    </div>
+      {selectedCollection && (
+        <CollectionDrawer
+          collection={
+            selectedCollection
+          }
+          loading={
+            detailLoading
+          }
+          error={
+            detailError
+          }
+          onClose={
+            closeCollection
+          }
+          onPatient={() =>
+            navigate(
+              `/proxy/collections?patientId=${selectedCollection.patientId}`
+            )
+          }
+        />
+      )}
+    </>
   );
 }
 
-/* ========================================= */
-/* METRIC CARD */
-/* ========================================= */
+/* ========================================================= */
+/* SUMMARY METRIC                                            */
+/* ========================================================= */
 
-function MetricCard({
+function SummaryMetric({
   icon: Icon,
   label,
   value,
-  helper,
   accent = "default",
   onClick,
 }) {
-  const styles = {
+  const accents = {
     default: {
       icon:
-        "bg-[#ccfbf1] text-[#0f766e]",
+        "bg-[#f0fdfa] text-[#0f766e]",
       value:
-        "text-[#0f172a]",
+        "text-text-primary",
     },
 
-    success: {
+    warning: {
       icon:
-        "bg-[#dcfce7] text-[#166534]",
+        "bg-[#fffbeb] text-[#d97706]",
       value:
-        "text-[#166534]",
+        "text-[#92400e]",
     },
 
     danger: {
       icon:
-        "bg-[#fee2e2] text-[#b91c1c]",
+        "bg-[#fef2f2] text-[#dc2626]",
       value:
         "text-[#b91c1c]",
     },
   };
 
-  const selected =
-    styles[accent] ||
-    styles.default;
+  const style =
+    accents[accent] ||
+    accents.default;
 
   return (
     <button
       type="button"
-      onClick={onClick}
-      className="group rounded-corner-lg border border-border-secondary bg-surface-bg p-md text-left transition hover:-translate-y-0.5 hover:border-[#99f6e4] hover:shadow-sm sm:p-lg"
+      onClick={
+        onClick
+      }
+      className="group min-h-[104px] rounded-xl border border-border-secondary bg-white p-md text-left shadow-sm transition hover:border-[#99f6e4] hover:shadow-md focus:outline-none focus:ring-2 focus:ring-brand-primary/20 sm:p-lg"
     >
-      <div className="flex items-start justify-between gap-sm">
-        <div>
-          <p className="text-xs text-text-secondary sm:text-label-sm">
-            {label}
-          </p>
-
-          <p
-            className={`mt-sm text-[28px] font-semibold leading-none sm:text-[30px] ${selected.value}`}
-          >
-            {value}
-          </p>
-        </div>
-
+      <div className="flex items-center justify-between gap-sm">
         <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full sm:h-10 sm:w-10 ${selected.icon}`}
+          className={`flex h-9 w-9 items-center justify-center rounded-lg ${style.icon}`}
         >
           <Icon
-            size={18}
+            size={17}
           />
         </div>
-      </div>
-
-      <div className="mt-md flex items-center justify-between gap-sm">
-        <p className="truncate text-[11px] text-text-tertiary sm:text-video-title">
-          {helper}
-        </p>
 
         <ArrowRight
           size={14}
-          className="shrink-0 text-text-tertiary transition group-hover:translate-x-0.5 group-hover:text-brand-primary"
+          className="text-text-tertiary opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100"
         />
+      </div>
+
+      <div className="mt-md">
+        <p
+          className={`text-2xl font-semibold tracking-[-0.03em] ${style.value}`}
+        >
+          {value ?? 0}
+        </p>
+
+        <p className="mt-1 text-xs font-medium text-text-secondary sm:text-sm">
+          {label}
+        </p>
       </div>
     </button>
   );
 }
 
-/* ========================================= */
-/* SECTION HEADER */
-/* ========================================= */
+/* ========================================================= */
+/* RANGE BUTTON                                              */
+/* ========================================================= */
 
-function SectionHeader({
+function RangeButton({
+  active,
+  onClick,
+  children,
+}) {
+  return (
+    <button
+      type="button"
+      aria-pressed={
+        active
+      }
+      onClick={
+        onClick
+      }
+      className={[
+        "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-brand-primary/20",
+        active
+          ? "border-brand-primary bg-brand-primary text-white"
+          : "border-border-secondary bg-white text-text-secondary hover:border-[#99f6e4] hover:text-text-primary",
+      ].join(" ")}
+    >
+      {children}
+    </button>
+  );
+}
+
+/* ========================================================= */
+/* SECTION HEADING                                           */
+/* ========================================================= */
+
+function SectionHeading({
   icon: Icon,
   title,
-  subtitle,
+  description,
   action,
   onAction,
 }) {
   return (
-    <div className="flex items-start justify-between gap-md border-b border-border-secondary p-lg lg:px-xl">
-      <div className="flex min-w-0 items-start gap-sm">
+    <div className="flex items-start justify-between gap-md border-b border-border-secondary px-lg py-lg lg:px-xl">
 
-        <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-primary/10 text-brand-primary">
+      <div className="min-w-0">
+        <div className="flex items-center gap-2">
           <Icon
-            size={15}
+            size={17}
+            className="shrink-0 text-brand-primary"
           />
-        </div>
 
-        <div className="min-w-0">
-          <h2 className="text-label font-semibold text-text-primary">
+          <h2 className="text-sm font-semibold text-text-primary sm:text-base">
             {title}
           </h2>
-
-          <p className="mt-xs text-video-title leading-5 text-text-secondary">
-            {subtitle}
-          </p>
         </div>
 
+        <p className="mt-1.5 text-sm leading-5 text-text-secondary">
+          {description}
+        </p>
       </div>
 
       {action &&
@@ -1475,7 +2164,7 @@ function SectionHeader({
           onClick={
             onAction
           }
-          className="flex shrink-0 items-center gap-1 text-label-sm font-medium text-brand-primary transition-opacity hover:opacity-70"
+          className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-brand-primary transition hover:opacity-70"
         >
           <span className="hidden sm:inline">
             {action}
@@ -1486,15 +2175,16 @@ function SectionHeader({
           />
         </button>
       )}
+
     </div>
   );
 }
 
-/* ========================================= */
-/* PRIORITY COLLECTION */
-/* ========================================= */
+/* ========================================================= */
+/* COLLECTION ROW                                            */
+/* ========================================================= */
 
-function PriorityCollectionRow({
+function CollectionRow({
   collection,
   onOpen,
 }) {
@@ -1504,78 +2194,164 @@ function PriorityCollectionRow({
       onClick={
         onOpen
       }
-      className="group flex w-full items-center gap-md p-md text-left transition hover:bg-[#f8fafc] sm:p-lg lg:px-xl"
+      className="group grid w-full grid-cols-1 gap-md px-lg py-lg text-left transition hover:bg-[#f8fafc] focus:outline-none focus-visible:bg-[#f8fafc] lg:grid-cols-12 lg:items-center lg:px-xl"
     >
 
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#f0fdfa] text-sm font-semibold text-[#0f766e]">
-        {getInitials(
-          collection.patientName
-        )}
-      </div>
+      {/* PATIENT */}
 
-      <div className="min-w-0 flex-1">
+      <div className="flex min-w-0 items-center gap-3 lg:col-span-4">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f0fdfa] text-xs font-bold text-[#0f766e]">
+          {getInitials(
+            collection
+              .patientName
+          )}
+        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-
-          <p className="truncate text-label-sm font-semibold text-text-primary">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-text-primary">
             {collection.patientName ||
               "Patient"}
           </p>
 
-          <CollectionStatus
-            status={
-              collection.status
-            }
-            date={
-              collection
-                .scheduledCollectionDate
-            }
-          />
-
+          <p className="mt-0.5 truncate text-xs text-text-secondary">
+            {collection.patientNumber ||
+              "No patient number"}
+          </p>
         </div>
-
-        <p className="mt-1 truncate text-video-title text-text-secondary">
-          {collection.medicationName ||
-            "Medication collection"}
-        </p>
-
-        <div className="mt-2 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-text-tertiary">
-
-          <span className="inline-flex items-center gap-1">
-            <CalendarClock
-              size={12}
-            />
-
-            {formatDate(
-              collection
-                .scheduledCollectionDate
-            )}
-          </span>
-
-          {collection.patientNumber && (
-            <span>
-              {
-                collection.patientNumber
-              }
-            </span>
-          )}
-
-        </div>
-
       </div>
 
-      <ArrowRight
-        size={16}
-        className="shrink-0 text-text-tertiary transition group-hover:translate-x-1 group-hover:text-brand-primary"
-      />
+      {/* MEDICATION */}
+
+      <div className="min-w-0 lg:col-span-3">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-text-tertiary lg:hidden">
+          Medication
+        </p>
+
+        <p className="mt-1 truncate text-sm font-medium text-text-primary lg:mt-0">
+          {getMedicationSummary(
+            collection
+          )}
+        </p>
+
+        {Array.isArray(
+          collection.items
+        ) &&
+          collection.items
+            .length ===
+            1 &&
+          collection.items[0]
+            ?.quantity && (
+          <p className="mt-0.5 text-xs text-text-tertiary">
+            Qty{" "}
+            {
+              collection
+                .items[0]
+                .quantity
+            }
+          </p>
+        )}
+      </div>
+
+      {/* DATE */}
+
+      <div className="min-w-0 lg:col-span-2">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.04em] text-text-tertiary lg:hidden">
+          Collection
+        </p>
+
+        <div className="mt-1 flex items-start gap-1.5 lg:mt-0">
+          <CalendarClock
+            size={14}
+            className="mt-0.5 shrink-0 text-text-tertiary"
+          />
+
+          <div>
+            <p className="text-sm font-medium text-text-primary">
+              {formatDate(
+                collection
+                  .scheduledCollectionDate
+              )}
+            </p>
+
+            <p className="mt-0.5 truncate text-xs text-text-tertiary">
+              {collection.clinicName ||
+                "Clinic"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* STATUS */}
+
+      <div className="lg:col-span-2">
+        <CollectionStatus
+          status={
+            collection.status
+          }
+          date={
+            collection
+              .scheduledCollectionDate
+          }
+        />
+      </div>
+
+      {/* ARROW */}
+
+      <div className="hidden justify-end lg:col-span-1 lg:flex">
+        <ArrowRight
+          size={16}
+          className="text-text-tertiary transition group-hover:translate-x-0.5 group-hover:text-brand-primary"
+        />
+      </div>
 
     </button>
   );
 }
 
-/* ========================================= */
-/* PATIENT ROW */
-/* ========================================= */
+/* ========================================================= */
+/* EMPTY COLLECTIONS                                         */
+/* ========================================================= */
+
+function EmptyCollections({
+  title,
+  description,
+  hasSearch,
+  onClearSearch,
+}) {
+  return (
+    <div className="px-lg py-2xl text-center lg:px-xl">
+      <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-lg bg-[#f0fdfa] text-[#0f766e]">
+        <CheckCircle2
+          size={20}
+        />
+      </div>
+
+      <h3 className="mt-md text-sm font-semibold text-text-primary">
+        {title}
+      </h3>
+
+      <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-text-secondary">
+        {description}
+      </p>
+
+      {hasSearch && (
+        <button
+          type="button"
+          onClick={
+            onClearSearch
+          }
+          className="mt-md text-sm font-semibold text-brand-primary transition hover:opacity-70"
+        >
+          Clear search
+        </button>
+      )}
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* PATIENT ROW                                               */
+/* ========================================================= */
 
 function PatientRow({
   patient,
@@ -1587,26 +2363,24 @@ function PatientRow({
       onClick={
         onOpen
       }
-      className="group flex w-full items-center gap-md p-md text-left transition hover:bg-[#f8fafc] sm:p-lg lg:px-xl"
+      className="group flex w-full items-center gap-md px-lg py-md text-left transition hover:bg-[#f8fafc] focus:outline-none focus-visible:bg-[#f8fafc] lg:px-xl"
     >
-
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ccfbf1] text-xs font-semibold text-[#115e59]">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#f0fdfa] text-xs font-bold text-[#0f766e]">
         {getInitials(
           patient.patientName
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
 
           <div className="min-w-0">
-            <p className="truncate text-label-sm font-semibold text-text-primary">
+            <p className="truncate text-sm font-semibold text-text-primary">
               {patient.patientName ||
                 "Patient"}
             </p>
 
-            <p className="mt-0.5 truncate text-video-title text-text-secondary">
+            <p className="mt-0.5 truncate text-xs text-text-secondary">
               {patient.patientNumber ||
                 "No patient number"}
             </p>
@@ -1622,7 +2396,7 @@ function PatientRow({
               }
             />
 
-            <p className="mt-1 text-[11px] text-text-tertiary">
+            <p className="mt-1 text-xs text-text-tertiary">
               {patient.nextCollectionDate
                 ? formatDate(
                     patient.nextCollectionDate
@@ -1632,150 +2406,607 @@ function PatientRow({
           </div>
 
         </div>
-
       </div>
 
       <ArrowRight
         size={15}
         className="shrink-0 text-text-tertiary transition group-hover:translate-x-0.5 group-hover:text-brand-primary"
       />
-
     </button>
   );
 }
 
-/* ========================================= */
-/* ACTIVITY ROW */
-/* ========================================= */
+/* ========================================================= */
+/* ACTIVITY ROW                                              */
+/* ========================================================= */
 
 function ActivityRow({
   collection,
+  onOpen,
 }) {
-  const collected =
+  const status =
     getCollectionStatusKey(
       collection
-    ) ===
+    );
+
+  const collected =
+    status ===
     "collected";
 
-  const activityDate =
+  const date =
     collection.collectedAt ||
     collection
       .scheduledCollectionDate;
 
   return (
-    <div className="flex items-start gap-md p-lg">
-
+    <button
+      type="button"
+      onClick={
+        onOpen
+      }
+      className="group flex w-full items-start gap-3 px-lg py-md text-left transition hover:bg-[#f8fafc] focus:outline-none focus-visible:bg-[#f8fafc]"
+    >
       <div
-        className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${
+        className={[
+          "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg",
           collected
-            ? "bg-[#dcfce7] text-[#166534]"
-            : "bg-[#f1f5f9] text-[#64748b]"
-        }`}
+            ? "bg-[#f0fdf4] text-[#16a34a]"
+            : "bg-[#f8fafc] text-[#64748b]",
+        ].join(" ")}
       >
         {collected ? (
           <CheckCircle2
-            size={16}
+            size={15}
           />
         ) : (
           <History
-            size={16}
+            size={15}
           />
         )}
       </div>
 
       <div className="min-w-0 flex-1">
-
-        <p className="truncate text-label-sm font-medium text-text-primary">
+        <p className="truncate text-sm font-semibold text-text-primary">
           {collection.patientName ||
             "Patient"}
         </p>
 
-        <p className="mt-1 text-video-title leading-5 text-text-secondary">
-          {formatActivityLabel(
+        <p className="mt-1 text-xs leading-5 text-text-secondary">
+          {getActivityLabel(
             collection
           )}
         </p>
 
-        <p className="mt-1 text-[11px] text-text-tertiary">
+        <p className="mt-1 text-xs text-text-tertiary">
           {formatDate(
-            activityDate
+            date
           )}
         </p>
-
       </div>
 
+      <ArrowRight
+        size={14}
+        className="mt-1 shrink-0 text-text-tertiary opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100"
+      />
+    </button>
+  );
+}
+
+/* ========================================================= */
+/* DETAILS DRAWER                                            */
+/* ========================================================= */
+
+function CollectionDrawer({
+  collection,
+  loading,
+  error,
+  onClose,
+  onPatient,
+}) {
+  const status =
+    getCollectionStatusKey(
+      collection
+    );
+
+  const collected =
+    status ===
+    "collected";
+
+  const items =
+    Array.isArray(
+      collection.items
+    )
+      ? collection.items
+      : [];
+
+  return (
+    <div
+      className="fixed inset-0 z-[120] flex justify-end"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="proxy-collection-title"
+    >
+      <button
+        type="button"
+        aria-label="Close collection details"
+        onClick={
+          onClose
+        }
+        className="absolute inset-0 bg-[#0f172a]/35 backdrop-blur-[1px]"
+      />
+
+      <aside className="relative flex h-full w-full max-w-xl flex-col bg-white shadow-2xl">
+
+        {/* HEADER */}
+
+        <div className="flex items-start justify-between gap-md border-b border-border-secondary px-lg py-lg sm:px-xl">
+          <div className="min-w-0">
+            <p className="text-xs font-semibold uppercase tracking-[0.06em] text-brand-primary">
+              Collection details
+            </p>
+
+            <h2
+              id="proxy-collection-title"
+              className="mt-1 truncate text-lg font-semibold text-text-primary"
+            >
+              {collection.patientName ||
+                "Patient"}
+            </h2>
+
+            <p className="mt-1 text-sm text-text-secondary">
+              {collection.patientNumber ||
+                "No patient number"}
+            </p>
+          </div>
+
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={
+              onClose
+            }
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-border-secondary text-text-secondary transition hover:bg-[#f8fafc] hover:text-text-primary"
+          >
+            <X
+              size={17}
+            />
+          </button>
+        </div>
+
+        {/* BODY */}
+
+        <div className="flex-1 overflow-y-auto px-lg py-lg sm:px-xl">
+
+          {loading && (
+            <div className="mb-lg flex items-center gap-2 text-sm text-text-secondary">
+              <RefreshCw
+                size={15}
+                className="animate-spin"
+              />
+
+              Refreshing collection details…
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-lg flex items-start gap-2 rounded-lg border border-[#fde68a] bg-[#fffbeb] p-md text-sm text-[#92400e]">
+              <AlertCircle
+                size={16}
+                className="mt-0.5 shrink-0"
+              />
+
+              {error}
+            </div>
+          )}
+
+          <div className="flex items-center justify-between gap-md">
+            <CollectionStatus
+              status={
+                collection.status
+              }
+              date={
+                collection
+                  .scheduledCollectionDate
+              }
+            />
+
+            <button
+              type="button"
+              onClick={
+                onPatient
+              }
+              className="inline-flex items-center gap-1.5 text-sm font-semibold text-brand-primary transition hover:opacity-70"
+            >
+              Patient collections
+
+              <ArrowRight
+                size={14}
+              />
+            </button>
+          </div>
+
+          {/* COLLECTION INFO */}
+
+          <div className="mt-xl grid grid-cols-1 gap-md sm:grid-cols-2">
+            <DetailCard
+              icon={
+                CalendarDays
+              }
+              label="Scheduled collection"
+              value={
+                formatLongDate(
+                  collection
+                    .scheduledCollectionDate
+                )
+              }
+            />
+
+            <DetailCard
+              icon={
+                MapPin
+              }
+              label="Clinic"
+              value={
+                collection.clinicName ||
+                "—"
+              }
+            />
+          </div>
+
+          {/* MEDICATIONS */}
+
+          <div className="mt-xl">
+            <div className="flex items-center gap-2">
+              <Pill
+                size={17}
+                className="text-brand-primary"
+              />
+
+              <h3 className="text-sm font-semibold text-text-primary">
+                Medication
+              </h3>
+            </div>
+
+            {items.length >
+            0 ? (
+              <div className="mt-md overflow-hidden rounded-xl border border-border-secondary">
+                {items.map(
+                  (
+                    item,
+                    index
+                  ) => (
+                    <div
+                      key={
+                        item.id ||
+                        item.medicationId ||
+                        index
+                      }
+                      className={[
+                        "px-md py-md",
+                        index !==
+                        items.length -
+                          1
+                          ? "border-b border-border-secondary"
+                          : "",
+                      ].join(" ")}
+                    >
+                      <div className="flex items-start justify-between gap-md">
+                        <div className="min-w-0">
+                          <p className="font-semibold text-text-primary">
+                            {item.medicationName ||
+                              "Medication"}
+                          </p>
+
+                          <p className="mt-1 text-sm text-text-secondary">
+                            {[
+                              item.dosage,
+                              item.form,
+                            ]
+                              .filter(
+                                Boolean
+                              )
+                              .join(
+                                " · "
+                              ) ||
+                              "Medication details"}
+                          </p>
+                        </div>
+
+                        <span className="shrink-0 rounded-md bg-[#f8fafc] px-2 py-1 text-xs font-semibold text-text-secondary">
+                          Qty{" "}
+                          {item.quantity ??
+                            "—"}
+                        </span>
+                      </div>
+                    </div>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="mt-md rounded-xl border border-border-secondary p-md">
+                <p className="text-sm font-medium text-text-primary">
+                  {collection.medicationName ||
+                    "Medication collection"}
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* PROCESSING */}
+
+          <div className="mt-xl">
+            <div className="flex items-center gap-2">
+              <PackageCheck
+                size={17}
+                className="text-brand-primary"
+              />
+
+              <h3 className="text-sm font-semibold text-text-primary">
+                Collection processing
+              </h3>
+            </div>
+
+            <div className="mt-md overflow-hidden rounded-xl border border-border-secondary">
+              {collected ? (
+                <>
+                  <DetailRow
+                    label="Collected by"
+                    value={
+                      collection.proxyName ||
+                      "Patient"
+                    }
+                  />
+
+                  <DetailRow
+                    label="Processed by"
+                    value={
+                      collection.processedByNurseName ||
+                      "—"
+                    }
+                  />
+
+                  <DetailRow
+                    label="Collected on"
+                    value={
+                      collection.collectedAt
+                        ? formatDate(
+                            collection.collectedAt
+                          )
+                        : "—"
+                    }
+                    last
+                  />
+                </>
+              ) : (
+                <>
+                  <DetailRow
+                    label="Assigned proxy"
+                    value={
+                      collection.proxyName ||
+                      "Not assigned"
+                    }
+                  />
+
+                  <DetailRow
+                    label="Processed by"
+                    value="Not yet processed"
+                    last
+                  />
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* NOTES */}
+
+          {collection.notes && (
+            <div className="mt-xl">
+              <h3 className="text-sm font-semibold text-text-primary">
+                Notes
+              </h3>
+
+              <div className="mt-md rounded-xl border border-border-secondary bg-[#f8fafc] p-md">
+                <p className="whitespace-pre-wrap text-sm leading-6 text-text-secondary">
+                  {collection.notes}
+                </p>
+              </div>
+            </div>
+          )}
+
+        </div>
+
+      </aside>
     </div>
   );
 }
 
-/* ========================================= */
-/* SNAPSHOT ROW */
-/* ========================================= */
+/* ========================================================= */
+/* DETAIL CARD                                               */
+/* ========================================================= */
 
-function SnapshotRow({
+function DetailCard({
+  icon: Icon,
+  label,
+  value,
+}) {
+  return (
+    <div className="rounded-xl border border-border-secondary p-md">
+      <Icon
+        size={16}
+        className="text-brand-primary"
+      />
+
+      <p className="mt-3 text-xs font-semibold text-text-tertiary">
+        {label}
+      </p>
+
+      <p className="mt-1 text-sm font-semibold leading-6 text-text-primary">
+        {value}
+      </p>
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* DETAIL ROW                                                */
+/* ========================================================= */
+
+function DetailRow({
   label,
   value,
   last = false,
 }) {
   return (
     <div
-      className={`flex items-center justify-between gap-md py-md ${
-        last
-          ? ""
-          : "border-b border-border-secondary"
-      }`}
+      className={[
+        "flex items-start justify-between gap-md px-md py-md",
+        !last
+          ? "border-b border-border-secondary"
+          : "",
+      ].join(" ")}
     >
-      <span className="text-label-sm text-text-secondary">
+      <span className="text-sm text-text-secondary">
         {label}
       </span>
 
-      <span className="text-label font-semibold text-text-primary">
+      <span className="text-right text-sm font-semibold text-text-primary">
         {value}
       </span>
     </div>
   );
 }
 
-/* ========================================= */
-/* QUICK ACTION */
-/* ========================================= */
+/* ========================================================= */
+/* INLINE ERROR                                              */
+/* ========================================================= */
 
-function QuickAction({
-  icon: Icon,
-  title,
-  description,
-  onClick,
+function InlineError({
+  message,
+  onRetry,
 }) {
   return (
-    <button
-      type="button"
-      onClick={
-        onClick
-      }
-      className="group flex items-center gap-md rounded-corner-lg border border-border-secondary bg-surface-bg p-lg text-left transition hover:-translate-y-0.5 hover:border-[#99f6e4] hover:shadow-sm"
-    >
-
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#ccfbf1] text-[#0f766e]">
-        <Icon
-          size={19}
-        />
-      </div>
-
-      <div className="min-w-0 flex-1">
-        <p className="text-label-sm font-semibold text-text-primary">
-          {title}
-        </p>
-
-        <p className="mt-xs text-video-title leading-5 text-text-secondary">
-          {description}
-        </p>
-      </div>
-
-      <ArrowRight
-        size={16}
-        className="shrink-0 text-text-tertiary transition group-hover:translate-x-1 group-hover:text-brand-primary"
+    <div className="px-lg py-2xl text-center lg:px-xl">
+      <AlertCircle
+        size={24}
+        className="mx-auto text-[#dc2626]"
       />
 
-    </button>
+      <h3 className="mt-md text-sm font-semibold text-text-primary">
+        Collections unavailable
+      </h3>
+
+      <p className="mx-auto mt-1.5 max-w-md text-sm leading-6 text-text-secondary">
+        {message}
+      </p>
+
+      <button
+        type="button"
+        onClick={
+          onRetry
+        }
+        className="mt-md inline-flex items-center gap-2 text-sm font-semibold text-brand-primary transition hover:opacity-70"
+      >
+        <RefreshCw
+          size={14}
+        />
+
+        Try again
+      </button>
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* COLLECTION ROW SKELETON                                   */
+/* ========================================================= */
+
+function CollectionRowsSkeleton() {
+  return (
+    <div className="animate-pulse divide-y divide-border-secondary">
+      {[
+        1,
+        2,
+        3,
+      ].map(
+        (item) => (
+          <div
+            key={
+              item
+            }
+            className="grid grid-cols-1 gap-md px-lg py-lg lg:grid-cols-12 lg:items-center lg:px-xl"
+          >
+            <div className="flex items-center gap-3 lg:col-span-4">
+              <div className="h-10 w-10 rounded-lg bg-[#e2e8f0]" />
+
+              <div className="flex-1">
+                <div className="h-3.5 w-40 rounded bg-[#e2e8f0]" />
+                <div className="mt-2 h-3 w-24 rounded bg-[#f1f5f9]" />
+              </div>
+            </div>
+
+            <div className="h-4 w-40 rounded bg-[#e2e8f0] lg:col-span-3" />
+
+            <div className="h-4 w-28 rounded bg-[#e2e8f0] lg:col-span-2" />
+
+            <div className="h-7 w-20 rounded-full bg-[#f1f5f9] lg:col-span-2" />
+
+            <div className="hidden lg:col-span-1 lg:block" />
+          </div>
+        )
+      )}
+    </div>
+  );
+}
+
+/* ========================================================= */
+/* PAGE SKELETON                                             */
+/* ========================================================= */
+
+function DashboardSkeleton() {
+  return (
+    <div className="animate-pulse p-lg md:p-xl lg:p-2xl">
+      <div className="mb-xl flex items-start justify-between gap-md">
+        <div>
+          <div className="h-7 w-44 rounded bg-[#e2e8f0]" />
+
+          <div className="mt-2 h-4 w-64 rounded bg-[#f1f5f9]" />
+        </div>
+
+        <div className="h-10 w-24 rounded-lg bg-[#f1f5f9]" />
+      </div>
+
+      <div className="mb-xl grid grid-cols-2 gap-md lg:grid-cols-5">
+        {[
+          1,
+          2,
+          3,
+          4,
+          5,
+        ].map(
+          (item) => (
+            <div
+              key={
+                item
+              }
+              className="h-[104px] rounded-xl border border-border-secondary bg-white p-md"
+            >
+              <div className="h-9 w-9 rounded-lg bg-[#f1f5f9]" />
+
+              <div className="mt-md h-6 w-10 rounded bg-[#e2e8f0]" />
+
+              <div className="mt-2 h-3 w-20 rounded bg-[#f1f5f9]" />
+            </div>
+          )
+        )}
+      </div>
+
+      <div className="h-[410px] rounded-xl border border-border-secondary bg-white" />
+
+      <div className="mt-xl grid grid-cols-1 gap-xl lg:grid-cols-3">
+        <div className="h-80 rounded-xl border border-border-secondary bg-white lg:col-span-2" />
+
+        <div className="h-80 rounded-xl border border-border-secondary bg-white" />
+      </div>
+    </div>
   );
 }
