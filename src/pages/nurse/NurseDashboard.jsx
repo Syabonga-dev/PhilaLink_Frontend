@@ -1,21 +1,42 @@
-import { Link } from "react-router-dom";
+import {
+  Link,
+} from "react-router-dom";
+
 import Card, {
   CardBody,
   CardHeader,
 } from "../../components/ui/Card.jsx";
+
 import Button from "../../components/ui/Button.jsx";
 import Spinner from "../../components/ui/Spinner.jsx";
+
 import {
   ErrorState,
   EmptyState,
 } from "../../components/ui/EmptyState.jsx";
-import StatusChip from "../../components/ui/StatusChip.jsx";
-import { useApi } from "../../lib/useApi.js";
-import { nursesApi } from "../../services/api/nurses.js";
 
-function alertTone(severity) {
+import StatusChip from "../../components/ui/StatusChip.jsx";
+
+import {
+  useApi,
+} from "../../lib/useApi.js";
+
+import {
+  nursesApi,
+} from "../../services/api/nurses.js";
+
+/* ========================================================= */
+/* HELPERS                                                   */
+/* ========================================================= */
+
+function alertTone(
+  severity
+) {
   switch (
-    String(severity ?? "")
+    String(
+      severity ??
+        ""
+    )
       .trim()
       .toLowerCase()
   ) {
@@ -37,134 +58,143 @@ function alertTone(severity) {
   }
 }
 
-function calculateStockPercent(stock) {
-  const quantity =
-    Number(stock?.quantityOnHand) ||
-    0;
+const STAT_CARDS = [
+  {
+    key:
+      "clinicPatients",
 
-  const reorderLevel =
-    Number(stock?.reorderLevel) ||
-    0;
+    label:
+      "Clinic patients",
 
-  if (reorderLevel <= 0) {
-    return quantity > 0 ? 100 : 0;
-  }
+    icon:
+      "groups",
+  },
 
-  const healthyLevel =
-    reorderLevel * 2;
+  {
+    key:
+      "appointmentsToday",
 
-  return Math.min(
-    100,
-    Math.round(
-      (quantity / healthyLevel) *
-        100
-    )
-  );
-}
+    label:
+      "Appointments today",
 
-function formatStockName(stock) {
-  return [
-    stock?.medicationName,
-    stock?.strength,
-    stock?.form,
-  ]
-    .filter(Boolean)
-    .join(" ");
-}
+    icon:
+      "calendar_today",
+  },
+
+  {
+    key:
+      "collectionsDueToday",
+
+    label:
+      "Collections due today",
+
+    icon:
+      "medication",
+  },
+
+  {
+    key:
+      "overdueCollections",
+
+    label:
+      "Overdue collections",
+
+    icon:
+      "priority_high",
+  },
+];
+
+/* ========================================================= */
+/* PAGE                                                      */
+/* ========================================================= */
 
 export default function NurseDashboard() {
   const {
-    data: stats,
-    loading: statsLoading,
-    error: statsError,
-    refetch: refetchStats,
-  } = useApi(
-    () =>
-      nursesApi.getDashboardStats(),
-    []
-  );
+    data:
+      stats,
+
+    loading:
+      statsLoading,
+
+    error:
+      statsError,
+
+    refetch:
+      refetchStats,
+  } =
+    useApi(
+      () =>
+        nursesApi
+          .getDashboardStats(),
+      []
+    );
 
   const {
-    data: patients,
-    loading: patientsLoading,
-    error: patientsError,
-  } = useApi(
-    () =>
-      nursesApi.getAssignedPatients(),
-    []
-  );
+    data:
+      patients,
+
+    loading:
+      patientsLoading,
+
+    error:
+      patientsError,
+
+    refetch:
+      refetchPatients,
+  } =
+    useApi(
+      () =>
+        nursesApi
+          .getAssignedPatients(),
+      []
+    );
 
   const {
-    data: alerts,
-    loading: alertsLoading,
-    error: alertsError,
-  } = useApi(
-    () =>
-      nursesApi.getUrgentAlerts(),
-    []
-  );
+    data:
+      alerts,
 
-  const {
-    data: supplies,
-    loading: suppliesLoading,
-    error: suppliesError,
-  } = useApi(
-    () =>
-      nursesApi.getSupplyLevels(),
-    []
-  );
+    loading:
+      alertsLoading,
 
-  const STAT_CARDS = [
-    {
-      key: "clinicPatients",
-      label: "Clinic patients",
-      icon: "groups",
-    },
-    {
-      key: "appointmentsToday",
-      label: "Appointments today",
-      icon: "calendar_today",
-    },
-    {
-      key: "collectionsDueToday",
-      label: "Collections due today",
-      icon: "medication",
-    },
-    {
-      key: "overdueCollections",
-      label: "Overdue collections",
-      icon: "priority_high",
-    },
-    {
-      key: "lowStockItems",
-      label: "Low stock items",
-      icon: "inventory_2",
-    },
-  ];
+    error:
+      alertsError,
+
+    refetch:
+      refetchAlerts,
+  } =
+    useApi(
+      () =>
+        nursesApi
+          .getUrgentAlerts(),
+      []
+    );
 
   const visiblePatients =
-    Array.isArray(patients)
-      ? patients.slice(0, 6)
+    Array.isArray(
+      patients
+    )
+      ? patients.slice(
+          0,
+          6
+        )
       : [];
 
   const visibleAlerts =
-    Array.isArray(alerts)
+    Array.isArray(
+      alerts
+    )
       ? alerts
-      : [];
-
-  const visibleSupplies =
-    Array.isArray(supplies)
-      ? supplies
-          .filter(
-            (stock) =>
-              stock?.isActive !== false
-          )
-          .slice(0, 6)
       : [];
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+
+      {/* =================================================== */}
+      {/* STATS                                               */}
+      {/* =================================================== */}
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+
         {statsLoading ? (
           <div className="col-span-full py-6">
             <Spinner label="Loading dashboard…" />
@@ -173,45 +203,70 @@ export default function NurseDashboard() {
           <div className="col-span-full">
             <ErrorState
               description={
-                statsError.message
+                statsError
+                  .message
               }
-              onRetry={refetchStats}
+              onRetry={
+                refetchStats
+              }
             />
           </div>
         ) : (
           STAT_CARDS.map(
-            (stat) => (
+            (
+              stat
+            ) => (
               <Card
-                key={stat.key}
+                key={
+                  stat.key
+                }
                 className="p-5"
               >
+
                 <span className="material-symbols-outlined flex h-10 w-10 items-center justify-center rounded-md bg-primary-container/10 text-primary">
-                  {stat.icon}
+                  {
+                    stat.icon
+                  }
                 </span>
 
                 <p className="mt-3 text-2xl font-bold text-on-surface">
                   {stats?.[
                     stat.key
-                  ] ?? 0}
+                  ] ??
+                    0}
                 </p>
 
-                <p className="text-xs text-on-surface-variant">
-                  {stat.label}
+                <p className="mt-1 text-xs text-on-surface-variant">
+                  {
+                    stat.label
+                  }
                 </p>
+
               </Card>
             )
           )
         )}
+
       </div>
 
+      {/* =================================================== */}
+      {/* PATIENTS + ALERTS                                   */}
+      {/* =================================================== */}
+
       <div className="grid gap-6 lg:grid-cols-3">
+
+        {/* PATIENTS */}
+
         <Card className="lg:col-span-2">
+
           <CardHeader
             title="Clinic patients"
-            subtitle="Patients registered at your clinic"
+            subtitle="Patients registered at your assigned clinic"
             action={
               <Button
-                as={Link}
+                as={
+                  Link
+                }
                 to="/nurse/patients"
                 size="sm"
                 variant="ghost"
@@ -223,6 +278,7 @@ export default function NurseDashboard() {
           />
 
           <CardBody className="pt-0">
+
             {patientsLoading ? (
               <div className="py-10">
                 <Spinner label="Loading patients…" />
@@ -230,20 +286,29 @@ export default function NurseDashboard() {
             ) : patientsError ? (
               <ErrorState
                 description={
-                  patientsError.message
+                  patientsError
+                    .message
+                }
+                onRetry={
+                  refetchPatients
                 }
               />
             ) : visiblePatients.length ===
               0 ? (
               <EmptyState
                 icon="groups"
-                title="No clinic patients yet"
+                title="No clinic patients"
+                description="There are currently no active patients assigned to your clinic."
               />
             ) : (
               <div className="overflow-x-auto">
+
                 <table className="w-full text-left text-sm">
+
                   <thead>
+
                     <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
+
                       <th className="py-2 pr-4 font-medium">
                         Patient
                       </th>
@@ -259,17 +324,24 @@ export default function NurseDashboard() {
                       <th className="py-2 pr-4 font-medium">
                         Gender
                       </th>
+
                     </tr>
+
                   </thead>
 
                   <tbody className="divide-y divide-outline-variant/50">
+
                     {visiblePatients.map(
-                      (patient) => (
+                      (
+                        patient
+                      ) => (
                         <tr
                           key={
                             patient.patientId
                           }
+                          className="transition-colors hover:bg-surface-container-low"
                         >
+
                           <td className="py-3 pr-4 font-semibold text-on-surface">
                             {
                               patient.fullName
@@ -282,28 +354,53 @@ export default function NurseDashboard() {
                           </td>
 
                           <td className="py-3 pr-4 text-on-surface-variant">
-                            {patient.phoneNumber ||
-                              "—"}
+
+                            {patient.phoneNumber ? (
+                              <a
+                                href={`tel:${patient.phoneNumber}`}
+                                className="hover:text-primary hover:underline"
+                              >
+                                {
+                                  patient.phoneNumber
+                                }
+                              </a>
+                            ) : (
+                              "—"
+                            )}
+
                           </td>
 
                           <td className="py-3 pr-4 text-on-surface-variant">
                             {patient.gender ||
                               "—"}
                           </td>
+
                         </tr>
                       )
                     )}
+
                   </tbody>
+
                 </table>
+
               </div>
             )}
+
           </CardBody>
+
         </Card>
 
+        {/* URGENT ALERTS */}
+
         <Card>
-          <CardHeader title="Urgent alerts" />
+
+          <CardHeader
+            title="Urgent alerts"
+            subtitle="Patient-care items that need attention"
+          />
 
           <CardBody className="pt-0">
+
             {alertsLoading ? (
               <div className="py-8">
                 <Spinner label="Loading alerts…" />
@@ -311,7 +408,11 @@ export default function NurseDashboard() {
             ) : alertsError ? (
               <ErrorState
                 description={
-                  alertsError.message
+                  alertsError
+                    .message
+                }
+                onRetry={
+                  refetchAlerts
                 }
               />
             ) : visibleAlerts.length ===
@@ -319,150 +420,147 @@ export default function NurseDashboard() {
               <EmptyState
                 icon="notifications_off"
                 title="No urgent alerts"
+                description="There are no urgent patient-care alerts at the moment."
               />
             ) : (
               <ul className="space-y-3">
+
                 {visibleAlerts.map(
-                  (alert) => (
+                  (
+                    alert
+                  ) => (
                     <li
-                      key={alert.code}
-                      className="rounded-md border border-outline-variant/60 bg-surface-container-low p-3 text-sm"
+                      key={
+                        alert.code
+                      }
+                      className="rounded-md border border-outline-variant/60 bg-surface-container-low p-4"
                     >
+
                       <div className="flex items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-on-surface">
+
+                        <div className="min-w-0">
+
+                          <p className="text-sm font-semibold leading-5 text-on-surface">
                             {
                               alert.message
                             }
                           </p>
 
-                          <p className="mt-1 text-xs text-on-surface-variant">
-                            Code:{" "}
-                            {alert.code}
-                          </p>
+                          {alert.count >
+                            0 && (
+                            <p className="mt-2 text-xs text-on-surface-variant">
+                              {
+                                alert.count
+                              }{" "}
+                              {alert.count ===
+                              1
+                                ? "item needs"
+                                : "items need"}{" "}
+                              attention
+                            </p>
+                          )}
+
                         </div>
 
                         <StatusChip
-                          tone={alertTone(
-                            alert.severity
-                          )}
+                          tone={
+                            alertTone(
+                              alert.severity
+                            )
+                          }
                         >
                           {alert.severity ||
                             "Alert"}
                         </StatusChip>
+
                       </div>
 
-                      {alert.count >
-                        0 && (
-                        <p className="mt-2 text-xs text-on-surface-variant">
-                          {alert.count}{" "}
-                          {alert.count ===
-                          1
-                            ? "item"
-                            : "items"}{" "}
-                          affected
-                        </p>
-                      )}
                     </li>
                   )
                 )}
+
               </ul>
             )}
+
           </CardBody>
+
         </Card>
+
       </div>
 
-      <Card>
-        <CardHeader
-          title="Clinic stock"
-          subtitle="Medication stock at your assigned clinic"
-        />
+      {/* =================================================== */}
+      {/* QUICK ACCESS                                        */}
+      {/* =================================================== */}
 
-        <CardBody className="pt-0">
-          {suppliesLoading ? (
-            <div className="py-8">
-              <Spinner label="Loading stock…" />
-            </div>
-          ) : suppliesError ? (
-            <ErrorState
-              description={
-                suppliesError.message
-              }
-            />
-          ) : visibleSupplies.length ===
-            0 ? (
-            <EmptyState
-              icon="inventory_2"
-              title="No stock data yet"
-            />
-          ) : (
-            <ul className="space-y-4">
-              {visibleSupplies.map(
-                (stock) => {
-                  const percent =
-                    calculateStockPercent(
-                      stock
-                    );
+      <div className="grid gap-6 md:grid-cols-2">
 
-                  return (
-                    <li key={stock.id}>
-                      <div className="mb-1 flex items-start justify-between gap-4 text-xs">
-                        <div>
-                          <span className="font-medium text-on-surface">
-                            {formatStockName(
-                              stock
-                            )}
-                          </span>
+        <Card>
 
-                          <p className="mt-1 text-on-surface-variant">
-                            {
-                              stock.quantityOnHand
-                            }{" "}
-                            {stock.unit ||
-                              "units"}{" "}
-                            on hand
-                          </p>
-                        </div>
+          <CardHeader
+            title="Medication collections"
+            subtitle="Review collections due at your clinic"
+          />
 
-                        {stock.isLowStock && (
-                          <StatusChip tone="error-soft">
-                            Low stock
-                          </StatusChip>
-                        )}
-                      </div>
+          <CardBody className="pt-0">
 
-                      <div className="mt-2 h-2 rounded-full bg-surface-container-highest">
-                        <div
-                          className={`h-2 rounded-full ${
-                            stock.isLowStock
-                              ? "bg-error"
-                              : percent <
-                                60
-                              ? "bg-warning"
-                              : "bg-success"
-                          }`}
-                          style={{
-                            width: `${percent}%`,
-                          }}
-                        />
-                      </div>
+            <p className="text-sm leading-6 text-on-surface-variant">
+              Review scheduled medication collections and record a completed collection when medication is handed to the patient or an authorised Proxy.
+            </p>
 
-                      <p className="mt-1 text-[11px] text-on-surface-variant">
-                        Reorder level:{" "}
-                        {
-                          stock.reorderLevel
-                        }{" "}
-                        {stock.unit ||
-                          "units"}
-                      </p>
-                    </li>
-                  );
+            <div className="mt-4">
+
+              <Button
+                as={
+                  Link
                 }
-              )}
-            </ul>
-          )}
-        </CardBody>
-      </Card>
+                to="/nurse/collections"
+                size="sm"
+                icon="inventory_2"
+              >
+                Open collections
+              </Button>
+
+            </div>
+
+          </CardBody>
+
+        </Card>
+
+        <Card>
+
+          <CardHeader
+            title="Patient directory"
+            subtitle="View patients registered at your clinic"
+          />
+
+          <CardBody className="pt-0">
+
+            <p className="text-sm leading-6 text-on-surface-variant">
+              Search the clinic patient list using a patient name, patient number, phone number or gender.
+            </p>
+
+            <div className="mt-4">
+
+              <Button
+                as={
+                  Link
+                }
+                to="/nurse/patients"
+                size="sm"
+                variant="outline"
+                icon="groups"
+              >
+                View patients
+              </Button>
+
+            </div>
+
+          </CardBody>
+
+        </Card>
+
+      </div>
+
     </div>
   );
 }
