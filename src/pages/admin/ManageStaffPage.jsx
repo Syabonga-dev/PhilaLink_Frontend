@@ -1,337 +1,543 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
-import Card, {
-  CardBody,
-  CardHeader,
-} from "../../components/ui/Card.jsx";
-import Button from "../../components/ui/Button.jsx";
-import Input, {
-  Select,
-} from "../../components/ui/Input.jsx";
-import Spinner from "../../components/ui/Spinner.jsx";
 import {
-  ErrorState,
-  EmptyState,
-} from "../../components/ui/EmptyState.jsx";
-import StatusChip from "../../components/ui/StatusChip.jsx";
-import { useApi } from "../../lib/useApi.js";
-import { adminApi } from "../../services/api/admin.js";
-import { useToast } from "../../components/ui/Toast.jsx";
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  Link,
+} from "react-router-dom";
+
+import {
+  RefreshCw,
+  Search,
+  UserPlus,
+  Users,
+} from "lucide-react";
+
+import {
+  useAuth,
+} from "../../context/AuthContext.jsx";
+
+import {
+  adminApi,
+} from "../../services/api/admin.js";
+
+import {
+  clinicAdminApi,
+} from "../../services/api/clinicAdmin.js";
 
 export default function ManageStaffPage() {
-  const [search, setSearch] =
-    useState("");
-
-  const [roleFilter, setRoleFilter] =
-    useState("All");
-
-  const [pendingId, setPendingId] =
-    useState(null);
-
-  const toast = useToast();
-
   const {
-    data: accounts,
-    loading,
-    error,
-    refetch,
-    setData,
-  } = useApi(
-    () =>
-      adminApi.listAccounts(),
-    []
-  );
+    role,
+  } =
+    useAuth();
 
-  const accountList =
-    Array.isArray(accounts)
-      ? accounts
-      : [];
-
-  const searchTerm =
-    search.trim().toLowerCase();
-
-  const filtered =
-    accountList.filter(
-      (account) => {
-        const matchesRole =
-          roleFilter === "All" ||
-          account.role ===
-            roleFilter;
-
-        const matchesSearch =
-          !searchTerm ||
-          [
-            account.fullName,
-            account.idNumber,
-            account.role,
-          ]
-            .filter(Boolean)
-            .some((value) =>
-              String(value)
-                .toLowerCase()
-                .includes(
-                  searchTerm
-                )
-            );
-
-        return (
-          matchesRole &&
-          matchesSearch
-        );
-      }
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState(
+      "All"
     );
 
-  const toggleActive =
-    async (account) => {
-      if (!account?.userId) {
-        toast.error(
-          "This account does not have a valid user ID."
-        );
-        return;
-      }
+  const [
+    search,
+    setSearch,
+  ] =
+    useState(
+      ""
+    );
 
+  const [
+    staff,
+    setStaff,
+  ] =
+    useState([]);
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
+
+  const [
+    pendingId,
+    setPendingId,
+  ] =
+    useState(null);
+
+  const load =
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
+
+          setError(
+            ""
+          );
+
+          const result =
+            role ===
+            "ClinicAdmin"
+              ? await clinicAdminApi
+                  .getStaff(
+                    filter
+                  )
+              : await adminApi
+                  .listAccounts(
+                    filter
+                  );
+
+          setStaff(
+            Array.isArray(
+              result
+            )
+              ? result
+              : []
+          );
+        } catch (
+          err
+        ) {
+          setError(
+            err?.message ||
+            "Could not load staff accounts."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      [
+        role,
+        filter,
+      ]
+    );
+
+  useEffect(
+    () => {
+      void load();
+    },
+    [
+      load,
+    ]
+  );
+
+  const visible =
+    useMemo(
+      () => {
+        const term =
+          search
+            .trim()
+            .toLowerCase();
+
+        if (!term) {
+          return staff;
+        }
+
+        return staff.filter(
+          item =>
+            [
+              item.fullName,
+              item.idNumber,
+              item.email,
+              item.phoneNumber,
+              item.role,
+            ]
+              .filter(
+                Boolean
+              )
+              .some(
+                value =>
+                  String(
+                    value
+                  )
+                    .toLowerCase()
+                    .includes(
+                      term
+                    )
+              )
+        );
+      },
+      [
+        staff,
+        search,
+      ]
+    );
+
+  async function toggle(
+    item
+  ) {
+    try {
       setPendingId(
-        account.userId
+        item.userId
       );
 
-      try {
-        if (account.isActive) {
-          await adminApi.deactivateAccount(
-            account.userId
-          );
+      if (
+        role ===
+        "ClinicAdmin"
+      ) {
+        if (
+          item.isActive
+        ) {
+          await clinicAdminApi
+            .deactivateStaff(
+              item.userId
+            );
         } else {
-          await adminApi.activateAccount(
-            account.userId
-          );
+          await clinicAdminApi
+            .activateStaff(
+              item.userId
+            );
         }
-
-        setData((current) =>
-          current.map((item) =>
-            item.userId ===
-            account.userId
-              ? {
-                  ...item,
-                  isActive:
-                    !item.isActive,
-                }
-              : item
-          )
-        );
-
-        toast.success(
-          `${account.fullName} ${
-            account.isActive
-              ? "deactivated"
-              : "activated"
-          }.`
-        );
-      } catch (error) {
-        console.error(
-          "Failed to update account:",
-          error
-        );
-
-        toast.error(
-          "Couldn't update this account. Please try again."
-        );
-      } finally {
-        setPendingId(null);
+      } else if (
+        item.isActive
+      ) {
+        await adminApi
+          .deactivateAccount(
+            item.userId
+          );
+      } else {
+        await adminApi
+          .activateAccount(
+            item.userId
+          );
       }
-    };
+
+      setStaff(
+        current =>
+          current.map(
+            row =>
+              row.userId ===
+              item.userId
+                ? {
+                    ...row,
+
+                    isActive:
+                      !row.isActive,
+                  }
+                : row
+          )
+      );
+    } catch (
+      err
+    ) {
+      setError(
+        err?.message ||
+        "Could not update account."
+      );
+    } finally {
+      setPendingId(
+        null
+      );
+    }
+  }
+
+  const filters =
+    role ===
+    "ClinicAdmin"
+      ? [
+          "All",
+          "Nurse",
+          "Proxy",
+        ]
+      : [
+          "All",
+          "Nurse",
+          "Proxy",
+          "Patient",
+          "ClinicAdmin",
+          "SuperAdmin",
+        ];
 
   return (
-    <Card>
-      <CardHeader
-        title="Manage staff"
-        subtitle={`${filtered.length} account${
-          filtered.length === 1
-            ? ""
-            : "s"
-        }`}
-        action={
-          <Button
-            as={Link}
-            to="/admin/register-staff"
-            size="sm"
-            icon="person_add"
-          >
-            Register staff
-          </Button>
-        }
-      />
+    <div className="space-y-5">
 
-      <CardBody className="pt-0">
-        <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-          <Input
-            placeholder="Search name or ID number…"
-            value={search}
-            onChange={(event) =>
-              setSearch(
-                event.target.value
-              )
-            }
-            className="flex-1"
-          />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
 
-          <Select
-            value={roleFilter}
-            onChange={(event) =>
-              setRoleFilter(
-                event.target.value
-              )
-            }
-            className="sm:w-44"
-          >
-            {[
-              "All",
-              "Nurse",
-              "Proxy",
-              "ClinicAdmin",
-              "SuperAdmin",
-            ].map((role) => (
-              <option
-                key={role}
-                value={role}
-              >
-                {role ===
-                "ClinicAdmin"
-                  ? "Clinic Admin"
-                  : role ===
-                    "SuperAdmin"
-                  ? "Super Admin"
-                  : role}
-              </option>
-            ))}
-          </Select>
+        <div>
+
+          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-violet-600">
+            Workforce
+          </p>
+
+          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
+            Staff management
+          </h2>
+
+          <p className="mt-2 text-sm text-slate-500">
+            Review and manage clinic account access.
+          </p>
+
         </div>
 
-        {loading ? (
-          <div className="py-10">
-            <Spinner label="Loading accounts…" />
+        <Link
+          to="/admin/register-staff"
+          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#6d28d9] px-4 py-2.5 text-xs font-bold text-white"
+        >
+          <UserPlus
+            size={15}
+          />
+          Register staff
+        </Link>
+
+      </div>
+
+      {error && (
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      <section className="rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5">
+
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+          <div className="relative w-full lg:max-w-sm">
+
+            <Search
+              size={15}
+              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+            />
+
+            <input
+              value={
+                search
+              }
+              onChange={
+                event =>
+                  setSearch(
+                    event.target
+                      .value
+                  )
+              }
+              placeholder="Search staff..."
+              className="w-full rounded-2xl border border-slate-200 py-2.5 pl-10 pr-4 text-xs outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+            />
+
           </div>
-        ) : error ? (
-          <ErrorState
-            description={
-              error.message
-            }
-            onRetry={refetch}
-          />
-        ) : filtered.length ===
+
+          <div className="flex flex-wrap gap-2">
+
+            {filters.map(
+              item => (
+                <button
+                  key={
+                    item
+                  }
+                  type="button"
+                  onClick={() =>
+                    setFilter(
+                      item
+                    )
+                  }
+                  className={`rounded-full px-3.5 py-2 text-[10px] font-bold ${
+                    filter ===
+                    item
+                      ? "bg-[#6d28d9] text-white"
+                      : "border border-slate-200 text-slate-500"
+                  }`}
+                >
+                  {item}
+                </button>
+              )
+            )}
+
+            <button
+              type="button"
+              onClick={
+                load
+              }
+              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500"
+            >
+              <RefreshCw
+                size={13}
+              />
+            </button>
+
+          </div>
+
+        </div>
+
+      </section>
+
+      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white">
+
+        {loading ? (
+          <div className="p-12 text-center text-sm text-slate-400">
+            Loading staff…
+          </div>
+        ) : visible.length ===
           0 ? (
-          <EmptyState
-            icon="badge"
-            title="No accounts found"
-            description={
-              search ||
-              roleFilter !== "All"
-                ? "Try changing your search or role filter."
-                : "No accounts are currently available."
-            }
-          />
+          <div className="p-12 text-center">
+
+            <Users
+              size={28}
+              className="mx-auto text-slate-300"
+            />
+
+            <p className="mt-3 text-sm font-bold text-slate-800">
+              No staff found
+            </p>
+
+          </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
-                  <th className="py-2 pr-4 font-medium">
-                    Name
+
+            <table className="w-full min-w-[900px] text-left">
+
+              <thead className="bg-[#fafafd] text-[10px] uppercase tracking-wider text-slate-400">
+
+                <tr>
+
+                  <th className="px-5 py-4">
+                    Staff member
                   </th>
 
-                  <th className="py-2 pr-4 font-medium">
-                    ID number
-                  </th>
-
-                  <th className="py-2 pr-4 font-medium">
+                  <th className="px-5 py-4">
                     Role
                   </th>
 
-                  <th className="py-2 pr-4 font-medium">
+                  <th className="px-5 py-4">
+                    ID number
+                  </th>
+
+                  <th className="px-5 py-4">
+                    Contact
+                  </th>
+
+                  <th className="px-5 py-4">
                     Status
                   </th>
 
-                  <th className="py-2 pr-4 font-medium">
+                  <th className="px-5 py-4">
                     Action
                   </th>
+
                 </tr>
+
               </thead>
 
-              <tbody className="divide-y divide-outline-variant/50">
-                {filtered.map(
-                  (account) => (
+              <tbody className="divide-y divide-slate-100">
+
+                {visible.map(
+                  item => (
                     <tr
                       key={
-                        account.userId
+                        item.userId
                       }
+                      className="hover:bg-slate-50/60"
                     >
-                      <td className="py-3 pr-4 font-semibold text-on-surface">
+
+                      <td className="px-5 py-4">
+
+                        <p className="text-xs font-bold text-slate-900">
+                          {
+                            item.fullName
+                          }
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-slate-400">
+                          {
+                            item.email ||
+                            "—"
+                          }
+                        </p>
+
+                      </td>
+
+                      <td className="px-5 py-4">
+
+                        <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
+                          {
+                            item.role
+                          }
+                        </span>
+
+                      </td>
+
+                      <td className="px-5 py-4 font-mono text-[11px] text-slate-500">
                         {
-                          account.fullName
+                          item.idNumber ||
+                          "—"
                         }
                       </td>
 
-                      <td className="py-3 pr-4 text-on-surface-variant">
-                        {account.idNumber ||
-                          "—"}
+                      <td className="px-5 py-4 text-xs text-slate-500">
+                        {
+                          item.phoneNumber ||
+                          "—"
+                        }
                       </td>
 
-                      <td className="py-3 pr-4 text-on-surface-variant">
-                        {account.role ===
-                        "ClinicAdmin"
-                          ? "Clinic Admin"
-                          : account.role ===
-                            "SuperAdmin"
-                          ? "Super Admin"
-                          : account.role}
-                      </td>
+                      <td className="px-5 py-4">
 
-                      <td className="py-3 pr-4">
-                        <StatusChip
-                          tone={
-                            account.isActive
-                              ? "success-soft"
-                              : "neutral"
-                          }
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
+                            item.isActive
+                              ? "bg-emerald-100 text-emerald-700"
+                              : "bg-slate-100 text-slate-500"
+                          }`}
                         >
-                          {account.isActive
+                          {item.isActive
                             ? "Active"
-                            : "Deactivated"}
-                        </StatusChip>
+                            : "Inactive"}
+                        </span>
+
                       </td>
 
-                      <td className="py-3 pr-4">
+                      <td className="px-5 py-4">
+
                         <button
                           type="button"
-                          onClick={() =>
-                            toggleActive(
-                              account
-                            )
-                          }
                           disabled={
                             pendingId ===
-                            account.userId
+                            item.userId
                           }
-                          className={`text-xs font-semibold hover:underline disabled:cursor-not-allowed disabled:opacity-50 ${
-                            account.isActive
-                              ? "text-error"
-                              : "text-primary"
+                          onClick={() =>
+                            toggle(
+                              item
+                            )
+                          }
+                          className={`text-[10px] font-bold hover:underline disabled:opacity-50 ${
+                            item.isActive
+                              ? "text-rose-600"
+                              : "text-teal-700"
                           }`}
                         >
                           {pendingId ===
-                          account.userId
+                          item.userId
                             ? "Updating…"
-                            : account.isActive
-                            ? "Deactivate"
-                            : "Activate"}
+                            : item.isActive
+                              ? "Deactivate"
+                              : "Activate"}
                         </button>
+
                       </td>
+
                     </tr>
                   )
                 )}
+
               </tbody>
+
             </table>
+
           </div>
         )}
-      </CardBody>
-    </Card>
+
+      </section>
+
+    </div>
   );
 }

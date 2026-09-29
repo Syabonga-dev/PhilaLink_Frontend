@@ -17,8 +17,6 @@ import {
 
 import LegalProtectedRoute from "./components/auth/LegalProtectedRoute.jsx";
 
-import AuthenticatedLayout from "./components/layout/AuthenticatedLayout.jsx";
-
 import LandingPage from "./pages/LandingPage.jsx";
 import LoginPage from "./pages/auth/LoginPage.jsx";
 import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage.jsx";
@@ -36,7 +34,9 @@ import {
   TermsOfUsePage,
 } from "./pages/legal/LegalPages.jsx";
 
-/* PATIENT */
+/* ========================================================= */
+/* PATIENT                                                   */
+/* ========================================================= */
 
 import PatientAppLayout from "./components/patient/AppLayout.jsx";
 import ThemePreferenceSync from "./components/patient/ThemePreferenceSync.jsx";
@@ -48,15 +48,20 @@ import PatientRecordsPage from "./pages/patient/RecordsPage.jsx";
 import PatientNearestClinicsPage from "./pages/patient/NearestClinicsPage.jsx";
 import PatientSettingsPage from "./pages/patient/SettingsPage.jsx";
 
-/* PROXY */
+/* ========================================================= */
+/* PROXY                                                     */
+/* ========================================================= */
 
 import ProxyAppLayout from "./components/proxy/ProxyAppLayout.jsx";
+
 import ProxyDashboard from "./pages/proxy/ProxyDashboard.jsx";
 import ProxyPatientsPage from "./pages/proxy/ProxyPatientsPage.jsx";
 import ProxyCollectionsPage from "./pages/proxy/ProxyCollectionsPage.jsx";
 import ProxySettingsPage from "./pages/proxy/ProxySettingsPage.jsx";
 
-/* NURSE */
+/* ========================================================= */
+/* NURSE                                                     */
+/* ========================================================= */
 
 import NurseAppLayout from "./components/nurse/NurseAppLayout.jsx";
 
@@ -67,9 +72,15 @@ import NurseAppointmentsPage from "./pages/nurse/NurseAppointmentsPage.jsx";
 import CollectionsPage from "./pages/nurse/CollectionsPage.jsx";
 import NurseSettingsPage from "./pages/nurse/NurseSettingsPage.jsx";
 
-/* ADMIN */
+/* ========================================================= */
+/* ADMIN                                                     */
+/* ========================================================= */
+
+import AdminAppLayout from "./components/admin/AdminAppLayout.jsx";
 
 import AdminDashboard from "./pages/admin/AdminDashboard.jsx";
+import AdminInventoryPage from "./pages/admin/AdminInventoryPage.jsx";
+import AdminReportsPage from "./pages/admin/AdminReportsPage.jsx";
 import RegisterStaffPage from "./pages/admin/RegisterStaffPage.jsx";
 import ManageStaffPage from "./pages/admin/ManageStaffPage.jsx";
 import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage.jsx";
@@ -91,9 +102,7 @@ function RedirectIfAuthenticated({
   } =
     useAuth();
 
-  if (
-    isLoading
-  ) {
+  if (isLoading) {
     return children;
   }
 
@@ -137,7 +146,9 @@ export default function App() {
   return (
     <Routes>
 
-      {/* PUBLIC */}
+      {/* =================================================== */}
+      {/* PUBLIC                                              */}
+      {/* =================================================== */}
 
       <Route
         path="/"
@@ -215,7 +226,9 @@ export default function App() {
         }
       />
 
-      {/* AUTHENTICATED */}
+      {/* =================================================== */}
+      {/* AUTHENTICATED                                       */}
+      {/* =================================================== */}
 
       <Route
         element={
@@ -439,81 +452,110 @@ export default function App() {
           </Route>
 
           {/* =============================================== */}
-          {/* ADMIN SHELL                                     */}
+          {/* ADMIN                                           */}
           {/* =============================================== */}
 
           <Route
             element={
-              <AuthenticatedLayout />
+              <RoleRoute
+                allow={[
+                  "ClinicAdmin",
+                  "SuperAdmin",
+                ]}
+              />
             }
           >
 
             <Route
+              path="/admin"
               element={
-                <RoleRoute
-                  allow={[
-                    "ClinicAdmin",
-                    "SuperAdmin",
-                  ]}
-                />
+                <AdminAppLayout />
               }
             >
 
               <Route
-                path="/admin"
+                index
                 element={
                   <AdminDashboard />
                 }
               />
 
               <Route
-                path="/admin/register-staff"
+                path="register-staff"
                 element={
                   <RegisterStaffPage />
                 }
               />
 
               <Route
-                path="/admin/staff"
+                path="staff"
                 element={
                   <ManageStaffPage />
                 }
               />
 
               <Route
-                path="/admin/audit"
+                path="audit"
                 element={
                   <AdminAuditLogPage />
                 }
               />
 
-            </Route>
+              {/* CLINIC ADMIN */}
 
-            {/* SUPER ADMIN */}
+              <Route
+                element={
+                  <RoleRoute
+                    allow={[
+                      "ClinicAdmin",
+                    ]}
+                  />
+                }
+              >
 
-            <Route
-              element={
-                <RoleRoute
-                  allow={[
-                    "SuperAdmin",
-                  ]}
+                <Route
+                  path="inventory"
+                  element={
+                    <AdminInventoryPage />
+                  }
                 />
-              }
-            >
+
+                <Route
+                  path="reports"
+                  element={
+                    <AdminReportsPage />
+                  }
+                />
+
+              </Route>
+
+              {/* SUPER ADMIN */}
 
               <Route
-                path="/admin/clinics"
                 element={
-                  <ManageClinicsPage />
+                  <RoleRoute
+                    allow={[
+                      "SuperAdmin",
+                    ]}
+                  />
                 }
-              />
+              >
 
-              <Route
-                path="/admin/register-clinic-admin"
-                element={
-                  <RegisterClinicAdminPage />
-                }
-              />
+                <Route
+                  path="clinics"
+                  element={
+                    <ManageClinicsPage />
+                  }
+                />
+
+                <Route
+                  path="register-clinic-admin"
+                  element={
+                    <RegisterClinicAdminPage />
+                  }
+                />
+
+              </Route>
 
             </Route>
 
