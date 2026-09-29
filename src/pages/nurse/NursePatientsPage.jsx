@@ -338,11 +338,13 @@ export default function NursePatientsPage() {
                           </td>
 
                           <td className="py-4 pr-4 text-on-surface-variant">
+
                             {
                               formatDate(
                                 patient.dateOfBirth
                               )
                             }
+
                           </td>
 
                           <td className="py-4 pr-4 text-on-surface-variant">
@@ -374,43 +376,29 @@ export default function NursePatientsPage() {
 
                           </td>
 
-                          <td className="py-4 pr-4 text-on-surface-variant">
-
-                            <div className="flex items-center gap-2">
-
-                              <span className="material-symbols-outlined text-[17px] text-primary">
-                                medication
-                              </span>
-
-                              <span>
-                                {
-                                  patient.activeMedicationCount ??
-                                  0
-                                }
-                              </span>
-
-                            </div>
-
-                          </td>
+                          {/* MEDICATION COUNT */}
 
                           <td className="py-4 pr-4 text-on-surface-variant">
 
-                            <div className="flex items-center gap-2">
-
-                              <span className="material-symbols-outlined text-[17px] text-primary">
-                                allergy
-                              </span>
-
-                              <span>
-                                {
-                                  patient.allergyCount ??
-                                  0
-                                }
-                              </span>
-
-                            </div>
+                            {
+                              patient.activeMedicationCount ??
+                              0
+                            }
 
                           </td>
+
+                          {/* ALLERGY COUNT */}
+
+                          <td className="py-4 pr-4 text-on-surface-variant">
+
+                            {
+                              patient.allergyCount ??
+                              0
+                            }
+
+                          </td>
+
+                          {/* COLLECTION STATUS */}
 
                           <td className="py-4 pr-4">
 
@@ -435,6 +423,8 @@ export default function NursePatientsPage() {
                             )}
 
                           </td>
+
+                          {/* MANAGE */}
 
                           <td
                             className="py-4 text-right"
@@ -519,8 +509,10 @@ export default function NursePatientsPage() {
                             </p>
 
                             <p className="mt-1 text-xs text-on-surface-variant">
+
                               {patient.patientNumber ||
                                 "No patient number"}
+
                             </p>
 
                           </div>
@@ -533,10 +525,11 @@ export default function NursePatientsPage() {
 
                       </div>
 
+                      {/* MOBILE COUNTS */}
+
                       <div className="mt-4 grid grid-cols-2 gap-3">
 
                         <MobileStat
-                          icon="medication"
                           label="Medication"
                           value={
                             patient.activeMedicationCount ??
@@ -545,7 +538,6 @@ export default function NursePatientsPage() {
                         />
 
                         <MobileStat
-                          icon="allergy"
                           label="Allergies"
                           value={
                             patient.allergyCount ??
@@ -607,24 +599,15 @@ export default function NursePatientsPage() {
 /* ========================================================= */
 
 function MobileStat({
-  icon,
   label,
   value,
 }) {
   return (
     <div className="rounded-xl bg-surface-container-low p-3">
 
-      <div className="flex items-center gap-2 text-on-surface-variant">
-
-        <span className="material-symbols-outlined text-[16px] text-primary">
-          {icon}
-        </span>
-
-        <span className="text-xs">
-          {label}
-        </span>
-
-      </div>
+      <p className="text-xs text-on-surface-variant">
+        {label}
+      </p>
 
       <p className="mt-1 text-lg font-semibold text-on-surface">
         {value}
