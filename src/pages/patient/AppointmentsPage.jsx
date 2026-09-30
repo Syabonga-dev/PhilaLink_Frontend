@@ -20,13 +20,23 @@ import {
 } from "lucide-react";
 
 import {
-  Badge,
-  Button,
-} from "../../components/patient/chatbot/AstraCompat.jsx";
-
-import {
   appointmentsApi,
 } from "../../services/api/appointments.js";
+
+const APPOINTMENT_TYPES = [
+  "Routine Checkup",
+  "General Consultation",
+  "Medication Review",
+  "Chronic Care Follow-up",
+  "Follow-up Visit",
+  "Symptoms / Feeling Unwell",
+  "Other",
+];
+
+const PROVIDER_TYPES = [
+  "Nurse",
+  "Doctor",
+];
 
 function parseDate(value) {
   if (!value) {
@@ -54,10 +64,14 @@ function formatDate(value) {
   return date.toLocaleDateString(
     "en-ZA",
     {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-      year: "numeric",
+      weekday:
+        "long",
+      day:
+        "numeric",
+      month:
+        "long",
+      year:
+        "numeric",
     }
   );
 }
@@ -84,6 +98,23 @@ function formatTimeRange(
         )
       : 0;
 
+  const options = {
+    hour:
+      "2-digit",
+    minute:
+      "2-digit",
+  };
+
+  const startText =
+    start.toLocaleTimeString(
+      "en-ZA",
+      options
+    );
+
+  if (!duration) {
+    return startText;
+  }
+
   const end =
     new Date(
       start.getTime() +
@@ -92,257 +123,21 @@ function formatTimeRange(
           1000
     );
 
-  const startText =
-    start.toLocaleTimeString(
-      "en-ZA",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
-
-  if (!duration) {
-    return startText;
-  }
-
-  const endText =
-    end.toLocaleTimeString(
-      "en-ZA",
-      {
-        hour: "2-digit",
-        minute: "2-digit",
-      }
-    );
-
-  return `${startText} – ${endText}`;
-}
-
-function normaliseStatus(
-  value
-) {
-  return String(
-    value ?? ""
-  )
-    .trim()
-    .toLowerCase();
-}
-
-function isPastAppointment(
-  appointment
-) {
-  const status =
-    normaliseStatus(
-      appointment?.status
-    );
-
-  if (
-    status === "completed" ||
-    status === "cancelled" ||
-    status === "canceled" ||
-    status === "missed" ||
-    status === "noshow" ||
-    status === "no-show"
-  ) {
-    return true;
-  }
-
-  const date =
-    parseDate(
-      appointment
-        ?.scheduledAt
-    );
-
-  if (!date) {
-    return false;
-  }
-
-  return (
-    date.getTime() <
-    Date.now()
-  );
-}
-
-function canReschedule(
-  appointment
-) {
-  if (
-    isPastAppointment(
-      appointment
-    )
-  ) {
-    return false;
-  }
-
-  const status =
-    normaliseStatus(
-      appointment?.status
-    );
-
-  return ![
-    "completed",
-    "cancelled",
-    "canceled",
-    "missed",
-    "noshow",
-    "no-show",
-  ].includes(status);
-}
-
-function canCancel(
-  appointment
-) {
-  const status =
-    normaliseStatus(
-      appointment?.status
-    );
-
-  if (
-    [
-      "completed",
-      "cancelled",
-      "canceled",
-      "missed",
-      "noshow",
-      "no-show",
-    ].includes(status)
-  ) {
-    return false;
-  }
-
-  const date =
-    parseDate(
-      appointment
-        ?.scheduledAt
-    );
-
-  if (
-    date &&
-    date.getTime() <
-      Date.now()
-  ) {
-    return false;
-  }
-
-  return true;
-}
-
-function getStatusDetails(
-  statusValue
-) {
-  const status =
-    normaliseStatus(
-      statusValue
-    );
-
-  switch (status) {
-    case "confirmed":
-      return {
-        label:
-          "Confirmed",
-        variant:
-          "success",
-      };
-
-    case "completed":
-      return {
-        label:
-          "Completed",
-        variant:
-          "success",
-      };
-
-    case "cancelled":
-    case "canceled":
-      return {
-        label:
-          "Cancelled",
-        variant:
-          "default",
-      };
-
-    case "pending":
-      return {
-        label:
-          "Pending",
-        variant:
-          "warning",
-      };
-
-    case "rescheduled":
-      return {
-        label:
-          "Rescheduled",
-        variant:
-          "default",
-      };
-
-    case "missed":
-    case "noshow":
-    case "no-show":
-      return {
-        label:
-          "Missed",
-        variant:
-          "warning",
-      };
-
-    case "scheduled":
-      return {
-        label:
-          "Scheduled",
-        variant:
-          "default",
-      };
-
-    default:
-      return {
-        label:
-          statusValue ||
-          "Scheduled",
-
-        variant:
-          "default",
-      };
-  }
-}
-
-function getProviderName(
-  appointment
-) {
-  return (
-    appointment
-      ?.providerName ||
-    appointment
-      ?.nurseName ||
-    "Clinic provider"
-  );
-}
-
-function isTelehealth(
-  mode
-) {
-  return (
-    String(
-      mode ?? ""
-    )
-      .trim()
-      .toLowerCase() ===
-    "telehealth"
-  );
+  return `${startText} – ${end.toLocaleTimeString(
+    "en-ZA",
+    options
+  )}`;
 }
 
 function toLocalDateTimeInput(
   value = null
 ) {
-  let date;
+  let date =
+    value
+      ? new Date(value)
+      : new Date();
 
-  if (value) {
-    date =
-      new Date(value);
-  } else {
-    date =
-      new Date();
-
+  if (!value) {
     date.setMinutes(
       date.getMinutes() +
         60
@@ -360,83 +155,178 @@ function toLocalDateTimeInput(
   const offset =
     date.getTimezoneOffset();
 
-  const local =
-    new Date(
-      date.getTime() -
-        offset *
-          60 *
-          1000
-    );
-
-  return local
+  return new Date(
+    date.getTime() -
+      offset *
+        60 *
+        1000
+  )
     .toISOString()
-    .slice(0, 16);
+    .slice(
+      0,
+      16
+    );
 }
 
-function LoadingState() {
-  return (
-    <div className="flex flex-col gap-md">
-      {[1, 2, 3].map(
-        (item) => (
-          <div
-            key={item}
-            className="animate-pulse rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl"
-          >
-            <div className="mb-md h-4 w-44 rounded bg-border-secondary" />
-            <div className="mb-sm h-3 w-56 rounded bg-border-secondary" />
-            <div className="h-3 w-40 rounded bg-border-secondary" />
-          </div>
-        )
-      )}
-    </div>
+function normaliseStatus(value) {
+  return String(
+    value ?? ""
+  )
+    .trim()
+    .toLowerCase();
+}
+
+function isPastAppointment(
+  appointment
+) {
+  const status =
+    normaliseStatus(
+      appointment?.status
+    );
+
+  if (
+    [
+      "completed",
+      "cancelled",
+      "canceled",
+      "missed",
+      "noshow",
+      "no-show",
+    ].includes(
+      status
+    )
+  ) {
+    return true;
+  }
+
+  const date =
+    parseDate(
+      appointment
+        ?.scheduledAt
+    );
+
+  return Boolean(
+    date &&
+      date.getTime() <
+        Date.now()
   );
 }
 
-function EmptyState({
-  type,
-  onBook,
+function canChange(
+  appointment
+) {
+  const status =
+    normaliseStatus(
+      appointment?.status
+    );
+
+  return ![
+    "completed",
+    "cancelled",
+    "canceled",
+    "missed",
+    "noshow",
+    "no-show",
+  ].includes(
+    status
+  ) &&
+    !isPastAppointment(
+      appointment
+    );
+}
+
+function requestedProviderFromNotes(
+  notes
+) {
+  if (!notes) {
+    return "";
+  }
+
+  const match =
+    String(notes).match(
+      /^Requested provider:\s*(.+)$/im
+    );
+
+  return match?.[1]?.trim() ||
+    "";
+}
+
+function displayNotes(notes) {
+  if (!notes) {
+    return "";
+  }
+
+  return String(notes)
+    .replace(
+      /^Requested provider:\s*.+(?:\r?\n){0,2}/i,
+      ""
+    )
+    .trim();
+}
+
+function getProviderName(
+  appointment
+) {
+  return (
+    appointment
+      ?.providerName ||
+    appointment
+      ?.nurseName ||
+    requestedProviderFromNotes(
+      appointment?.notes
+    ) ||
+    "Clinic provider"
+  );
+}
+
+function StatusBadge({
+  value,
 }) {
-  const isUpcoming =
-    type ===
-    "upcoming";
+  const status =
+    normaliseStatus(
+      value
+    );
+
+  let classes =
+    "bg-slate-100 text-slate-600";
+
+  if (
+    status ===
+      "confirmed" ||
+    status ===
+      "completed"
+  ) {
+    classes =
+      "bg-emerald-50 text-emerald-700";
+  } else if (
+    status ===
+      "pending"
+  ) {
+    classes =
+      "bg-amber-50 text-amber-700";
+  } else if (
+    status ===
+      "cancelled" ||
+    status ===
+      "canceled"
+  ) {
+    classes =
+      "bg-red-50 text-red-700";
+  } else if (
+    status ===
+      "rescheduled"
+  ) {
+    classes =
+      "bg-teal-50 text-teal-700";
+  }
 
   return (
-    <div className="rounded-corner-lg border border-border-secondary bg-surface-bg p-xl text-center lg:p-2xl">
-      <div className="mx-auto mb-md flex h-12 w-12 items-center justify-center rounded-corner-full bg-brand-tertiary">
-        <Calendar
-          size={20}
-          className="text-brand-primary"
-        />
-      </div>
-
-      <h2 className="text-label font-semibold text-text-primary">
-        {isUpcoming
-          ? "No upcoming appointments"
-          : "No previous appointments"}
-      </h2>
-
-      <p className="mx-auto mt-xs max-w-md text-label-sm text-text-secondary">
-        {isUpcoming
-          ? "You do not currently have any upcoming appointments on record."
-          : "There are no past appointments available in your record."}
-      </p>
-
-      {isUpcoming && (
-        <button
-          type="button"
-          onClick={
-            onBook
-          }
-          className="mt-lg inline-flex items-center gap-xs text-label-sm font-medium text-brand-primary hover:opacity-70"
-        >
-          <Plus
-            size={15}
-          />
-
-          Book appointment
-        </button>
-      )}
-    </div>
+    <span
+      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${classes}`}
+    >
+      {value ||
+        "Scheduled"}
+    </span>
   );
 }
 
@@ -446,45 +336,39 @@ function AppointmentCard({
   onReschedule,
   onCancel,
 }) {
-  const status =
-    getStatusDetails(
-      appointment.status
-    );
-
   const telehealth =
-    isTelehealth(
-      appointment.mode
-    );
+    String(
+      appointment.mode ??
+        ""
+    )
+      .trim()
+      .toLowerCase() ===
+    "telehealth";
 
-  const reschedulable =
-    canReschedule(
-      appointment
-    );
-
-  const cancellable =
-    canCancel(
-      appointment
+  const notes =
+    displayNotes(
+      appointment.notes
     );
 
   return (
-    <div
-      className={`rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl ${
+    <article
+      className={`rounded-2xl border border-slate-200 bg-white p-5 shadow-sm ${
         past
           ? "opacity-80"
           : ""
       }`}
     >
-      <div className="flex flex-col gap-md sm:flex-row sm:items-start">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
-          <div className="mb-md flex items-start justify-between gap-md">
-            <div className="min-w-0">
-              <h3 className="text-label-sm font-semibold text-text-primary">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <h3 className="text-base font-semibold text-slate-950">
                 {appointment.type ||
                   "Appointment"}
               </h3>
 
               {appointment.reason && (
-                <p className="mt-xs text-video-title text-text-secondary">
+                <p className="mt-1 text-sm text-slate-500">
                   {
                     appointment.reason
                   }
@@ -492,61 +376,53 @@ function AppointmentCard({
               )}
             </div>
 
-            <Badge
-              label={
-                status.label
-              }
-              variant={
-                status.variant
+            <StatusBadge
+              value={
+                appointment.status
               }
             />
           </div>
 
-          <div className="flex flex-col gap-sm">
-            <div className="flex items-center gap-xs">
+          <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
+            <div className="flex items-center gap-2">
               <Calendar
-                size={13}
-                className="flex-shrink-0 text-text-tertiary"
+                size={15}
+                className="text-[#0f766e]"
               />
-
-              <span className="text-label-sm text-text-secondary">
+              <span>
                 {formatDate(
-                  appointment
-                    .scheduledAt
+                  appointment.scheduledAt
                 )}
               </span>
             </div>
 
-            <div className="flex items-center gap-xs">
+            <div className="flex items-center gap-2">
               <Clock
-                size={13}
-                className="flex-shrink-0 text-text-tertiary"
+                size={15}
+                className="text-[#0f766e]"
               />
-
-              <span className="text-label-sm text-text-secondary">
+              <span>
                 {formatTimeRange(
-                  appointment
-                    .scheduledAt,
-                  appointment
-                    .durationMinutes
+                  appointment.scheduledAt,
+                  appointment.durationMinutes
                 )}
               </span>
             </div>
 
-            <div className="flex items-center gap-xs">
+            <div className="flex items-center gap-2">
               {telehealth ? (
                 <Video
-                  size={13}
-                  className="flex-shrink-0 text-brand-primary"
+                  size={15}
+                  className="text-[#0f766e]"
                 />
               ) : (
                 <MapPin
-                  size={13}
-                  className="flex-shrink-0 text-text-tertiary"
+                  size={15}
+                  className="text-[#0f766e]"
                 />
               )}
 
-              <span className="text-label-sm text-text-secondary">
+              <span>
                 {telehealth
                   ? "Telehealth"
                   : appointment
@@ -555,13 +431,12 @@ function AppointmentCard({
               </span>
             </div>
 
-            <div className="flex items-center gap-xs">
+            <div className="flex items-center gap-2">
               <Stethoscope
-                size={13}
-                className="flex-shrink-0 text-text-tertiary"
+                size={15}
+                className="text-[#0f766e]"
               />
-
-              <span className="text-label-sm text-text-secondary">
+              <span>
                 {getProviderName(
                   appointment
                 )}
@@ -569,64 +444,56 @@ function AppointmentCard({
             </div>
           </div>
 
-          {appointment.notes && (
-            <div className="mt-lg border-t border-border-secondary pt-lg">
-              <p className="mb-xs text-video-title text-text-tertiary">
+          {notes && (
+            <div className="mt-4 border-t border-slate-100 pt-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
                 Notes
               </p>
-
-              <p className="text-label-sm text-text-secondary">
-                {
-                  appointment.notes
-                }
+              <p className="mt-1 text-sm text-slate-600">
+                {notes}
               </p>
             </div>
           )}
 
           {!past &&
-            (reschedulable ||
-              cancellable) && (
-              <div className="mt-lg flex flex-wrap gap-sm border-t border-border-secondary pt-lg">
-                {reschedulable && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onReschedule(
-                        appointment
-                      )
-                    }
-                    className="inline-flex items-center gap-xs rounded-corner-md border border-border-secondary px-md py-sm text-label-sm font-medium text-text-secondary transition hover:bg-bg-faint hover:text-brand-primary"
-                  >
-                    <Pencil
-                      size={14}
-                    />
+            canChange(
+              appointment
+            ) && (
+              <div className="mt-4 flex flex-wrap gap-2 border-t border-slate-100 pt-4">
+                <button
+                  type="button"
+                  onClick={() =>
+                    onReschedule(
+                      appointment
+                    )
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-teal-200 hover:bg-teal-50"
+                >
+                  <Pencil
+                    size={14}
+                  />
+                  Reschedule
+                </button>
 
-                    Reschedule
-                  </button>
-                )}
-
-                {cancellable && (
-                  <button
-                    type="button"
-                    onClick={() =>
-                      onCancel(
-                        appointment
-                      )
-                    }
-                    className="inline-flex items-center gap-xs rounded-corner-md border border-danger/30 px-md py-sm text-label-sm font-medium text-danger transition hover:bg-danger/10"
-                  >
-                    <Trash2
-                      size={14}
-                    />
-
-                    Cancel
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={() =>
+                    onCancel(
+                      appointment
+                    )
+                  }
+                  className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
+                >
+                  <Trash2
+                    size={14}
+                  />
+                  Cancel
+                </button>
               </div>
-          )}
+            )}
         </div>
       </div>
-    </div>
+    </article>
   );
 }
 
@@ -652,6 +519,13 @@ function BookingModal({
     setType,
   ] = useState(
     "Routine Checkup"
+  );
+
+  const [
+    providerType,
+    setProviderType,
+  ] = useState(
+    "Nurse"
   );
 
   const [
@@ -691,25 +565,22 @@ function BookingModal({
     setScheduledAt(
       toLocalDateTimeInput()
     );
-
     setDurationMinutes(
       "30"
     );
-
     setType(
       "Routine Checkup"
     );
-
+    setProviderType(
+      "Nurse"
+    );
     setReason(
       "Routine patient checkup"
     );
-
     setMode(
       "InPerson"
     );
-
     setNotes("");
-
     setSubmitError("");
   }, [open]);
 
@@ -717,151 +588,105 @@ function BookingModal({
     return null;
   }
 
-  const handleSubmit =
-    async (event) => {
-      event.preventDefault();
+  async function handleSubmit(
+    event
+  ) {
+    event.preventDefault();
 
-      const parsedDate =
-        new Date(
-          scheduledAt
-        );
+    const parsedDate =
+      new Date(
+        scheduledAt
+      );
 
-      if (
-        Number.isNaN(
-          parsedDate.getTime()
-        )
-      ) {
-        setSubmitError(
-          "Please choose a valid appointment date and time."
-        );
-
-        return;
-      }
-
-      if (
-        parsedDate.getTime() <=
+    if (
+      Number.isNaN(
+        parsedDate.getTime()
+      ) ||
+      parsedDate.getTime() <=
         Date.now()
-      ) {
-        setSubmitError(
-          "Appointment time must be in the future."
+    ) {
+      setSubmitError(
+        "Please choose a future appointment date and time."
+      );
+      return;
+    }
+
+    if (!reason.trim()) {
+      setSubmitError(
+        "Please enter the reason for your appointment."
+      );
+      return;
+    }
+
+    const duration =
+      Number(
+        durationMinutes
+      );
+
+    const persistedNotes =
+      [
+        `Requested provider: ${providerType}`,
+        notes.trim(),
+      ]
+        .filter(Boolean)
+        .join(
+          "\n\n"
         );
 
-        return;
-      }
+    try {
+      setSubmitting(
+        true
+      );
+      setSubmitError("");
 
-      if (
-        !type.trim()
-      ) {
-        setSubmitError(
-          "Please enter an appointment type."
-        );
+      await appointmentsApi
+        .book({
+          scheduledAt:
+            parsedDate
+              .toISOString(),
+          durationMinutes:
+            duration,
+          type,
+          reason:
+            reason.trim(),
+          providerName:
+            providerType,
+          mode,
+          notes:
+            persistedNotes,
+        });
 
-        return;
-      }
-
-      if (
-        !reason.trim()
-      ) {
-        setSubmitError(
-          "Please enter the reason for your appointment."
-        );
-
-        return;
-      }
-
-      const duration =
-        Number(
-          durationMinutes
-        );
-
-      if (
-        !Number.isFinite(
-          duration
-        ) ||
-        duration <= 0
-      ) {
-        setSubmitError(
-          "Please choose a valid appointment duration."
-        );
-
-        return;
-      }
-
-      try {
-        setSubmitting(
-          true
-        );
-
-        setSubmitError(
-          ""
-        );
-
-        await appointmentsApi
-          .book({
-            scheduledAt:
-              parsedDate
-                .toISOString(),
-
-            durationMinutes:
-              duration,
-
-            type:
-              type.trim(),
-
-            reason:
-              reason.trim(),
-
-            mode,
-
-            notes:
-              notes.trim() ||
-              null,
-          });
-
-        await onBooked();
-
-        onClose();
-      } catch (err) {
-        console.error(
-          "Failed to book appointment:",
-          err
-        );
-
-        setSubmitError(
-          err?.message ||
-            "We could not book your appointment."
-        );
-      } finally {
-        setSubmitting(
-          false
-        );
-      }
-    };
+      await onBooked();
+      onClose();
+    } catch (error) {
+      setSubmitError(
+        error?.message ||
+          "We could not book your appointment."
+      );
+    } finally {
+      setSubmitting(
+        false
+      );
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-lg">
-      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-corner-lg bg-surface-bg shadow-xl sm:max-w-xl sm:rounded-corner-lg">
-        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-border-secondary bg-surface-bg px-lg py-md">
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6">
+      <div className="max-h-[92vh] w-full overflow-y-auto rounded-t-2xl bg-white shadow-xl sm:max-w-xl sm:rounded-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
           <div>
-            <h2 className="text-label font-semibold text-text-primary">
+            <h2 className="font-semibold text-slate-950">
               Book appointment
             </h2>
-
-            <p className="mt-xs text-video-title text-text-secondary">
-              Choose your preferred appointment details.
+            <p className="mt-1 text-xs text-slate-500">
+              Choose the service and whether you want to see a Nurse or Doctor.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={
-              onClose
-            }
-            disabled={
-              submitting
-            }
-            className="flex h-9 w-9 items-center justify-center rounded-corner-full text-text-secondary hover:bg-bg-faint"
-            aria-label="Close booking form"
+            onClick={onClose}
+            className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
           >
             <X
               size={18}
@@ -873,196 +698,132 @@ function BookingModal({
           onSubmit={
             handleSubmit
           }
-          className="flex flex-col gap-lg p-lg"
+          className="space-y-4 p-5"
         >
           {submitError && (
-            <div className="flex items-start gap-sm rounded-corner-md border border-danger/20 bg-danger/10 p-md">
+            <div className="flex gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
               <AlertCircle
-                size={16}
-                className="mt-[2px] shrink-0 text-danger"
+                size={17}
               />
-
-              <p className="text-label-sm text-text-primary">
-                {
-                  submitError
-                }
-              </p>
+              {submitError}
             </div>
           )}
 
-          <label className="flex flex-col gap-xs">
-            <span className="text-label-sm font-medium text-text-primary">
-              Date and time
-            </span>
+          <SelectField
+            label="Appointment type"
+            value={type}
+            onChange={setType}
+            options={
+              APPOINTMENT_TYPES
+            }
+          />
 
-            <input
-              type="datetime-local"
-              value={
-                scheduledAt
-              }
-              onChange={(
-                event
-              ) =>
-                setScheduledAt(
-                  event.target
-                    .value
-                )
-              }
-              required
-              className="w-full rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
+          <SelectField
+            label="Who do you want to see?"
+            value={
+              providerType
+            }
+            onChange={
+              setProviderType
+            }
+            options={
+              PROVIDER_TYPES
+            }
+          />
+
+          <Field
+            label="Date and time"
+            type="datetime-local"
+            value={
+              scheduledAt
+            }
+            onChange={
+              setScheduledAt
+            }
+            required
+          />
+
+          <TextArea
+            label="Reason"
+            value={reason}
+            onChange={
+              setReason
+            }
+            required
+          />
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <SelectField
+              label="Visit mode"
+              value={mode}
+              onChange={setMode}
+              options={[
+                {
+                  value:
+                    "InPerson",
+                  label:
+                    "In person",
+                },
+                {
+                  value:
+                    "Telehealth",
+                  label:
+                    "Telehealth",
+                },
+              ]}
             />
-          </label>
 
-          <label className="flex flex-col gap-xs">
-            <span className="text-label-sm font-medium text-text-primary">
-              Appointment type
-            </span>
-
-            <input
-              type="text"
+            <SelectField
+              label="Duration"
               value={
-                type
+                durationMinutes
               }
-              onChange={(
-                event
-              ) =>
-                setType(
-                  event.target
-                    .value
-                )
+              onChange={
+                setDurationMinutes
               }
-              required
-              className="w-full rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
+              options={[
+                {
+                  value:
+                    "15",
+                  label:
+                    "15 minutes",
+                },
+                {
+                  value:
+                    "30",
+                  label:
+                    "30 minutes",
+                },
+                {
+                  value:
+                    "45",
+                  label:
+                    "45 minutes",
+                },
+                {
+                  value:
+                    "60",
+                  label:
+                    "60 minutes",
+                },
+              ]}
             />
-          </label>
-
-          <label className="flex flex-col gap-xs">
-            <span className="text-label-sm font-medium text-text-primary">
-              Reason
-            </span>
-
-            <textarea
-              value={
-                reason
-              }
-              onChange={(
-                event
-              ) =>
-                setReason(
-                  event.target
-                    .value
-                )
-              }
-              required
-              rows={3}
-              className="w-full resize-none rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
-            />
-          </label>
-
-          <div className="grid grid-cols-1 gap-md sm:grid-cols-2">
-            <label className="flex flex-col gap-xs">
-              <span className="text-label-sm font-medium text-text-primary">
-                Visit mode
-              </span>
-
-              <select
-                value={
-                  mode
-                }
-                onChange={(
-                  event
-                ) =>
-                  setMode(
-                    event.target
-                      .value
-                  )
-                }
-                className="w-full rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
-              >
-                <option value="InPerson">
-                  In person
-                </option>
-
-                <option value="Telehealth">
-                  Telehealth
-                </option>
-              </select>
-            </label>
-
-            <label className="flex flex-col gap-xs">
-              <span className="text-label-sm font-medium text-text-primary">
-                Duration
-              </span>
-
-              <select
-                value={
-                  durationMinutes
-                }
-                onChange={(
-                  event
-                ) =>
-                  setDurationMinutes(
-                    event.target
-                      .value
-                  )
-                }
-                className="w-full rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
-              >
-                <option value="15">
-                  15 minutes
-                </option>
-
-                <option value="30">
-                  30 minutes
-                </option>
-
-                <option value="45">
-                  45 minutes
-                </option>
-
-                <option value="60">
-                  60 minutes
-                </option>
-              </select>
-            </label>
           </div>
 
-          <label className="flex flex-col gap-xs">
-            <span className="text-label-sm font-medium text-text-primary">
-              Notes
-              <span className="font-normal text-text-tertiary">
-                {" "}
-                (optional)
-              </span>
-            </span>
+          <TextArea
+            label="Notes (optional)"
+            value={notes}
+            onChange={setNotes}
+          />
 
-            <textarea
-              value={
-                notes
-              }
-              onChange={(
-                event
-              ) =>
-                setNotes(
-                  event.target
-                    .value
-                )
-              }
-              rows={3}
-              className="w-full resize-none rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
-            />
-          </label>
-
-          <div className="flex flex-col-reverse gap-sm border-t border-border-secondary pt-lg sm:flex-row sm:justify-end">
+          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
             <button
               type="button"
-              onClick={
-                onClose
-              }
+              onClick={onClose}
               disabled={
                 submitting
               }
-              className="rounded-corner-md border border-border-secondary px-lg py-sm text-label-sm font-medium text-text-secondary hover:bg-bg-faint disabled:opacity-50"
+              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
             >
               Cancel
             </button>
@@ -1072,7 +833,7 @@ function BookingModal({
               disabled={
                 submitting
               }
-              className="rounded-corner-md bg-brand-primary px-lg py-sm text-label-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
+              className="rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               {submitting
                 ? "Booking..."
@@ -1094,265 +855,122 @@ function RescheduleModal({
     scheduledAt,
     setScheduledAt,
   ] = useState("");
-
   const [
     submitting,
     setSubmitting,
   ] = useState(false);
-
   const [
-    submitError,
-    setSubmitError,
+    error,
+    setError,
   ] = useState("");
 
   useEffect(() => {
-    if (!appointment) {
-      return;
+    if (appointment) {
+      setScheduledAt(
+        toLocalDateTimeInput(
+          appointment.scheduledAt
+        )
+      );
+      setError("");
     }
-
-    setScheduledAt(
-      toLocalDateTimeInput(
-        appointment
-          .scheduledAt
-      )
-    );
-
-    setSubmitError("");
-  }, [
-    appointment,
-  ]);
+  }, [appointment]);
 
   if (!appointment) {
     return null;
   }
 
-  const handleSubmit =
-    async (event) => {
-      event.preventDefault();
+  async function submit(
+    event
+  ) {
+    event.preventDefault();
 
-      const parsedDate =
-        new Date(
-          scheduledAt
-        );
+    const date =
+      new Date(
+        scheduledAt
+      );
 
-      if (
-        Number.isNaN(
-          parsedDate.getTime()
-        )
-      ) {
-        setSubmitError(
-          "Please choose a valid date and time."
-        );
-
-        return;
-      }
-
-      if (
-        parsedDate.getTime() <=
+    if (
+      Number.isNaN(
+        date.getTime()
+      ) ||
+      date.getTime() <=
         Date.now()
-      ) {
-        setSubmitError(
-          "The new appointment time must be in the future."
+    ) {
+      setError(
+        "Choose a future appointment date and time."
+      );
+      return;
+    }
+
+    try {
+      setSubmitting(
+        true
+      );
+      setError("");
+
+      await appointmentsApi
+        .reschedule(
+          appointment.id,
+          {
+            scheduledAt:
+              date.toISOString(),
+          }
         );
 
-        return;
-      }
-
-      const original =
-        parseDate(
-          appointment
-            .scheduledAt
-        );
-
-      if (
-        original &&
-        original.getTime() ===
-          parsedDate.getTime()
-      ) {
-        setSubmitError(
-          "Choose a different appointment date or time."
-        );
-
-        return;
-      }
-
-      try {
-        setSubmitting(
-          true
-        );
-
-        setSubmitError(
-          ""
-        );
-
-        await appointmentsApi
-          .reschedule(
-            appointment.id,
-            {
-              scheduledAt:
-                parsedDate
-                  .toISOString(),
-            }
-          );
-
-        await onRescheduled();
-
-        onClose();
-      } catch (err) {
-        console.error(
-          "Failed to reschedule appointment:",
-          err
-        );
-
-        setSubmitError(
-          err?.message ||
-            "We could not reschedule this appointment."
-        );
-      } finally {
-        setSubmitting(
-          false
-        );
-      }
-    };
+      await onRescheduled();
+      onClose();
+    } catch (saveError) {
+      setError(
+        saveError?.message ||
+          "We could not reschedule this appointment."
+      );
+    } finally {
+      setSubmitting(
+        false
+      );
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-lg">
-      <div className="w-full rounded-t-corner-lg bg-surface-bg shadow-xl sm:max-w-lg sm:rounded-corner-lg">
-        <div className="flex items-center justify-between border-b border-border-secondary px-lg py-md">
-          <div>
-            <h2 className="text-label font-semibold text-text-primary">
-              Reschedule appointment
-            </h2>
+    <SimpleModal
+      title="Reschedule appointment"
+      onClose={onClose}
+    >
+      <form
+        onSubmit={submit}
+        className="space-y-4"
+      >
+        {error && (
+          <ErrorBox>
+            {error}
+          </ErrorBox>
+        )}
 
-            <p className="mt-xs text-video-title text-text-secondary">
-              {appointment.type ||
-                "Appointment"}
-            </p>
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              onClose
-            }
-            disabled={
-              submitting
-            }
-            className="flex h-9 w-9 items-center justify-center rounded-corner-full text-text-secondary hover:bg-bg-faint"
-            aria-label="Close reschedule form"
-          >
-            <X
-              size={18}
-            />
-          </button>
-        </div>
-
-        <form
-          onSubmit={
-            handleSubmit
+        <Field
+          label="New date and time"
+          type="datetime-local"
+          value={
+            scheduledAt
           }
-          className="flex flex-col gap-lg p-lg"
-        >
-          <div className="rounded-corner-md bg-bg-faint p-md">
-            <p className="text-video-title text-text-tertiary">
-              Current appointment
-            </p>
+          onChange={
+            setScheduledAt
+          }
+          required
+        />
 
-            <p className="mt-xs text-label-sm font-medium text-text-primary">
-              {formatDate(
-                appointment
-                  .scheduledAt
-              )}
-            </p>
-
-            <p className="mt-xs text-label-sm text-text-secondary">
-              {formatTimeRange(
-                appointment
-                  .scheduledAt,
-                appointment
-                  .durationMinutes
-              )}
-            </p>
-          </div>
-
-          {submitError && (
-            <div className="flex items-start gap-sm rounded-corner-md border border-danger/20 bg-danger/10 p-md">
-              <AlertCircle
-                size={16}
-                className="mt-[2px] shrink-0 text-danger"
-              />
-
-              <p className="text-label-sm text-text-primary">
-                {
-                  submitError
-                }
-              </p>
-            </div>
-          )}
-
-          <label className="flex flex-col gap-xs">
-            <span className="text-label-sm font-medium text-text-primary">
-              New date and time
-            </span>
-
-            <input
-              type="datetime-local"
-              value={
-                scheduledAt
-              }
-              onChange={(
-                event
-              ) =>
-                setScheduledAt(
-                  event.target
-                    .value
-                )
-              }
-              required
-              className="w-full rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none focus:border-brand-primary"
-            />
-          </label>
-
-          <p className="text-video-title text-text-secondary">
-            The appointment type,
-            reason, duration and
-            visit mode will stay
-            unchanged.
-          </p>
-
-          <div className="flex flex-col-reverse gap-sm border-t border-border-secondary pt-lg sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={
-                onClose
-              }
-              disabled={
-                submitting
-              }
-              className="rounded-corner-md border border-border-secondary px-lg py-sm text-label-sm font-medium text-text-secondary hover:bg-bg-faint disabled:opacity-50"
-            >
-              Keep current time
-            </button>
-
-            <button
-              type="submit"
-              disabled={
-                submitting
-              }
-              className="rounded-corner-md bg-brand-primary px-lg py-sm text-label-sm font-medium text-white hover:opacity-90 disabled:opacity-50"
-            >
-              {submitting
-                ? "Rescheduling..."
-                : "Confirm reschedule"}
-            </button>
-          </div>
-        </form>
-      </div>
-    </div>
+        <ModalActions
+          saving={
+            submitting
+          }
+          onCancel={onClose}
+          submitLabel="Confirm reschedule"
+        />
+      </form>
+    </SimpleModal>
   );
 }
 
-function CancelAppointmentModal({
+function CancelModal({
   appointment,
   onClose,
   onCancelled,
@@ -1361,181 +979,87 @@ function CancelAppointmentModal({
     submitting,
     setSubmitting,
   ] = useState(false);
-
   const [
-    submitError,
-    setSubmitError,
+    error,
+    setError,
   ] = useState("");
-
-  useEffect(() => {
-    if (appointment) {
-      setSubmitError("");
-    }
-  }, [
-    appointment,
-  ]);
 
   if (!appointment) {
     return null;
   }
 
-  const handleCancel =
-    async () => {
-      try {
-        setSubmitting(
-          true
+  async function cancel() {
+    try {
+      setSubmitting(
+        true
+      );
+      setError("");
+
+      await appointmentsApi
+        .cancel(
+          appointment.id
         );
 
-        setSubmitError(
-          ""
-        );
-
-        await appointmentsApi
-          .cancel(
-            appointment.id
-          );
-
-        await onCancelled();
-
-        onClose();
-      } catch (err) {
-        console.error(
-          "Failed to cancel appointment:",
-          err
-        );
-
-        setSubmitError(
-          err?.message ||
-            "We could not cancel this appointment."
-        );
-      } finally {
-        setSubmitting(
-          false
-        );
-      }
-    };
+      await onCancelled();
+      onClose();
+    } catch (saveError) {
+      setError(
+        saveError?.message ||
+          "We could not cancel this appointment."
+      );
+    } finally {
+      setSubmitting(
+        false
+      );
+    }
+  }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-lg">
-      <div className="w-full rounded-t-corner-lg bg-surface-bg shadow-xl sm:max-w-lg sm:rounded-corner-lg">
-        <div className="flex items-center justify-between border-b border-border-secondary px-lg py-md">
-          <div>
-            <h2 className="text-label font-semibold text-text-primary">
-              Cancel appointment
-            </h2>
+    <SimpleModal
+      title="Cancel appointment"
+      onClose={onClose}
+    >
+      <div className="space-y-4">
+        {error && (
+          <ErrorBox>
+            {error}
+          </ErrorBox>
+        )}
 
-            <p className="mt-xs text-video-title text-text-secondary">
-              This will mark the appointment as cancelled.
-            </p>
-          </div>
+        <p className="text-sm text-slate-600">
+          Are you sure you want to cancel your {appointment.type ||
+            "appointment"} on {formatDate(
+            appointment.scheduledAt
+          )}?
+        </p>
 
+        <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
           <button
             type="button"
-            onClick={
-              onClose
-            }
+            onClick={onClose}
             disabled={
               submitting
             }
-            className="flex h-9 w-9 items-center justify-center rounded-corner-full text-text-secondary hover:bg-bg-faint"
-            aria-label="Close cancellation confirmation"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
           >
-            <X
-              size={18}
-            />
+            Keep appointment
+          </button>
+
+          <button
+            type="button"
+            onClick={cancel}
+            disabled={
+              submitting
+            }
+            className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+          >
+            {submitting
+              ? "Cancelling..."
+              : "Cancel appointment"}
           </button>
         </div>
-
-        <div className="flex flex-col gap-lg p-lg">
-          <div className="rounded-corner-md bg-bg-faint p-md">
-            <p className="text-label-sm font-medium text-text-primary">
-              {appointment.type ||
-                "Appointment"}
-            </p>
-
-            <p className="mt-xs text-label-sm text-text-secondary">
-              {formatDate(
-                appointment
-                  .scheduledAt
-              )}
-            </p>
-
-            <p className="mt-xs text-label-sm text-text-secondary">
-              {formatTimeRange(
-                appointment
-                  .scheduledAt,
-                appointment
-                  .durationMinutes
-              )}
-            </p>
-
-            {appointment.reason && (
-              <p className="mt-md text-video-title text-text-secondary">
-                {
-                  appointment.reason
-                }
-              </p>
-            )}
-          </div>
-
-          {submitError && (
-            <div className="flex items-start gap-sm rounded-corner-md border border-danger/20 bg-danger/10 p-md">
-              <AlertCircle
-                size={16}
-                className="mt-[2px] shrink-0 text-danger"
-              />
-
-              <p className="text-label-sm text-text-primary">
-                {
-                  submitError
-                }
-              </p>
-            </div>
-          )}
-
-          <div className="flex items-start gap-sm rounded-corner-md border border-warning/20 bg-warning/10 p-md">
-            <AlertCircle
-              size={16}
-              className="mt-[2px] shrink-0 text-warning"
-            />
-
-            <p className="text-label-sm text-text-secondary">
-              Are you sure you want to cancel this appointment?
-            </p>
-          </div>
-
-          <div className="flex flex-col-reverse gap-sm border-t border-border-secondary pt-lg sm:flex-row sm:justify-end">
-            <button
-              type="button"
-              onClick={
-                onClose
-              }
-              disabled={
-                submitting
-              }
-              className="rounded-corner-md border border-border-secondary px-lg py-sm text-label-sm font-medium text-text-secondary hover:bg-bg-faint disabled:opacity-50"
-            >
-              Keep appointment
-            </button>
-
-            <button
-              type="button"
-              onClick={
-                handleCancel
-              }
-              disabled={
-                submitting
-              }
-              className="rounded-corner-md bg-danger px-lg py-sm text-label-sm font-medium text-white transition-opacity hover:opacity-90 disabled:opacity-50"
-            >
-              {submitting
-                ? "Cancelling..."
-                : "Cancel appointment"}
-            </button>
-          </div>
-        </div>
       </div>
-    </div>
+    </SimpleModal>
   );
 }
 
@@ -1544,34 +1068,28 @@ export default function AppointmentsPage() {
     appointments,
     setAppointments,
   ] = useState([]);
-
   const [
     tab,
     setTab,
   ] = useState(
     "upcoming"
   );
-
   const [
     loading,
     setLoading,
   ] = useState(true);
-
   const [
     error,
     setError,
   ] = useState("");
-
   const [
     bookingOpen,
     setBookingOpen,
   ] = useState(false);
-
   const [
     rescheduleAppointment,
     setRescheduleAppointment,
   ] = useState(null);
-
   const [
     cancelAppointment,
     setCancelAppointment,
@@ -1584,7 +1102,6 @@ export default function AppointmentsPage() {
           setLoading(
             true
           );
-
           setError("");
 
           const result =
@@ -1598,20 +1115,12 @@ export default function AppointmentsPage() {
               ? result
               : []
           );
-        } catch (err) {
-          console.error(
-            "Failed to load appointments:",
-            err
-          );
-
+        } catch (loadError) {
           setError(
-            err?.message ||
+            loadError?.message ||
               "We could not load your appointments."
           );
-
-          setAppointments(
-            []
-          );
+          setAppointments([]);
         } finally {
           setLoading(
             false
@@ -1622,182 +1131,97 @@ export default function AppointmentsPage() {
     );
 
   useEffect(() => {
-    loadAppointments();
-  }, [
-    loadAppointments,
-  ]);
+    void loadAppointments();
+  }, [loadAppointments]);
 
   const upcoming =
-    useMemo(() => {
-      return appointments
-        .filter(
-          (
-            appointment
-          ) =>
-            !isPastAppointment(
-              appointment
-            )
-        )
-        .sort(
-          (a, b) => {
-            const aDate =
-              parseDate(
+    useMemo(
+      () =>
+        appointments
+          .filter(
+            item =>
+              !isPastAppointment(
+                item
+              )
+          )
+          .sort(
+            (a, b) =>
+              (parseDate(
                 a.scheduledAt
-              )?.getTime() ??
-              0;
-
-            const bDate =
-              parseDate(
+              )?.getTime() ||
+                0) -
+              (parseDate(
                 b.scheduledAt
-              )?.getTime() ??
-              0;
-
-            return (
-              aDate -
-              bDate
-            );
-          }
-        );
-    }, [
-      appointments,
-    ]);
+              )?.getTime() ||
+                0)
+          ),
+      [appointments]
+    );
 
   const past =
-    useMemo(() => {
-      return appointments
-        .filter(
-          (
-            appointment
-          ) =>
-            isPastAppointment(
-              appointment
-            )
-        )
-        .sort(
-          (a, b) => {
-            const aDate =
-              parseDate(
-                a.scheduledAt
-              )?.getTime() ??
-              0;
-
-            const bDate =
-              parseDate(
+    useMemo(
+      () =>
+        appointments
+          .filter(
+            item =>
+              isPastAppointment(
+                item
+              )
+          )
+          .sort(
+            (a, b) =>
+              (parseDate(
                 b.scheduledAt
-              )?.getTime() ??
-              0;
-
-            return (
-              bDate -
-              aDate
-            );
-          }
-        );
-    }, [
-      appointments,
-    ]);
-
-  const clinicNames =
-    useMemo(() => {
-      return [
-        ...new Set(
-          upcoming
-            .map(
-              (
-                appointment
-              ) =>
-                appointment
-                  .clinicName
-            )
-            .filter(
-              Boolean
-            )
-        ),
-      ];
-    }, [
-      upcoming,
-    ]);
-
-  const handleBooked =
-    useCallback(
-      async () => {
-        await loadAppointments();
-
-        setTab(
-          "upcoming"
-        );
-      },
-      [
-        loadAppointments,
-      ]
+              )?.getTime() ||
+                0) -
+              (parseDate(
+                a.scheduledAt
+              )?.getTime() ||
+                0)
+          ),
+      [appointments]
     );
 
-  const handleRescheduled =
-    useCallback(
-      async () => {
-        await loadAppointments();
+  const visible =
+    tab ===
+      "upcoming"
+      ? upcoming
+      : past;
 
-        setTab(
-          "upcoming"
-        );
-      },
-      [
-        loadAppointments,
-      ]
+  async function refreshed() {
+    await loadAppointments();
+    setTab(
+      "upcoming"
     );
-
-  const handleCancelled =
-    useCallback(
-      async () => {
-        await loadAppointments();
-
-        setTab(
-          "upcoming"
-        );
-      },
-      [
-        loadAppointments,
-      ]
-    );
+  }
 
   return (
-    <>
-      <div className="p-lg md:p-xl lg:p-2xl">
-        <div className="mb-lg flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between lg:mb-xl">
+    <div className="p-4 md:p-6 lg:p-8">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-title text-text-primary">
+            <h1 className="text-2xl font-bold text-slate-950">
               Appointments
             </h1>
-
-            <p className="mt-xs text-label-sm text-text-secondary">
-              {loading
-                ? "Loading your appointments..."
-                : `${upcoming.length} upcoming${
-                    clinicNames.length ===
-                    1
-                      ? ` · ${clinicNames[0]}`
-                      : ""
-                  }`}
+            <p className="mt-1 text-sm text-slate-500">
+              Book a clinic visit and choose whether you want to see a Nurse or Doctor.
             </p>
           </div>
 
-          <div className="flex flex-wrap items-center gap-sm">
-            <Button
-              variant="subtle"
-              iconStart={
-                <RefreshCw
-                  size={15}
-                />
-              }
+          <div className="flex gap-2">
+            <button
+              type="button"
               onClick={
                 loadAppointments
               }
-              disabled={
-                loading
-              }
+              disabled={loading}
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
             >
+              <RefreshCw
+                size={15}
+              />
               Refresh
-            </Button>
+            </button>
 
             <button
               type="button"
@@ -1806,132 +1230,67 @@ export default function AppointmentsPage() {
                   true
                 )
               }
-              className="inline-flex items-center justify-center gap-xs rounded-corner-md bg-brand-primary px-md py-sm text-label-sm font-medium text-white transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#115e59]"
             >
               <Plus
                 size={16}
               />
-
               Book appointment
             </button>
           </div>
         </div>
 
         {error && (
-          <div className="mb-lg flex items-start gap-md rounded-corner-lg border border-danger/20 bg-danger/10 p-md">
-            <AlertCircle
-              size={17}
-              className="mt-0.5 flex-shrink-0 text-danger"
-            />
-
-            <div className="flex-1">
-              <p className="text-label-sm text-text-primary">
-                {error}
-              </p>
-
-              <button
-                type="button"
-                onClick={
-                  loadAppointments
-                }
-                className="mt-xs text-label-sm text-brand-primary transition-opacity hover:opacity-70"
-              >
-                Try again
-              </button>
-            </div>
-          </div>
+          <ErrorBox>
+            {error}
+          </ErrorBox>
         )}
 
-        <div className="mb-xl flex gap-md border-b border-border-secondary">
-          {[
-            {
-              key:
-                "upcoming",
-              label:
-                `Upcoming (${upcoming.length})`,
-            },
-            {
-              key:
-                "past",
-              label:
-                `Past (${past.length})`,
-            },
-          ].map(
-            (item) => (
-              <button
-                key={
-                  item.key
-                }
-                type="button"
-                onClick={() =>
-                  setTab(
-                    item.key
-                  )
-                }
-                className={`-mb-px border-b-2 pb-md text-label-sm font-medium transition-colors ${
-                  tab ===
-                  item.key
-                    ? "border-brand-primary text-brand-primary"
-                    : "border-transparent text-text-secondary hover:text-text-primary"
-                }`}
-              >
-                {
-                  item.label
-                }
-              </button>
-            )
-          )}
+        <div className="mb-5 flex gap-6 border-b border-slate-200">
+          <TabButton
+            active={
+              tab ===
+              "upcoming"
+            }
+            onClick={() =>
+              setTab(
+                "upcoming"
+              )
+            }
+          >
+            Upcoming ({upcoming.length})
+          </TabButton>
+
+          <TabButton
+            active={
+              tab ===
+              "past"
+            }
+            onClick={() =>
+              setTab(
+                "past"
+              )
+            }
+          >
+            Past ({past.length})
+          </TabButton>
         </div>
 
         {loading ? (
-          <LoadingState />
-        ) : tab ===
-          "upcoming" ? (
-          upcoming.length ===
-          0 ? (
-            <EmptyState
-              type="upcoming"
-              onBook={() =>
-                setBookingOpen(
-                  true
-                )
-              }
-            />
-          ) : (
-            <div className="flex flex-col gap-md">
-              {upcoming.map(
-                (
-                  appointment
-                ) => (
-                  <AppointmentCard
-                    key={
-                      appointment.id
-                    }
-                    appointment={
-                      appointment
-                    }
-                    onReschedule={
-                      setRescheduleAppointment
-                    }
-                    onCancel={
-                      setCancelAppointment
-                    }
-                  />
-                )
-              )}
-            </div>
-          )
-        ) : past.length ===
-          0 ? (
-          <EmptyState
-            type="past"
-          />
-        ) : (
-          <div className="flex flex-col gap-md">
-            {past.map(
-              (
-                appointment
-              ) => (
+          <div className="space-y-3">
+            {[1, 2, 3].map(
+              item => (
+                <div
+                  key={item}
+                  className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-white"
+                />
+              )
+            )}
+          </div>
+        ) : visible.length ? (
+          <div className="space-y-4">
+            {visible.map(
+              appointment => (
                 <AppointmentCard
                   key={
                     appointment.id
@@ -1939,31 +1298,58 @@ export default function AppointmentsPage() {
                   appointment={
                     appointment
                   }
-                  past
+                  past={
+                    tab ===
+                    "past"
+                  }
                   onReschedule={
                     setRescheduleAppointment
+                  }
+                  onCancel={
+                    setCancelAppointment
                   }
                 />
               )
             )}
           </div>
+        ) : (
+          <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
+            <Calendar
+              size={28}
+              className="mx-auto text-[#0f766e]"
+            />
+            <h2 className="mt-3 font-semibold text-slate-900">
+              {tab ===
+              "upcoming"
+                ? "No upcoming appointments"
+                : "No previous appointments"}
+            </h2>
+            {tab ===
+              "upcoming" && (
+              <button
+                type="button"
+                onClick={() =>
+                  setBookingOpen(
+                    true
+                  )
+                }
+                className="mt-4 text-sm font-semibold text-[#0f766e]"
+              >
+                Book an appointment
+              </button>
+            )}
+          </div>
         )}
-
-        <div className="h-20 lg:hidden" />
       </div>
 
       <BookingModal
-        open={
-          bookingOpen
-        }
+        open={bookingOpen}
         onClose={() =>
           setBookingOpen(
             false
           )
         }
-        onBooked={
-          handleBooked
-        }
+        onBooked={refreshed}
       />
 
       <RescheduleModal
@@ -1976,11 +1362,11 @@ export default function AppointmentsPage() {
           )
         }
         onRescheduled={
-          handleRescheduled
+          refreshed
         }
       />
 
-      <CancelAppointmentModal
+      <CancelModal
         appointment={
           cancelAppointment
         }
@@ -1990,9 +1376,208 @@ export default function AppointmentsPage() {
           )
         }
         onCancelled={
-          handleCancelled
+          refreshed
         }
       />
-    </>
+    </div>
+  );
+}
+
+function TabButton({
+  active,
+  onClick,
+  children,
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`-mb-px border-b-2 pb-3 text-sm font-semibold ${
+        active
+          ? "border-[#0f766e] text-[#0f766e]"
+          : "border-transparent text-slate-500 hover:text-slate-800"
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function SimpleModal({
+  title,
+  onClose,
+  children,
+}) {
+  return (
+    <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6">
+      <div className="w-full rounded-t-2xl bg-white shadow-xl sm:max-w-lg sm:rounded-2xl">
+        <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
+          <h2 className="font-semibold text-slate-950">
+            {title}
+          </h2>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
+          >
+            <X
+              size={18}
+            />
+          </button>
+        </div>
+        <div className="p-5">
+          {children}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ErrorBox({
+  children,
+}) {
+  return (
+    <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+      <AlertCircle
+        size={17}
+        className="mt-0.5 shrink-0"
+      />
+      <span>
+        {children}
+      </span>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+        {label}
+      </span>
+      <input
+        type={type}
+        value={value}
+        required={required}
+        onChange={event =>
+          onChange(
+            event.target.value
+          )
+        }
+        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
+      />
+    </label>
+  );
+}
+
+function TextArea({
+  label,
+  value,
+  onChange,
+  required = false,
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+        {label}
+      </span>
+      <textarea
+        rows={3}
+        value={value}
+        required={required}
+        onChange={event =>
+          onChange(
+            event.target.value
+          )
+        }
+        className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
+      />
+    </label>
+  );
+}
+
+function SelectField({
+  label,
+  value,
+  onChange,
+  options,
+}) {
+  return (
+    <label className="block">
+      <span className="mb-1.5 block text-sm font-medium text-slate-700">
+        {label}
+      </span>
+      <select
+        value={value}
+        onChange={event =>
+          onChange(
+            event.target.value
+          )
+        }
+        className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
+      >
+        {options.map(
+          option => {
+            const item =
+              typeof option ===
+              "string"
+                ? {
+                    value:
+                      option,
+                    label:
+                      option,
+                  }
+                : option;
+
+            return (
+              <option
+                key={
+                  item.value
+                }
+                value={
+                  item.value
+                }
+              >
+                {item.label}
+              </option>
+            );
+          }
+        )}
+      </select>
+    </label>
+  );
+}
+
+function ModalActions({
+  saving,
+  onCancel,
+  submitLabel,
+}) {
+  return (
+    <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
+      <button
+        type="button"
+        onClick={onCancel}
+        disabled={saving}
+        className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+      >
+        Cancel
+      </button>
+      <button
+        type="submit"
+        disabled={saving}
+        className="rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
+      >
+        {saving
+          ? "Saving..."
+          : submitLabel}
+      </button>
+    </div>
   );
 }
