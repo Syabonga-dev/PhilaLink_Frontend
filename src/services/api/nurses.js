@@ -58,6 +58,28 @@ export const nursesApi = {
   },
 
   // =====================================================
+  // CLINIC INVENTORY
+  // =====================================================
+
+  getClinicStock: () =>
+    api.get(
+      "/api/nurses/me/stock"
+    ),
+
+  // =====================================================
+  // HEALTH METRICS
+  // =====================================================
+
+  createHealthMetric: (
+    patientId,
+    payload
+  ) =>
+    api.post(
+      `/api/nurses/me/patients/${patientId}/health-metrics`,
+      payload
+    ),
+
+  // =====================================================
   // ALLERGIES
   // =====================================================
 
@@ -146,7 +168,9 @@ export const nursesApi = {
       `/api/medications/${medicationId}/schedule`,
       {
         medicationId,
+
         timeOfDay,
+
         isActive:
           true,
       }
