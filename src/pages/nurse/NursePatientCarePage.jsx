@@ -2232,7 +2232,7 @@ function RoutineCheckupModal({
           mode,
 
           status:
-            "Scheduled",
+            "Pending",
 
           notes:
             notes.trim() ||
