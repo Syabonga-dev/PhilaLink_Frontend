@@ -1,17 +1,20 @@
 import {
+  useCallback,
+  useEffect,
+  useMemo,
   useState,
 } from "react";
 
 import {
-  BarChart3,
+  AlertTriangle,
+  CalendarRange,
   CheckCircle2,
-  Database,
   Download,
   FileSpreadsheet,
   FileText,
   Filter,
-  LockKeyhole,
-  Sheet,
+  LoaderCircle,
+  Search,
   TableProperties,
 } from "lucide-react";
 
@@ -19,769 +22,1268 @@ import {
   clinicAdminApi,
 } from "../../services/api/clinicAdmin.js";
 
-const RANGES = [
+const REPORT_TYPES = [
   {
     value:
-      7,
+      "Patients",
+
     label:
-      "7 days",
+      "Patients",
+
+    description:
+      "Patient registrations and account status.",
   },
   {
     value:
-      30,
+      "Appointments",
+
     label:
-      "30 days",
+      "Appointments",
+
+    description:
+      "Appointments by type, provider, mode and status.",
   },
   {
     value:
-      90,
+      "Collections",
+
     label:
-      "90 days",
+      "Collections",
+
+    description:
+      "Medication collection activity, including collected and missed collections.",
   },
   {
     value:
-      180,
+      "Medication Adherence",
+
     label:
-      "6 months",
+      "Medication Adherence",
+
+    description:
+      "Medication doses recorded as taken or missed.",
   },
   {
     value:
-      365,
+      "Inventory",
+
     label:
-      "12 months",
+      "Inventory",
+
+    description:
+      "Current clinic medication stock and low-stock items.",
+  },
+  {
+    value:
+      "Staff",
+
+    label:
+      "Staff",
+
+    description:
+      "Nurses and proxies registered at the clinic.",
   },
 ];
 
-const FORMATS = [
-  {
-    id:
-      "xlsx",
+const DEFAULT_FILTERS = {
+  reportType:
+    "Appointments",
 
-    title:
-      "Excel Management Workbook",
+  dateFrom:
+    dateInput(
+      -29
+    ),
 
-    description:
-      "Executive dashboard plus filterable raw-data sheets for appointments, collections, inventory, staff and new patients.",
+  dateTo:
+    dateInput(
+      0
+    ),
 
-    helper:
-      "Best for analysis, formulas, filtering and further work.",
+  search:
+    "",
 
-    icon:
-      FileSpreadsheet,
+  status:
+    "All",
 
-    iconClass:
-      "bg-emerald-50 text-emerald-700",
+  role:
+    "All",
 
-    buttonClass:
-      "bg-[#0f766e] hover:bg-[#115e59]",
-  },
-  {
-    id:
-      "pdf",
+  provider:
+    "All",
 
-    title:
-      "Official PDF Report",
+  appointmentType:
+    "All",
 
-    description:
-      "Print-ready clinic operations report with KPI summary, activity visuals, status analysis and paginated detail tables.",
+  mode:
+    "All",
 
-    helper:
-      "Best for sharing, printing and official records.",
+  medication:
+    "All",
+};
 
-    icon:
-      FileText,
+function dateInput(
+  offsetDays
+) {
+  const date =
+    new Date();
 
-    iconClass:
-      "bg-teal-50 text-teal-700",
+  date.setDate(
+    date.getDate() +
+      offsetDays
+  );
 
-    buttonClass:
-      "bg-[#0f172a] hover:bg-[#1e293b]",
-  },
-  {
-    id:
-      "csv",
+  return date
+    .toISOString()
+    .slice(
+      0,
+      10
+    );
+}
 
-    title:
-      "CSV Data Export",
+function formatCell(
+  value,
+  type
+) {
+  if (
+    value === null ||
+    value === undefined ||
+    value === ""
+  ) {
+    return "—";
+  }
 
-    description:
-      "Portable data-first export for external analysis tools and lightweight spreadsheet work.",
+  if (
+    type === "date" ||
+    type === "datetime"
+  ) {
+    const date =
+      new Date(value);
 
-    helper:
-      "Best when presentation is not required.",
+    if (
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return type ===
+        "date"
+        ? date
+            .toLocaleDateString(
+              "en-ZA",
+              {
+                year:
+                  "numeric",
 
-    icon:
-      Sheet,
+                month:
+                  "short",
 
-    iconClass:
-      "bg-sky-50 text-sky-700",
+                day:
+                  "2-digit",
+              }
+            )
+        : date
+            .toLocaleString(
+              "en-ZA",
+              {
+                year:
+                  "numeric",
 
-    buttonClass:
-      "bg-slate-700 hover:bg-slate-800",
-  },
-];
+                month:
+                  "short",
 
-function ReportPreview() {
+                day:
+                  "2-digit",
+
+                hour:
+                  "2-digit",
+
+                minute:
+                  "2-digit",
+              }
+            );
+    }
+  }
+
+  if (
+    type === "number"
+  ) {
+    const numeric =
+      Number(value);
+
+    if (
+      Number.isFinite(
+        numeric
+      )
+    ) {
+      return numeric
+        .toLocaleString(
+          "en-ZA"
+        );
+    }
+  }
+
+  return String(value);
+}
+
+function statusClass(
+  value
+) {
+  const status =
+    String(
+      value || ""
+    ).toLowerCase();
+
+  if (
+    status.includes(
+      "completed"
+    ) ||
+    status.includes(
+      "collected"
+    ) ||
+    status.includes(
+      "confirmed"
+    ) ||
+    status.includes(
+      "healthy"
+    ) ||
+    status.includes(
+      "taken"
+    ) ||
+    status ===
+      "active"
+  ) {
+    return "bg-emerald-100 text-emerald-700";
+  }
+
+  if (
+    status.includes(
+      "pending"
+    ) ||
+    status.includes(
+      "scheduled"
+    ) ||
+    status.includes(
+      "low stock"
+    )
+  ) {
+    return "bg-amber-100 text-amber-800";
+  }
+
+  if (
+    status.includes(
+      "cancel"
+    ) ||
+    status.includes(
+      "missed"
+    ) ||
+    status.includes(
+      "inactive"
+    ) ||
+    status.includes(
+      "overdue"
+    )
+  ) {
+    return "bg-red-100 text-red-700";
+  }
+
+  return "bg-slate-100 text-slate-600";
+}
+
+function OptionSelect({
+  label,
+  value,
+  options,
+  onChange,
+}) {
   return (
-    <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-      <div className="bg-[#0f766e] px-5 py-4 text-white">
-        <p className="text-[9px] font-black uppercase tracking-[0.18em] text-teal-100">
-          PhilaLink
-        </p>
+    <label className="block">
+      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </span>
 
-        <div className="mt-1 flex items-end justify-between gap-4">
-          <div>
-            <h3 className="text-base font-black">
-              Clinic Operations Report
-            </h3>
-
-            <p className="mt-0.5 text-[10px] text-teal-100">
-              Executive management dashboard
-            </p>
-          </div>
-
-          <div className="text-right text-[8px] leading-4 text-teal-100">
-            <p>
-              Reporting period
-            </p>
-
-            <p className="font-bold text-white">
-              Selected range
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-3 bg-[#f8fafc] p-4">
-        <div className="grid grid-cols-5 gap-2">
-          {[
-            [
-              "Patients",
-              "—",
-            ],
-            [
-              "Appointments",
-              "—",
-            ],
-            [
-              "Collections",
-              "—",
-            ],
-            [
-              "Low stock",
-              "—",
-            ],
-            [
-              "New patients",
-              "—",
-            ],
-          ].map(
-            (
-              item
-            ) => (
-              <div
-                key={
-                  item[0]
-                }
-                className="rounded-xl border border-slate-200 bg-white p-2.5"
-              >
-                <p className="truncate text-[6px] font-black uppercase tracking-wide text-slate-400">
-                  {item[0]}
-                </p>
-
-                <p className="mt-1 text-lg font-black text-slate-900">
-                  {item[1]}
-                </p>
-
-                <div className="mt-2 h-1 w-8 rounded-full bg-[#14b8a6]" />
-              </div>
+      <select
+        value={
+          value
+        }
+        onChange={
+          event =>
+            onChange(
+              event.target
+                .value
             )
-          )}
-        </div>
+        }
+        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
+      >
+        {(options?.length
+          ? options
+          : ["All"]
+        ).map(
+          option => (
+            <option
+              key={
+                option
+              }
+              value={
+                option
+              }
+            >
+              {option}
+            </option>
+          )
+        )}
+      </select>
+    </label>
+  );
+}
 
-        <div className="grid grid-cols-[1.6fr_0.8fr] gap-3">
-          <div className="rounded-xl border border-slate-200 bg-white p-3">
-            <div className="flex items-center justify-between">
-              <p className="text-[8px] font-black text-slate-800">
-                Monthly Activity
-              </p>
+function SummaryCard({
+  label,
+  value,
+}) {
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.035)]">
+      <p className="text-[9px] font-black uppercase tracking-[0.13em] text-slate-400">
+        {label}
+      </p>
 
-              <BarChart3
-                size={12}
-                className="text-[#0f766e]"
-              />
-            </div>
+      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+        {value}
+      </p>
 
-            <div className="mt-3 flex h-20 items-end gap-2 border-b border-l border-slate-200 pl-2">
-              {[
-                26,
-                44,
-                36,
-                62,
-                48,
-                74,
-                55,
-                82,
-              ].map(
-                (
-                  height,
-                  index
-                ) => (
-                  <div
-                    key={
-                      index
-                    }
-                    className="flex flex-1 items-end justify-center gap-[2px]"
-                  >
-                    <div
-                      className="w-[28%] rounded-t bg-[#0f766e]"
-                      style={{
-                        height:
-                          `${height}%`,
-                      }}
-                    />
+      <div className="mt-3 h-1 w-10 rounded-full bg-[#14b8a6]" />
+    </div>
+  );
+}
 
-                    <div
-                      className="w-[28%] rounded-t bg-[#14b8a6]"
-                      style={{
-                        height:
-                          `${Math.max(
-                            16,
-                            height -
-                              14
-                          )}%`,
-                      }}
-                    />
+function EmptyPreview() {
+  return (
+    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center">
+      <TableProperties
+        size={32}
+        className="mx-auto text-slate-300"
+      />
 
-                    <div
-                      className="w-[28%] rounded-t bg-blue-500"
-                      style={{
-                        height:
-                          `${Math.max(
-                            12,
-                            height -
-                              28
-                          )}%`,
-                      }}
-                    />
-                  </div>
-                )
-              )}
-            </div>
-          </div>
+      <p className="mt-3 text-sm font-black text-slate-800">
+        No rows matched these filters
+      </p>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-3">
-            <p className="text-[8px] font-black text-slate-800">
-              Status Distribution
-            </p>
-
-            <div className="mt-3 space-y-3">
-              {[
-                [
-                  "Pending",
-                  "78%",
-                ],
-                [
-                  "Completed",
-                  "54%",
-                ],
-                [
-                  "Confirmed",
-                  "42%",
-                ],
-                [
-                  "Other",
-                  "26%",
-                ],
-              ].map(
-                (
-                  item,
-                  index
-                ) => (
-                  <div
-                    key={
-                      item[0]
-                    }
-                  >
-                    <div className="mb-1 flex justify-between text-[6px] font-semibold text-slate-400">
-                      <span>
-                        {item[0]}
-                      </span>
-
-                      <span>
-                        {item[1]}
-                      </span>
-                    </div>
-
-                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-100">
-                      <div
-                        className={
-                          index % 2 ===
-                          0
-                            ? "h-full bg-[#0f766e]"
-                            : "h-full bg-[#14b8a6]"
-                        }
-                        style={{
-                          width:
-                            item[1],
-                        }}
-                      />
-                    </div>
-                  </div>
-                )
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-          <div className="grid grid-cols-6 bg-[#0f766e] px-3 py-2 text-[6px] font-black uppercase tracking-wide text-white">
-            <span>
-              Patient
-            </span>
-            <span>
-              Service
-            </span>
-            <span>
-              Status
-            </span>
-            <span>
-              Date
-            </span>
-            <span>
-              Provider
-            </span>
-            <span>
-              Clinic data
-            </span>
-          </div>
-
-          {[1, 2, 3, 4].map(
-            row => (
-              <div
-                key={
-                  row
-                }
-                className={`grid grid-cols-6 px-3 py-2 text-[6px] text-slate-400 ${
-                  row % 2 ===
-                  0
-                    ? "bg-teal-50/50"
-                    : "bg-white"
-                }`}
-              >
-                <span>
-                  Live data
-                </span>
-                <span>
-                  Report
-                </span>
-                <span>
-                  Dynamic
-                </span>
-                <span>
-                  Range
-                </span>
-                <span>
-                  Staff
-                </span>
-                <span>
-                  PhilaLink
-                </span>
-              </div>
-            )
-          )}
-        </div>
-      </div>
+      <p className="mt-1 text-xs text-slate-400">
+        Change the filters and apply them again.
+      </p>
     </div>
   );
 }
 
 export default function AdminReportsPage() {
   const [
-    rangeDays,
-    setRangeDays,
+    filters,
+    setFilters,
   ] =
     useState(
-      30
+      DEFAULT_FILTERS
     );
 
   const [
-    generating,
-    setGenerating,
+    appliedFilters,
+    setAppliedFilters,
   ] =
     useState(
-      ""
+      DEFAULT_FILTERS
     );
+
+  const [
+    preview,
+    setPreview,
+  ] =
+    useState(null);
+
+  const [
+    loading,
+    setLoading,
+  ] =
+    useState(true);
 
   const [
     error,
     setError,
   ] =
-    useState(
-      ""
-    );
+    useState("");
 
   const [
     success,
     setSuccess,
   ] =
-    useState(
+    useState("");
+
+  const [
+    downloading,
+    setDownloading,
+  ] =
+    useState("");
+
+  const reportDefinition =
+    useMemo(
+      () =>
+        REPORT_TYPES.find(
+          item =>
+            item.value ===
+            filters.reportType
+        ) ||
+        REPORT_TYPES[0],
+      [
+        filters.reportType,
+      ]
+    );
+
+  const isInventory =
+    filters.reportType ===
+    "Inventory";
+
+  const options =
+    preview?.filterOptions ||
+    {};
+
+  function update(
+    key,
+    value
+  ) {
+    setFilters(
+      current => ({
+        ...current,
+        [key]:
+          value,
+      })
+    );
+  }
+
+  function resetContextFilters(
+    reportType
+  ) {
+    setFilters(
+      current => ({
+        ...current,
+
+        reportType,
+
+        search:
+          "",
+
+        status:
+          "All",
+
+        role:
+          "All",
+
+        provider:
+          "All",
+
+        appointmentType:
+          "All",
+
+        mode:
+          "All",
+
+        medication:
+          "All",
+      })
+    );
+  }
+
+  const loadPreview =
+    useCallback(
+      async (
+        query
+      ) => {
+        try {
+          setLoading(
+            true
+          );
+
+          setError("");
+
+          const data =
+            await clinicAdminApi
+              .previewReport(
+                query
+              );
+
+          setPreview(
+            data
+          );
+        } catch (
+          loadError
+        ) {
+          setError(
+            loadError?.message ||
+            "Could not generate the report preview."
+          );
+
+          setPreview(
+            null
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      []
+    );
+
+  useEffect(
+    () => {
+      void loadPreview(
+        appliedFilters
+      );
+    },
+    [
+      appliedFilters,
+      loadPreview,
+    ]
+  );
+
+  function applyFilters(
+    event
+  ) {
+    event?.preventDefault();
+
+    if (
+      !isInventory &&
+      filters.dateFrom &&
+      filters.dateTo &&
+      filters.dateFrom >
+        filters.dateTo
+    ) {
+      setError(
+        "The From date cannot be after the To date."
+      );
+
+      return;
+    }
+
+    setSuccess(
       ""
     );
 
-  async function generate(
+    setAppliedFilters({
+      ...filters,
+    });
+  }
+
+  async function exportReport(
     format
   ) {
     try {
-      setGenerating(
+      setDownloading(
         format
       );
 
-      setError(
-        ""
-      );
+      setError("");
 
-      setSuccess(
-        ""
-      );
+      setSuccess("");
 
       const fileName =
         await clinicAdminApi
-          .downloadReport({
-            format,
-            rangeDays,
-          });
+          .downloadDynamicReport(
+            appliedFilters,
+            format
+          );
 
       setSuccess(
-        `${fileName} generated successfully.`
+        `${fileName} generated from the current filtered report.`
       );
     } catch (
-      err
+      exportError
     ) {
       setError(
-        err?.message ||
-        "Could not generate the report."
+        exportError?.message ||
+        "Could not export the report."
       );
     } finally {
-      setGenerating(
+      setDownloading(
         ""
       );
     }
   }
 
+  const showStatus =
+    [
+      "Patients",
+      "Appointments",
+      "Collections",
+      "Medication Adherence",
+      "Inventory",
+      "Staff",
+    ].includes(
+      filters.reportType
+    );
+
+  const showMedication =
+    [
+      "Collections",
+      "Medication Adherence",
+      "Inventory",
+    ].includes(
+      filters.reportType
+    );
+
+  const showAppointmentFilters =
+    filters.reportType ===
+    "Appointments";
+
+  const showRole =
+    filters.reportType ===
+    "Staff";
+
   return (
     <div className="space-y-5">
-      <section className="overflow-hidden rounded-[28px] border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-white">
-        <div className="grid gap-8 p-6 lg:grid-cols-[minmax(0,0.9fr)_minmax(420px,1.1fr)] lg:p-8">
-          <div className="flex flex-col justify-center">
-            <p className="text-[10px] font-black uppercase tracking-[0.18em] text-[#0f766e]">
-              Reporting Centre
-            </p>
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0f766e]">
+            Admin / Reports
+          </p>
 
-            <h1 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-              Professional clinic reports
-            </h1>
+          <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
+            Dynamic Report Builder
+          </h1>
 
-            <p className="mt-3 max-w-xl text-sm leading-6 text-slate-500">
-              Export live PhilaLink clinic data as an executive Excel workbook,
-              an official print-ready PDF, or a portable CSV dataset.
-            </p>
-
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              <div className="flex items-start gap-3 rounded-2xl border border-teal-100 bg-white p-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                  <BarChart3
-                    size={16}
-                  />
-                </div>
-
-                <div>
-                  <p className="text-xs font-black text-slate-900">
-                    Executive summary
-                  </p>
-
-                  <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
-                    KPIs, activity trends, status analysis and stock alerts.
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3 rounded-2xl border border-teal-100 bg-white p-3">
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                  <TableProperties
-                    size={16}
-                  />
-                </div>
-
-                <div>
-                  <p className="text-xs font-black text-slate-900">
-                    Detailed data
-                  </p>
-
-                  <p className="mt-0.5 text-[10px] leading-4 text-slate-400">
-                    Appointments, collections, inventory, staff and patients.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <ReportPreview />
+          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
+            Choose exactly what you want to report on, filter the live clinic data,
+            preview the results in a table, then export that same filtered dataset to
+            Excel or PDF.
+          </p>
         </div>
-      </section>
 
-      <section className="rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_10px_35px_rgba(15,23,42,0.035)]">
-        <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <div className="flex items-start gap-3">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                <Database
-                  size={17}
-                />
-              </div>
-
-              <div>
-                <p className="text-sm font-black text-slate-950">
-                  Reporting period
-                </p>
-
-                <p className="mt-1 text-xs text-slate-400">
-                  The selected range is applied to all exported report sections.
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-4 flex flex-wrap gap-2">
-              {RANGES.map(
-                item => (
-                  <button
-                    key={
-                      item.value
-                    }
-                    type="button"
-                    onClick={
-                      () =>
-                        setRangeDays(
-                          item.value
-                        )
-                    }
-                    className={`rounded-xl px-4 py-2 text-xs font-black transition ${
-                      rangeDays ===
-                      item.value
-                        ? "bg-[#0f766e] text-white shadow-md shadow-teal-100"
-                        : "border border-slate-200 bg-white text-slate-500 hover:border-teal-200 hover:text-teal-700"
-                    }`}
-                  >
-                    {item.label}
-                  </button>
+        <div className="flex flex-wrap gap-2">
+          <button
+            type="button"
+            onClick={
+              () =>
+                exportReport(
+                  "xlsx"
                 )
-              )}
-            </div>
-          </div>
+            }
+            disabled={
+              downloading !==
+                "" ||
+              loading
+            }
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0f766e] px-4 text-xs font-black text-white transition hover:bg-[#115e59] disabled:opacity-50"
+          >
+            {downloading ===
+            "xlsx" ? (
+              <LoaderCircle
+                size={14}
+                className="animate-spin"
+              />
+            ) : (
+              <FileSpreadsheet
+                size={14}
+              />
+            )}
 
-          <div className="flex items-center gap-2 rounded-xl bg-[#f8fafc] px-3 py-2 text-[10px] font-semibold text-slate-500">
-            <Filter
-              size={13}
-              className="text-[#0f766e]"
-            />
+            Export Excel
+          </button>
 
-            Current export range:{" "}
-            <span className="font-black text-slate-800">
-              {
-                RANGES.find(
-                  item =>
-                    item.value ===
-                    rangeDays
-                )?.label
-              }
-            </span>
-          </div>
+          <button
+            type="button"
+            onClick={
+              () =>
+                exportReport(
+                  "pdf"
+                )
+            }
+            disabled={
+              downloading !==
+                "" ||
+              loading
+            }
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0f172a] px-4 text-xs font-black text-white transition hover:bg-[#1e293b] disabled:opacity-50"
+          >
+            {downloading ===
+            "pdf" ? (
+              <LoaderCircle
+                size={14}
+                className="animate-spin"
+              />
+            ) : (
+              <FileText
+                size={14}
+              />
+            )}
+
+            Export PDF
+          </button>
         </div>
-      </section>
+      </div>
 
       {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
-          {error}
+        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <AlertTriangle
+            size={17}
+            className="mt-0.5 shrink-0"
+          />
+
+          <span>
+            {error}
+          </span>
         </div>
       )}
 
       {success && (
-        <div className="flex items-center gap-2 rounded-2xl border border-emerald-200 bg-emerald-50 p-4 text-sm font-medium text-emerald-700">
+        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
           <CheckCircle2
             size={17}
+            className="mt-0.5 shrink-0"
           />
 
-          {success}
+          <span>
+            {success}
+          </span>
         </div>
       )}
 
-      <div className="grid gap-4 xl:grid-cols-3">
-        {FORMATS.map(
-          item => {
-            const Icon =
-              item.icon;
+      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.035)]">
+        <div className="border-b border-slate-200 bg-[#f8fafc] px-5 py-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
+              <Filter
+                size={16}
+              />
+            </div>
 
-            const busy =
-              generating ===
-              item.id;
+            <div>
+              <h2 className="text-sm font-black text-slate-950">
+                Report filters
+              </h2>
 
-            return (
-              <article
-                key={
-                  item.id
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                The table and exported files use the same applied filters.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <form
+          onSubmit={
+            applyFilters
+          }
+          className="p-5"
+        >
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                Report Type
+              </span>
+
+              <select
+                value={
+                  filters.reportType
                 }
-                className="flex min-h-[300px] flex-col rounded-[24px] border border-slate-200 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.04)]"
+                onChange={
+                  event =>
+                    resetContextFilters(
+                      event.target
+                        .value
+                    )
+                }
+                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e]"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div
-                    className={`flex h-12 w-12 items-center justify-center rounded-2xl ${item.iconClass}`}
-                  >
-                    <Icon
-                      size={21}
-                    />
-                  </div>
+                {REPORT_TYPES.map(
+                  item => (
+                    <option
+                      key={
+                        item.value
+                      }
+                      value={
+                        item.value
+                      }
+                    >
+                      {item.label}
+                    </option>
+                  )
+                )}
+              </select>
+            </label>
 
-                  {item.id !==
-                    "csv" && (
-                    <span className="rounded-full bg-teal-50 px-2.5 py-1 text-[9px] font-black uppercase tracking-wider text-teal-700">
-                      Enhanced
-                    </span>
-                  )}
-                </div>
+            {!isInventory && (
+              <>
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                    From
+                  </span>
 
-                <h3 className="mt-5 text-lg font-black text-slate-950">
-                  {
-                    item.title
+                  <input
+                    type="date"
+                    value={
+                      filters.dateFrom
+                    }
+                    onChange={
+                      event =>
+                        update(
+                          "dateFrom",
+                          event.target
+                            .value
+                        )
+                    }
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e]"
+                  />
+                </label>
+
+                <label className="block">
+                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                    To
+                  </span>
+
+                  <input
+                    type="date"
+                    value={
+                      filters.dateTo
+                    }
+                    onChange={
+                      event =>
+                        update(
+                          "dateTo",
+                          event.target
+                            .value
+                        )
+                    }
+                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e]"
+                  />
+                </label>
+              </>
+            )}
+
+            <label className="block">
+              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
+                Search
+              </span>
+
+              <div className="relative">
+                <Search
+                  size={14}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                />
+
+                <input
+                  type="search"
+                  value={
+                    filters.search
                   }
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-500">
-                  {
-                    item.description
+                  onChange={
+                    event =>
+                      update(
+                        "search",
+                        event.target
+                          .value
+                      )
                   }
+                  placeholder="Patient, medication, staff..."
+                  className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-700 outline-none transition focus:border-[#0f766e]"
+                />
+              </div>
+            </label>
+
+            {showStatus && (
+              <OptionSelect
+                label="Status"
+                value={
+                  filters.status
+                }
+                options={
+                  options.status
+                }
+                onChange={
+                  value =>
+                    update(
+                      "status",
+                      value
+                    )
+                }
+              />
+            )}
+
+            {showAppointmentFilters && (
+              <>
+                <OptionSelect
+                  label="Appointment Type"
+                  value={
+                    filters.appointmentType
+                  }
+                  options={
+                    options.appointmentType
+                  }
+                  onChange={
+                    value =>
+                      update(
+                        "appointmentType",
+                        value
+                      )
+                  }
+                />
+
+                <OptionSelect
+                  label="Provider"
+                  value={
+                    filters.provider
+                  }
+                  options={
+                    options.provider
+                  }
+                  onChange={
+                    value =>
+                      update(
+                        "provider",
+                        value
+                      )
+                  }
+                />
+
+                <OptionSelect
+                  label="Mode"
+                  value={
+                    filters.mode
+                  }
+                  options={
+                    options.mode
+                  }
+                  onChange={
+                    value =>
+                      update(
+                        "mode",
+                        value
+                      )
+                  }
+                />
+              </>
+            )}
+
+            {showMedication && (
+              <OptionSelect
+                label="Medication"
+                value={
+                  filters.medication
+                }
+                options={
+                  options.medication
+                }
+                onChange={
+                  value =>
+                    update(
+                      "medication",
+                      value
+                    )
+                }
+              />
+            )}
+
+            {showRole && (
+              <OptionSelect
+                label="Role"
+                value={
+                  filters.role
+                }
+                options={
+                  options.role
+                }
+                onChange={
+                  value =>
+                    update(
+                      "role",
+                      value
+                    )
+                }
+              />
+            )}
+          </div>
+
+          <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs font-black text-slate-900">
+                {reportDefinition.label}
+              </p>
+
+              <p className="mt-0.5 text-[10px] text-slate-400">
+                {reportDefinition.description}
+              </p>
+            </div>
+
+            <button
+              type="submit"
+              disabled={
+                loading
+              }
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-5 text-xs font-black text-white transition hover:bg-[#115e59] disabled:opacity-50"
+            >
+              {loading ? (
+                <LoaderCircle
+                  size={14}
+                  className="animate-spin"
+                />
+              ) : (
+                <Filter
+                  size={14}
+                />
+              )}
+
+              Apply filters
+            </button>
+          </div>
+        </form>
+      </section>
+
+      {preview && (
+        <>
+          <section className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-white p-5">
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+              <div>
+                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#0f766e]">
+                  Live preview
                 </p>
 
-                <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f8fafc] p-3">
-                  {item.id ===
-                    "pdf" ? (
-                    <LockKeyhole
-                      size={14}
-                      className="mt-0.5 shrink-0 text-[#0f766e]"
-                    />
-                  ) : (
-                    <TableProperties
-                      size={14}
-                      className="mt-0.5 shrink-0 text-[#0f766e]"
-                    />
-                  )}
+                <h2 className="mt-1 text-xl font-black text-slate-950">
+                  {preview.title}
+                </h2>
 
-                  <p className="text-[10px] leading-4 text-slate-500">
-                    {
-                      item.helper
-                    }
+                <p className="mt-1 text-xs text-slate-500">
+                  {preview.clinicName} · Requested by{" "}
+                  {preview.requestedBy}
+                </p>
+              </div>
+
+              <div className="inline-flex items-center gap-2 rounded-xl border border-teal-100 bg-white px-3 py-2 text-[10px] font-bold text-slate-500">
+                <CalendarRange
+                  size={13}
+                  className="text-[#0f766e]"
+                />
+
+                {preview.dateFrom &&
+                preview.dateTo
+                  ? `${new Date(
+                      preview.dateFrom
+                    ).toLocaleDateString(
+                      "en-ZA"
+                    )} – ${new Date(
+                      preview.dateTo
+                    ).toLocaleDateString(
+                      "en-ZA"
+                    )}`
+                  : "Current-state report"}
+              </div>
+            </div>
+          </section>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {(preview.summary ||
+              []).map(
+              item => (
+                <SummaryCard
+                  key={
+                    item.key
+                  }
+                  label={
+                    item.label
+                  }
+                  value={
+                    item.value
+                  }
+                />
+              )
+            )}
+          </div>
+
+          {loading ? (
+            <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
+              <LoaderCircle
+                size={28}
+                className="animate-spin text-[#0f766e]"
+              />
+            </div>
+          ) : (preview.rows ||
+              []).length ===
+            0 ? (
+            <EmptyPreview />
+          ) : (
+            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.035)]">
+              <div className="flex flex-col gap-2 border-b border-slate-200 bg-[#fbfcfd] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <h3 className="text-sm font-black text-slate-950">
+                    Report contents
+                  </h3>
+
+                  <p className="mt-0.5 text-[10px] text-slate-400">
+                    Columns and rows change according to the selected report and filters.
                   </p>
                 </div>
 
-                <button
-                  type="button"
-                  disabled={
-                    Boolean(
-                      generating
-                    )
-                  }
-                  onClick={
-                    () =>
-                      generate(
-                        item.id
+                <span className="rounded-full bg-teal-50 px-3 py-1 text-[10px] font-black text-teal-700">
+                  {(preview.rows ||
+                    []).length.toLocaleString(
+                    "en-ZA"
+                  )}{" "}
+                  rows
+                </span>
+              </div>
+
+              <div className="max-h-[620px] overflow-auto">
+                <table className="min-w-full border-collapse text-left">
+                  <thead className="sticky top-0 z-10 bg-[#0f766e] text-white">
+                    <tr>
+                      {(preview.columns ||
+                        []).map(
+                        column => (
+                          <th
+                            key={
+                              column.key
+                            }
+                            className="whitespace-nowrap px-4 py-3 text-[9px] font-black uppercase tracking-[0.1em]"
+                          >
+                            {column.label}
+                          </th>
+                        )
+                      )}
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100">
+                    {(preview.rows ||
+                      []).map(
+                      (
+                        row,
+                        rowIndex
+                      ) => (
+                        <tr
+                          key={
+                            `${preview.reportType}-${rowIndex}`
+                          }
+                          className={`transition hover:bg-teal-50/40 ${
+                            rowIndex %
+                              2 ===
+                            0
+                              ? "bg-white"
+                              : "bg-[#f8fafc]"
+                          }`}
+                        >
+                          {(preview.columns ||
+                            []).map(
+                            column => {
+                              const value =
+                                row[
+                                  column
+                                    .key
+                                ];
+
+                              return (
+                                <td
+                                  key={
+                                    column.key
+                                  }
+                                  className="max-w-[320px] px-4 py-3 text-xs text-slate-600"
+                                >
+                                  {column.dataType ===
+                                  "status" ? (
+                                    <span
+                                      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-black ${statusClass(
+                                        value
+                                      )}`}
+                                    >
+                                      {formatCell(
+                                        value,
+                                        column.dataType
+                                      )}
+                                    </span>
+                                  ) : (
+                                    <span
+                                      className={
+                                        column.dataType ===
+                                        "number"
+                                          ? "font-black text-slate-900"
+                                          : "break-words"
+                                      }
+                                    >
+                                      {formatCell(
+                                        value,
+                                        column.dataType
+                                      )}
+                                    </span>
+                                  )}
+                                </td>
+                              );
+                            }
+                          )}
+                        </tr>
                       )
-                  }
-                  className={`mt-auto inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 text-xs font-black text-white transition disabled:opacity-50 ${item.buttonClass}`}
-                >
-                  <Download
-                    size={15}
-                  />
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </section>
+          )}
 
-                  {busy
-                    ? "Generating…"
-                    : "Generate & download"}
-                </button>
-              </article>
-            );
-          }
-        )}
-      </div>
+          <section className="grid gap-3 md:grid-cols-2">
+            <button
+              type="button"
+              onClick={
+                () =>
+                  exportReport(
+                    "xlsx"
+                  )
+              }
+              disabled={
+                downloading !==
+                  "" ||
+                loading
+              }
+              className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-left transition hover:border-emerald-300 disabled:opacity-50"
+            >
+              <div>
+                <p className="text-sm font-black text-emerald-900">
+                  Export filtered Excel workbook
+                </p>
 
-      <section className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
-              <FileSpreadsheet
-                size={18}
+                <p className="mt-1 text-xs leading-5 text-emerald-700">
+                  Dashboard sheet + complete filterable data sheet with the current report contents.
+                </p>
+              </div>
+
+              <Download
+                size={20}
+                className="shrink-0 text-emerald-700"
               />
-            </div>
+            </button>
 
-            <div>
-              <h3 className="text-sm font-black text-slate-950">
-                Excel report structure
-              </h3>
+            <button
+              type="button"
+              onClick={
+                () =>
+                  exportReport(
+                    "pdf"
+                  )
+              }
+              disabled={
+                downloading !==
+                  "" ||
+                loading
+              }
+              className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-slate-300 disabled:opacity-50"
+            >
+              <div>
+                <p className="text-sm font-black text-slate-900">
+                  Export filtered official PDF
+                </p>
 
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                Built for continued analysis after export.
-              </p>
-            </div>
-          </div>
+                <p className="mt-1 text-xs leading-5 text-slate-500">
+                  Branded printable report with summary cards, table data and page numbering.
+                </p>
+              </div>
 
-          <ul className="mt-4 space-y-2 text-xs text-slate-500">
-            <li>
-              • Executive dashboard with branded KPI cards and visual data bars
-            </li>
-            <li>
-              • Separate raw-data worksheets with frozen headings and filters
-            </li>
-            <li>
-              • Numeric values remain numeric for formulas and calculations
-            </li>
-            <li>
-              • Totals and operational summary values are included
-            </li>
-          </ul>
-        </div>
-
-        <div className="rounded-[24px] border border-slate-200 bg-white p-5">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-              <FileText
-                size={18}
+              <Download
+                size={20}
+                className="shrink-0 text-slate-700"
               />
-            </div>
-
-            <div>
-              <h3 className="text-sm font-black text-slate-950">
-                PDF report structure
-              </h3>
-
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                Designed as an official fixed clinic report.
-              </p>
-            </div>
-          </div>
-
-          <ul className="mt-4 space-y-2 text-xs text-slate-500">
-            <li>
-              • Branded executive first page with KPIs and visual summaries
-            </li>
-            <li>
-              • Report period, requested-by details and generated timestamp
-            </li>
-            <li>
-              • Paginated detail tables for operational records
-            </li>
-            <li>
-              • Consistent confidential footer with Page X of Y
-            </li>
-          </ul>
-        </div>
-      </section>
+            </button>
+          </section>
+        </>
+      )}
     </div>
   );
 }
