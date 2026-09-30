@@ -6,18 +6,11 @@ import {
 } from "react";
 
 import {
-  Link,
-} from "react-router-dom";
-
-import {
   AlertTriangle,
   ArrowUpRight,
   BarChart3,
-  Boxes,
   CalendarDays,
   CheckCircle2,
-  ChevronLeft,
-  ChevronRight,
   Clock3,
   FileBarChart,
   PackageCheck,
@@ -44,6 +37,10 @@ import {
 } from "recharts";
 
 import {
+  Link,
+} from "react-router-dom";
+
+import {
   useAuth,
 } from "../../context/AuthContext.jsx";
 
@@ -55,59 +52,37 @@ import {
   clinicAdminApi,
 } from "../../services/api/clinicAdmin.js";
 
-/* ========================================================= */
-/* COLORS                                                    */
-/* ========================================================= */
-
 const COLORS = {
   teal:
     "#0f766e",
-
+  tealDark:
+    "#115e59",
   tealLight:
     "#5eead4",
-
-  violet:
-    "#6d28d9",
-
-  violetLight:
-    "#c4b5fd",
-
-  blue:
-    "#2563eb",
-
-  blueLight:
-    "#93c5fd",
-
-  amber:
-    "#f59e0b",
-
-  rose:
-    "#e11d48",
-
   emerald:
     "#059669",
-
+  emeraldLight:
+    "#a7f3d0",
+  cyan:
+    "#0891b2",
+  amber:
+    "#f59e0b",
+  rose:
+    "#e11d48",
   slate:
     "#64748b",
 };
 
-const PIE_COLORS = [
-  COLORS.violet,
+const CHART_COLORS = [
   COLORS.teal,
-  COLORS.blue,
+  COLORS.emerald,
+  COLORS.cyan,
   COLORS.amber,
   COLORS.rose,
-  COLORS.emerald,
   COLORS.slate,
 ];
 
-/* ========================================================= */
-/* HELPERS                                                   */
-/* ========================================================= */
-
-function safeArray(
-  value
-) {
+function safeArray(value) {
   return Array.isArray(
     value
   )
@@ -115,9 +90,7 @@ function safeArray(
     : [];
 }
 
-function number(
-  value
-) {
+function number(value) {
   return Number(
     value || 0
   ).toLocaleString(
@@ -125,49 +98,13 @@ function number(
   );
 }
 
-function firstName(
-  value
-) {
-  return String(
-    value || "Administrator"
-  )
-    .trim()
-    .split(
-      /\s+/
-    )[0];
-}
-
-function getGreeting() {
-  const hour =
-    new Date()
-      .getHours();
-
-  if (
-    hour < 12
-  ) {
-    return "Good morning";
-  }
-
-  if (
-    hour < 18
-  ) {
-    return "Good afternoon";
-  }
-
-  return "Good evening";
-}
-
-function formatDateTime(
-  value
-) {
+function formatDateTime(value) {
   if (!value) {
     return "—";
   }
 
   const date =
-    new Date(
-      value
-    );
+    new Date(value);
 
   if (
     Number.isNaN(
@@ -182,42 +119,15 @@ function formatDateTime(
     {
       day:
         "2-digit",
-
       month:
         "short",
-
       hour:
         "2-digit",
-
       minute:
         "2-digit",
     }
   );
 }
-
-function monthName(
-  year,
-  month
-) {
-  return new Date(
-    year,
-    month,
-    1
-  ).toLocaleDateString(
-    "en-ZA",
-    {
-      month:
-        "long",
-
-      year:
-        "numeric",
-    }
-  );
-}
-
-/* ========================================================= */
-/* TOOLTIP                                                   */
-/* ========================================================= */
 
 function ChartTooltip({
   active,
@@ -232,8 +142,7 @@ function ChartTooltip({
   }
 
   return (
-    <div className="min-w-[170px] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-2xl backdrop-blur">
-
+    <div className="min-w-[170px] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur">
       {label && (
         <p className="mb-2 text-xs font-bold text-slate-900">
           {label}
@@ -241,7 +150,6 @@ function ChartTooltip({
       )}
 
       <div className="space-y-1.5">
-
         {payload.map(
           (
             entry,
@@ -251,272 +159,86 @@ function ChartTooltip({
               key={`${entry.dataKey}-${index}`}
               className="flex items-center justify-between gap-5 text-xs"
             >
-
-              <div className="flex items-center gap-2">
-
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor:
-                      entry.color ||
-                      entry.fill ||
-                      entry.payload?.fill,
-                  }}
-                />
-
-                <span className="text-slate-500">
-                  {
-                    entry.name
-                  }
-                </span>
-
-              </div>
-
+              <span className="text-slate-500">
+                {entry.name}
+              </span>
               <span className="font-bold text-slate-900">
                 {number(
                   entry.value
                 )}
               </span>
-
             </div>
           )
         )}
-
       </div>
-
     </div>
   );
 }
 
-/* ========================================================= */
-/* MINI KPI                                                  */
-/* ========================================================= */
-
-function MiniKpi({
+function KpiCard({
   label,
   value,
   detail,
   icon:
     Icon,
-  accent =
-    "violet",
+  tone =
+    "teal",
 }) {
-  const accents = {
-    violet:
-      "bg-violet-50 text-violet-700",
-
+  const tones = {
     teal:
       "bg-teal-50 text-teal-700",
-
-    blue:
-      "bg-blue-50 text-blue-700",
-
+    emerald:
+      "bg-emerald-50 text-emerald-700",
     amber:
       "bg-amber-50 text-amber-700",
-
     rose:
       "bg-rose-50 text-rose-700",
+    cyan:
+      "bg-cyan-50 text-cyan-700",
   };
 
   return (
-    <div className="rounded-[22px] border border-slate-200/80 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
-
+    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-[0_8px_30px_rgba(15,23,42,0.04)]">
       <div className="flex items-start justify-between gap-3">
-
         <div>
-
           <p className="text-[10px] font-bold uppercase tracking-[0.13em] text-slate-400">
             {label}
           </p>
-
           <p className="mt-2 text-[26px] font-bold tracking-tight text-slate-950">
             {number(
               value
             )}
           </p>
-
           <p className="mt-1 text-[11px] text-slate-400">
-            {
-              detail
-            }
+            {detail}
           </p>
-
         </div>
 
         <div
           className={`flex h-10 w-10 items-center justify-center rounded-2xl ${
-            accents[accent] ||
-            accents.violet
+            tones[tone] ||
+            tones.teal
           }`}
         >
           <Icon
             size={18}
           />
         </div>
-
       </div>
-
     </div>
   );
 }
 
-/* ========================================================= */
-/* PERFORMANCE BAR CHART                                     */
-/* ========================================================= */
-
-function PerformanceBarChart({
+function MonthlyBarChart({
   data,
 }) {
-  const chartData =
-    safeArray(
-      data
-    );
-
   return (
-    <div className="h-[205px]">
-
+    <div className="h-[300px]">
       <ResponsiveContainer
         width="100%"
         height="100%"
       >
-
         <BarChart
-          data={
-            chartData
-          }
-          margin={{
-            top:
-              10,
-
-            left:
-              -20,
-
-            right:
-              5,
-
-            bottom:
-              0,
-          }}
-          barGap={
-            5
-          }
-        >
-
-          <CartesianGrid
-            vertical={
-              false
-            }
-            stroke="#e9e7f1"
-            strokeDasharray="4 4"
-          />
-
-          <XAxis
-            dataKey="period"
-            axisLine={
-              false
-            }
-            tickLine={
-              false
-            }
-            tick={{
-              fontSize:
-                10,
-
-              fill:
-                "#94a3b8",
-            }}
-          />
-
-          <YAxis
-            allowDecimals={
-              false
-            }
-            axisLine={
-              false
-            }
-            tickLine={
-              false
-            }
-            tick={{
-              fontSize:
-                10,
-
-              fill:
-                "#94a3b8",
-            }}
-          />
-
-          <Tooltip
-            cursor={{
-              fill:
-                "#f4f0ff",
-
-              radius:
-                12,
-            }}
-            content={
-              <ChartTooltip />
-            }
-          />
-
-          <Bar
-            dataKey="appointments"
-            name="Appointments"
-            fill={
-              COLORS.violet
-            }
-            radius={[
-              8,
-              8,
-              3,
-              3,
-            ]}
-            maxBarSize={
-              24
-            }
-          />
-
-          <Bar
-            dataKey="collections"
-            name="Collections"
-            fill={
-              COLORS.tealLight
-            }
-            radius={[
-              8,
-              8,
-              3,
-              3,
-            ]}
-            maxBarSize={
-              24
-            }
-          />
-
-        </BarChart>
-
-      </ResponsiveContainer>
-
-    </div>
-  );
-}
-
-/* ========================================================= */
-/* TREND LINE CHART                                          */
-/* ========================================================= */
-
-function TrendLineChart({
-  data,
-}) {
-  return (
-    <div className="h-[310px]">
-
-      <ResponsiveContainer
-        width="100%"
-        height="100%"
-      >
-
-        <LineChart
           data={
             safeArray(
               data
@@ -524,396 +246,233 @@ function TrendLineChart({
           }
           margin={{
             top:
-              10,
-
+              15,
             right:
-              20,
-
+              10,
             left:
-              -15,
-
+              -20,
             bottom:
-              5,
+              0,
           }}
         >
-
           <CartesianGrid
-            vertical={
-              false
-            }
-            stroke="#edf0f5"
+            vertical={false}
+            stroke="#e2e8f0"
             strokeDasharray="4 4"
           />
-
           <XAxis
             dataKey="period"
-            axisLine={
-              false
-            }
-            tickLine={
-              false
-            }
+            axisLine={false}
+            tickLine={false}
             tick={{
               fontSize:
                 10,
-
               fill:
                 "#94a3b8",
             }}
           />
-
           <YAxis
-            allowDecimals={
-              false
-            }
-            axisLine={
-              false
-            }
-            tickLine={
-              false
-            }
+            allowDecimals={false}
+            axisLine={false}
+            tickLine={false}
             tick={{
               fontSize:
                 10,
-
               fill:
                 "#94a3b8",
             }}
           />
-
           <Tooltip
             content={
               <ChartTooltip />
             }
           />
-
           <Legend
             iconType="circle"
             wrapperStyle={{
               fontSize:
                 "11px",
-
-              paddingTop:
-                "12px",
             }}
           />
-
-          <Line
-            type="monotone"
+          <Bar
             dataKey="appointments"
             name="Appointments"
-            stroke={
-              COLORS.violet
-            }
-            strokeWidth={
-              3
-            }
-            dot={{
-              r:
-                3,
-
-              fill:
-                COLORS.violet,
-
-              strokeWidth:
-                0,
-            }}
-            activeDot={{
-              r:
-                6,
-            }}
-          />
-
-          <Line
-            type="monotone"
-            dataKey="collections"
-            name="Collections"
-            stroke={
+            fill={
               COLORS.teal
             }
-            strokeWidth={
-              3
-            }
-            dot={{
-              r:
-                3,
-
-              fill:
-                COLORS.teal,
-
-              strokeWidth:
-                0,
-            }}
-            activeDot={{
-              r:
-                6,
-            }}
+            radius={[
+              8,
+              8,
+              2,
+              2,
+            ]}
+            maxBarSize={30}
           />
-
-          <Line
-            type="monotone"
-            dataKey="newPatients"
-            name="New patients"
-            stroke={
-              COLORS.amber
+          <Bar
+            dataKey="collections"
+            name="Collections"
+            fill={
+              COLORS.emeraldLight
             }
-            strokeWidth={
-              2.5
-            }
-            dot={{
-              r:
-                3,
-
-              fill:
-                COLORS.amber,
-
-              strokeWidth:
-                0,
-            }}
-            activeDot={{
-              r:
-                6,
-            }}
+            radius={[
+              8,
+              8,
+              2,
+              2,
+            ]}
+            maxBarSize={30}
           />
-
-        </LineChart>
-
+        </BarChart>
       </ResponsiveContainer>
-
     </div>
   );
 }
 
-/* ========================================================= */
-/* STACKED BAR CHART                                         */
-/* ========================================================= */
-
-function CompletionChart({
+function CompletionLineChart({
   data,
 }) {
-  const chartData =
+  const rows =
     useMemo(
       () =>
         safeArray(
           data
         ).map(
-          item => {
-            const appointments =
-              Number(
-                item.appointments ||
-                0
-              );
-
-            const completedAppointments =
+          item => ({
+            ...item,
+            completed:
               Number(
                 item.completedAppointments ||
                 0
-              );
-
-            const collections =
-              Number(
-                item.collections ||
-                0
-              );
-
-            const completedCollections =
+              ) +
               Number(
                 item.completedCollections ||
                 0
-              );
-
-            return {
-              period:
-                item.period,
-
-              completedAppointments,
-
-              openAppointments:
-                Math.max(
-                  appointments -
-                    completedAppointments,
+              ),
+            outstanding:
+              Math.max(
+                Number(
+                  item.appointments ||
                   0
-                ),
-
-              completedCollections,
-
-              openCollections:
-                Math.max(
-                  collections -
-                    completedCollections,
-                  0
-                ),
-            };
-          }
-        ),
-      [
-        data,
-      ]
+                ) +
+                  Number(
+                    item.collections ||
+                    0
+                  ) -
+                  Number(
+                    item.completedAppointments ||
+                    0
+                  ) -
+                  Number(
+                    item.completedCollections ||
+                    0
+                  ),
+                0
+              ),
+          })),
+      [data]
     );
 
   return (
-    <div className="h-[310px]">
-
+    <div className="h-[265px]">
       <ResponsiveContainer
         width="100%"
         height="100%"
       >
-
-        <BarChart
-          data={
-            chartData
-          }
+        <LineChart
+          data={rows}
           margin={{
             top:
               10,
-
             right:
-              10,
-
+              15,
             left:
-              -15,
-
+              -20,
             bottom:
-              0,
+              5,
           }}
         >
-
           <CartesianGrid
-            vertical={
-              false
-            }
-            stroke="#edf0f5"
+            vertical={false}
+            stroke="#e2e8f0"
             strokeDasharray="4 4"
           />
-
           <XAxis
             dataKey="period"
-            axisLine={
-              false
-            }
-            tickLine={
-              false
-            }
+            axisLine={false}
+            tickLine={false}
             tick={{
               fontSize:
                 10,
-
               fill:
                 "#94a3b8",
             }}
           />
-
           <YAxis
-            allowDecimals={
-              false
-            }
-            axisLine={
-              false
-            }
-            tickLine={
-              false
-            }
+            allowDecimals={false}
+            axisLine={false}
+            tickLine={false}
             tick={{
               fontSize:
                 10,
-
               fill:
                 "#94a3b8",
             }}
           />
-
           <Tooltip
             content={
               <ChartTooltip />
             }
           />
-
           <Legend
             iconType="circle"
             wrapperStyle={{
               fontSize:
                 "10px",
-
-              paddingTop:
-                "12px",
             }}
           />
-
-          <Bar
-            dataKey="completedAppointments"
-            name="Appointments completed"
-            stackId="appointments"
-            fill={
-              COLORS.violet
+          <Line
+            type="monotone"
+            dataKey="completed"
+            name="Completed"
+            stroke={
+              COLORS.emerald
             }
-            maxBarSize={
-              24
-            }
+            strokeWidth={3}
+            dot={{
+              r:
+                3,
+              fill:
+                COLORS.emerald,
+              strokeWidth:
+                0,
+            }}
           />
-
-          <Bar
-            dataKey="openAppointments"
-            name="Appointments open"
-            stackId="appointments"
-            fill={
-              COLORS.violetLight
+          <Line
+            type="monotone"
+            dataKey="outstanding"
+            name="Outstanding"
+            stroke={
+              COLORS.amber
             }
-            radius={[
-              6,
-              6,
-              0,
-              0,
-            ]}
-            maxBarSize={
-              24
-            }
+            strokeWidth={2.5}
+            dot={{
+              r:
+                3,
+              fill:
+                COLORS.amber,
+              strokeWidth:
+                0,
+            }}
           />
-
-          <Bar
-            dataKey="completedCollections"
-            name="Collections completed"
-            stackId="collections"
-            fill={
-              COLORS.teal
-            }
-            maxBarSize={
-              24
-            }
-          />
-
-          <Bar
-            dataKey="openCollections"
-            name="Collections open"
-            stackId="collections"
-            fill={
-              COLORS.tealLight
-            }
-            radius={[
-              6,
-              6,
-              0,
-              0,
-            ]}
-            maxBarSize={
-              24
-            }
-          />
-
-        </BarChart>
-
+        </LineChart>
       </ResponsiveContainer>
-
     </div>
   );
 }
 
-/* ========================================================= */
-/* DONUT                                                     */
-/* ========================================================= */
-
 function DonutChart({
   data,
-  centerLabel,
+  label,
 }) {
   const values =
     safeArray(
@@ -923,8 +482,7 @@ function DonutChart({
         Number(
           item.count ||
           0
-        ) >
-        0
+        ) > 0
     );
 
   const total =
@@ -941,12 +499,9 @@ function DonutChart({
       0
     );
 
-  if (
-    values.length ===
-    0
-  ) {
+  if (!values.length) {
     return (
-      <div className="flex h-[265px] items-center justify-center text-sm text-slate-400">
+      <div className="flex h-[270px] items-center justify-center text-sm text-slate-400">
         No activity yet
       </div>
     );
@@ -954,36 +509,22 @@ function DonutChart({
 
   return (
     <div className="relative h-[285px]">
-
       <ResponsiveContainer
         width="100%"
         height="100%"
       >
-
         <PieChart>
-
           <Pie
-            data={
-              values
-            }
+            data={values}
             nameKey="status"
             dataKey="count"
             cx="50%"
             cy="44%"
-            innerRadius={
-              60
-            }
-            outerRadius={
-              88
-            }
-            paddingAngle={
-              4
-            }
-            cornerRadius={
-              8
-            }
+            innerRadius={58}
+            outerRadius={86}
+            paddingAngle={4}
+            cornerRadius={8}
           >
-
             {values.map(
               (
                 item,
@@ -992,23 +533,20 @@ function DonutChart({
                 <Cell
                   key={`${item.status}-${index}`}
                   fill={
-                    PIE_COLORS[
+                    CHART_COLORS[
                       index %
-                      PIE_COLORS.length
+                        CHART_COLORS.length
                     ]
                   }
                 />
               )
             )}
-
           </Pie>
-
           <Tooltip
             content={
               <ChartTooltip />
             }
           />
-
           <Legend
             iconType="circle"
             verticalAlign="bottom"
@@ -1017,344 +555,67 @@ function DonutChart({
                 "10px",
             }}
           />
-
         </PieChart>
-
       </ResponsiveContainer>
 
       <div className="pointer-events-none absolute left-1/2 top-[44%] -translate-x-1/2 -translate-y-1/2 text-center">
-
         <p className="text-2xl font-bold text-slate-950">
-          {
-            number(
-              total
-            )
-          }
+          {number(
+            total
+          )}
         </p>
-
-        <p className="text-[9px] font-bold uppercase tracking-[0.12em] text-slate-400">
-          {
-            centerLabel
-          }
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-400">
+          {label}
         </p>
-
       </div>
-
     </div>
   );
 }
 
-/* ========================================================= */
-/* CALENDAR                                                  */
-/* ========================================================= */
-
-function CalendarCard({
-  kpis,
-}) {
-  const now =
-    new Date();
-
-  const [
-    cursor,
-    setCursor,
-  ] =
-    useState(
-      new Date(
-        now.getFullYear(),
-        now.getMonth(),
-        1
-      )
-    );
-
-  const year =
-    cursor.getFullYear();
-
-  const month =
-    cursor.getMonth();
-
-  const firstDay =
-    new Date(
-      year,
-      month,
-      1
-    ).getDay();
-
-  /*
-   * Calendar starts Monday.
-   * JS Sunday = 0.
-   */
-  const leadingDays =
-    firstDay ===
-    0
-      ? 6
-      : firstDay - 1;
-
-  const days =
-    new Date(
-      year,
-      month + 1,
-      0
-    ).getDate();
-
-  const cells = [
-    ...Array(
-      leadingDays
-    ).fill(
-      null
-    ),
-
-    ...Array.from(
-      {
-        length:
-          days,
-      },
-      (
-        _,
-        index
-      ) =>
-        index + 1
-    ),
-  ];
-
-  while (
-    cells.length %
-      7 !==
-    0
-  ) {
-    cells.push(
-      null
-    );
-  }
-
-  const isCurrentMonth =
-    year ===
-      now.getFullYear() &&
-    month ===
-      now.getMonth();
-
+function LoadingPanel() {
   return (
-    <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
-      <div className="flex items-center justify-between">
-
-        <div>
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-            Clinic calendar
-          </p>
-
-          <h3 className="mt-1 text-base font-bold text-slate-950">
-            {
-              monthName(
-                year,
-                month
-              )
-            }
-          </h3>
-
-        </div>
-
-        <div className="flex gap-1">
-
-          <button
-            type="button"
-            onClick={() =>
-              setCursor(
-                new Date(
-                  year,
-                  month - 1,
-                  1
-                )
-              )
-            }
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"
-          >
-            <ChevronLeft
-              size={17}
-            />
-          </button>
-
-          <button
-            type="button"
-            onClick={() =>
-              setCursor(
-                new Date(
-                  year,
-                  month + 1,
-                  1
-                )
-              )
-            }
-            className="flex h-8 w-8 items-center justify-center rounded-xl text-slate-500 hover:bg-slate-100"
-          >
-            <ChevronRight
-              size={17}
-            />
-          </button>
-
-        </div>
-
-      </div>
-
-      <div className="mt-5 grid grid-cols-7 text-center text-[9px] font-bold uppercase tracking-wider text-slate-400">
-
-        {[
-          "M",
-          "T",
-          "W",
-          "T",
-          "F",
-          "S",
-          "S",
-        ].map(
-          (
-            day,
-            index
-          ) => (
+    <div className="space-y-5">
+      <div className="h-28 animate-pulse rounded-[28px] bg-slate-100" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {[1, 2, 3, 4].map(
+          item => (
             <div
-              key={`${day}-${index}`}
-              className="py-2"
-            >
-              {day}
-            </div>
+              key={item}
+              className="h-28 animate-pulse rounded-[22px] bg-slate-100"
+            />
           )
         )}
-
       </div>
-
-      <div className="grid grid-cols-7 gap-1">
-
-        {cells.map(
-          (
-            day,
-            index
-          ) => {
-            const today =
-              Boolean(
-                day
-              ) &&
-              isCurrentMonth &&
-              day ===
-                now.getDate();
-
-            return (
-              <div
-                key={
-                  index
-                }
-                className={`relative flex aspect-square items-center justify-center rounded-xl text-[11px] font-semibold ${
-                  day
-                    ? today
-                      ? "bg-[#6d28d9] text-white shadow-lg shadow-violet-200"
-                      : "text-slate-600 hover:bg-violet-50"
-                    : ""
-                }`}
-              >
-                {day}
-
-                {today &&
-                  Number(
-                    kpis?.appointmentsToday ||
-                    0
-                  ) >
-                    0 && (
-                  <span className="absolute -right-0.5 -top-0.5 h-2 w-2 rounded-full border-2 border-white bg-[#5eead4]" />
-                )}
-
-              </div>
-            );
-          }
-        )}
-
-      </div>
-
-      {/* TODAY SUMMARY */}
-
-      <div className="mt-5 rounded-[20px] bg-[#f7f5ff] p-4">
-
-        <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-500">
-          Today
-        </p>
-
-        <div className="mt-3 space-y-3">
-
-          <div className="flex items-center justify-between">
-
-            <div className="flex items-center gap-2">
-
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-violet-700">
-                <CalendarDays
-                  size={15}
-                />
-              </div>
-
-              <div>
-
-                <p className="text-xs font-bold text-slate-900">
-                  Appointments
-                </p>
-
-                <p className="text-[10px] text-slate-400">
-                  Clinic schedule
-                </p>
-
-              </div>
-
-            </div>
-
-            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-violet-700">
-              {
-                kpis?.appointmentsToday ||
-                0
-              }
-            </span>
-
-          </div>
-
-          <div className="flex items-center justify-between">
-
-            <div className="flex items-center gap-2">
-
-              <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-white text-teal-700">
-                <PackageCheck
-                  size={15}
-                />
-              </div>
-
-              <div>
-
-                <p className="text-xs font-bold text-slate-900">
-                  Collections
-                </p>
-
-                <p className="text-[10px] text-slate-400">
-                  Due today
-                </p>
-
-              </div>
-
-            </div>
-
-            <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-teal-700">
-              {
-                kpis?.collectionsDueToday ||
-                0
-              }
-            </span>
-
-          </div>
-
-        </div>
-
-      </div>
-
-    </section>
+      <div className="h-80 animate-pulse rounded-[28px] bg-slate-100" />
+    </div>
   );
 }
 
-/* ========================================================= */
-/* RECENT ACTIVITY                                           */
-/* ========================================================= */
+function ErrorPanel({
+  message,
+  onRetry,
+}) {
+  return (
+    <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 text-center">
+      <AlertTriangle
+        size={24}
+        className="mx-auto text-red-600"
+      />
+      <p className="mt-3 text-sm font-semibold text-red-800">
+        {message}
+      </p>
+      {onRetry && (
+        <button
+          type="button"
+          onClick={onRetry}
+          className="mt-4 rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white"
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
+}
 
 function RecentActivity({
   data,
@@ -1365,35 +626,26 @@ function RecentActivity({
     );
 
   return (
-    <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
+    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.04)]">
       <div className="flex items-center justify-between">
-
         <div>
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-teal-700">
             Governance
           </p>
-
           <h3 className="mt-1 text-base font-bold text-slate-950">
             Recent activity
           </h3>
-
         </div>
-
         <Link
           to="/admin/audit"
-          className="text-[11px] font-bold text-violet-700 hover:underline"
+          className="text-[11px] font-bold text-[#0f766e] hover:underline"
         >
           View all
         </Link>
-
       </div>
 
       <div className="mt-4 divide-y divide-slate-100">
-
-        {rows.length >
-        0 ? (
+        {rows.length ? (
           rows
             .slice(
               0,
@@ -1402,50 +654,32 @@ function RecentActivity({
             .map(
               item => (
                 <div
-                  key={
-                    item.id
-                  }
+                  key={item.id}
                   className="flex gap-3 py-3 first:pt-0 last:pb-0"
                 >
-
-                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-violet-50 text-violet-700">
-
+                  <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
                     <Clock3
                       size={14}
                     />
-
                   </div>
-
                   <div className="min-w-0 flex-1">
-
                     <p className="truncate text-xs font-bold text-slate-900">
-                      {
-                        item.action
-                      }
+                      {item.action}
                     </p>
-
                     <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                      {
-                        item.performedBy
-                      }{" "}
+                      {item.performedBy ||
+                        "System"}{" "}
                       ·{" "}
-                      {
-                        formatDateTime(
-                          item.timestamp
-                        )
-                      }
+                      {formatDateTime(
+                        item.timestamp
+                      )}
                     </p>
-
                     {item.details && (
                       <p className="mt-1 line-clamp-2 text-[10px] leading-4 text-slate-500">
-                        {
-                          item.details
-                        }
+                        {item.details}
                       </p>
                     )}
-
                   </div>
-
                 </div>
               )
             )
@@ -1454,16 +688,10 @@ function RecentActivity({
             No recent activity
           </p>
         )}
-
       </div>
-
     </section>
   );
 }
-
-/* ========================================================= */
-/* LOW STOCK                                                 */
-/* ========================================================= */
 
 function LowStock({
   data,
@@ -1474,35 +702,26 @@ function LowStock({
     );
 
   return (
-    <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
+    <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.04)]">
       <div className="flex items-center justify-between">
-
         <div>
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-teal-700">
             Inventory
           </p>
-
           <h3 className="mt-1 text-base font-bold text-slate-950">
             Stock alerts
           </h3>
-
         </div>
-
         <Link
           to="/admin/inventory"
-          className="text-[11px] font-bold text-violet-700 hover:underline"
+          className="text-[11px] font-bold text-[#0f766e] hover:underline"
         >
           Manage
         </Link>
-
       </div>
 
       <div className="mt-4 space-y-2.5">
-
-        {items.length >
-        0 ? (
+        {items.length ? (
           items
             .slice(
               0,
@@ -1511,300 +730,157 @@ function LowStock({
             .map(
               item => (
                 <div
-                  key={
-                    item.id
-                  }
-                  className="flex items-center justify-between gap-3 rounded-2xl bg-rose-50/70 px-3 py-2.5"
+                  key={item.id}
+                  className="flex items-center justify-between gap-3 rounded-2xl bg-amber-50 px-3 py-2.5"
                 >
-
                   <div className="min-w-0">
-
                     <p className="truncate text-xs font-bold text-slate-900">
-                      {
-                        item.medicationName
-                      }{" "}
-                      {
-                        item.strength
-                      }
+                      {item.medicationName}{" "}
+                      {item.strength}
                     </p>
-
-                    <p className="mt-0.5 text-[10px] text-slate-400">
-                      Reorder at {
-                        item.reorderLevel
-                      }{" "}
-                      {
-                        item.unit
-                      }
+                    <p className="mt-0.5 text-[10px] text-slate-500">
+                      Reorder at {item.reorderLevel}{" "}
+                      {item.unit}
                     </p>
-
                   </div>
-
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-rose-700">
-                    {
-                      item.quantityOnHand
-                    }{" "}
+                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-bold text-amber-700">
+                    {item.quantityOnHand}{" "}
                     left
                   </span>
-
                 </div>
               )
             )
         ) : (
           <div className="rounded-2xl bg-emerald-50 p-5 text-center">
-
             <CheckCircle2
               size={20}
               className="mx-auto text-emerald-600"
             />
-
             <p className="mt-2 text-xs font-bold text-emerald-800">
               Inventory healthy
             </p>
-
           </div>
         )}
-
       </div>
-
     </section>
   );
 }
-
-/* ========================================================= */
-/* SUPER ADMIN                                               */
-/* ========================================================= */
 
 function SuperAdminDashboard() {
   const [
     data,
     setData,
-  ] =
-    useState(null);
-
+  ] = useState(null);
   const [
     loading,
     setLoading,
-  ] =
-    useState(true);
-
+  ] = useState(true);
   const [
     error,
     setError,
-  ] =
-    useState("");
+  ] = useState("");
 
-  useEffect(
-    () => {
-      let active =
-        true;
+  useEffect(() => {
+    let active =
+      true;
 
-      adminApi
-        .getDashboard()
-        .then(
-          result => {
-            if (
-              active
-            ) {
-              setData(
-                result
-              );
-            }
-          }
-        )
-        .catch(
-          err => {
-            if (
-              active
-            ) {
-              setError(
-                err?.message ||
-                "Unable to load administration analytics."
-              );
-            }
-          }
-        )
-        .finally(
-          () => {
-            if (
-              active
-            ) {
-              setLoading(
-                false
-              );
-            }
-          }
-        );
+    adminApi
+      .getDashboard()
+      .then(result => {
+        if (active) {
+          setData(
+            result
+          );
+        }
+      })
+      .catch(err => {
+        if (active) {
+          setError(
+            err?.message ||
+              "Unable to load administration analytics."
+          );
+        }
+      })
+      .finally(() => {
+        if (active) {
+          setLoading(
+            false
+          );
+        }
+      });
 
-      return () => {
-        active =
-          false;
-      };
-    },
-    []
-  );
+    return () => {
+      active =
+        false;
+    };
+  }, []);
 
   if (loading) {
-    return (
-      <LoadingPanel />
-    );
+    return <LoadingPanel />;
   }
 
   if (error) {
     return (
       <ErrorPanel
-        message={
-          error
-        }
+        message={error}
       />
     );
   }
 
   return (
     <div className="space-y-5">
-
-      <section className="rounded-[30px] bg-gradient-to-br from-violet-100 via-[#f5f2ff] to-white p-7">
-
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-violet-600">
+      <section className="rounded-[30px] border border-teal-100 bg-gradient-to-br from-teal-100 via-[#f0fdfa] to-white p-7">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-teal-700">
           PhilaLink
         </p>
-
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
           System overview
         </h2>
-
         <p className="mt-2 text-sm text-slate-500">
           National user and service administration.
         </p>
-
       </section>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-        <MiniKpi
+        <KpiCard
           label="Patients"
           value={
             data?.totalPatients
           }
           detail={`${data?.activePatients || 0} active`}
-          icon={
-            Users
-          }
+          icon={Users}
         />
-
-        <MiniKpi
+        <KpiCard
           label="Nurses"
           value={
             data?.totalNurses
           }
           detail={`${data?.activeNurses || 0} active`}
-          icon={
-            BarChart3
-          }
-          accent="teal"
+          icon={BarChart3}
+          tone="emerald"
         />
-
-        <MiniKpi
+        <KpiCard
           label="Proxies"
           value={
             data?.totalProxies
           }
           detail={`${data?.activeProxies || 0} active`}
-          icon={
-            Users
-          }
-          accent="blue"
+          icon={Users}
+          tone="cyan"
         />
-
-        <MiniKpi
+        <KpiCard
           label="Proxy links"
           value={
             data?.totalProxyLinks
           }
           detail="Active links"
-          icon={
-            TrendingUp
-          }
-          accent="amber"
+          icon={TrendingUp}
+          tone="amber"
         />
-
       </div>
-
     </div>
   );
 }
-
-/* ========================================================= */
-/* STATES                                                    */
-/* ========================================================= */
-
-function LoadingPanel() {
-  return (
-    <div className="flex min-h-[460px] items-center justify-center rounded-[30px] border border-slate-200 bg-white">
-
-      <div className="text-center">
-
-        <RefreshCw
-          size={25}
-          className="mx-auto animate-spin text-violet-600"
-        />
-
-        <p className="mt-3 text-sm font-medium text-slate-500">
-          Loading clinic analytics…
-        </p>
-
-      </div>
-
-    </div>
-  );
-}
-
-function ErrorPanel({
-  message,
-  onRetry,
-}) {
-  return (
-    <div className="rounded-[24px] border border-red-200 bg-red-50 p-6">
-
-      <div className="flex items-start gap-3">
-
-        <AlertTriangle
-          size={20}
-          className="mt-0.5 shrink-0 text-red-600"
-        />
-
-        <div>
-
-          <p className="font-bold text-red-900">
-            Analytics unavailable
-          </p>
-
-          <p className="mt-1 text-sm text-red-700">
-            {message}
-          </p>
-
-          {onRetry && (
-            <button
-              type="button"
-              onClick={
-                onRetry
-              }
-              className="mt-4 rounded-xl bg-red-700 px-4 py-2 text-xs font-bold text-white"
-            >
-              Try again
-            </button>
-          )}
-
-        </div>
-
-      </div>
-
-    </div>
-  );
-}
-
-/* ========================================================= */
-/* DASHBOARD                                                 */
-/* ========================================================= */
 
 export default function AdminDashboard() {
   const {
@@ -1816,20 +892,19 @@ export default function AdminDashboard() {
   const [
     data,
     setData,
-  ] =
-    useState(null);
-
+  ] = useState(null);
+  const [
+    months,
+    setMonths,
+  ] = useState(6);
   const [
     loading,
     setLoading,
-  ] =
-    useState(true);
-
+  ] = useState(true);
   const [
     error,
     setError,
-  ] =
-    useState("");
+  ] = useState("");
 
   const load =
     useCallback(
@@ -1845,26 +920,21 @@ export default function AdminDashboard() {
           setLoading(
             true
           );
-
-          setError(
-            ""
-          );
+          setError("");
 
           const result =
             await clinicAdminApi
               .getAnalytics(
-                6
+                months
               );
 
           setData(
             result
           );
-        } catch (
-          err
-        ) {
+        } catch (loadError) {
           setError(
-            err?.message ||
-            "Unable to load clinic analytics."
+            loadError?.message ||
+              "Unable to load clinic analytics."
           );
         } finally {
           setLoading(
@@ -1874,17 +944,13 @@ export default function AdminDashboard() {
       },
       [
         role,
+        months,
       ]
     );
 
-  useEffect(
-    () => {
-      void load();
-    },
-    [
-      load,
-    ]
-  );
+  useEffect(() => {
+    void load();
+  }, [load]);
 
   const completionRate =
     useMemo(
@@ -1894,10 +960,7 @@ export default function AdminDashboard() {
             data?.monthlyActivity
           );
 
-        if (
-          rows.length ===
-          0
-        ) {
+        if (!rows.length) {
           return 0;
         }
 
@@ -1926,24 +989,18 @@ export default function AdminDashboard() {
             0
           );
 
-        if (
-          total <= 0
-        ) {
-          return 0;
-        }
-
-        return Math.min(
-          100,
-          Math.round(
-            completed /
-              total *
-              100
-          )
-        );
+        return total > 0
+          ? Math.min(
+              100,
+              Math.round(
+                completed /
+                  total *
+                  100
+              )
+            )
+          : 0;
       },
-      [
-        data,
-      ]
+      [data]
     );
 
   if (
@@ -1956,20 +1013,14 @@ export default function AdminDashboard() {
   }
 
   if (loading) {
-    return (
-      <LoadingPanel />
-    );
+    return <LoadingPanel />;
   }
 
   if (error) {
     return (
       <ErrorPanel
-        message={
-          error
-        }
-        onRetry={
-          load
-        }
+        message={error}
+        onRetry={load}
       />
     );
   }
@@ -1984,434 +1035,286 @@ export default function AdminDashboard() {
 
   return (
     <div className="space-y-5">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#0f766e]">
+            Clinic administration
+          </p>
+          <h2 className="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+            Analytics Overview
+          </h2>
+          <p className="mt-1 text-sm text-slate-500">
+            Service activity, appointments, collections and stock performance for your clinic.
+          </p>
+        </div>
 
-      {/* =================================================== */}
-      {/* TOP GRID                                            */}
-      {/* =================================================== */}
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.75fr)_360px]">
-
-        {/* PERFORMANCE CARD */}
-
-        <section className="overflow-hidden rounded-[30px] border border-violet-100 bg-gradient-to-br from-[#f0ebff] via-[#f7f4ff] to-white p-5 shadow-[0_18px_55px_rgba(109,40,217,0.08)] sm:p-7">
-
-          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-
-            <div>
-
-              <p className="text-[11px] font-medium text-slate-500">
-                {getGreeting()},{" "}
-                <span className="font-bold text-slate-950">
-                  {
-                    firstName(
-                      displayName
-                    )
-                  }
-                </span>
-              </p>
-
-              <h2 className="mt-2 max-w-xl text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
-                Your clinic is running at{" "}
-                <span className="text-[#6d28d9]">
-                  {
-                    completionRate
-                  }%
-                </span>{" "}
-                service completion
-              </h2>
-
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-
-                <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
-                  {
-                    kpis.collectedThisMonth ||
-                    0
-                  }{" "}
-                  collections completed
-                </span>
-
-                <span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-violet-700 shadow-sm">
-                  {
-                    kpis.newPatientsThisMonth ||
-                    0
-                  }{" "}
-                  new patients
-                </span>
-
-              </div>
-
-            </div>
-
-            <Link
-              to="/admin/reports"
-              className="inline-flex shrink-0 items-center gap-2 self-start rounded-2xl bg-[#6d28d9] px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-violet-200 transition hover:bg-violet-800"
-            >
-
-              <FileBarChart
-                size={15}
-              />
-
-              Reports
-
-            </Link>
-
-          </div>
-
-          <div className="mt-5 rounded-[24px] bg-white/65 p-3 backdrop-blur">
-
-            <PerformanceBarChart
-              data={
-                data?.monthlyActivity
-              }
-            />
-
-          </div>
-
-          <div className="mt-3 flex items-center justify-between text-[10px] text-slate-400">
-
-            <span>
-              Monthly appointments and medication collections
+        <div className="flex flex-wrap items-end gap-2 rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
+          <label className="block">
+            <span className="mb-1 block px-1 text-[9px] font-bold uppercase tracking-wide text-slate-400">
+              Period
             </span>
-
-            <button
-              type="button"
-              onClick={
-                load
+            <select
+              value={months}
+              onChange={event =>
+                setMonths(
+                  Number(
+                    event.target.value
+                  )
+                )
               }
-              className="inline-flex items-center gap-1 font-bold text-violet-700"
+              className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 outline-none focus:border-[#0f766e]"
             >
-              <RefreshCw
-                size={12}
-              />
-              Refresh
-            </button>
+              <option value="3">
+                Last 3 months
+              </option>
+              <option value="6">
+                Last 6 months
+              </option>
+              <option value="12">
+                Last 12 months
+              </option>
+            </select>
+          </label>
 
-          </div>
-
-        </section>
-
-        {/* CALENDAR */}
-
-        <CalendarCard
-          kpis={
-            kpis
-          }
-        />
-
+          <button
+            type="button"
+            onClick={load}
+            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0f766e] px-4 text-xs font-bold text-white hover:bg-[#115e59]"
+          >
+            <RefreshCw
+              size={14}
+            />
+            Refresh
+          </button>
+        </div>
       </div>
 
-      {/* =================================================== */}
-      {/* KPIS                                                */}
-      {/* =================================================== */}
+      <section className="overflow-hidden rounded-[30px] border border-teal-100 bg-gradient-to-br from-[#ccfbf1] via-[#f0fdfa] to-white p-5 shadow-[0_18px_55px_rgba(15,118,110,0.08)] sm:p-7">
+        <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-[11px] font-medium text-slate-500">
+              {displayName}
+            </p>
+            <h3 className="mt-2 max-w-xl text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">
+              Clinic service completion is{" "}
+              <span className="text-[#0f766e]">
+                {completionRate}%
+              </span>
+            </h3>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-[10px] font-bold text-emerald-700">
+                {kpis.collectedThisMonth || 0}{" "}
+                collections completed
+              </span>
+              <span className="rounded-full bg-white px-3 py-1 text-[10px] font-bold text-teal-700 shadow-sm">
+                {kpis.newPatientsThisMonth || 0}{" "}
+                new patients
+              </span>
+            </div>
+          </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <Link
+            to="/admin/reports"
+            className="inline-flex shrink-0 items-center gap-2 rounded-2xl bg-[#0f766e] px-4 py-2.5 text-xs font-bold text-white shadow-lg shadow-teal-100 hover:bg-[#115e59]"
+          >
+            <FileBarChart
+              size={15}
+            />
+            Reports
+          </Link>
+        </div>
 
-        <MiniKpi
+        <div className="mt-5 rounded-[24px] bg-white/75 p-3 backdrop-blur">
+          <MonthlyBarChart
+            data={
+              data?.monthlyActivity
+            }
+          />
+        </div>
+      </section>
+
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <KpiCard
           label="Active patients"
           value={
             kpis.activePatients
           }
-          detail={`${kpis.newPatientsThisMonth || 0} added this month`}
-          icon={
-            Users
-          }
+          detail="Registered at clinic"
+          icon={Users}
         />
-
-        <MiniKpi
-          label="Appointments"
+        <KpiCard
+          label="Pending appointments"
           value={
-            kpis.appointmentsToday
+            kpis.pendingAppointments
           }
-          detail={`${kpis.pendingAppointments || 0} awaiting action`}
-          icon={
-            CalendarDays
-          }
-          accent="blue"
+          detail="Awaiting action"
+          icon={CalendarDays}
+          tone="cyan"
         />
-
-        <MiniKpi
-          label="Collections due"
+        <KpiCard
+          label="Collections due today"
           value={
             kpis.collectionsDueToday
           }
-          detail={`${kpis.overdueCollections || 0} overdue`}
-          icon={
-            PackageCheck
-          }
-          accent={
-            kpis.overdueCollections >
-            0
-              ? "rose"
-              : "teal"
-          }
+          detail="Medication collections"
+          icon={PackageCheck}
+          tone="emerald"
         />
-
-        <MiniKpi
+        <KpiCard
+          label="Overdue collections"
+          value={
+            kpis.overdueCollections
+          }
+          detail="Requires follow-up"
+          icon={AlertTriangle}
+          tone="rose"
+        />
+        <KpiCard
           label="Low stock"
           value={
             kpis.lowStockItems
           }
-          detail="At or below reorder level"
-          icon={
-            Boxes
-          }
-          accent={
-            kpis.lowStockItems >
-            0
-              ? "amber"
-              : "teal"
-          }
+          detail="Below reorder level"
+          icon={AlertTriangle}
+          tone="amber"
         />
-
       </div>
 
-      {/* =================================================== */}
-      {/* LINE + DONUT                                        */}
-      {/* =================================================== */}
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-
-        <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
-          <div className="flex items-start justify-between">
-
-            <div>
-
-              <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-600">
-                Analytics
-              </p>
-
-              <h3 className="mt-1 text-base font-bold text-slate-950">
-                Clinic activity trend
-              </h3>
-
-              <p className="mt-1 text-[11px] text-slate-400">
-                Hover over the chart to inspect exact values
-              </p>
-
-            </div>
-
-            <TrendingUp
-              size={19}
-              className="text-violet-600"
-            />
-
-          </div>
-
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.55fr)_minmax(320px,0.75fr)]">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.04)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f766e]">
+            Service activity
+          </p>
+          <h3 className="mt-1 text-base font-bold text-slate-950">
+            Completed vs outstanding work
+          </h3>
+          <p className="mt-1 text-[11px] text-slate-400">
+            Appointments and medication collections over time
+          </p>
           <div className="mt-3">
-
-            <TrendLineChart
+            <CompletionLineChart
               data={
                 data?.monthlyActivity
               }
             />
-
           </div>
-
         </section>
 
-        <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-violet-600">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.04)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f766e]">
             Appointment flow
           </p>
-
           <h3 className="mt-1 text-base font-bold text-slate-950">
             Status distribution
           </h3>
-
           <DonutChart
             data={
               data?.appointmentStatuses
             }
-            centerLabel="Appointments"
+            label="Appointments"
           />
-
         </section>
-
       </div>
 
-      {/* =================================================== */}
-      {/* STACKED + COLLECTION DONUT                          */}
-      {/* =================================================== */}
-
-      <div className="grid gap-5 xl:grid-cols-[minmax(0,1.6fr)_minmax(320px,0.8fr)]">
-
-        <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
-          <div>
-
-            <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-teal-600">
-              Completion performance
-            </p>
-
-            <h3 className="mt-1 text-base font-bold text-slate-950">
-              Completed vs outstanding work
-            </h3>
-
-            <p className="mt-1 text-[11px] text-slate-400">
-              Appointments and medication collections by month
-            </p>
-
-          </div>
-
-          <div className="mt-3">
-
-            <CompletionChart
-              data={
-                data?.monthlyActivity
-              }
-            />
-
-          </div>
-
-        </section>
-
-        <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-teal-600">
+      <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.04)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f766e]">
             Medication operations
           </p>
-
           <h3 className="mt-1 text-base font-bold text-slate-950">
             Collection status
           </h3>
-
           <DonutChart
             data={
               data?.collectionStatuses
             }
-            centerLabel="Collections"
+            label="Collections"
           />
-
         </section>
 
+        <section className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.04)]">
+          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#0f766e]">
+            Clinic team
+          </p>
+          <h3 className="mt-1 text-base font-bold text-slate-950">
+            Workforce
+          </h3>
+
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="rounded-[20px] bg-teal-50 p-4">
+              <p className="text-2xl font-bold text-teal-800">
+                {kpis.activeNurses || 0}
+              </p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-teal-600">
+                Nurses
+              </p>
+            </div>
+            <div className="rounded-[20px] bg-emerald-50 p-4">
+              <p className="text-2xl font-bold text-emerald-800">
+                {kpis.activeProxies || 0}
+              </p>
+              <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-emerald-600">
+                Proxies
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-4 space-y-2">
+            <QuickLink
+              to="/admin/register-staff"
+              icon={UserPlus}
+              label="Register staff"
+            />
+            <QuickLink
+              to="/admin/staff"
+              icon={Users}
+              label="Manage staff"
+            />
+            <QuickLink
+              to="/admin/reports"
+              icon={FileBarChart}
+              label="Generate report"
+            />
+          </div>
+        </section>
       </div>
 
-      {/* =================================================== */}
-      {/* ACTIVITY / STOCK / QUICK                            */}
-      {/* =================================================== */}
-
-      <div className="grid gap-5 lg:grid-cols-3">
-
+      <div className="grid gap-5 lg:grid-cols-2">
         <RecentActivity
           data={
             data?.recentActivity
           }
         />
-
         <LowStock
           data={
             data?.lowStockItems
           }
         />
-
-        <section className="rounded-[28px] border border-slate-200/80 bg-white p-5 shadow-[0_15px_45px_rgba(15,23,42,0.05)]">
-
-          <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-slate-400">
-            Workforce
-          </p>
-
-          <h3 className="mt-1 text-base font-bold text-slate-950">
-            Clinic team
-          </h3>
-
-          <div className="mt-4 grid grid-cols-2 gap-3">
-
-            <div className="rounded-[20px] bg-violet-50 p-4">
-
-              <p className="text-2xl font-bold text-violet-800">
-                {
-                  kpis.activeNurses ||
-                  0
-                }
-              </p>
-
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-violet-500">
-                Nurses
-              </p>
-
-            </div>
-
-            <div className="rounded-[20px] bg-teal-50 p-4">
-
-              <p className="text-2xl font-bold text-teal-800">
-                {
-                  kpis.activeProxies ||
-                  0
-                }
-              </p>
-
-              <p className="mt-1 text-[10px] font-bold uppercase tracking-wide text-teal-500">
-                Proxies
-              </p>
-
-            </div>
-
-          </div>
-
-          <div className="mt-4 space-y-2">
-
-            <Link
-              to="/admin/register-staff"
-              className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-violet-200 hover:bg-violet-50"
-            >
-
-              <span className="flex items-center gap-2">
-                <UserPlus
-                  size={15}
-                />
-                Register staff
-              </span>
-
-              <ArrowUpRight
-                size={14}
-              />
-
-            </Link>
-
-            <Link
-              to="/admin/staff"
-              className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-violet-200 hover:bg-violet-50"
-            >
-
-              <span className="flex items-center gap-2">
-                <Users
-                  size={15}
-                />
-                Manage staff
-              </span>
-
-              <ArrowUpRight
-                size={14}
-              />
-
-            </Link>
-
-            <Link
-              to="/admin/reports"
-              className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-violet-200 hover:bg-violet-50"
-            >
-
-              <span className="flex items-center gap-2">
-                <FileBarChart
-                  size={15}
-                />
-                Generate report
-              </span>
-
-              <ArrowUpRight
-                size={14}
-              />
-
-            </Link>
-
-          </div>
-
-        </section>
-
       </div>
-
     </div>
+  );
+}
+
+function QuickLink({
+  to,
+  icon:
+    Icon,
+  label,
+}) {
+  return (
+    <Link
+      to={to}
+      className="flex items-center justify-between rounded-2xl border border-slate-100 px-4 py-3 text-xs font-bold text-slate-700 transition hover:border-teal-200 hover:bg-teal-50"
+    >
+      <span className="flex items-center gap-2">
+        <Icon
+          size={15}
+        />
+        {label}
+      </span>
+      <ArrowUpRight
+        size={14}
+      />
+    </Link>
   );
 }
