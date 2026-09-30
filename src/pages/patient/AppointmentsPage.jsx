@@ -461,10 +461,10 @@ function AppointmentCard({
       appointment
     );
 
-    const cancellable =
-  canCancel(
-    appointment
-  );
+  const cancellable =
+    canCancel(
+      appointment
+    );
 
   return (
     <div
@@ -651,13 +651,15 @@ function BookingModal({
     type,
     setType,
   ] = useState(
-    "General Consultation"
+    "Routine Checkup"
   );
 
   const [
     reason,
     setReason,
-  ] = useState("");
+  ] = useState(
+    "Routine patient checkup"
+  );
 
   const [
     mode,
@@ -695,14 +697,19 @@ function BookingModal({
     );
 
     setType(
-      "General Consultation"
+      "Routine Checkup"
     );
 
-    setReason("");
+    setReason(
+      "Routine patient checkup"
+    );
+
     setMode(
       "InPerson"
     );
+
     setNotes("");
+
     setSubmitError("");
   }, [open]);
 
@@ -1566,9 +1573,9 @@ export default function AppointmentsPage() {
   ] = useState(null);
 
   const [
-  cancelAppointment,
-  setCancelAppointment,
-] = useState(null);
+    cancelAppointment,
+    setCancelAppointment,
+  ] = useState(null);
 
   const loadAppointments =
     useCallback(
@@ -1739,19 +1746,19 @@ export default function AppointmentsPage() {
       ]
     );
 
-    const handleCancelled =
-  useCallback(
-    async () => {
-      await loadAppointments();
+  const handleCancelled =
+    useCallback(
+      async () => {
+        await loadAppointments();
 
-      setTab(
-        "upcoming"
-      );
-    },
-    [
-      loadAppointments,
-    ]
-  );
+        setTab(
+          "upcoming"
+        );
+      },
+      [
+        loadAppointments,
+      ]
+    );
 
   return (
     <>
