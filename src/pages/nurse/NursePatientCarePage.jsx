@@ -118,6 +118,56 @@ function todayInput() {
     );
 }
 
+function toLocalDateTimeInput(
+  value = null
+) {
+  let date;
+
+  if (value) {
+    date =
+      new Date(value);
+  } else {
+    date =
+      new Date();
+
+    date.setMinutes(
+      date.getMinutes() +
+        60
+    );
+
+    date.setSeconds(
+      0
+    );
+
+    date.setMilliseconds(
+      0
+    );
+  }
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "";
+  }
+
+  const offset =
+    date.getTimezoneOffset();
+
+  return new Date(
+    date.getTime() -
+      offset *
+        60 *
+        1000
+  )
+    .toISOString()
+    .slice(
+      0,
+      16
+    );
+}
+
 /* ========================================================= */
 /* PAGE                                                      */
 /* ========================================================= */
@@ -131,6 +181,12 @@ export default function NursePatientCarePage() {
   const [
     patient,
     setPatient,
+  ] =
+    useState(null);
+
+  const [
+    nurse,
+    setNurse,
   ] =
     useState(null);
 
@@ -194,22 +250,26 @@ export default function NursePatientCarePage() {
             ""
           );
 
-          const [
-            care,
-            proxies,
-            stock,
-          ] =
-            await Promise.all([
-              nursesApi
-                .getPatientCare(
-                  patientId
-                ),
+          const care =
+            await nursesApi
+              .getPatientCare(
+                patientId
+              );
 
+          const [
+            proxiesResult,
+            stockResult,
+            nurseResult,
+          ] =
+            await Promise.allSettled([
               nursesApi
                 .getClinicProxies(),
 
               nursesApi
                 .getClinicStock(),
+
+              nursesApi
+                .getMe(),
             ]);
 
           setPatient(
@@ -217,19 +277,30 @@ export default function NursePatientCarePage() {
           );
 
           setClinicProxies(
+            proxiesResult.status ===
+              "fulfilled" &&
             Array.isArray(
-              proxies
+              proxiesResult.value
             )
-              ? proxies
+              ? proxiesResult.value
               : []
           );
 
           setClinicStock(
+            stockResult.status ===
+              "fulfilled" &&
             Array.isArray(
-              stock
+              stockResult.value
             )
-              ? stock
+              ? stockResult.value
               : []
+          );
+
+          setNurse(
+            nurseResult.status ===
+              "fulfilled"
+              ? nurseResult.value
+              : null
           );
         } catch (loadError) {
           console.error(
@@ -1229,12 +1300,29 @@ export default function NursePatientCarePage() {
             title="Appointments"
             description="Recent and upcoming appointments."
             action={
-              <Link
-                to="/nurse/appointments"
-                className="text-xs font-semibold text-[#0f766e]"
-              >
-                Open appointments
-              </Link>
+              <div className="flex flex-wrap items-center justify-end gap-2">
+
+                <ActionButton
+                  label="Book routine checkup"
+                  onClick={() => {
+                    setEditing(
+                      null
+                    );
+
+                    setModal(
+                      "appointment"
+                    );
+                  }}
+                />
+
+                <Link
+                  to="/nurse/appointments"
+                  className="text-xs font-semibold text-[#0f766e]"
+                >
+                  Open appointments
+                </Link>
+
+              </div>
             }
           >
 
@@ -1350,6 +1438,40 @@ export default function NursePatientCarePage() {
 
             success(
               "Condition saved."
+            );
+
+            await load();
+          }}
+        />
+      )}
+
+      {modal ===
+        "appointment" && (
+        <RoutineCheckupModal
+          patientId={
+            patientId
+          }
+          clinicId={
+            patient.clinicId
+          }
+          patientName={
+            patient.fullName
+          }
+          nurse={
+            nurse
+          }
+          onClose={() =>
+            setModal(
+              null
+            )
+          }
+          onSaved={async () => {
+            setModal(
+              null
+            );
+
+            success(
+              "Routine checkup booked."
             );
 
             await load();
@@ -1958,6 +2080,273 @@ function ConditionModal({
               notes:
                 value,
             })
+          }
+        />
+
+        <SubmitBar
+          saving={
+            saving
+          }
+          onCancel={
+            onClose
+          }
+        />
+
+      </form>
+
+    </Modal>
+  );
+}
+
+function RoutineCheckupModal({
+  patientId,
+  clinicId,
+  patientName,
+  nurse,
+  onClose,
+  onSaved,
+}) {
+  const [
+    scheduledAt,
+    setScheduledAt,
+  ] =
+    useState(
+      toLocalDateTimeInput()
+    );
+
+  const [
+    mode,
+    setMode,
+  ] =
+    useState(
+      "InPerson"
+    );
+
+  const [
+    notes,
+    setNotes,
+  ] =
+    useState("");
+
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(false);
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
+
+  async function submit(
+    event
+  ) {
+    event.preventDefault();
+
+    const appointmentDate =
+      new Date(
+        scheduledAt
+      );
+
+    if (
+      Number.isNaN(
+        appointmentDate.getTime()
+      )
+    ) {
+      setError(
+        "Choose a valid appointment date and time."
+      );
+
+      return;
+    }
+
+    if (
+      appointmentDate.getTime() <=
+      Date.now()
+    ) {
+      setError(
+        "The appointment must be scheduled for a future date and time."
+      );
+
+      return;
+    }
+
+    if (
+      !patientId ||
+      !clinicId
+    ) {
+      setError(
+        "The patient clinic information is unavailable."
+      );
+
+      return;
+    }
+
+    if (
+      !nurse?.nurseId
+    ) {
+      setError(
+        "Your Nurse profile could not be loaded. Refresh the page and try again."
+      );
+
+      return;
+    }
+
+    try {
+      setSaving(
+        true
+      );
+
+      setError(
+        ""
+      );
+
+      await nursesApi
+        .createAppointment({
+          patientId,
+
+          clinicId,
+
+          nurseId:
+            nurse.nurseId,
+
+          scheduledAt:
+            appointmentDate
+              .toISOString(),
+
+          durationMinutes:
+            30,
+
+          type:
+            "Routine Checkup",
+
+          reason:
+            "Routine patient checkup",
+
+          providerName:
+            nurse.fullName ||
+            null,
+
+          mode,
+
+          status:
+            "Scheduled",
+
+          notes:
+            notes.trim() ||
+            null,
+        });
+
+      await onSaved();
+    } catch (saveError) {
+      setError(
+        saveError?.message ||
+          "Could not book the routine checkup."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+  return (
+    <Modal
+      title="Book routine checkup"
+      onClose={
+        onClose
+      }
+    >
+
+      <form
+        onSubmit={
+          submit
+        }
+        className="space-y-4"
+      >
+
+        {error && (
+          <FormError>
+            {error}
+          </FormError>
+        )}
+
+        <div className="rounded-xl bg-[#f8fafc] p-4">
+
+          <p className="text-xs font-medium uppercase tracking-wide text-[#94a3b8]">
+            Patient
+          </p>
+
+          <p className="mt-1 text-sm font-semibold text-[#0f172a]">
+            {patientName}
+          </p>
+
+          <p className="mt-3 text-xs font-medium uppercase tracking-wide text-[#94a3b8]">
+            Nurse
+          </p>
+
+          <p className="mt-1 text-sm font-semibold text-[#0f172a]">
+            {nurse?.fullName ||
+              "Current Nurse"}
+          </p>
+
+          <p className="mt-2 text-xs text-[#64748b]">
+            Routine checkup · 30 minutes
+          </p>
+
+        </div>
+
+        <Field
+          label="Appointment date and time"
+          type="datetime-local"
+          required
+          value={
+            scheduledAt
+          }
+          onChange={
+            setScheduledAt
+          }
+        />
+
+        <div>
+
+          <label className="mb-2 block text-sm font-medium text-[#334155]">
+            Visit mode
+          </label>
+
+          <select
+            value={
+              mode
+            }
+            onChange={(
+              event
+            ) =>
+              setMode(
+                event.target.value
+              )
+            }
+            className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
+          >
+            <option value="InPerson">
+              In person
+            </option>
+
+            <option value="Telehealth">
+              Telehealth
+            </option>
+          </select>
+
+        </div>
+
+        <TextArea
+          label="Notes"
+          value={
+            notes
+          }
+          onChange={
+            setNotes
           }
         />
 
