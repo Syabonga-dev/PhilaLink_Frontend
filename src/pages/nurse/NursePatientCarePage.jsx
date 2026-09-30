@@ -1303,7 +1303,7 @@ export default function NursePatientCarePage() {
               <div className="flex flex-wrap items-center justify-end gap-2">
 
                 <ActionButton
-                  label="Book routine checkup"
+                  label="Book appointment"
                   onClick={() => {
                     setEditing(
                       null
@@ -1354,6 +1354,9 @@ export default function NursePatientCarePage() {
                           {formatDateTime(
                             appointment.scheduledAt
                           )}
+                          {" · "}
+                          {appointment.providerName ||
+                            "Clinic provider"}
                           {" · "}
                           {appointment.status}
                         </p>
@@ -1457,9 +1460,6 @@ export default function NursePatientCarePage() {
           patientName={
             patient.fullName
           }
-          nurse={
-            nurse
-          }
           onClose={() =>
             setModal(
               null
@@ -1471,7 +1471,7 @@ export default function NursePatientCarePage() {
             );
 
             success(
-              "Routine checkup booked."
+              "Appointment booked."
             );
 
             await load();
@@ -2102,7 +2102,6 @@ function RoutineCheckupModal({
   patientId,
   clinicId,
   patientName,
-  nurse,
   onClose,
   onSaved,
 }) {
@@ -2112,6 +2111,38 @@ function RoutineCheckupModal({
   ] =
     useState(
       toLocalDateTimeInput()
+    );
+
+  const [
+    appointmentType,
+    setAppointmentType,
+  ] =
+    useState(
+      "Routine Checkup"
+    );
+
+  const [
+    providerType,
+    setProviderType,
+  ] =
+    useState(
+      "Nurse"
+    );
+
+  const [
+    durationMinutes,
+    setDurationMinutes,
+  ] =
+    useState(
+      "30"
+    );
+
+  const [
+    reason,
+    setReason,
+  ] =
+    useState(
+      "Routine patient checkup"
     );
 
   const [
@@ -2185,10 +2216,29 @@ function RoutineCheckupModal({
     }
 
     if (
-      !nurse?.nurseId
+      !appointmentType ||
+      !providerType
     ) {
       setError(
-        "Your Nurse profile could not be loaded. Refresh the page and try again."
+        "Choose an appointment type and whether the patient should see a Nurse or Doctor."
+      );
+
+      return;
+    }
+
+    const duration =
+      Number(
+        durationMinutes
+      );
+
+    if (
+      !Number.isFinite(
+        duration
+      ) ||
+      duration <= 0
+    ) {
+      setError(
+        "Choose a valid appointment duration."
       );
 
       return;
@@ -2209,25 +2259,35 @@ function RoutineCheckupModal({
 
           clinicId,
 
+          /*
+           * The patient is requesting a clinician category,
+           * not a specific Nurse record. This deliberately
+           * stays null for both Nurse and Doctor requests.
+           */
           nurseId:
-            nurse.nurseId,
+            null,
 
           scheduledAt:
             appointmentDate
               .toISOString(),
 
           durationMinutes:
-            30,
+            duration,
 
           type:
-            "Routine Checkup",
+            appointmentType,
 
           reason:
-            "Routine patient checkup",
+            reason.trim() ||
+            appointmentType,
 
+          /*
+           * ProviderName already exists on Appointments and
+           * can hold "Nurse" or "Doctor" without adding a
+           * Doctor entity or database migration.
+           */
           providerName:
-            nurse.fullName ||
-            null,
+            providerType,
 
           mode,
 
@@ -2243,7 +2303,7 @@ function RoutineCheckupModal({
     } catch (saveError) {
       setError(
         saveError?.message ||
-          "Could not book the routine checkup."
+          "Could not book the appointment."
       );
     } finally {
       setSaving(
@@ -2254,7 +2314,7 @@ function RoutineCheckupModal({
 
   return (
     <Modal
-      title="Book routine checkup"
+      title="Book appointment"
       onClose={
         onClose
       }
@@ -2273,9 +2333,9 @@ function RoutineCheckupModal({
           </FormError>
         )}
 
-        <div className="rounded-xl bg-[#f8fafc] p-4">
+        <div className="rounded-xl bg-[#f0fdfa] p-4">
 
-          <p className="text-xs font-medium uppercase tracking-wide text-[#94a3b8]">
+          <p className="text-xs font-medium uppercase tracking-wide text-[#64748b]">
             Patient
           </p>
 
@@ -2283,18 +2343,82 @@ function RoutineCheckupModal({
             {patientName}
           </p>
 
-          <p className="mt-3 text-xs font-medium uppercase tracking-wide text-[#94a3b8]">
-            Nurse
+          <p className="mt-2 text-xs text-[#0f766e]">
+            Choose the service and clinician type for this patient.
           </p>
 
-          <p className="mt-1 text-sm font-semibold text-[#0f172a]">
-            {nurse?.fullName ||
-              "Current Nurse"}
-          </p>
+        </div>
 
-          <p className="mt-2 text-xs text-[#64748b]">
-            Routine checkup · 30 minutes
-          </p>
+        <div>
+
+          <label className="mb-2 block text-sm font-medium text-[#334155]">
+            Appointment type
+          </label>
+
+          <select
+            value={
+              appointmentType
+            }
+            onChange={(
+              event
+            ) =>
+              setAppointmentType(
+                event.target.value
+              )
+            }
+            className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
+          >
+            <option value="Routine Checkup">
+              Routine Checkup
+            </option>
+            <option value="General Consultation">
+              General Consultation
+            </option>
+            <option value="Medication Review">
+              Medication Review
+            </option>
+            <option value="Chronic Care Follow-up">
+              Chronic Care Follow-up
+            </option>
+            <option value="Follow-up Visit">
+              Follow-up Visit
+            </option>
+            <option value="Symptoms / Feeling Unwell">
+              Symptoms / Feeling Unwell
+            </option>
+            <option value="Other">
+              Other
+            </option>
+          </select>
+
+        </div>
+
+        <div>
+
+          <label className="mb-2 block text-sm font-medium text-[#334155]">
+            Who should the patient see?
+          </label>
+
+          <select
+            value={
+              providerType
+            }
+            onChange={(
+              event
+            ) =>
+              setProviderType(
+                event.target.value
+              )
+            }
+            className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
+          >
+            <option value="Nurse">
+              Nurse
+            </option>
+            <option value="Doctor">
+              Doctor
+            </option>
+          </select>
 
         </div>
 
@@ -2310,35 +2434,84 @@ function RoutineCheckupModal({
           }
         />
 
-        <div>
+        <div className="grid gap-4 sm:grid-cols-2">
 
-          <label className="mb-2 block text-sm font-medium text-[#334155]">
-            Visit mode
-          </label>
+          <div>
 
-          <select
-            value={
-              mode
-            }
-            onChange={(
-              event
-            ) =>
-              setMode(
-                event.target.value
-              )
-            }
-            className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
-          >
-            <option value="InPerson">
-              In person
-            </option>
+            <label className="mb-2 block text-sm font-medium text-[#334155]">
+              Visit mode
+            </label>
 
-            <option value="Telehealth">
-              Telehealth
-            </option>
-          </select>
+            <select
+              value={
+                mode
+              }
+              onChange={(
+                event
+              ) =>
+                setMode(
+                  event.target.value
+                )
+              }
+              className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
+            >
+              <option value="InPerson">
+                In person
+              </option>
+
+              <option value="Telehealth">
+                Telehealth
+              </option>
+            </select>
+
+          </div>
+
+          <div>
+
+            <label className="mb-2 block text-sm font-medium text-[#334155]">
+              Duration
+            </label>
+
+            <select
+              value={
+                durationMinutes
+              }
+              onChange={(
+                event
+              ) =>
+                setDurationMinutes(
+                  event.target.value
+                )
+              }
+              className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
+            >
+              <option value="15">
+                15 minutes
+              </option>
+              <option value="30">
+                30 minutes
+              </option>
+              <option value="45">
+                45 minutes
+              </option>
+              <option value="60">
+                60 minutes
+              </option>
+            </select>
+
+          </div>
 
         </div>
+
+        <TextArea
+          label="Reason"
+          value={
+            reason
+          }
+          onChange={
+            setReason
+          }
+        />
 
         <TextArea
           label="Notes"
