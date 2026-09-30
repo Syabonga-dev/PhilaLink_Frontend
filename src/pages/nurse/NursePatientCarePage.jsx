@@ -10,6 +10,7 @@ import {
 } from "react-router-dom";
 
 import {
+  Activity,
   AlertTriangle,
   ArrowLeft,
   CalendarDays,
@@ -140,6 +141,12 @@ export default function NursePatientCarePage() {
     useState([]);
 
   const [
+    clinicStock,
+    setClinicStock,
+  ] =
+    useState([]);
+
+  const [
     loading,
     setLoading,
   ] =
@@ -190,6 +197,7 @@ export default function NursePatientCarePage() {
           const [
             care,
             proxies,
+            stock,
           ] =
             await Promise.all([
               nursesApi
@@ -199,6 +207,9 @@ export default function NursePatientCarePage() {
 
               nursesApi
                 .getClinicProxies(),
+
+              nursesApi
+                .getClinicStock(),
             ]);
 
           setPatient(
@@ -210,6 +221,14 @@ export default function NursePatientCarePage() {
               proxies
             )
               ? proxies
+              : []
+          );
+
+          setClinicStock(
+            Array.isArray(
+              stock
+            )
+              ? stock
               : []
           );
         } catch (loadError) {
@@ -809,6 +828,100 @@ export default function NursePatientCarePage() {
 
           </CareSection>
 
+          {/* HEALTH METRICS */}
+
+          <CareSection
+            icon={
+              Activity
+            }
+            title="Health Metrics"
+            description="Vitals and clinical measurements recorded for this patient."
+            action={
+              <ActionButton
+                label="Record metric"
+                onClick={() => {
+                  setEditing(
+                    null
+                  );
+
+                  setModal(
+                    "healthMetric"
+                  );
+                }}
+              />
+            }
+          >
+
+            {patient.healthMetrics?.length ? (
+              <div className="grid gap-3 sm:grid-cols-2">
+
+                {patient.healthMetrics
+                  .slice(
+                    0,
+                    8
+                  )
+                  .map(
+                    (
+                      metric
+                    ) => (
+                      <div
+                        key={
+                          metric.id
+                        }
+                        className="rounded-xl border border-[#e2e8f0] p-4"
+                      >
+
+                        <div className="flex items-start justify-between gap-3">
+
+                          <div>
+
+                            <p className="text-sm font-semibold text-[#0f172a]">
+                              {metric.metricType}
+                            </p>
+
+                            <p className="mt-1 text-lg font-bold text-[#0f766e]">
+                              {metric.value}
+
+                              {metric.unit
+                                ? ` ${metric.unit}`
+                                : ""}
+                            </p>
+
+                          </div>
+
+                          {metric.status && (
+                            <span className="rounded-full bg-[#f1f5f9] px-2.5 py-1 text-[10px] font-semibold text-[#475569]">
+                              {metric.status}
+                            </span>
+                          )}
+
+                        </div>
+
+                        {metric.note && (
+                          <p className="mt-2 text-xs leading-5 text-[#64748b]">
+                            {metric.note}
+                          </p>
+                        )}
+
+                        <p className="mt-3 text-[11px] text-[#94a3b8]">
+                          {formatDateTime(
+                            metric.recordedAt
+                          )}
+                        </p>
+
+                      </div>
+                    )
+                  )}
+
+              </div>
+            ) : (
+              <EmptyText>
+                No health metrics recorded yet.
+              </EmptyText>
+            )}
+
+          </CareSection>
+
           {/* MEDICATIONS */}
 
           <CareSection
@@ -1245,10 +1358,38 @@ export default function NursePatientCarePage() {
       )}
 
       {modal ===
+        "healthMetric" && (
+        <HealthMetricModal
+          patientId={
+            patientId
+          }
+          onClose={() =>
+            setModal(
+              null
+            )
+          }
+          onSaved={async () => {
+            setModal(
+              null
+            );
+
+            success(
+              "Health metric recorded."
+            );
+
+            await load();
+          }}
+        />
+      )}
+
+      {modal ===
         "medication" && (
         <MedicationModal
           patientId={
             patientId
+          }
+          stock={
+            clinicStock
           }
           onClose={() =>
             setModal(
@@ -1835,24 +1976,330 @@ function ConditionModal({
   );
 }
 
-function MedicationModal({
+function HealthMetricModal({
   patientId,
   onClose,
   onSaved,
 }) {
+  const unitByMetric = {
+    "Blood Pressure":
+      "mmHg",
+
+    "Blood Glucose":
+      "mmol/L",
+
+    Weight:
+      "kg",
+
+    Temperature:
+      "°C",
+
+    "Heart Rate":
+      "bpm",
+
+    "Oxygen Saturation":
+      "%",
+  };
+
   const [
     form,
     setForm,
   ] =
     useState({
-      name:
+      metricType:
+        "Blood Pressure",
+
+      customMetricType:
         "",
 
-      dosage:
+      value:
         "",
 
-      form:
-        "Tablet",
+      unit:
+        "mmHg",
+
+      status:
+        "",
+
+      note:
+        "",
+    });
+
+  const [
+    saving,
+    setSaving,
+  ] =
+    useState(false);
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
+
+  async function submit(
+    event
+  ) {
+    event.preventDefault();
+
+    const metricType =
+      form.metricType ===
+      "Other"
+        ? form.customMetricType
+            .trim()
+        : form.metricType;
+
+    if (
+      !metricType ||
+      !form.value.trim()
+    ) {
+      setError(
+        "Metric type and value are required."
+      );
+
+      return;
+    }
+
+    try {
+      setSaving(
+        true
+      );
+
+      setError(
+        ""
+      );
+
+      await nursesApi
+        .createHealthMetric(
+          patientId,
+          {
+            metricType,
+
+            value:
+              form.value.trim(),
+
+            unit:
+              form.unit.trim(),
+
+            status:
+              form.status ||
+              null,
+
+            note:
+              form.note ||
+              null,
+          }
+        );
+
+      onSaved();
+    } catch (saveError) {
+      setError(
+        saveError?.message ||
+          "Could not record health metric."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+  return (
+    <Modal
+      title="Record health metric"
+      onClose={
+        onClose
+      }
+    >
+
+      <form
+        onSubmit={
+          submit
+        }
+        className="grid gap-4 sm:grid-cols-2"
+      >
+
+        {error && (
+          <div className="sm:col-span-2">
+            <FormError>
+              {error}
+            </FormError>
+          </div>
+        )}
+
+        <SelectField
+          label="Metric"
+          value={
+            form.metricType
+          }
+          onChange={(
+            value
+          ) =>
+            setForm({
+              ...form,
+
+              metricType:
+                value,
+
+              unit:
+                unitByMetric[
+                  value
+                ] ??
+                "",
+            })
+          }
+          options={[
+            "Blood Pressure",
+            "Blood Glucose",
+            "Weight",
+            "Temperature",
+            "Heart Rate",
+            "Oxygen Saturation",
+            "Other",
+          ]}
+        />
+
+        {form.metricType ===
+          "Other" && (
+          <Field
+            label="Metric name"
+            required
+            value={
+              form.customMetricType
+            }
+            onChange={(
+              value
+            ) =>
+              setForm({
+                ...form,
+                customMetricType:
+                  value,
+              })
+            }
+          />
+        )}
+
+        <Field
+          label="Value"
+          required
+          placeholder={
+            form.metricType ===
+            "Blood Pressure"
+              ? "e.g. 120/80"
+              : "Enter reading"
+          }
+          value={
+            form.value
+          }
+          onChange={(
+            value
+          ) =>
+            setForm({
+              ...form,
+              value:
+                value,
+            })
+          }
+        />
+
+        <Field
+          label="Unit"
+          value={
+            form.unit
+          }
+          onChange={(
+            value
+          ) =>
+            setForm({
+              ...form,
+              unit:
+                value,
+            })
+          }
+        />
+
+        <SelectField
+          label="Status"
+          value={
+            form.status
+          }
+          onChange={(
+            value
+          ) =>
+            setForm({
+              ...form,
+              status:
+                value,
+            })
+          }
+          options={[
+            "",
+            "Normal",
+            "Low",
+            "Elevated",
+            "High",
+            "Critical",
+          ]}
+        />
+
+        <div className="sm:col-span-2">
+
+          <TextArea
+            label="Clinical note"
+            value={
+              form.note
+            }
+            onChange={(
+              value
+            ) =>
+              setForm({
+                ...form,
+                note:
+                  value,
+              })
+            }
+          />
+
+        </div>
+
+        <div className="sm:col-span-2">
+
+          <SubmitBar
+            saving={
+              saving
+            }
+            onCancel={
+              onClose
+            }
+          />
+
+        </div>
+
+      </form>
+
+    </Modal>
+  );
+}
+
+function MedicationModal({
+  patientId,
+  stock,
+  onClose,
+  onSaved,
+}) {
+  const [
+    search,
+    setSearch,
+  ] =
+    useState("");
+
+  const [
+    form,
+    setForm,
+  ] =
+    useState({
+      clinicStockId:
+        "",
 
       instructions:
         "",
@@ -1885,10 +2332,74 @@ function MedicationModal({
   ] =
     useState("");
 
+  const availableStock =
+    Array.isArray(
+      stock
+    )
+      ? stock
+      : [];
+
+  const normalizedSearch =
+    search
+      .trim()
+      .toLowerCase();
+
+  const filteredStock =
+    availableStock
+      .filter(
+        (
+          item
+        ) => {
+          if (
+            !normalizedSearch
+          ) {
+            return true;
+          }
+
+          return [
+            item.medicationName,
+            item.strength,
+            item.form,
+            item.unit,
+          ]
+            .filter(Boolean)
+            .join(
+              " "
+            )
+            .toLowerCase()
+            .includes(
+              normalizedSearch
+            );
+        }
+      )
+      .slice(
+        0,
+        40
+      );
+
+  const selectedStock =
+    availableStock.find(
+      (
+        item
+      ) =>
+        item.id ===
+        form.clinicStockId
+    );
+
   async function submit(
     event
   ) {
     event.preventDefault();
+
+    if (
+      !form.clinicStockId
+    ) {
+      setError(
+        "Select a medication from clinic inventory."
+      );
+
+      return;
+    }
 
     try {
       setSaving(
@@ -1903,14 +2414,8 @@ function MedicationModal({
         .createMedication({
           patientId,
 
-          name:
-            form.name,
-
-          dosage:
-            form.dosage,
-
-          form:
-            form.form,
+          clinicStockId:
+            form.clinicStockId,
 
           instructions:
             form.instructions,
@@ -1960,7 +2465,7 @@ function MedicationModal({
 
   return (
     <Modal
-      title="Assign medication"
+      title="Assign medication from inventory"
       onClose={
         onClose
       }
@@ -1981,65 +2486,127 @@ function MedicationModal({
           </div>
         )}
 
-        <Field
-          label="Medication name"
-          required
-          value={
-            form.name
-          }
-          onChange={(
-            value
-          ) =>
-            setForm({
-              ...form,
-              name:
-                value,
-            })
-          }
-        />
+        <div className="sm:col-span-2">
 
-        <Field
-          label="Dosage / strength"
-          required
-          placeholder="e.g. 500 mg"
-          value={
-            form.dosage
-          }
-          onChange={(
-            value
-          ) =>
-            setForm({
-              ...form,
-              dosage:
-                value,
-            })
-          }
-        />
+          <label className="mb-2 block text-sm font-medium text-[#334155]">
+            Medication in clinic inventory
+          </label>
 
-        <SelectField
-          label="Form"
-          value={
-            form.form
-          }
-          onChange={(
-            value
-          ) =>
-            setForm({
-              ...form,
-              form:
-                value,
-            })
-          }
-          options={[
-            "Tablet",
-            "Capsule",
-            "Liquid",
-            "Injection",
-            "Inhaler",
-            "Cream",
-            "Other",
-          ]}
-        />
+          <input
+            type="search"
+            value={
+              search
+            }
+            onChange={(
+              event
+            ) =>
+              setSearch(
+                event.target.value
+              )
+            }
+            placeholder="Search medication, strength or form..."
+            className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
+          />
+
+          <div className="mt-2 max-h-56 overflow-y-auto rounded-xl border border-[#e2e8f0] bg-white">
+
+            {availableStock.length ===
+            0 ? (
+              <div className="p-4 text-sm text-[#64748b]">
+                There is no active medication stock available at this clinic.
+              </div>
+            ) : filteredStock.length ===
+              0 ? (
+              <div className="p-4 text-sm text-[#64748b]">
+                No inventory item matches your search.
+              </div>
+            ) : (
+              filteredStock.map(
+                (
+                  item
+                ) => {
+                  const selected =
+                    form.clinicStockId ===
+                    item.id;
+
+                  return (
+                    <button
+                      key={
+                        item.id
+                      }
+                      type="button"
+                      onClick={() =>
+                        setForm({
+                          ...form,
+
+                          clinicStockId:
+                            item.id,
+                        })
+                      }
+                      className={[
+                        "flex w-full items-start justify-between gap-4 border-b border-[#f1f5f9] px-4 py-3 text-left last:border-b-0",
+                        selected
+                          ? "bg-[#f0fdfa]"
+                          : "hover:bg-[#f8fafc]",
+                      ].join(
+                        " "
+                      )}
+                    >
+
+                      <div className="min-w-0">
+
+                        <p className="text-sm font-semibold text-[#0f172a]">
+                          {item.medicationName}
+                        </p>
+
+                        <p className="mt-1 text-xs text-[#64748b]">
+                          {item.strength}
+                          {" · "}
+                          {item.form}
+                        </p>
+
+                      </div>
+
+                      <div className="shrink-0 text-right">
+
+                        <p className="text-xs font-semibold text-[#0f766e]">
+                          {item.quantityOnHand}
+                          {" "}
+                          {item.unit ||
+                            "units"}
+                        </p>
+
+                        <p className="mt-1 text-[10px] text-[#94a3b8]">
+                          in stock
+                        </p>
+
+                      </div>
+
+                    </button>
+                  );
+                }
+              )
+            )}
+
+          </div>
+
+          {selectedStock && (
+            <div className="mt-3 rounded-xl bg-[#f0fdfa] p-3 text-sm text-[#115e59]">
+
+              Selected:{" "}
+
+              <span className="font-semibold">
+                {selectedStock.medicationName}
+                {" · "}
+                {selectedStock.strength}
+                {" · "}
+                {selectedStock.form}
+              </span>
+
+            </div>
+          )}
+
+        </div>
 
         <Field
           label="Units per dose"
@@ -2546,7 +3113,9 @@ function ProxyModal({
   ) {
     event.preventDefault();
 
-    if (!proxyId) {
+    if (
+      !proxyId
+    ) {
       setError(
         "Select a Proxy."
       );
@@ -2621,8 +3190,7 @@ function ProxyModal({
                   event
                 ) =>
                   setProxyId(
-                    event.target
-                      .value
+                    event.target.value
                   )
                 }
                 className="h-11 w-full rounded-xl border border-[#cbd5e1] px-3 text-sm outline-none focus:border-[#0f766e]"
