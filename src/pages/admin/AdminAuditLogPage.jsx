@@ -1,18 +1,31 @@
 import {
+  useMemo,
   useState,
 } from "react";
-import Card, {
-  CardBody,
-  CardHeader,
-} from "../../components/ui/Card.jsx";
-import Input from "../../components/ui/Input.jsx";
-import Spinner from "../../components/ui/Spinner.jsx";
+
 import {
-  EmptyState,
-  ErrorState,
-} from "../../components/ui/EmptyState.jsx";
-import { useApi } from "../../lib/useApi.js";
-import { adminApi } from "../../services/api/admin.js";
+  History,
+  RefreshCw,
+} from "lucide-react";
+
+import {
+  useApi,
+} from "../../lib/useApi.js";
+
+import {
+  adminApi,
+} from "../../services/api/admin.js";
+
+import {
+  DataTable,
+  EmptyBlock,
+  LoadingBlock,
+  Notice,
+  PageHeader,
+  Panel,
+  SearchField,
+  SecondaryButton,
+} from "../../components/admin/AdminPrimitives.jsx";
 
 function formatDate(
   value
@@ -22,180 +35,274 @@ function formatDate(
   }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
       date.getTime()
     )
   ) {
-    return value;
+    return String(
+      value
+    );
   }
 
-  return date.toLocaleString(
-    "en-ZA"
-  );
+  return date
+    .toLocaleString(
+      "en-ZA",
+      {
+        year:
+          "numeric",
+
+        month:
+          "short",
+
+        day:
+          "2-digit",
+
+        hour:
+          "2-digit",
+
+        minute:
+          "2-digit",
+      }
+    );
 }
 
 export default function AdminAuditLogPage() {
   const [
     search,
     setSearch,
-  ] = useState("");
+  ] =
+    useState("");
 
   const {
     data,
     loading,
     error,
     refetch,
-  } = useApi(
-    () =>
-      adminApi.getAuditLog(),
-    []
-  );
+  } =
+    useApi(
+      () =>
+        adminApi
+          .getAuditLog(),
+      []
+    );
 
   const logs =
-    Array.isArray(data)
+    Array.isArray(
+      data
+    )
       ? data
       : [];
 
-  const term =
-    search
-      .trim()
-      .toLowerCase();
-
   const filtered =
-    logs.filter((log) =>
-      !term
-        ? true
-        : [
-            log.action,
-            log.performedBy,
-            log.details,
-          ]
-            .filter(Boolean)
-            .some((value) =>
-              String(value)
-                .toLowerCase()
-                .includes(
-                  term
-                )
-            )
+    useMemo(
+      () => {
+        const term =
+          search
+            .trim()
+            .toLowerCase();
+
+        if (!term) {
+          return logs;
+        }
+
+        return logs.filter(
+          log =>
+            [
+              log.action,
+              log.performedBy,
+              log.details,
+            ]
+              .filter(
+                Boolean
+              )
+              .some(
+                value =>
+                  String(
+                    value
+                  )
+                    .toLowerCase()
+                    .includes(
+                      term
+                    )
+              )
+        );
+      },
+      [
+        logs,
+        search,
+      ]
     );
 
+  const columns = [
+    {
+      key:
+        "timestamp",
+
+      label:
+        "Date / time",
+
+      render:
+        value => (
+          <span className="whitespace-nowrap text-slate-500">
+            {formatDate(
+              value
+            )}
+          </span>
+        ),
+    },
+    {
+      key:
+        "action",
+
+      label:
+        "Action",
+
+      render:
+        value => (
+          <span className="font-semibold text-slate-900">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+    {
+      key:
+        "performedBy",
+
+      label:
+        "Performed by",
+    },
+    {
+      key:
+        "details",
+
+      label:
+        "Details",
+
+      render:
+        value => (
+          <span className="block max-w-[560px] whitespace-normal leading-5">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+  ];
+
   return (
-    <Card>
-      <CardHeader
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Governance"
         title="Audit log"
-        subtitle={`${filtered.length} visible log${
-          filtered.length ===
-          1
-            ? ""
-            : "s"
-        }`}
+        description="Review recorded administrative activity for accountability and operational traceability."
+        actions={
+          <SecondaryButton
+            onClick={
+              refetch
+            }
+            disabled={
+              loading
+            }
+          >
+            <RefreshCw
+              size={15}
+              className={
+                loading
+                  ? "animate-spin"
+                  : ""
+              }
+            />
+
+            Refresh
+          </SecondaryButton>
+        }
       />
 
-      <CardBody className="pt-0">
-        <div className="mb-4">
-          <Input
-            placeholder="Search action, user or details…"
-            value={
-              search
-            }
-            onChange={(
-              event
-            ) =>
-              setSearch(
-                event.target
-                  .value
-              )
-            }
-          />
+      {error ? (
+        <Notice type="error">
+          {error.message ||
+            "Could not load the audit log."}
+        </Notice>
+      ) : null}
+
+      <Panel
+        title="Recorded activity"
+        description={`${filtered.length.toLocaleString(
+          "en-ZA"
+        )} visible entr${
+          filtered.length ===
+          1
+            ? "y"
+            : "ies"
+        }`}
+        noPadding
+      >
+        <div className="border-b border-slate-200 px-5 py-4">
+          <div className="max-w-xl">
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+              Search
+            </span>
+
+            <SearchField
+              value={
+                search
+              }
+              onChange={
+                event =>
+                  setSearch(
+                    event.target
+                      .value
+                  )
+              }
+              placeholder="Action, user or details…"
+            />
+          </div>
         </div>
 
         {loading ? (
-          <div className="py-10">
-            <Spinner label="Loading audit log…" />
-          </div>
-        ) : error ? (
-          <ErrorState
-            description={
-              error.message
-            }
-            onRetry={
-              refetch
+          <LoadingBlock
+            label="Loading audit log…"
+            minHeight={
+              320
             }
           />
-        ) : filtered.length ===
-          0 ? (
-          <EmptyState
-            icon="history"
-            title="No audit entries found"
-            description={
-              search
-                ? "Try a different search."
-                : "There are no visible audit records."
+        ) : filtered.length ? (
+          <DataTable
+            columns={
+              columns
+            }
+            rows={
+              filtered
+            }
+            rowKey={
+              row =>
+                row.id
+            }
+            maxHeight={
+              680
             }
           />
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm">
-              <thead>
-                <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
-                  <th className="py-2 pr-4 font-medium">
-                    Date
-                  </th>
-
-                  <th className="py-2 pr-4 font-medium">
-                    Action
-                  </th>
-
-                  <th className="py-2 pr-4 font-medium">
-                    Performed by
-                  </th>
-
-                  <th className="py-2 font-medium">
-                    Details
-                  </th>
-                </tr>
-              </thead>
-
-              <tbody className="divide-y divide-outline-variant/50">
-                {filtered.map(
-                  (log) => (
-                    <tr
-                      key={
-                        log.id
-                      }
-                    >
-                      <td className="whitespace-nowrap py-3 pr-4 text-on-surface-variant">
-                        {formatDate(
-                          log.timestamp
-                        )}
-                      </td>
-
-                      <td className="py-3 pr-4 font-semibold text-on-surface">
-                        {log.action ||
-                          "—"}
-                      </td>
-
-                      <td className="py-3 pr-4 text-on-surface-variant">
-                        {log.performedBy ||
-                          "—"}
-                      </td>
-
-                      <td className="py-3 text-on-surface-variant">
-                        {log.details ||
-                          "—"}
-                      </td>
-                    </tr>
-                  )
-                )}
-              </tbody>
-            </table>
+          <div className="p-5">
+            <EmptyBlock
+              icon={
+                History
+              }
+              title="No audit entries found"
+              description={
+                search
+                  ? "Try a different search term."
+                  : "There are no visible audit records."
+              }
+            />
           </div>
         )}
-      </CardBody>
-    </Card>
+      </Panel>
+    </div>
   );
 }
