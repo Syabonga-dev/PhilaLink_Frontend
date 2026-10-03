@@ -1,6 +1,7 @@
 import {
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -10,90 +11,68 @@ import {
 
 import {
   AlertCircle,
-  ArrowRight,
   CalendarCheck2,
-  CalendarClock,
   PackageCheck,
   RefreshCw,
-  Stethoscope,
   Users,
 } from "lucide-react";
+
+import {
+  DataTable,
+  LoadingBlock,
+  MetricStrip,
+  Notice,
+  PageHeader,
+  Panel,
+  SecondaryButton,
+  StatusBadge,
+} from "../../components/admin/AdminPrimitives.jsx";
 
 import {
   nursesApi,
 } from "../../services/api/nurses.js";
 
-const statsConfig = [
-  {
-    key:
-      "clinicPatients",
+function workloadStatus(
+  patient
+) {
+  if (
+    Number(
+      patient?.overdueCollectionCount ||
+        0
+    ) >
+    0
+  ) {
+    return "Overdue";
+  }
 
-    label:
-      "Clinic patients",
+  if (
+    Number(
+      patient?.activeMedicationCount ||
+        0
+    ) >
+    0
+  ) {
+    return "Active";
+  }
 
-    icon:
-      Users,
+  return "No active medication";
+}
 
-    path:
-      "/nurse/patients",
-  },
-
-  {
-    key:
-      "appointmentsToday",
-
-    label:
-      "Appointments today",
-
-    icon:
-      CalendarCheck2,
-
-    path:
-      "/nurse/appointments",
-  },
-
-  {
-    key:
-      "pendingAppointments",
-
-    label:
-      "Pending appointments",
-
-    icon:
-      CalendarClock,
-
-    path:
-      "/nurse/appointments",
-  },
-
-  {
-    key:
-      "collectionsDueToday",
-
-    label:
-      "Collections due",
-
-    icon:
-      PackageCheck,
-
-    path:
-      "/nurse/collections",
-  },
-
-  {
-    key:
-      "overdueCollections",
-
-    label:
-      "Overdue collections",
-
-    icon:
-      AlertCircle,
-
-    path:
-      "/nurse/collections",
-  },
-];
+function queueRow({
+  label,
+  value,
+  helper,
+  path,
+  status,
+}) {
+  return {
+    label,
+    value,
+    helper,
+    path,
+    status,
+  };
+}
 
 export default function NurseDashboard() {
   const [
@@ -165,7 +144,8 @@ export default function NurseDashboard() {
             ]);
 
           setStats(
-            dashboard
+            dashboard ||
+              null
           );
 
           setPatients(
@@ -185,15 +165,19 @@ export default function NurseDashboard() {
           );
 
           setProfile(
-            nurseProfile
+            nurseProfile ||
+              null
           );
-        } catch (loadError) {
+        } catch (
+          loadError
+        ) {
           console.error(
             loadError
           );
 
           setError(
-            loadError?.message ||
+            loadError
+              ?.message ||
               "Could not load the Nurse dashboard."
           );
         } finally {
@@ -214,366 +198,532 @@ export default function NurseDashboard() {
     ]
   );
 
+  const metrics =
+    useMemo(
+      () => [
+        {
+          label:
+            "Clinic patients",
+
+          value:
+            stats
+              ?.clinicPatients ??
+            patients.length,
+
+          helper:
+            "Visible in your clinic scope",
+
+          icon:
+            Users,
+        },
+
+        {
+          label:
+            "Appointments today",
+
+          value:
+            stats
+              ?.appointmentsToday ??
+            0,
+
+          helper:
+            `${
+              stats
+                ?.pendingAppointments ??
+              0
+            } pending`,
+
+          icon:
+            CalendarCheck2,
+        },
+
+        {
+          label:
+            "Collections due",
+
+          value:
+            stats
+              ?.collectionsDueToday ??
+            0,
+
+          helper:
+            "Scheduled for today",
+
+          icon:
+            PackageCheck,
+        },
+
+        {
+          label:
+            "Overdue collections",
+
+          value:
+            stats
+              ?.overdueCollections ??
+            0,
+
+          helper:
+            "Requires follow-up",
+
+          icon:
+            AlertCircle,
+        },
+      ],
+      [
+        stats,
+        patients.length,
+      ]
+    );
+
+  const queue =
+    useMemo(
+      () => [
+        queueRow({
+          label:
+            "Pending appointments",
+
+          value:
+            stats
+              ?.pendingAppointments ??
+            0,
+
+          helper:
+            "Review bookings waiting for action",
+
+          path:
+            "/nurse/appointments",
+
+          status:
+            (
+              stats
+                ?.pendingAppointments ??
+              0
+            ) >
+            0
+              ? "Pending"
+              : "Clear",
+        }),
+
+        queueRow({
+          label:
+            "Collections due today",
+
+          value:
+            stats
+              ?.collectionsDueToday ??
+            0,
+
+          helper:
+            "Medication collections scheduled today",
+
+          path:
+            "/nurse/collections",
+
+          status:
+            (
+              stats
+                ?.collectionsDueToday ??
+              0
+            ) >
+            0
+              ? "Due"
+              : "Clear",
+        }),
+
+        queueRow({
+          label:
+            "Overdue collections",
+
+          value:
+            stats
+              ?.overdueCollections ??
+            0,
+
+          helper:
+            "Patients requiring collection follow-up",
+
+          path:
+            "/nurse/collections",
+
+          status:
+            (
+              stats
+                ?.overdueCollections ??
+              0
+            ) >
+            0
+              ? "Overdue"
+              : "Clear",
+        }),
+      ],
+      [
+        stats,
+      ]
+    );
+
+  const patientColumns = [
+    {
+      key:
+        "fullName",
+
+      label:
+        "Patient",
+    },
+
+    {
+      key:
+        "patientNumber",
+
+      label:
+        "Patient no.",
+    },
+
+    {
+      key:
+        "activeMedicationCount",
+
+      label:
+        "Active medication",
+
+      render:
+        value =>
+          value ??
+          0,
+    },
+
+    {
+      key:
+        "overdueCollectionCount",
+
+      label:
+        "Overdue",
+
+      render:
+        value =>
+          value ??
+          0,
+    },
+
+    {
+      key:
+        "status",
+
+      label:
+        "Care status",
+
+      render:
+        (
+          _,
+          patient
+        ) => (
+          <StatusBadge
+            value={
+              workloadStatus(
+                patient
+              )
+            }
+          />
+        ),
+    },
+
+    {
+      key:
+        "action",
+
+      label:
+        "Action",
+
+      render:
+        (
+          _,
+          patient
+        ) => (
+          <Link
+            to={`/nurse/patients/${patient.patientId}`}
+            className="font-medium text-[#0f766e] hover:underline"
+          >
+            Open care record
+          </Link>
+        ),
+    },
+  ];
+
   return (
     <div className="p-4 sm:p-6 lg:p-8">
 
-      <div className="mx-auto max-w-[1500px]">
+      <div className="mx-auto max-w-[1500px] space-y-6">
 
-        <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+        <PageHeader
+          eyebrow="Nurse operations"
+          title="Clinic workload"
+          description="Review patient workload, appointments, medication collections and care alerts within your assigned clinic."
+          meta={
+            <>
+              <span>
+                Clinic:{" "}
+                {profile
+                  ?.clinicName ||
+                  "Assigned clinic"}
+              </span>
 
-          <div>
+              <span>
+                Patient records:{" "}
+                {patients.length}
+              </span>
+            </>
+          }
+          actions={
+            <SecondaryButton
+              type="button"
+              onClick={
+                load
+              }
+              disabled={
+                loading
+              }
+            >
+              <RefreshCw
+                size={15}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
 
-            <h2 className="text-2xl font-bold tracking-tight text-[#0f172a]">
-              Nurse dashboard
-            </h2>
+              Refresh
+            </SecondaryButton>
+          }
+        />
 
-            <p className="mt-1 text-sm text-[#64748b]">
-              {profile?.clinicName ||
-                "Your assigned clinic"}
-            </p>
-
-          </div>
-
-          <button
-            type="button"
-            onClick={
-              load
-            }
-            className="inline-flex min-h-[42px] items-center justify-center gap-2 rounded-xl border border-[#e2e8f0] bg-white px-4 text-sm font-semibold text-[#475569] hover:bg-[#f8fafc]"
-          >
-            <RefreshCw
-              size={16}
-            />
-
-            Refresh
-          </button>
-
-        </div>
-
-        {error && (
-          <div className="mb-6 rounded-xl border border-[#fecaca] bg-[#fef2f2] p-4 text-sm text-[#b91c1c]">
+        {error ? (
+          <Notice type="error">
             {error}
-          </div>
-        )}
+          </Notice>
+        ) : null}
 
-        {loading ? (
-          <div className="rounded-2xl border border-[#e2e8f0] bg-white p-12 text-center text-sm text-[#64748b]">
-            Loading dashboard...
-          </div>
+        {loading &&
+        !stats ? (
+          <LoadingBlock
+            label="Loading clinic workload…"
+            minHeight={
+              300
+            }
+          />
         ) : (
           <>
-            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
 
-              {statsConfig.map(
-                (
-                  item
-                ) => {
-                  const Icon =
-                    item.icon;
+            <MetricStrip
+              metrics={
+                metrics
+              }
+            />
 
-                  return (
-                    <Link
-                      key={
-                        item.key
-                      }
-                      to={
-                        item.path
-                      }
-                      className="rounded-2xl border border-[#e2e8f0] bg-white p-5 transition hover:-translate-y-0.5 hover:shadow-md"
-                    >
+            <div className="grid gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(320px,1fr)]">
 
-                      <div className="flex items-center justify-between">
-
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ccfbf1] text-[#0f766e]">
-                          <Icon
-                            size={19}
-                          />
-                        </div>
-
-                        <ArrowRight
-                          size={15}
-                          className="text-[#94a3b8]"
-                        />
-
-                      </div>
-
-                      <p className="mt-4 text-2xl font-bold">
-                        {stats?.[
-                          item.key
-                        ] ??
-                          0}
-                      </p>
-
-                      <p className="mt-1 text-xs font-medium text-[#64748b]">
-                        {item.label}
-                      </p>
-
-                    </Link>
-                  );
-                }
-              )}
-
-            </div>
-
-            <div className="mt-6 grid gap-6 xl:grid-cols-3">
-
-              {/* PATIENTS */}
-
-              <section className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white xl:col-span-2">
-
-                <div className="flex items-center justify-between border-b border-[#e2e8f0] px-5 py-5">
-
-                  <div>
-
-                    <h3 className="font-semibold">
-                      Clinic patients
-                    </h3>
-
-                    <p className="mt-1 text-sm text-[#64748b]">
-                      Quick access to patient care records.
-                    </p>
-
-                  </div>
-
+              <Panel
+                title="Patient workload"
+                description="Patients currently available in your clinic scope."
+                noPadding
+                actions={
                   <Link
                     to="/nurse/patients"
-                    className="text-sm font-semibold text-[#0f766e]"
+                    className="text-xs font-medium text-[#0f766e] hover:underline"
                   >
-                    View all
+                    View all patients
                   </Link>
+                }
+              >
 
-                </div>
-
-                <div className="divide-y divide-[#e2e8f0]">
-
-                  {patients.length ===
-                  0 ? (
-                    <div className="p-8 text-center text-sm text-[#64748b]">
-                      No clinic patients.
-                    </div>
-                  ) : (
-                    patients
-                      .slice(
+                {patients.length ? (
+                  <DataTable
+                    columns={
+                      patientColumns
+                    }
+                    rows={
+                      patients.slice(
                         0,
-                        6
+                        10
                       )
-                      .map(
-                        (
-                          patient
-                        ) => (
-                          <Link
-                            key={
-                              patient.patientId
-                            }
-                            to={`/nurse/patients/${patient.patientId}`}
-                            className="flex items-center justify-between gap-4 px-5 py-4 hover:bg-[#f8fafc]"
-                          >
+                    }
+                    rowKey={
+                      patient =>
+                        patient.patientId
+                    }
+                    maxHeight={
+                      520
+                    }
+                  />
+                ) : (
+                  <div className="px-5 py-10 text-center text-sm text-slate-500">
+                    No patients are currently available in this clinic scope.
+                  </div>
+                )}
 
-                            <div className="flex min-w-0 items-center gap-3">
+              </Panel>
 
-                              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#f0fdfa] text-[#0f766e]">
-                                <Users
-                                  size={17}
-                                />
-                              </div>
+              <div className="space-y-6">
 
-                              <div className="min-w-0">
+                <Panel
+                  title="Operational queue"
+                  description="Items that may require action during the current shift."
+                  noPadding
+                >
 
-                                <p className="truncate text-sm font-semibold">
-                                  {patient.fullName}
-                                </p>
+                  <div className="divide-y divide-slate-200">
 
-                                <p className="mt-0.5 truncate text-xs text-[#64748b]">
-                                  {patient.patientNumber ||
-                                    "No patient number"}
-                                </p>
-
-                              </div>
-
-                            </div>
-
-                            <div className="hidden shrink-0 text-right sm:block">
-
-                              <p className="text-xs text-[#64748b]">
-                                {
-                                  patient.activeMedicationCount ??
-                                  0
-                                }{" "}
-                                active medication(s)
-                              </p>
-
-                              {patient.overdueCollectionCount >
-                                0 && (
-                                <p className="mt-1 text-xs font-semibold text-[#dc2626]">
-                                  {
-                                    patient.overdueCollectionCount
-                                  }{" "}
-                                  overdue
-                                </p>
-                              )}
-
-                            </div>
-
-                          </Link>
-                        )
-                      )
-                  )}
-
-                </div>
-
-              </section>
-
-              {/* ALERTS */}
-
-              <section className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white">
-
-                <div className="border-b border-[#e2e8f0] px-5 py-5">
-
-                  <h3 className="font-semibold">
-                    Care alerts
-                  </h3>
-
-                  <p className="mt-1 text-sm text-[#64748b]">
-                    Work requiring attention.
-                  </p>
-
-                </div>
-
-                <div className="space-y-3 p-5">
-
-                  {alerts.length ===
-                  0 ? (
-                    <div className="rounded-xl bg-[#f0fdfa] p-4 text-sm text-[#115e59]">
-                      No urgent care alerts.
-                    </div>
-                  ) : (
-                    alerts.map(
-                      (
-                        alert
-                      ) => (
-                        <div
+                    {queue.map(
+                      item => (
+                        <Link
                           key={
-                            alert.code
+                            item.label
                           }
-                          className={[
-                            "rounded-xl border p-4",
-                            String(
-                              alert.severity
-                            ).toLowerCase() ===
-                            "high"
-                              ? "border-[#fecaca] bg-[#fef2f2]"
-                              : "border-[#fde68a] bg-[#fffbeb]",
-                          ].join(
-                            " "
-                          )}
+                          to={
+                            item.path
+                          }
+                          className="flex items-center gap-4 bg-white px-5 py-4 transition hover:bg-slate-50"
                         >
 
-                          <div className="flex items-start gap-3">
+                          <div className="min-w-0 flex-1">
 
-                            <AlertCircle
-                              size={18}
-                              className={
-                                String(
-                                  alert.severity
-                                ).toLowerCase() ===
-                                "high"
-                                  ? "mt-0.5 text-[#dc2626]"
-                                  : "mt-0.5 text-[#d97706]"
-                              }
-                            />
+                            <div className="flex items-center justify-between gap-3">
 
-                            <div>
-
-                              <p className="text-sm font-semibold">
-                                {alert.message}
+                              <p className="truncate text-sm font-semibold text-slate-900">
+                                {
+                                  item.label
+                                }
                               </p>
 
-                              <p className="mt-1 text-xs text-[#64748b]">
-                                {alert.count} item(s)
+                              <span className="text-lg font-semibold text-slate-950">
+                                {
+                                  item.value
+                                }
+                              </span>
+
+                            </div>
+
+                            <div className="mt-1 flex items-center justify-between gap-3">
+
+                              <p className="text-xs text-slate-500">
+                                {
+                                  item.helper
+                                }
                               </p>
+
+                              <StatusBadge
+                                value={
+                                  item.status
+                                }
+                              />
 
                             </div>
 
                           </div>
 
-                        </div>
+                        </Link>
                       )
-                    )
+                    )}
+
+                  </div>
+
+                </Panel>
+
+                <Panel
+                  title="Care alerts"
+                  description="Clinical and operational alerts generated for your current clinic scope."
+                  noPadding
+                >
+
+                  {!alerts.length ? (
+                    <div className="border-l-[3px] border-emerald-500 bg-emerald-50 px-4 py-4 text-sm text-emerald-800">
+                      No urgent care alerts.
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-200">
+
+                      {alerts.map(
+                        alert => {
+                          const high =
+                            String(
+                              alert.severity ||
+                                ""
+                            )
+                              .toLowerCase() ===
+                            "high";
+
+                          return (
+                            <div
+                              key={
+                                alert.code ||
+                                alert.message
+                              }
+                              className="px-5 py-4"
+                            >
+
+                              <div className="flex items-start gap-3">
+
+                                <AlertCircle
+                                  size={
+                                    16
+                                  }
+                                  className={
+                                    high
+                                      ? "mt-0.5 shrink-0 text-red-600"
+                                      : "mt-0.5 shrink-0 text-amber-600"
+                                  }
+                                />
+
+                                <div className="min-w-0 flex-1">
+
+                                  <div className="flex items-start justify-between gap-3">
+
+                                    <p className="text-sm font-semibold text-slate-900">
+                                      {
+                                        alert.message
+                                      }
+                                    </p>
+
+                                    <StatusBadge
+                                      value={
+                                        high
+                                          ? "Overdue"
+                                          : "Due"
+                                      }
+                                    />
+
+                                  </div>
+
+                                  <p className="mt-1 text-xs text-slate-500">
+                                    {
+                                      alert.count ??
+                                      0
+                                    }{" "}
+                                    item(s)
+                                  </p>
+
+                                </div>
+
+                              </div>
+
+                            </div>
+                          );
+                        }
+                      )}
+
+                    </div>
                   )}
 
-                </div>
+                </Panel>
 
-              </section>
-
-            </div>
-
-            <div className="mt-6 grid gap-4 md:grid-cols-3">
-
-              <QuickAction
-                icon={
-                  Stethoscope
-                }
-                title="Patient care"
-                description="Manage allergies, conditions, medication and Proxy assignments."
-                path="/nurse/patients"
-              />
-
-              <QuickAction
-                icon={
-                  CalendarCheck2
-                }
-                title="Appointments"
-                description="Review pending appointments and manage clinic bookings."
-                path="/nurse/appointments"
-              />
-
-              <QuickAction
-                icon={
-                  PackageCheck
-                }
-                title="Collections"
-                description="Process scheduled medication collections."
-                path="/nurse/collections"
-              />
+              </div>
 
             </div>
+
           </>
         )}
 
       </div>
 
     </div>
-  );
-}
-
-function QuickAction({
-  icon: Icon,
-  title,
-  description,
-  path,
-}) {
-  return (
-    <Link
-      to={
-        path
-      }
-      className="rounded-2xl border border-[#e2e8f0] bg-white p-5 hover:shadow-md"
-    >
-
-      <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#ccfbf1] text-[#0f766e]">
-        <Icon
-          size={18}
-        />
-      </div>
-
-      <h3 className="mt-4 font-semibold">
-        {title}
-      </h3>
-
-      <p className="mt-2 text-sm leading-6 text-[#64748b]">
-        {description}
-      </p>
-
-    </Link>
   );
 }
