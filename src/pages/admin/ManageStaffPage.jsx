@@ -28,6 +28,31 @@ import {
   clinicAdminApi,
 } from "../../services/api/clinicAdmin.js";
 
+import {
+  DataTable,
+  EmptyBlock,
+  LoadingBlock,
+  MetricStrip,
+  Notice,
+  PageHeader,
+  Panel,
+  SearchField,
+  SecondaryButton,
+  SelectField,
+  StatusBadge,
+} from "../../components/admin/AdminPrimitives.jsx";
+
+function number(
+  value
+) {
+  return Number(
+    value ||
+      0
+  ).toLocaleString(
+    "en-ZA"
+  );
+}
+
 export default function ManageStaffPage() {
   const {
     role,
@@ -38,17 +63,13 @@ export default function ManageStaffPage() {
     filter,
     setFilter,
   ] =
-    useState(
-      "All"
-    );
+    useState("All");
 
   const [
     search,
     setSearch,
   ] =
-    useState(
-      ""
-    );
+    useState("");
 
   const [
     staff,
@@ -170,8 +191,103 @@ export default function ManageStaffPage() {
         );
       },
       [
-        staff,
         search,
+        staff,
+      ]
+    );
+
+  const metrics =
+    useMemo(
+      () => {
+        const active =
+          staff.filter(
+            item =>
+              item.isActive
+          ).length;
+
+        const nurses =
+          staff.filter(
+            item =>
+              item.role ===
+              "Nurse"
+          ).length;
+
+        const proxies =
+          staff.filter(
+            item =>
+              item.role ===
+              "Proxy"
+          ).length;
+
+        return [
+          {
+            label:
+              "Visible accounts",
+
+            value:
+              number(
+                staff.length
+              ),
+
+            helper:
+              filter ===
+              "All"
+                ? "All roles"
+                : filter,
+
+            icon:
+              Users,
+          },
+          {
+            label:
+              "Active accounts",
+
+            value:
+              number(
+                active
+              ),
+
+            helper:
+              "Currently enabled",
+
+            icon:
+              Users,
+          },
+          {
+            label:
+              "Nurses",
+
+            value:
+              number(
+                nurses
+              ),
+
+            helper:
+              "Professional staff",
+
+            icon:
+              Users,
+          },
+          {
+            label:
+              "Proxies",
+
+            value:
+              number(
+                proxies
+              ),
+
+            helper:
+              "Registered proxy accounts",
+
+            icon:
+              Users,
+          },
+        ];
+      },
+      [
+        filter,
+        staff,
       ]
     );
 
@@ -181,6 +297,10 @@ export default function ManageStaffPage() {
     try {
       setPendingId(
         item.userId
+      );
+
+      setError(
+        ""
       );
 
       if (
@@ -243,7 +363,7 @@ export default function ManageStaffPage() {
     }
   }
 
-  const filters =
+  const roleOptions =
     role ===
     "ClinicAdmin"
       ? [
@@ -260,57 +380,209 @@ export default function ManageStaffPage() {
           "SuperAdmin",
         ];
 
+  const columns = [
+    {
+      key:
+        "fullName",
+
+      label:
+        "Staff member",
+
+      render:
+        (
+          value,
+          row
+        ) => (
+          <div>
+            <p className="font-semibold text-slate-900">
+              {value ||
+                "—"}
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              {row.email ||
+                "No email"}
+            </p>
+          </div>
+        ),
+    },
+    {
+      key:
+        "role",
+
+      label:
+        "Role",
+
+      render:
+        value => (
+          <span className="border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+    {
+      key:
+        "idNumber",
+
+      label:
+        "ID number",
+
+      render:
+        value => (
+          <span className="font-mono text-[11px]">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+    {
+      key:
+        "phoneNumber",
+
+      label:
+        "Contact",
+    },
+    {
+      key:
+        "isActive",
+
+      label:
+        "Status",
+
+      render:
+        value => (
+          <StatusBadge
+            value={
+              value
+                ? "Active"
+                : "Inactive"
+            }
+          />
+        ),
+    },
+    {
+      key:
+        "actions",
+
+      label:
+        "Account access",
+
+      render:
+        (
+          _,
+          row
+        ) => (
+          <button
+            type="button"
+            disabled={
+              pendingId ===
+              row.userId
+            }
+            onClick={
+              () =>
+                toggle(
+                  row
+                )
+            }
+            className={`text-[11px] font-medium hover:underline disabled:opacity-50 ${
+              row.isActive
+                ? "text-red-600"
+                : "text-[#0f766e]"
+            }`}
+          >
+            {pendingId ===
+            row.userId
+              ? "Updating…"
+              : row.isActive
+                ? "Deactivate"
+                : "Activate"}
+          </button>
+        ),
+    },
+  ];
+
   return (
     <div className="space-y-5">
+      <PageHeader
+        eyebrow={
+          role ===
+          "ClinicAdmin"
+            ? "Clinic workforce"
+            : "Administration"
+        }
+        title={
+          role ===
+          "ClinicAdmin"
+            ? "Staff"
+            : "Accounts"
+        }
+        description={
+          role ===
+          "ClinicAdmin"
+            ? "Review Nurse and Proxy accounts assigned to your clinic and control account access."
+            : "Review administrative and service accounts across PhilaLink."
+        }
+        actions={
+          <>
+            <SecondaryButton
+              onClick={
+                load
+              }
+              disabled={
+                loading
+              }
+            >
+              <RefreshCw
+                size={15}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
 
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+              Refresh
+            </SecondaryButton>
 
-        <div>
+            <Link
+              to="/admin/register-staff"
+              className="inline-flex h-10 items-center justify-center gap-2 bg-[#0f766e] px-4 text-sm font-medium text-white hover:bg-[#0b655e]"
+            >
+              <UserPlus
+                size={15}
+              />
 
-          <p className="text-[10px] font-bold uppercase tracking-[0.15em] text-violet-600">
-            Workforce
-          </p>
+              Register staff
+            </Link>
+          </>
+        }
+      />
 
-          <h2 className="mt-1 text-3xl font-bold tracking-tight text-slate-950">
-            Staff management
-          </h2>
-
-          <p className="mt-2 text-sm text-slate-500">
-            Review and manage clinic account access.
-          </p>
-
-        </div>
-
-        <Link
-          to="/admin/register-staff"
-          className="inline-flex items-center justify-center gap-2 rounded-2xl bg-[#6d28d9] px-4 py-2.5 text-xs font-bold text-white"
-        >
-          <UserPlus
-            size={15}
-          />
-          Register staff
-        </Link>
-
-      </div>
-
-      {error && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      {error ? (
+        <Notice type="error">
           {error}
-        </div>
-      )}
+        </Notice>
+      ) : null}
 
-      <section className="rounded-[28px] border border-slate-200 bg-white p-4 sm:p-5">
+      <MetricStrip
+        metrics={
+          metrics
+        }
+      />
 
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <Panel
+        title="Staff directory"
+        description="Filter accounts by role or search identifying and contact details."
+        noPadding
+      >
+        <div className="grid gap-3 border-b border-slate-200 px-5 py-4 lg:grid-cols-[minmax(260px,1fr)_220px_auto] lg:items-end">
+          <div>
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+              Search
+            </span>
 
-          <div className="relative w-full lg:max-w-sm">
-
-            <Search
-              size={15}
-              className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
-            />
-
-            <input
+            <SearchField
               value={
                 search
               }
@@ -321,223 +593,74 @@ export default function ManageStaffPage() {
                       .value
                   )
               }
-              placeholder="Search staff..."
-              className="w-full rounded-2xl border border-slate-200 py-2.5 pl-10 pr-4 text-xs outline-none focus:border-violet-300 focus:ring-2 focus:ring-violet-100"
+              placeholder="Name, ID, email or phone…"
             />
-
           </div>
 
-          <div className="flex flex-wrap gap-2">
+          <SelectField
+            label="Role"
+            value={
+              filter
+            }
+            onChange={
+              event =>
+                setFilter(
+                  event.target
+                    .value
+                )
+            }
+            options={
+              roleOptions
+            }
+          />
 
-            {filters.map(
-              item => (
-                <button
-                  key={
-                    item
-                  }
-                  type="button"
-                  onClick={() =>
-                    setFilter(
-                      item
-                    )
-                  }
-                  className={`rounded-full px-3.5 py-2 text-[10px] font-bold ${
-                    filter ===
-                    item
-                      ? "bg-[#6d28d9] text-white"
-                      : "border border-slate-200 text-slate-500"
-                  }`}
-                >
-                  {item}
-                </button>
-              )
-            )}
-
-            <button
-              type="button"
-              onClick={
-                load
-              }
-              className="flex h-8 w-8 items-center justify-center rounded-full border border-slate-200 text-slate-500"
-            >
-              <RefreshCw
-                size={13}
-              />
-            </button>
-
+          <div className="flex h-10 items-center justify-center border border-slate-300 bg-slate-50 px-4 text-xs font-medium text-slate-600">
+            {visible.length.toLocaleString(
+              "en-ZA"
+            )}{" "}
+            result
+            {visible.length ===
+            1
+              ? ""
+              : "s"}
           </div>
-
         </div>
 
-      </section>
-
-      <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white">
-
         {loading ? (
-          <div className="p-12 text-center text-sm text-slate-400">
-            Loading staff…
-          </div>
-        ) : visible.length ===
-          0 ? (
-          <div className="p-12 text-center">
-
-            <Users
-              size={28}
-              className="mx-auto text-slate-300"
-            />
-
-            <p className="mt-3 text-sm font-bold text-slate-800">
-              No staff found
-            </p>
-
-          </div>
+          <LoadingBlock
+            label="Loading staff…"
+            minHeight={
+              320
+            }
+          />
+        ) : visible.length ? (
+          <DataTable
+            columns={
+              columns
+            }
+            rows={
+              visible
+            }
+            rowKey={
+              row =>
+                row.userId
+            }
+            maxHeight={
+              650
+            }
+          />
         ) : (
-          <div className="overflow-x-auto">
-
-            <table className="w-full min-w-[900px] text-left">
-
-              <thead className="bg-[#fafafd] text-[10px] uppercase tracking-wider text-slate-400">
-
-                <tr>
-
-                  <th className="px-5 py-4">
-                    Staff member
-                  </th>
-
-                  <th className="px-5 py-4">
-                    Role
-                  </th>
-
-                  <th className="px-5 py-4">
-                    ID number
-                  </th>
-
-                  <th className="px-5 py-4">
-                    Contact
-                  </th>
-
-                  <th className="px-5 py-4">
-                    Status
-                  </th>
-
-                  <th className="px-5 py-4">
-                    Action
-                  </th>
-
-                </tr>
-
-              </thead>
-
-              <tbody className="divide-y divide-slate-100">
-
-                {visible.map(
-                  item => (
-                    <tr
-                      key={
-                        item.userId
-                      }
-                      className="hover:bg-slate-50/60"
-                    >
-
-                      <td className="px-5 py-4">
-
-                        <p className="text-xs font-bold text-slate-900">
-                          {
-                            item.fullName
-                          }
-                        </p>
-
-                        <p className="mt-1 text-[10px] text-slate-400">
-                          {
-                            item.email ||
-                            "—"
-                          }
-                        </p>
-
-                      </td>
-
-                      <td className="px-5 py-4">
-
-                        <span className="rounded-full bg-violet-50 px-2.5 py-1 text-[10px] font-bold text-violet-700">
-                          {
-                            item.role
-                          }
-                        </span>
-
-                      </td>
-
-                      <td className="px-5 py-4 font-mono text-[11px] text-slate-500">
-                        {
-                          item.idNumber ||
-                          "—"
-                        }
-                      </td>
-
-                      <td className="px-5 py-4 text-xs text-slate-500">
-                        {
-                          item.phoneNumber ||
-                          "—"
-                        }
-                      </td>
-
-                      <td className="px-5 py-4">
-
-                        <span
-                          className={`rounded-full px-2.5 py-1 text-[10px] font-bold ${
-                            item.isActive
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-slate-100 text-slate-500"
-                          }`}
-                        >
-                          {item.isActive
-                            ? "Active"
-                            : "Inactive"}
-                        </span>
-
-                      </td>
-
-                      <td className="px-5 py-4">
-
-                        <button
-                          type="button"
-                          disabled={
-                            pendingId ===
-                            item.userId
-                          }
-                          onClick={() =>
-                            toggle(
-                              item
-                            )
-                          }
-                          className={`text-[10px] font-bold hover:underline disabled:opacity-50 ${
-                            item.isActive
-                              ? "text-rose-600"
-                              : "text-teal-700"
-                          }`}
-                        >
-                          {pendingId ===
-                          item.userId
-                            ? "Updating…"
-                            : item.isActive
-                              ? "Deactivate"
-                              : "Activate"}
-                        </button>
-
-                      </td>
-
-                    </tr>
-                  )
-                )}
-
-              </tbody>
-
-            </table>
-
+          <div className="p-5">
+            <EmptyBlock
+              icon={
+                Search
+              }
+              title="No staff found"
+              description="Change the role filter or search term, or register a new clinic account."
+            />
           </div>
         )}
-
-      </section>
-
+      </Panel>
     </div>
   );
 }
