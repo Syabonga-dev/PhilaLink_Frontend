@@ -3,27 +3,11 @@ import {
   useState,
 } from "react";
 
-import Card, {
-  CardBody,
-  CardHeader,
-} from "../../components/ui/Card.jsx";
-
-import Button from "../../components/ui/Button.jsx";
-
-import Input, {
-  Select,
-} from "../../components/ui/Input.jsx";
-
-import Spinner from "../../components/ui/Spinner.jsx";
-
 import {
-  ErrorState,
-  EmptyState,
-} from "../../components/ui/EmptyState.jsx";
-
-import {
-  useToast,
-} from "../../components/ui/Toast.jsx";
+  ClipboardCopy,
+  ShieldCheck,
+  UserPlus,
+} from "lucide-react";
 
 import {
   useAuth,
@@ -40,6 +24,17 @@ import {
 import {
   ApiError,
 } from "../../services/api/client.js";
+
+import {
+  InputField,
+  LoadingBlock,
+  Notice,
+  PageHeader,
+  Panel,
+  PrimaryButton,
+  SecondaryButton,
+  SelectField,
+} from "../../components/admin/AdminPrimitives.jsx";
 
 const EMPTY_FORM = {
   role:
@@ -118,13 +113,21 @@ function mapApiErrors(
   Object.entries(
     errors
   ).forEach(
-    ([key, messages]) => {
+    ([
+      key,
+      messages,
+    ]) => {
       const field =
-        key.charAt(0)
-          .toLowerCase() +
-        key.slice(1);
+        key.charAt(
+          0
+        ).toLowerCase() +
+        key.slice(
+          1
+        );
 
-      mapped[field] =
+      mapped[
+        field
+      ] =
         Array.isArray(
           messages
         )
@@ -136,52 +139,21 @@ function mapApiErrors(
   return mapped;
 }
 
-function SectionTitle({
-  children,
+function SectionHeading({
+  title,
   description,
 }) {
   return (
-    <div>
-      <h3 className="text-sm font-bold text-slate-900">
-        {children}
-      </h3>
+    <div className="border-b border-slate-200 pb-3">
+      <h2 className="text-sm font-semibold text-slate-950">
+        {title}
+      </h2>
 
-      {description && (
+      {description ? (
         <p className="mt-1 text-xs leading-5 text-slate-500">
           {description}
         </p>
-      )}
-    </div>
-  );
-}
-
-function ClinicLockedCard({
-  clinicName,
-}) {
-  return (
-    <div className="rounded-2xl border border-teal-200 bg-teal-50/70 p-4">
-      <div className="flex items-start gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-[#0f766e] text-white">
-          <span className="material-symbols-outlined text-[20px]">
-            local_hospital
-          </span>
-        </div>
-
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.12em] text-teal-700">
-            Assigned clinic
-          </p>
-
-          <p className="mt-1 text-sm font-bold text-slate-950">
-            {clinicName ||
-              "Your assigned clinic"}
-          </p>
-
-          <p className="mt-1 text-xs leading-5 text-slate-500">
-            Staff registered by a Clinic Administrator are automatically attached to this clinic.
-          </p>
-        </div>
-      </div>
+      ) : null}
     </div>
   );
 }
@@ -246,8 +218,17 @@ export default function RegisterStaffPage() {
   ] =
     useState(null);
 
-  const toast =
-    useToast();
+  const [
+    success,
+    setSuccess,
+  ] =
+    useState("");
+
+  const [
+    error,
+    setError,
+  ] =
+    useState("");
 
   useEffect(
     () => {
@@ -290,12 +271,15 @@ export default function RegisterStaffPage() {
             setForm(
               current => ({
                 ...current,
+
                 clinicId:
                   me.clinicId,
               })
             );
 
-            setClinics([]);
+            setClinics(
+              []
+            );
           } else {
             const result =
               await clinicsApi
@@ -318,14 +302,14 @@ export default function RegisterStaffPage() {
             );
           }
         } catch (
-          error
+          err
         ) {
           if (
             active
           ) {
             setProfileError(
-              error?.message ||
-                "Could not load registration context."
+              err?.message ||
+              "Could not load registration context."
             );
           }
         } finally {
@@ -351,37 +335,38 @@ export default function RegisterStaffPage() {
     ]
   );
 
-  const set =
-    key =>
-    event => {
-      const value =
-        event.target
-          .value;
+  function setField(
+    key,
+    value
+  ) {
+    setForm(
+      current => ({
+        ...current,
 
-      setForm(
-        current => ({
-          ...current,
-          [key]:
-            value,
-        })
-      );
+        [key]:
+          value,
+      })
+    );
 
-      setErrors(
-        current => ({
-          ...current,
-          [key]:
-            undefined,
-        })
-      );
-    };
+    setErrors(
+      current => ({
+        ...current,
+
+        [key]:
+          undefined,
+      })
+    );
+  }
 
   function resetForRole(
     nextRole
   ) {
     setForm({
       ...EMPTY_FORM,
+
       role:
         nextRole,
+
       clinicId:
         isClinicAdmin
           ? adminProfile
@@ -394,6 +379,14 @@ export default function RegisterStaffPage() {
 
     setCreatedAccount(
       null
+    );
+
+    setSuccess(
+      ""
+    );
+
+    setError(
+      ""
     );
   }
 
@@ -427,7 +420,8 @@ export default function RegisterStaffPage() {
     }
 
     if (
-      !form.email.trim()
+      !form.email
+        .trim()
     ) {
       next.email =
         "Enter an email address.";
@@ -465,14 +459,16 @@ export default function RegisterStaffPage() {
     }
 
     if (
-      !form.suburb.trim()
+      !form.suburb
+        .trim()
     ) {
       next.suburb =
         "Enter the suburb.";
     }
 
     if (
-      !form.city.trim()
+      !form.city
+        .trim()
     ) {
       next.city =
         "Enter the city.";
@@ -688,6 +684,14 @@ export default function RegisterStaffPage() {
         null
       );
 
+      setError(
+        ""
+      );
+
+      setSuccess(
+        ""
+      );
+
       const payload =
         buildPayload();
 
@@ -707,27 +711,27 @@ export default function RegisterStaffPage() {
         result
       );
 
-      toast.success(
+      setSuccess(
         `${form.role} account created successfully.`
       );
     } catch (
-      error
+      err
     ) {
       if (
-        error instanceof
+        err instanceof
           ApiError &&
-        error.errors
+        err.errors
       ) {
         setErrors(
           mapApiErrors(
-            error.errors
+            err.errors
           )
         );
       }
 
-      toast.error(
-        error?.message ||
-          "Couldn't create the account. Please try again."
+      setError(
+        err?.message ||
+        "Couldn't create the account. Please try again."
       );
     } finally {
       setLoading(
@@ -736,19 +740,40 @@ export default function RegisterStaffPage() {
     }
   }
 
-  function resetForm() {
-    resetForRole(
-      form.role
-    );
+  async function copyPassword() {
+    if (
+      !createdAccount?.temporaryPassword
+    ) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard
+        .writeText(
+          createdAccount
+            .temporaryPassword
+        );
+
+      setSuccess(
+        "Temporary password copied to the clipboard."
+      );
+    } catch {
+      setError(
+        "Could not copy the temporary password automatically."
+      );
+    }
   }
 
   if (
     profileLoading
   ) {
     return (
-      <div className="mx-auto max-w-4xl rounded-[28px] border border-slate-200 bg-white p-12">
-        <Spinner label="Loading clinic registration details…" />
-      </div>
+      <LoadingBlock
+        label="Loading registration context…"
+        minHeight={
+          360
+        }
+      />
     );
   }
 
@@ -756,285 +781,370 @@ export default function RegisterStaffPage() {
     profileError
   ) {
     return (
-      <div className="mx-auto max-w-4xl">
-        <ErrorState
-          description={
-            profileError
-          }
-        />
-      </div>
+      <Notice type="error">
+        {profileError}
+      </Notice>
     );
   }
 
   if (
     createdAccount
   ) {
-    return (
-      <Card className="mx-auto max-w-2xl overflow-hidden border-teal-100">
-        <div className="h-2 bg-[#0f766e]" />
+    const clinicLabel =
+      isClinicAdmin
+        ? adminProfile
+            ?.clinicName ||
+          "Assigned clinic"
+        : clinics.find(
+            clinic =>
+              clinic.id ===
+              form.clinicId
+          )?.name ||
+          "Selected clinic";
 
-        <CardHeader
+    return (
+      <div className="space-y-5">
+        <PageHeader
+          eyebrow="Clinic workforce"
           title="Account created"
-          subtitle="Save these login details now. The temporary password is only returned once."
+          description="The account is ready. Relay the temporary login credentials securely to the staff member."
         />
 
-        <CardBody>
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
-              <div className="grid gap-4 sm:grid-cols-2">
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Full name
+        {success ? (
+          <Notice type="success">
+            {success}
+          </Notice>
+        ) : null}
+
+        {error ? (
+          <Notice type="error">
+            {error}
+          </Notice>
+        ) : null}
+
+        <Panel
+          title="New staff account"
+          description="The temporary password is shown only in this registration response."
+        >
+          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+            <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Full name
+                </dt>
+
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  {createdAccount.fullName ||
+                    form.fullName}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Role
+                </dt>
+
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  {createdAccount.role ||
+                    form.role}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Clinic
+                </dt>
+
+                <dd className="mt-1 text-sm font-semibold text-slate-900">
+                  {clinicLabel}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  User ID
+                </dt>
+
+                <dd className="mt-1 break-all font-mono text-xs text-slate-600">
+                  {createdAccount.userId ||
+                    "—"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  ID number
+                </dt>
+
+                <dd className="mt-1 font-mono text-sm text-slate-800">
+                  {createdAccount.idNumber ||
+                    form.idNumber}
+                </dd>
+              </div>
+            </dl>
+
+            <div className="border border-amber-200 bg-amber-50 p-4">
+              <div className="flex items-start gap-3">
+                <ShieldCheck
+                  size={18}
+                  className="mt-0.5 shrink-0 text-amber-700"
+                />
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
+                    Temporary password
                   </p>
 
-                  <p className="mt-1 font-semibold text-slate-950">
-                    {createdAccount.fullName ||
-                      form.fullName ||
-                      "—"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Role
+                  <p className="mt-2 break-all font-mono text-lg font-semibold text-slate-950">
+                    {createdAccount.temporaryPassword ||
+                      "Not returned"}
                   </p>
 
-                  <p className="mt-1 font-semibold text-slate-950">
-                    {createdAccount.role ||
-                      form.role}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    Clinic
+                  <p className="mt-2 text-xs leading-5 text-amber-800">
+                    Share this securely. It cannot be retrieved again after registration.
                   </p>
 
-                  <p className="mt-1 font-semibold text-slate-950">
-                    {isClinicAdmin
-                      ? adminProfile
-                          ?.clinicName ||
-                        "Assigned clinic"
-                      : clinics.find(
-                          clinic =>
-                            clinic.id ===
-                            form.clinicId
-                        )?.name ||
-                        "—"}
-                  </p>
-                </div>
+                  {createdAccount.temporaryPassword ? (
+                    <button
+                      type="button"
+                      onClick={
+                        copyPassword
+                      }
+                      className="mt-3 inline-flex h-9 items-center gap-2 border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                    >
+                      <ClipboardCopy
+                        size={14}
+                      />
 
-                <div>
-                  <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                    User ID
-                  </p>
-
-                  <p className="mt-1 break-all font-mono text-sm text-slate-700">
-                    {createdAccount.userId ||
-                      "—"}
-                  </p>
+                      Copy password
+                    </button>
+                  ) : null}
                 </div>
               </div>
             </div>
+          </div>
 
-            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <p className="text-sm font-bold text-slate-950">
-                Temporary password
-              </p>
-
-              <p className="mt-2 break-all font-mono text-lg font-bold text-[#0f766e]">
-                {createdAccount.temporaryPassword ||
-                  "—"}
-              </p>
-
-              <p className="mt-2 text-xs leading-5 text-slate-500">
-                Share this securely with the account holder. It cannot be retrieved again after registration.
-              </p>
-            </div>
-
-            <Button
-              type="button"
-              className="w-full"
+          <div className="mt-6 border-t border-slate-200 pt-4">
+            <PrimaryButton
               onClick={
-                resetForm
+                () =>
+                  resetForRole(
+                    form.role
+                  )
               }
             >
+              <UserPlus
+                size={15}
+              />
+
               Register another account
-            </Button>
+            </PrimaryButton>
           </div>
-        </CardBody>
-      </Card>
+        </Panel>
+      </div>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-5">
-      <section className="rounded-[30px] border border-teal-100 bg-gradient-to-br from-teal-100 via-[#f1fffc] to-white p-6 sm:p-8">
-        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-teal-700">
-          Clinic workforce
-        </p>
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Clinic workforce"
+        title="Register staff"
+        description="Create Nurse or Proxy accounts. Clinic Administrators register staff directly into their assigned clinic."
+        meta={
+          isClinicAdmin ? (
+            <span>
+              Assigned clinic:{" "}
+              {adminProfile?.clinicName ||
+                "Clinic"}
+            </span>
+          ) : null
+        }
+      />
 
-        <h1 className="mt-2 text-3xl font-bold tracking-tight text-slate-950">
-          Register staff
-        </h1>
+      {error ? (
+        <Notice type="error">
+          {error}
+        </Notice>
+      ) : null}
 
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-500">
-          Create Nurse or Proxy accounts. Clinic Administrators register people directly into their own assigned clinic.
-        </p>
-      </section>
+      {success ? (
+        <Notice type="success">
+          {success}
+        </Notice>
+      ) : null}
 
-      <Card className="border-slate-200">
-        <CardBody>
-          <form
-            onSubmit={
-              handleSubmit
-            }
-            className="space-y-8"
-          >
-            <div className="grid grid-cols-2 gap-2 rounded-2xl bg-slate-100 p-1">
-              {[
-                "Nurse",
-                "Proxy",
-              ].map(
-                item => (
-                  <button
-                    key={
-                      item
-                    }
-                    type="button"
-                    onClick={() =>
+      <form
+        onSubmit={
+          handleSubmit
+        }
+        className="space-y-5"
+      >
+        <Panel
+          title="Account type"
+          description="Choose the staff profile to create."
+        >
+          <div className="inline-flex border border-slate-300 bg-slate-50 p-1">
+            {[
+              "Nurse",
+              "Proxy",
+            ].map(
+              item => (
+                <button
+                  key={
+                    item
+                  }
+                  type="button"
+                  onClick={
+                    () =>
                       resetForRole(
                         item
                       )
-                    }
-                    className={`flex items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-bold transition ${{
-                      Nurse:
-                        form.role ===
-                        "Nurse",
-                      Proxy:
-                        form.role ===
-                        "Proxy",
-                    }[item]
-                      ? "bg-white text-[#0f766e] shadow-sm ring-1 ring-teal-100"
-                      : "text-slate-500 hover:text-slate-800"}`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {item ===
-                      "Nurse"
-                        ? "medical_services"
-                        : "family_restroom"}
-                    </span>
+                  }
+                  className={`px-5 py-2 text-sm font-medium transition ${
+                    form.role ===
+                    item
+                      ? "bg-white text-[#0f766e] shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  {item}
+                </button>
+              )
+            )}
+          </div>
+        </Panel>
 
-                    {item}
-                  </button>
-                )
-              )}
-            </div>
-
+        <Panel>
+          <div className="space-y-6">
             <section className="space-y-4">
-              <SectionTitle description="The account holder's identifying and contact information.">
-                Personal details
-              </SectionTitle>
-
-              <Input
-                label="Full name"
-                value={
-                  form.fullName
-                }
-                onChange={
-                  set(
-                    "fullName"
-                  )
-                }
-                error={
-                  errors.fullName
-                }
+              <SectionHeading
+                title="Personal details"
+                description="Identifying and contact information for the new account."
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputField
+                  label="Full name"
+                  value={
+                    form.fullName
+                  }
+                  onChange={
+                    event =>
+                      setField(
+                        "fullName",
+                        event.target
+                          .value
+                      )
+                  }
+                  error={
+                    errors.fullName
+                  }
+                  required
+                />
+
+                <InputField
                   label="SA ID number"
                   value={
                     form.idNumber
                   }
                   onChange={
-                    set(
-                      "idNumber"
-                    )
+                    event =>
+                      setField(
+                        "idNumber",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.idNumber
                   }
                   inputMode="numeric"
-                  maxLength={13}
+                  maxLength={
+                    13
+                  }
+                  required
                 />
 
-                <Input
+                <InputField
                   label="Cellphone number"
                   value={
                     form.phoneNumber
                   }
                   onChange={
-                    set(
-                      "phoneNumber"
-                    )
+                    event =>
+                      setField(
+                        "phoneNumber",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.phoneNumber
                   }
                   inputMode="tel"
+                  required
                 />
-              </div>
 
-              <Input
-                label="Email"
-                type="email"
-                value={
-                  form.email
-                }
-                onChange={
-                  set(
-                    "email"
-                  )
-                }
-                error={
-                  errors.email
-                }
-              />
+                <InputField
+                  label="Email"
+                  type="email"
+                  value={
+                    form.email
+                  }
+                  onChange={
+                    event =>
+                      setField(
+                        "email",
+                        event.target
+                          .value
+                      )
+                  }
+                  error={
+                    errors.email
+                  }
+                  required
+                />
 
-              <div className="grid gap-4 sm:grid-cols-2">
                 {form.role ===
                 "Nurse" ? (
-                  <Input
+                  <InputField
                     label="Date of birth"
                     type="date"
                     value={
                       form.dateOfBirth
                     }
                     onChange={
-                      set(
-                        "dateOfBirth"
-                      )
+                      event =>
+                        setField(
+                          "dateOfBirth",
+                          event.target
+                            .value
+                        )
                     }
                     error={
                       errors.dateOfBirth
                     }
+                    required
                   />
                 ) : (
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-xs leading-5 text-slate-500">
+                  <div className="border border-slate-200 bg-slate-50 p-3 text-xs leading-5 text-slate-500">
                     Proxy date of birth is derived from the SA ID number by the existing registration flow.
                   </div>
                 )}
 
-                <Select
+                <SelectField
                   label="Gender"
                   value={
                     form.gender
                   }
                   onChange={
-                    set(
-                      "gender"
-                    )
+                    event =>
+                      setField(
+                        "gender",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.gender
@@ -1055,51 +1165,52 @@ export default function RegisterStaffPage() {
                   <option value="Other">
                     Other
                   </option>
-                </Select>
+                </SelectField>
               </div>
             </section>
 
             <section className="space-y-4">
-              <SectionTitle description={
-                isClinicAdmin
-                  ? "Your clinic is taken from your Clinic Administrator profile and cannot be changed here."
-                  : "Choose the clinic that this account should belong to."
-              }>
-                Clinic
-              </SectionTitle>
+              <SectionHeading
+                title="Clinic assignment"
+                description={
+                  isClinicAdmin
+                    ? "Your clinic is locked to your Clinic Administrator profile."
+                    : "Choose the clinic that should own this account."
+                }
+              />
 
               {isClinicAdmin ? (
-                <>
-                  <ClinicLockedCard
-                    clinicName={
-                      adminProfile
-                        ?.clinicName
-                    }
-                  />
+                <div className="border border-teal-200 bg-teal-50 px-4 py-3">
+                  <p className="text-[11px] font-medium uppercase tracking-wide text-teal-700">
+                    Assigned clinic
+                  </p>
 
-                  {errors.clinicId && (
-                    <p className="text-xs font-medium text-red-600">
-                      {errors.clinicId}
+                  <p className="mt-1 text-sm font-semibold text-slate-950">
+                    {adminProfile?.clinicName ||
+                      "Assigned clinic"}
+                  </p>
+
+                  {errors.clinicId ? (
+                    <p className="mt-1 text-xs text-red-600">
+                      {
+                        errors.clinicId
+                      }
                     </p>
-                  )}
-                </>
-              ) : clinics.length ===
-                0 ? (
-                <EmptyState
-                  icon="local_hospital"
-                  title="No active clinics available"
-                  description={`A clinic must exist before a ${form.role} can be registered.`}
-                />
+                  ) : null}
+                </div>
               ) : (
-                <Select
+                <SelectField
                   label="Clinic"
                   value={
                     form.clinicId
                   }
                   onChange={
-                    set(
-                      "clinicId"
-                    )
+                    event =>
+                      setField(
+                        "clinicId",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.clinicId
@@ -1119,267 +1230,335 @@ export default function RegisterStaffPage() {
                           clinic.id
                         }
                       >
-                        {clinic.name}
+                        {
+                          clinic.name
+                        }
                         {clinic.type
                           ? ` — ${clinic.type}`
                           : ""}
                       </option>
                     )
                   )}
-                </Select>
+                </SelectField>
               )}
             </section>
 
             {form.role ===
-              "Nurse" && (
+            "Nurse" ? (
               <section className="space-y-4">
-                <SectionTitle description="Professional details used for the Nurse profile.">
-                  Nurse details
-                </SectionTitle>
+                <SectionHeading
+                  title="Professional details"
+                  description="Nursing registration and employment information."
+                />
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <Input
+                <div className="grid gap-4 md:grid-cols-2">
+                  <InputField
                     label="Employee number"
                     value={
                       form.employeeNumber
                     }
                     onChange={
-                      set(
-                        "employeeNumber"
-                      )
+                      event =>
+                        setField(
+                          "employeeNumber",
+                          event.target
+                            .value
+                        )
                     }
                     error={
                       errors.employeeNumber
                     }
+                    required
                   />
 
-                  <Input
-                    label="Registration number"
+                  <InputField
+                    label="Professional registration number"
                     value={
                       form.registrationNumber
                     }
                     onChange={
-                      set(
-                        "registrationNumber"
-                      )
+                      event =>
+                        setField(
+                          "registrationNumber",
+                          event.target
+                            .value
+                        )
                     }
                     error={
                       errors.registrationNumber
                     }
+                    required
+                  />
+
+                  <InputField
+                    label="Qualification"
+                    value={
+                      form.qualification
+                    }
+                    onChange={
+                      event =>
+                        setField(
+                          "qualification",
+                          event.target
+                            .value
+                        )
+                    }
+                    error={
+                      errors.qualification
+                    }
+                    required
+                  />
+
+                  <InputField
+                    label="Employment date"
+                    type="date"
+                    value={
+                      form.employmentDate
+                    }
+                    onChange={
+                      event =>
+                        setField(
+                          "employmentDate",
+                          event.target
+                            .value
+                        )
+                    }
+                    error={
+                      errors.employmentDate
+                    }
+                    required
+                  />
+                </div>
+              </section>
+            ) : null}
+
+            <section className="space-y-4">
+              <SectionHeading
+                title="Address"
+                description="Residential information for the staff profile."
+              />
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <InputField
+                    label="Address line 1"
+                    value={
+                      form.addressLine1
+                    }
+                    onChange={
+                      event =>
+                        setField(
+                          "addressLine1",
+                          event.target
+                            .value
+                        )
+                    }
+                    error={
+                      errors.addressLine1
+                    }
+                    required
                   />
                 </div>
 
-                <Input
-                  label="Qualification"
-                  value={
-                    form.qualification
-                  }
-                  onChange={
-                    set(
-                      "qualification"
-                    )
-                  }
-                  error={
-                    errors.qualification
-                  }
-                />
+                <div className="md:col-span-2">
+                  <InputField
+                    label="Address line 2 (optional)"
+                    value={
+                      form.addressLine2
+                    }
+                    onChange={
+                      event =>
+                        setField(
+                          "addressLine2",
+                          event.target
+                            .value
+                        )
+                    }
+                  />
+                </div>
 
-                <Input
-                  label="Employment date"
-                  type="date"
-                  value={
-                    form.employmentDate
-                  }
-                  onChange={
-                    set(
-                      "employmentDate"
-                    )
-                  }
-                  error={
-                    errors.employmentDate
-                  }
-                />
-              </section>
-            )}
-
-            <section className="space-y-4">
-              <SectionTitle description="Residential information for the staff profile.">
-                Address
-              </SectionTitle>
-
-              <Input
-                label="Address line 1"
-                value={
-                  form.addressLine1
-                }
-                onChange={
-                  set(
-                    "addressLine1"
-                  )
-                }
-                error={
-                  errors.addressLine1
-                }
-              />
-
-              <Input
-                label="Address line 2 (optional)"
-                value={
-                  form.addressLine2
-                }
-                onChange={
-                  set(
-                    "addressLine2"
-                  )
-                }
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
+                <InputField
                   label="Suburb"
                   value={
                     form.suburb
                   }
                   onChange={
-                    set(
-                      "suburb"
-                    )
+                    event =>
+                      setField(
+                        "suburb",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.suburb
                   }
+                  required
                 />
 
-                <Input
+                <InputField
                   label="City"
                   value={
                     form.city
                   }
                   onChange={
-                    set(
-                      "city"
-                    )
+                    event =>
+                      setField(
+                        "city",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.city
                   }
+                  required
                 />
 
-                <Input
+                <InputField
                   label="Province"
                   value={
                     form.province
                   }
                   onChange={
-                    set(
-                      "province"
-                    )
+                    event =>
+                      setField(
+                        "province",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.province
                   }
+                  required
                 />
 
-                <Input
+                <InputField
                   label="Postal code"
                   value={
                     form.postalCode
                   }
                   onChange={
-                    set(
-                      "postalCode"
-                    )
+                    event =>
+                      setField(
+                        "postalCode",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.postalCode
                   }
+                  required
                 />
               </div>
             </section>
 
             <section className="space-y-4">
-              <SectionTitle description="A contact to use if the account holder cannot be reached during an emergency.">
-                Emergency contact
-              </SectionTitle>
-
-              <Input
-                label="Emergency contact name"
-                value={
-                  form.emergencyContactName
-                }
-                onChange={
-                  set(
-                    "emergencyContactName"
-                  )
-                }
-                error={
-                  errors.emergencyContactName
-                }
+              <SectionHeading
+                title="Emergency contact"
+                description="A contact to use if the staff member cannot be reached during an emergency."
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="md:col-span-2">
+                  <InputField
+                    label="Emergency contact name"
+                    value={
+                      form.emergencyContactName
+                    }
+                    onChange={
+                      event =>
+                        setField(
+                          "emergencyContactName",
+                          event.target
+                            .value
+                        )
+                    }
+                    error={
+                      errors.emergencyContactName
+                    }
+                    required
+                  />
+                </div>
+
+                <InputField
                   label="Emergency contact number"
                   value={
                     form.emergencyContactPhone
                   }
                   onChange={
-                    set(
-                      "emergencyContactPhone"
-                    )
+                    event =>
+                      setField(
+                        "emergencyContactPhone",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.emergencyContactPhone
                   }
                   inputMode="tel"
+                  required
                 />
 
-                <Input
+                <InputField
                   label="Relationship"
                   value={
                     form.emergencyContactRelationship
                   }
                   onChange={
-                    set(
-                      "emergencyContactRelationship"
-                    )
+                    event =>
+                      setField(
+                        "emergencyContactRelationship",
+                        event.target
+                          .value
+                      )
                   }
                   error={
                     errors.emergencyContactRelationship
                   }
+                  required
                 />
               </div>
             </section>
+          </div>
+        </Panel>
 
-            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 pt-6 sm:flex-row sm:justify-end">
-              <button
-                type="button"
-                onClick={
-                  resetForm
-                }
-                disabled={
-                  loading
-                }
-                className="rounded-xl border border-slate-200 px-5 py-2.5 text-sm font-bold text-slate-600 transition hover:bg-slate-50 disabled:opacity-50"
-              >
-                Clear form
-              </button>
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+          <SecondaryButton
+            type="button"
+            onClick={
+              () =>
+                resetForRole(
+                  form.role
+                )
+            }
+            disabled={
+              loading
+            }
+          >
+            Clear form
+          </SecondaryButton>
 
-              <Button
-                type="submit"
-                disabled={
-                  loading ||
-                  !form.clinicId
-                }
-              >
-                {loading
-                  ? "Creating account…"
-                  : `Register ${form.role}`}
-              </Button>
-            </div>
-          </form>
-        </CardBody>
-      </Card>
+          <PrimaryButton
+            type="submit"
+            disabled={
+              loading ||
+              !form.clinicId
+            }
+          >
+            <UserPlus
+              size={15}
+            />
+
+            {loading
+              ? "Creating account…"
+              : `Register ${form.role}`}
+          </PrimaryButton>
+        </div>
+      </form>
     </div>
   );
 }
