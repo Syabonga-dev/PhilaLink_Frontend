@@ -1,20 +1,19 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
 import {
-  AlertTriangle,
   CalendarRange,
-  CheckCircle2,
   Download,
   FileSpreadsheet,
   FileText,
   Filter,
+  KeyRound,
   LoaderCircle,
-  Search,
+  LockKeyhole,
+  ShieldCheck,
   TableProperties,
 } from "lucide-react";
 
@@ -22,7 +21,35 @@ import {
   clinicAdminApi,
 } from "../../services/api/clinicAdmin.js";
 
+import {
+  AdminModal,
+  DataTable,
+  EmptyBlock,
+  FilterSummary,
+  InputField,
+  LoadingBlock,
+  MetricStrip,
+  Notice,
+  PageHeader,
+  Panel,
+  PrimaryButton,
+  SearchField,
+  SecondaryButton,
+  SelectField,
+  StatusBadge,
+} from "../../components/admin/AdminPrimitives.jsx";
+
 const REPORT_TYPES = [
+  {
+    value:
+      "Collections",
+
+    label:
+      "Medication collections",
+
+    description:
+      "Collected, missed and scheduled medication collections.",
+  },
   {
     value:
       "Patients",
@@ -45,23 +72,13 @@ const REPORT_TYPES = [
   },
   {
     value:
-      "Collections",
-
-    label:
-      "Collections",
-
-    description:
-      "Medication collection activity, including collected and missed collections.",
-  },
-  {
-    value:
       "Medication Adherence",
 
     label:
-      "Medication Adherence",
+      "Medication adherence",
 
     description:
-      "Medication doses recorded as taken or missed.",
+      "Medication dose records marked taken or missed.",
   },
   {
     value:
@@ -71,7 +88,7 @@ const REPORT_TYPES = [
       "Inventory",
 
     description:
-      "Current clinic medication stock and low-stock items.",
+      "Current medication stock and low-stock items.",
   },
   {
     value:
@@ -84,42 +101,6 @@ const REPORT_TYPES = [
       "Nurses and proxies registered at the clinic.",
   },
 ];
-
-const DEFAULT_FILTERS = {
-  reportType:
-    "Appointments",
-
-  dateFrom:
-    dateInput(
-      -29
-    ),
-
-  dateTo:
-    dateInput(
-      0
-    ),
-
-  search:
-    "",
-
-  status:
-    "All",
-
-  role:
-    "All",
-
-  provider:
-    "All",
-
-  appointmentType:
-    "All",
-
-  mode:
-    "All",
-
-  medication:
-    "All",
-};
 
 function dateInput(
   offsetDays
@@ -140,24 +121,81 @@ function dateInput(
     );
 }
 
+function defaultFilters(
+  reportType =
+    "Collections"
+) {
+  return {
+    reportType,
+
+    dateFrom:
+      dateInput(
+        -29
+      ),
+
+    dateTo:
+      dateInput(
+        0
+      ),
+
+    search:
+      "",
+
+    status:
+      "All",
+
+    role:
+      "All",
+
+    provider:
+      "All",
+
+    appointmentType:
+      "All",
+
+    mode:
+      "All",
+
+    medication:
+      "All",
+  };
+}
+
+function safeArray(
+  value
+) {
+  return Array.isArray(
+    value
+  )
+    ? value
+    : [];
+}
+
 function formatCell(
   value,
   type
 ) {
   if (
-    value === null ||
-    value === undefined ||
-    value === ""
+    value ===
+      null ||
+    value ===
+      undefined ||
+    value ===
+      ""
   ) {
     return "—";
   }
 
   if (
-    type === "date" ||
-    type === "datetime"
+    type ===
+      "date" ||
+    type ===
+      "datetime"
   ) {
     const date =
-      new Date(value);
+      new Date(
+        value
+      );
 
     if (
       !Number.isNaN(
@@ -166,48 +204,49 @@ function formatCell(
     ) {
       return type ===
         "date"
-        ? date
-            .toLocaleDateString(
-              "en-ZA",
-              {
-                year:
-                  "numeric",
+        ? date.toLocaleDateString(
+            "en-ZA",
+            {
+              year:
+                "numeric",
 
-                month:
-                  "short",
+              month:
+                "short",
 
-                day:
-                  "2-digit",
-              }
-            )
-        : date
-            .toLocaleString(
-              "en-ZA",
-              {
-                year:
-                  "numeric",
+              day:
+                "2-digit",
+            }
+          )
+        : date.toLocaleString(
+            "en-ZA",
+            {
+              year:
+                "numeric",
 
-                month:
-                  "short",
+              month:
+                "short",
 
-                day:
-                  "2-digit",
+              day:
+                "2-digit",
 
-                hour:
-                  "2-digit",
+              hour:
+                "2-digit",
 
-                minute:
-                  "2-digit",
-              }
-            );
+              minute:
+                "2-digit",
+            }
+          );
     }
   }
 
   if (
-    type === "number"
+    type ===
+    "number"
   ) {
     const numeric =
-      Number(value);
+      Number(
+        value
+      );
 
     if (
       Number.isFinite(
@@ -221,155 +260,206 @@ function formatCell(
     }
   }
 
-  return String(value);
+  return String(
+    value
+  );
 }
 
-function statusClass(
-  value
-) {
-  const status =
-    String(
-      value || ""
-    ).toLowerCase();
-
-  if (
-    status.includes(
-      "completed"
-    ) ||
-    status.includes(
-      "collected"
-    ) ||
-    status.includes(
-      "confirmed"
-    ) ||
-    status.includes(
-      "healthy"
-    ) ||
-    status.includes(
-      "taken"
-    ) ||
-    status ===
-      "active"
-  ) {
-    return "bg-emerald-100 text-emerald-700";
-  }
-
-  if (
-    status.includes(
-      "pending"
-    ) ||
-    status.includes(
-      "scheduled"
-    ) ||
-    status.includes(
-      "low stock"
-    )
-  ) {
-    return "bg-amber-100 text-amber-800";
-  }
-
-  if (
-    status.includes(
-      "cancel"
-    ) ||
-    status.includes(
-      "missed"
-    ) ||
-    status.includes(
-      "inactive"
-    ) ||
-    status.includes(
-      "overdue"
-    )
-  ) {
-    return "bg-red-100 text-red-700";
-  }
-
-  return "bg-slate-100 text-slate-600";
-}
-
-function OptionSelect({
-  label,
-  value,
-  options,
-  onChange,
+function PasswordModal({
+  open,
+  onClose,
+  onExport,
+  pending,
 }) {
-  return (
-    <label className="block">
-      <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-        {label}
-      </span>
+  const [
+    password,
+    setPassword,
+  ] =
+    useState("");
 
-      <select
-        value={
-          value
+  const [
+    confirm,
+    setConfirm,
+  ] =
+    useState("");
+
+  const [
+    localError,
+    setLocalError,
+  ] =
+    useState("");
+
+  useEffect(
+    () => {
+      if (
+        open
+      ) {
+        setPassword(
+          ""
+        );
+
+        setConfirm(
+          ""
+        );
+
+        setLocalError(
+          ""
+        );
+      }
+    },
+    [
+      open,
+    ]
+  );
+
+  if (!open) {
+    return null;
+  }
+
+  function submit(
+    event
+  ) {
+    event.preventDefault();
+
+    if (
+      password.length <
+      8
+    ) {
+      setLocalError(
+        "Use at least 8 characters for the PDF password."
+      );
+
+      return;
+    }
+
+    if (
+      password !==
+      confirm
+    ) {
+      setLocalError(
+        "The two passwords do not match."
+      );
+
+      return;
+    }
+
+    setLocalError(
+      ""
+    );
+
+    onExport(
+      password
+    );
+  }
+
+  return (
+    <AdminModal
+      title="Secure PDF export"
+      description="The PDF will require this password when opened. The password is used only for this export and is not stored by PhilaLink."
+      onClose={
+        onClose
+      }
+    >
+      <form
+        onSubmit={
+          submit
         }
-        onChange={
-          event =>
-            onChange(
-              event.target
-                .value
-            )
-        }
-        className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
+        className="space-y-5 p-5"
       >
-        {(options?.length
-          ? options
-          : ["All"]
-        ).map(
-          option => (
-            <option
-              key={
-                option
-              }
-              value={
-                option
-              }
-            >
-              {option}
-            </option>
-          )
-        )}
-      </select>
-    </label>
-  );
-}
+        <div className="border border-slate-200 bg-slate-50 p-4">
+          <div className="flex items-start gap-3">
+            <ShieldCheck
+              size={18}
+              className="mt-0.5 shrink-0 text-[#0f766e]"
+            />
 
-function SummaryCard({
-  label,
-  value,
-}) {
-  return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_8px_28px_rgba(15,23,42,0.035)]">
-      <p className="text-[9px] font-black uppercase tracking-[0.13em] text-slate-400">
-        {label}
-      </p>
+            <div>
+              <p className="text-sm font-medium text-slate-900">
+                Confidential clinic report
+              </p>
 
-      <p className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-        {value}
-      </p>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Copying and modification permissions are restricted. Printing remains available to authorised recipients.
+              </p>
+            </div>
+          </div>
+        </div>
 
-      <div className="mt-3 h-1 w-10 rounded-full bg-[#14b8a6]" />
-    </div>
-  );
-}
+        <InputField
+          label="PDF password"
+          type="password"
+          value={
+            password
+          }
+          onChange={
+            event =>
+              setPassword(
+                event.target
+                  .value
+              )
+          }
+          placeholder="At least 8 characters"
+          required
+        />
 
-function EmptyPreview() {
-  return (
-    <div className="rounded-2xl border border-dashed border-slate-300 bg-white p-14 text-center">
-      <TableProperties
-        size={32}
-        className="mx-auto text-slate-300"
-      />
+        <InputField
+          label="Confirm password"
+          type="password"
+          value={
+            confirm
+          }
+          onChange={
+            event =>
+              setConfirm(
+                event.target
+                  .value
+              )
+          }
+          placeholder="Repeat the password"
+          required
+        />
 
-      <p className="mt-3 text-sm font-black text-slate-800">
-        No rows matched these filters
-      </p>
+        {localError ? (
+          <Notice type="error">
+            {localError}
+          </Notice>
+        ) : null}
 
-      <p className="mt-1 text-xs text-slate-400">
-        Change the filters and apply them again.
-      </p>
-    </div>
+        <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+          <SecondaryButton
+            type="button"
+            onClick={
+              onClose
+            }
+            disabled={
+              pending
+            }
+          >
+            Cancel
+          </SecondaryButton>
+
+          <PrimaryButton
+            type="submit"
+            disabled={
+              pending
+            }
+          >
+            {pending ? (
+              <LoaderCircle
+                size={15}
+                className="animate-spin"
+              />
+            ) : (
+              <LockKeyhole
+                size={15}
+              />
+            )}
+
+            Generate encrypted PDF
+          </PrimaryButton>
+        </div>
+      </form>
+    </AdminModal>
   );
 }
 
@@ -379,7 +469,8 @@ export default function AdminReportsPage() {
     setFilters,
   ] =
     useState(
-      DEFAULT_FILTERS
+      () =>
+        defaultFilters()
     );
 
   const [
@@ -387,7 +478,8 @@ export default function AdminReportsPage() {
     setAppliedFilters,
   ] =
     useState(
-      DEFAULT_FILTERS
+      () =>
+        defaultFilters()
     );
 
   const [
@@ -420,73 +512,11 @@ export default function AdminReportsPage() {
   ] =
     useState("");
 
-  const reportDefinition =
-    useMemo(
-      () =>
-        REPORT_TYPES.find(
-          item =>
-            item.value ===
-            filters.reportType
-        ) ||
-        REPORT_TYPES[0],
-      [
-        filters.reportType,
-      ]
-    );
-
-  const isInventory =
-    filters.reportType ===
-    "Inventory";
-
-  const options =
-    preview?.filterOptions ||
-    {};
-
-  function update(
-    key,
-    value
-  ) {
-    setFilters(
-      current => ({
-        ...current,
-        [key]:
-          value,
-      })
-    );
-  }
-
-  function resetContextFilters(
-    reportType
-  ) {
-    setFilters(
-      current => ({
-        ...current,
-
-        reportType,
-
-        search:
-          "",
-
-        status:
-          "All",
-
-        role:
-          "All",
-
-        provider:
-          "All",
-
-        appointmentType:
-          "All",
-
-        mode:
-          "All",
-
-        medication:
-          "All",
-      })
-    );
-  }
+  const [
+    passwordOpen,
+    setPasswordOpen,
+  ] =
+    useState(false);
 
   const loadPreview =
     useCallback(
@@ -498,22 +528,21 @@ export default function AdminReportsPage() {
             true
           );
 
-          setError("");
+          setError(
+            ""
+          );
 
-          const data =
+          setPreview(
             await clinicAdminApi
               .previewReport(
                 query
-              );
-
-          setPreview(
-            data
+              )
           );
         } catch (
-          loadError
+          err
         ) {
           setError(
-            loadError?.message ||
+            err?.message ||
             "Could not generate the report preview."
           );
 
@@ -541,6 +570,74 @@ export default function AdminReportsPage() {
     ]
   );
 
+  const options =
+    preview?.filterOptions ||
+    {};
+
+  const isInventory =
+    filters.reportType ===
+    "Inventory";
+
+  const showMedication =
+    [
+      "Collections",
+      "Medication Adherence",
+      "Inventory",
+    ].includes(
+      filters.reportType
+    );
+
+  const showAppointments =
+    filters.reportType ===
+    "Appointments";
+
+  const showRole =
+    filters.reportType ===
+    "Staff";
+
+  const reportDefinition =
+    REPORT_TYPES.find(
+      item =>
+        item.value ===
+        filters.reportType
+    ) ||
+    REPORT_TYPES[0];
+
+  function update(
+    key,
+    value
+  ) {
+    setFilters(
+      current => ({
+        ...current,
+
+        [key]:
+          value,
+      })
+    );
+  }
+
+  function changeReportType(
+    value
+  ) {
+    const next =
+      defaultFilters(
+        value
+      );
+
+    setFilters(
+      next
+    );
+
+    setAppliedFilters(
+      next
+    );
+
+    setSuccess(
+      ""
+    );
+  }
+
   function applyFilters(
     event
   ) {
@@ -560,6 +657,10 @@ export default function AdminReportsPage() {
       return;
     }
 
+    setError(
+      ""
+    );
+
     setSuccess(
       ""
     );
@@ -569,34 +670,55 @@ export default function AdminReportsPage() {
     });
   }
 
-  async function exportReport(
-    format
-  ) {
-    try {
-      setDownloading(
-        format
+  function clearFilters() {
+    const next =
+      defaultFilters(
+        filters.reportType
       );
 
-      setError("");
+    setFilters(
+      next
+    );
 
-      setSuccess("");
+    setAppliedFilters(
+      next
+    );
+
+    setSuccess(
+      ""
+    );
+  }
+
+  async function exportExcel() {
+    try {
+      setDownloading(
+        "xlsx"
+      );
+
+      setError(
+        ""
+      );
+
+      setSuccess(
+        ""
+      );
 
       const fileName =
         await clinicAdminApi
           .downloadDynamicReport(
             appliedFilters,
-            format
+            "xlsx"
           );
 
       setSuccess(
-        `${fileName} generated from the current filtered report.`
+        `${fileName} generated from the currently applied report parameters.`
       );
     } catch (
-      exportError
+      err
     ) {
       setError(
-        exportError?.message ||
-        "Could not export the report."
+        err?.message ||
+        "Could not export the Excel workbook."
       );
     } finally {
       setDownloading(
@@ -605,685 +727,788 @@ export default function AdminReportsPage() {
     }
   }
 
-  const showStatus =
-    [
-      "Patients",
-      "Appointments",
-      "Collections",
-      "Medication Adherence",
-      "Inventory",
-      "Staff",
-    ].includes(
-      filters.reportType
+  async function exportSecurePdf(
+    password
+  ) {
+    try {
+      setDownloading(
+        "pdf"
+      );
+
+      setError(
+        ""
+      );
+
+      setSuccess(
+        ""
+      );
+
+      const fileName =
+        await clinicAdminApi
+          .downloadSecurePdf(
+            appliedFilters,
+            password
+          );
+
+      setPasswordOpen(
+        false
+      );
+
+      setSuccess(
+        `${fileName} generated as a password-protected PDF.`
+      );
+    } catch (
+      err
+    ) {
+      setError(
+        err?.message ||
+        "Could not export the encrypted PDF."
+      );
+    } finally {
+      setDownloading(
+        ""
+      );
+    }
+  }
+
+  const rows =
+    safeArray(
+      preview?.rows
     );
 
-  const showMedication =
-    [
-      "Collections",
-      "Medication Adherence",
-      "Inventory",
-    ].includes(
-      filters.reportType
+  const columns =
+    safeArray(
+      preview?.columns
+    ).map(
+      column => ({
+        ...column,
+
+        render:
+          value =>
+            column.dataType ===
+            "status" ? (
+              <StatusBadge
+                value={
+                  formatCell(
+                    value,
+                    column.dataType
+                  )
+                }
+              />
+            ) : (
+              <span
+                className={
+                  column.dataType ===
+                  "number"
+                    ? "font-semibold text-slate-900"
+                    : ""
+                }
+              >
+                {formatCell(
+                  value,
+                  column.dataType
+                )}
+              </span>
+            ),
+      })
     );
 
-  const showAppointmentFilters =
-    filters.reportType ===
-    "Appointments";
+  const metrics =
+    safeArray(
+      preview?.summary
+    )
+      .slice(
+        0,
+        4
+      )
+      .map(
+        item => ({
+          label:
+            item.label,
 
-  const showRole =
-    filters.reportType ===
-    "Staff";
+          value:
+            item.value,
+
+          helper:
+            preview?.reportType ||
+            "Filtered report",
+        })
+      );
+
+  const appliedItems = [
+    {
+      label:
+        "Report",
+
+      value:
+        appliedFilters.reportType,
+    },
+    {
+      label:
+        "From",
+
+      value:
+        appliedFilters.reportType ===
+        "Inventory"
+          ? ""
+          : appliedFilters.dateFrom,
+    },
+    {
+      label:
+        "To",
+
+      value:
+        appliedFilters.reportType ===
+        "Inventory"
+          ? ""
+          : appliedFilters.dateTo,
+    },
+    {
+      label:
+        "Status",
+
+      value:
+        appliedFilters.status,
+    },
+    {
+      label:
+        "Medication",
+
+      value:
+        appliedFilters.medication,
+    },
+    {
+      label:
+        "Role",
+
+      value:
+        appliedFilters.role,
+    },
+    {
+      label:
+        "Provider",
+
+      value:
+        appliedFilters.provider,
+    },
+    {
+      label:
+        "Type",
+
+      value:
+        appliedFilters.appointmentType,
+    },
+    {
+      label:
+        "Mode",
+
+      value:
+        appliedFilters.mode,
+    },
+    {
+      label:
+        "Search",
+
+      value:
+        appliedFilters.search,
+    },
+  ];
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0f766e]">
-            Admin / Reports
-          </p>
+      <PageHeader
+        eyebrow="Clinic reporting"
+        title="Reports"
+        description="Build formal clinic reports from live data. The preview, Excel workbook and encrypted PDF all use the same applied parameters."
+        meta={
+          preview ? (
+            <>
+              <span>
+                {
+                  preview.clinicName
+                }
+              </span>
 
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
-            Dynamic Report Builder
-          </h1>
+              <span>
+                Requested by{" "}
+                {
+                  preview.requestedBy
+                }
+              </span>
 
-          <p className="mt-1 max-w-3xl text-xs leading-5 text-slate-500">
-            Choose exactly what you want to report on, filter the live clinic data,
-            preview the results in a table, then export that same filtered dataset to
-            Excel or PDF.
-          </p>
-        </div>
+              <span>
+                {rows.length.toLocaleString(
+                  "en-ZA"
+                )}{" "}
+                rows
+              </span>
+            </>
+          ) : null
+        }
+        actions={
+          <>
+            <SecondaryButton
+              onClick={
+                exportExcel
+              }
+              disabled={
+                loading ||
+                downloading !==
+                  ""
+              }
+            >
+              {downloading ===
+              "xlsx" ? (
+                <LoaderCircle
+                  size={15}
+                  className="animate-spin"
+                />
+              ) : (
+                <FileSpreadsheet
+                  size={15}
+                />
+              )}
 
-        <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={
-              () =>
-                exportReport(
-                  "xlsx"
-                )
-            }
-            disabled={
-              downloading !==
-                "" ||
-              loading
-            }
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0f766e] px-4 text-xs font-black text-white transition hover:bg-[#115e59] disabled:opacity-50"
-          >
-            {downloading ===
-            "xlsx" ? (
-              <LoaderCircle
-                size={14}
-                className="animate-spin"
+              Export Excel
+            </SecondaryButton>
+
+            <PrimaryButton
+              onClick={
+                () =>
+                  setPasswordOpen(
+                    true
+                  )
+              }
+              disabled={
+                loading ||
+                downloading !==
+                  ""
+              }
+            >
+              <LockKeyhole
+                size={15}
               />
-            ) : (
-              <FileSpreadsheet
-                size={14}
-              />
-            )}
 
-            Export Excel
-          </button>
+              Secure PDF
+            </PrimaryButton>
+          </>
+        }
+      />
 
-          <button
-            type="button"
-            onClick={
-              () =>
-                exportReport(
-                  "pdf"
-                )
-            }
-            disabled={
-              downloading !==
-                "" ||
-              loading
-            }
-            className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#0f172a] px-4 text-xs font-black text-white transition hover:bg-[#1e293b] disabled:opacity-50"
-          >
-            {downloading ===
-            "pdf" ? (
-              <LoaderCircle
-                size={14}
-                className="animate-spin"
-              />
-            ) : (
-              <FileText
-                size={14}
-              />
-            )}
+      {error ? (
+        <Notice type="error">
+          {error}
+        </Notice>
+      ) : null}
 
-            Export PDF
-          </button>
-        </div>
-      </div>
+      {success ? (
+        <Notice type="success">
+          {success}
+        </Notice>
+      ) : null}
 
-      {error && (
-        <div className="flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          <AlertTriangle
-            size={17}
-            className="mt-0.5 shrink-0"
-          />
-
-          <span>
-            {error}
-          </span>
-        </div>
-      )}
-
-      {success && (
-        <div className="flex items-start gap-3 rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-700">
-          <CheckCircle2
-            size={17}
-            className="mt-0.5 shrink-0"
-          />
-
-          <span>
-            {success}
-          </span>
-        </div>
-      )}
-
-      <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.035)]">
-        <div className="border-b border-slate-200 bg-[#f8fafc] px-5 py-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-              <Filter
-                size={16}
-              />
-            </div>
-
-            <div>
-              <h2 className="text-sm font-black text-slate-950">
-                Report filters
-              </h2>
-
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                The table and exported files use the same applied filters.
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <Panel
+        title="Report parameters"
+        description={
+          reportDefinition.description
+        }
+        noPadding
+      >
         <form
           onSubmit={
             applyFilters
           }
-          className="p-5"
+          className="grid gap-4 px-5 py-4 md:grid-cols-2 xl:grid-cols-4"
         >
-          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-                Report Type
-              </span>
+          <SelectField
+            label="Report type"
+            value={
+              filters.reportType
+            }
+            onChange={
+              event =>
+                changeReportType(
+                  event.target
+                    .value
+                )
+            }
+            options={
+              REPORT_TYPES
+            }
+          />
 
-              <select
-                value={
-                  filters.reportType
-                }
-                onChange={
-                  event =>
-                    resetContextFilters(
-                      event.target
-                        .value
-                    )
-                }
-                className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e]"
-              >
-                {REPORT_TYPES.map(
-                  item => (
-                    <option
-                      key={
-                        item.value
-                      }
-                      value={
-                        item.value
-                      }
-                    >
-                      {item.label}
-                    </option>
-                  )
-                )}
-              </select>
-            </label>
-
-            {!isInventory && (
-              <>
-                <label className="block">
-                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-                    From
-                  </span>
-
-                  <input
-                    type="date"
-                    value={
-                      filters.dateFrom
-                    }
-                    onChange={
-                      event =>
-                        update(
-                          "dateFrom",
-                          event.target
-                            .value
-                        )
-                    }
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e]"
-                  />
-                </label>
-
-                <label className="block">
-                  <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-                    To
-                  </span>
-
-                  <input
-                    type="date"
-                    value={
-                      filters.dateTo
-                    }
-                    onChange={
-                      event =>
-                        update(
-                          "dateTo",
-                          event.target
-                            .value
-                        )
-                    }
-                    className="h-10 w-full rounded-xl border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 outline-none transition focus:border-[#0f766e]"
-                  />
-                </label>
-              </>
-            )}
-
-            <label className="block">
-              <span className="mb-1.5 block text-[10px] font-black uppercase tracking-[0.12em] text-slate-400">
-                Search
-              </span>
-
-              <div className="relative">
-                <Search
-                  size={14}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
+          {!isInventory ? (
+            <>
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                  From
+                </span>
 
                 <input
-                  type="search"
+                  type="date"
                   value={
-                    filters.search
+                    filters.dateFrom
                   }
                   onChange={
                     event =>
                       update(
-                        "search",
+                        "dateFrom",
                         event.target
                           .value
                       )
                   }
-                  placeholder="Patient, medication, staff..."
-                  className="h-10 w-full rounded-xl border border-slate-200 bg-white pl-9 pr-3 text-xs text-slate-700 outline-none transition focus:border-[#0f766e]"
+                  className="h-10 w-full border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f766e]"
                 />
-              </div>
-            </label>
+              </label>
 
-            {showStatus && (
-              <OptionSelect
-                label="Status"
-                value={
-                  filters.status
-                }
-                options={
-                  options.status
-                }
-                onChange={
-                  value =>
-                    update(
-                      "status",
-                      value
-                    )
-                }
-              />
-            )}
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                  To
+                </span>
 
-            {showAppointmentFilters && (
-              <>
-                <OptionSelect
-                  label="Appointment Type"
+                <input
+                  type="date"
                   value={
-                    filters.appointmentType
-                  }
-                  options={
-                    options.appointmentType
+                    filters.dateTo
                   }
                   onChange={
-                    value =>
+                    event =>
                       update(
-                        "appointmentType",
-                        value
+                        "dateTo",
+                        event.target
+                          .value
                       )
                   }
+                  className="h-10 w-full border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f766e]"
                 />
+              </label>
+            </>
+          ) : null}
 
-                <OptionSelect
-                  label="Provider"
-                  value={
-                    filters.provider
-                  }
-                  options={
-                    options.provider
-                  }
-                  onChange={
-                    value =>
-                      update(
-                        "provider",
-                        value
-                      )
-                  }
-                />
+          <div>
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+              Search
+            </span>
 
-                <OptionSelect
-                  label="Mode"
-                  value={
-                    filters.mode
-                  }
-                  options={
-                    options.mode
-                  }
-                  onChange={
-                    value =>
-                      update(
-                        "mode",
-                        value
-                      )
-                  }
-                />
-              </>
-            )}
-
-            {showMedication && (
-              <OptionSelect
-                label="Medication"
-                value={
-                  filters.medication
-                }
-                options={
-                  options.medication
-                }
-                onChange={
-                  value =>
-                    update(
-                      "medication",
-                      value
-                    )
-                }
-              />
-            )}
-
-            {showRole && (
-              <OptionSelect
-                label="Role"
-                value={
-                  filters.role
-                }
-                options={
-                  options.role
-                }
-                onChange={
-                  value =>
-                    update(
-                      "role",
-                      value
-                    )
-                }
-              />
-            )}
+            <SearchField
+              value={
+                filters.search
+              }
+              onChange={
+                event =>
+                  update(
+                    "search",
+                    event.target
+                      .value
+                  )
+              }
+              placeholder="Patient, medication or staff…"
+            />
           </div>
 
-          <div className="mt-5 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-black text-slate-900">
-                {reportDefinition.label}
-              </p>
+          <SelectField
+            label="Status"
+            value={
+              filters.status
+            }
+            onChange={
+              event =>
+                update(
+                  "status",
+                  event.target
+                    .value
+                )
+            }
+            options={
+              safeArray(
+                options.status
+              ).length
+                ? options.status
+                : [
+                    "All",
+                  ]
+            }
+          />
 
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                {reportDefinition.description}
-              </p>
-            </div>
+          {showMedication ? (
+            <SelectField
+              label="Medication"
+              value={
+                filters.medication
+              }
+              onChange={
+                event =>
+                  update(
+                    "medication",
+                    event.target
+                      .value
+                  )
+              }
+              options={
+                safeArray(
+                  options.medication
+                ).length
+                  ? options.medication
+                  : [
+                      "All",
+                    ]
+              }
+            />
+          ) : null}
 
-            <button
+          {showAppointments ? (
+            <>
+              <SelectField
+                label="Appointment type"
+                value={
+                  filters.appointmentType
+                }
+                onChange={
+                  event =>
+                    update(
+                      "appointmentType",
+                      event.target
+                        .value
+                    )
+                }
+                options={
+                  safeArray(
+                    options.appointmentType
+                  ).length
+                    ? options.appointmentType
+                    : [
+                        "All",
+                      ]
+                }
+              />
+
+              <SelectField
+                label="Provider"
+                value={
+                  filters.provider
+                }
+                onChange={
+                  event =>
+                    update(
+                      "provider",
+                      event.target
+                        .value
+                    )
+                }
+                options={
+                  safeArray(
+                    options.provider
+                  ).length
+                    ? options.provider
+                    : [
+                        "All",
+                      ]
+                }
+              />
+
+              <SelectField
+                label="Mode"
+                value={
+                  filters.mode
+                }
+                onChange={
+                  event =>
+                    update(
+                      "mode",
+                      event.target
+                        .value
+                    )
+                }
+                options={
+                  safeArray(
+                    options.mode
+                  ).length
+                    ? options.mode
+                    : [
+                        "All",
+                      ]
+                }
+              />
+            </>
+          ) : null}
+
+          {showRole ? (
+            <SelectField
+              label="Role"
+              value={
+                filters.role
+              }
+              onChange={
+                event =>
+                  update(
+                    "role",
+                    event.target
+                      .value
+                  )
+              }
+              options={
+                safeArray(
+                  options.role
+                ).length
+                  ? options.role
+                  : [
+                      "All",
+                    ]
+              }
+            />
+          ) : null}
+
+          <div className="flex items-end gap-2 xl:col-span-4">
+            <PrimaryButton
               type="submit"
               disabled={
                 loading
               }
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-5 text-xs font-black text-white transition hover:bg-[#115e59] disabled:opacity-50"
             >
               {loading ? (
                 <LoaderCircle
-                  size={14}
+                  size={15}
                   className="animate-spin"
                 />
               ) : (
                 <Filter
-                  size={14}
+                  size={15}
                 />
               )}
 
               Apply filters
-            </button>
+            </PrimaryButton>
+
+            <SecondaryButton
+              type="button"
+              onClick={
+                clearFilters
+              }
+              disabled={
+                loading
+              }
+            >
+              Reset
+            </SecondaryButton>
           </div>
         </form>
-      </section>
 
-      {preview && (
-        <>
-          <section className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-white p-5">
-            <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
+        <FilterSummary
+          items={
+            appliedItems
+          }
+          onClear={
+            clearFilters
+          }
+        />
+      </Panel>
+
+      {preview ? (
+        <div className="border border-slate-200 bg-white px-5 py-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-start gap-3">
+              <FileText
+                size={18}
+                className="mt-0.5 text-[#0f766e]"
+              />
+
               <div>
-                <p className="text-[9px] font-black uppercase tracking-[0.16em] text-[#0f766e]">
-                  Live preview
+                <p className="text-sm font-semibold text-slate-950">
+                  {
+                    preview.title
+                  }
                 </p>
-
-                <h2 className="mt-1 text-xl font-black text-slate-950">
-                  {preview.title}
-                </h2>
 
                 <p className="mt-1 text-xs text-slate-500">
-                  {preview.clinicName} · Requested by{" "}
-                  {preview.requestedBy}
+                  {preview.dateFrom &&
+                  preview.dateTo
+                    ? `${new Date(
+                        preview.dateFrom
+                      ).toLocaleDateString(
+                        "en-ZA"
+                      )} – ${new Date(
+                        preview.dateTo
+                      ).toLocaleDateString(
+                        "en-ZA"
+                      )}`
+                    : "Current-state report"}
                 </p>
               </div>
-
-              <div className="inline-flex items-center gap-2 rounded-xl border border-teal-100 bg-white px-3 py-2 text-[10px] font-bold text-slate-500">
-                <CalendarRange
-                  size={13}
-                  className="text-[#0f766e]"
-                />
-
-                {preview.dateFrom &&
-                preview.dateTo
-                  ? `${new Date(
-                      preview.dateFrom
-                    ).toLocaleDateString(
-                      "en-ZA"
-                    )} – ${new Date(
-                      preview.dateTo
-                    ).toLocaleDateString(
-                      "en-ZA"
-                    )}`
-                  : "Current-state report"}
-              </div>
             </div>
-          </section>
 
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-            {(preview.summary ||
-              []).map(
-              item => (
-                <SummaryCard
-                  key={
-                    item.key
-                  }
-                  label={
-                    item.label
-                  }
-                  value={
-                    item.value
-                  }
-                />
-              )
-            )}
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <CalendarRange
+                size={14}
+              />
+
+              Generated from live clinic data
+            </div>
           </div>
+        </div>
+      ) : null}
 
+      {preview ? (
+        <MetricStrip
+          metrics={
+            metrics
+          }
+        />
+      ) : null}
+
+      {loading &&
+      !preview ? (
+        <LoadingBlock
+          label="Building report preview…"
+          minHeight={
+            360
+          }
+        />
+      ) : null}
+
+      {preview ? (
+        <Panel
+          title="Report contents"
+          description="Columns change automatically according to the selected report type."
+          actions={
+            <div className="flex items-center gap-2 text-xs text-slate-500">
+              <TableProperties
+                size={14}
+              />
+
+              {rows.length.toLocaleString(
+                "en-ZA"
+              )}{" "}
+              rows
+            </div>
+          }
+          noPadding
+        >
           {loading ? (
-            <div className="flex min-h-[300px] items-center justify-center rounded-2xl border border-slate-200 bg-white">
-              <LoaderCircle
-                size={28}
-                className="animate-spin text-[#0f766e]"
+            <LoadingBlock
+              label="Applying report filters…"
+              minHeight={
+                280
+              }
+            />
+          ) : rows.length ? (
+            <DataTable
+              columns={
+                columns
+              }
+              rows={
+                rows
+              }
+              rowKey={(
+                _,
+                index
+              ) =>
+                `${preview.reportType}-${index}`
+              }
+              maxHeight={
+                640
+              }
+            />
+          ) : (
+            <div className="p-5">
+              <EmptyBlock
+                icon={
+                  TableProperties
+                }
+                title="No rows matched these filters"
+                description="Change the date range or filter values and apply them again."
               />
             </div>
-          ) : (preview.rows ||
-              []).length ===
-            0 ? (
-            <EmptyPreview />
-          ) : (
-            <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_8px_30px_rgba(15,23,42,0.035)]">
-              <div className="flex flex-col gap-2 border-b border-slate-200 bg-[#fbfcfd] px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h3 className="text-sm font-black text-slate-950">
-                    Report contents
-                  </h3>
-
-                  <p className="mt-0.5 text-[10px] text-slate-400">
-                    Columns and rows change according to the selected report and filters.
-                  </p>
-                </div>
-
-                <span className="rounded-full bg-teal-50 px-3 py-1 text-[10px] font-black text-teal-700">
-                  {(preview.rows ||
-                    []).length.toLocaleString(
-                    "en-ZA"
-                  )}{" "}
-                  rows
-                </span>
-              </div>
-
-              <div className="max-h-[620px] overflow-auto">
-                <table className="min-w-full border-collapse text-left">
-                  <thead className="sticky top-0 z-10 bg-[#0f766e] text-white">
-                    <tr>
-                      {(preview.columns ||
-                        []).map(
-                        column => (
-                          <th
-                            key={
-                              column.key
-                            }
-                            className="whitespace-nowrap px-4 py-3 text-[9px] font-black uppercase tracking-[0.1em]"
-                          >
-                            {column.label}
-                          </th>
-                        )
-                      )}
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-slate-100">
-                    {(preview.rows ||
-                      []).map(
-                      (
-                        row,
-                        rowIndex
-                      ) => (
-                        <tr
-                          key={
-                            `${preview.reportType}-${rowIndex}`
-                          }
-                          className={`transition hover:bg-teal-50/40 ${
-                            rowIndex %
-                              2 ===
-                            0
-                              ? "bg-white"
-                              : "bg-[#f8fafc]"
-                          }`}
-                        >
-                          {(preview.columns ||
-                            []).map(
-                            column => {
-                              const value =
-                                row[
-                                  column
-                                    .key
-                                ];
-
-                              return (
-                                <td
-                                  key={
-                                    column.key
-                                  }
-                                  className="max-w-[320px] px-4 py-3 text-xs text-slate-600"
-                                >
-                                  {column.dataType ===
-                                  "status" ? (
-                                    <span
-                                      className={`inline-flex whitespace-nowrap rounded-full px-2.5 py-1 text-[10px] font-black ${statusClass(
-                                        value
-                                      )}`}
-                                    >
-                                      {formatCell(
-                                        value,
-                                        column.dataType
-                                      )}
-                                    </span>
-                                  ) : (
-                                    <span
-                                      className={
-                                        column.dataType ===
-                                        "number"
-                                          ? "font-black text-slate-900"
-                                          : "break-words"
-                                      }
-                                    >
-                                      {formatCell(
-                                        value,
-                                        column.dataType
-                                      )}
-                                    </span>
-                                  )}
-                                </td>
-                              );
-                            }
-                          )}
-                        </tr>
-                      )
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </section>
           )}
+        </Panel>
+      ) : null}
 
-          <section className="grid gap-3 md:grid-cols-2">
-            <button
-              type="button"
-              onClick={
-                () =>
-                  exportReport(
-                    "xlsx"
-                  )
-              }
-              disabled={
-                downloading !==
-                  "" ||
-                loading
-              }
-              className="flex items-center justify-between rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-left transition hover:border-emerald-300 disabled:opacity-50"
-            >
-              <div>
-                <p className="text-sm font-black text-emerald-900">
-                  Export filtered Excel workbook
-                </p>
+      {preview ? (
+        <div className="grid gap-4 md:grid-cols-2">
+          <button
+            type="button"
+            onClick={
+              exportExcel
+            }
+            disabled={
+              loading ||
+              downloading !==
+                ""
+            }
+            className="flex items-center justify-between border border-slate-200 bg-white p-5 text-left transition hover:border-emerald-300 disabled:opacity-50"
+          >
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                Excel workbook
+              </p>
 
-                <p className="mt-1 text-xs leading-5 text-emerald-700">
-                  Dashboard sheet + complete filterable data sheet with the current report contents.
-                </p>
-              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                Filterable data sheet plus report summary using the applied dataset.
+              </p>
+            </div>
 
-              <Download
-                size={20}
-                className="shrink-0 text-emerald-700"
-              />
-            </button>
+            <Download
+              size={18}
+              className="text-emerald-700"
+            />
+          </button>
 
-            <button
-              type="button"
-              onClick={
-                () =>
-                  exportReport(
-                    "pdf"
-                  )
-              }
-              disabled={
-                downloading !==
-                  "" ||
-                loading
-              }
-              className="flex items-center justify-between rounded-2xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-slate-300 disabled:opacity-50"
-            >
-              <div>
-                <p className="text-sm font-black text-slate-900">
-                  Export filtered official PDF
-                </p>
+          <button
+            type="button"
+            onClick={
+              () =>
+                setPasswordOpen(
+                  true
+                )
+            }
+            disabled={
+              loading ||
+              downloading !==
+                ""
+            }
+            className="flex items-center justify-between border border-slate-200 bg-white p-5 text-left transition hover:border-[#0f766e] disabled:opacity-50"
+          >
+            <div>
+              <p className="text-sm font-semibold text-slate-900">
+                Encrypted official PDF
+              </p>
 
-                <p className="mt-1 text-xs leading-5 text-slate-500">
-                  Branded printable report with summary cards, table data and page numbering.
-                </p>
-              </div>
+              <p className="mt-1 text-xs leading-5 text-slate-500">
+                PhilaLink-branded report with the logo, page numbering and password protection.
+              </p>
+            </div>
 
-              <Download
-                size={20}
-                className="shrink-0 text-slate-700"
-              />
-            </button>
-          </section>
-        </>
-      )}
+            <KeyRound
+              size={18}
+              className="text-[#0f766e]"
+            />
+          </button>
+        </div>
+      ) : null}
+
+      <PasswordModal
+        open={
+          passwordOpen
+        }
+        onClose={
+          () => {
+            if (
+              downloading !==
+              "pdf"
+            ) {
+              setPasswordOpen(
+                false
+              );
+            }
+          }
+        }
+        onExport={
+          exportSecurePdf
+        }
+        pending={
+          downloading ===
+          "pdf"
+        }
+      />
     </div>
   );
 }
