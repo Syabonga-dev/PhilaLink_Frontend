@@ -14,19 +14,28 @@ function buildReportQuery(
   Object.entries(
     filters
   ).forEach(
-    ([key, value]) => {
+    ([
+      key,
+      value,
+    ]) => {
       if (
-        value === null ||
-        value === undefined ||
-        value === "" ||
-        value === "All"
+        value ===
+          null ||
+        value ===
+          undefined ||
+        value ===
+          "" ||
+        value ===
+          "All"
       ) {
         return;
       }
 
       params.set(
         key,
-        String(value)
+        String(
+          value
+        )
       );
     }
   );
@@ -34,114 +43,14 @@ function buildReportQuery(
   return params;
 }
 
-async function downloadFile(
-  url,
+function fileNameFromResponse(
+  response,
   fallbackName
 ) {
-  const token =
-    tokenStore.getToken();
-
-  let response;
-
-  try {
-    response =
-      await fetch(
-        `${API_BASE_URL}${url}`,
-        {
-          method:
-            "GET",
-
-          headers: {
-            Accept:
-              "*/*",
-
-            ...(token
-              ? {
-                  Authorization:
-                    `Bearer ${token}`,
-                }
-              : {}),
-          },
-        }
-      );
-  } catch {
-    throw new ApiError(
-      "Can't reach the PhilaLink server.",
-      {
-        isNetworkError:
-          true,
-      }
-    );
-  }
-
-  if (
-    response.status ===
-    401
-  ) {
-    tokenStore.clear();
-
-    throw new ApiError(
-      "Your session has expired. Please log in again.",
-      {
-        status:
-          401,
-      }
-    );
-  }
-
-  if (!response.ok) {
-    let message =
-      `Report generation failed (${response.status}).`;
-
-    try {
-      const contentType =
-        response.headers.get(
-          "content-type"
-        ) || "";
-
-      if (
-        contentType.includes(
-          "application/json"
-        )
-      ) {
-        const data =
-          await response.json();
-
-        message =
-          data?.message ||
-          data?.title ||
-          message;
-      } else {
-        const text =
-          await response.text();
-
-        if (text) {
-          message =
-            text;
-        }
-      }
-    } catch {
-      // Keep fallback.
-    }
-
-    throw new ApiError(
-      message,
-      {
-        status:
-          response.status,
-      }
-    );
-  }
-
-  const blob =
-    await response.blob();
-
   const disposition =
     response.headers.get(
       "content-disposition"
-    ) || "";
-
-  let fileName =
+    ) ||
     "";
 
   const utfMatch =
@@ -157,21 +66,106 @@ async function downloadFile(
   if (
     utfMatch?.[1]
   ) {
-    fileName =
-      decodeURIComponent(
+    try {
+      return decodeURIComponent(
         utfMatch[1]
       );
-  } else if (
-    standardMatch?.[1]
-  ) {
-    fileName =
-      standardMatch[1];
+    } catch {
+      return utfMatch[1];
+    }
   }
 
-  if (!fileName) {
-    fileName =
-      fallbackName;
+  if (
+    standardMatch?.[1]
+  ) {
+    return standardMatch[1];
   }
+
+  return fallbackName;
+}
+
+async function throwDownloadError(
+  response
+) {
+  if (
+    response.status ===
+    401
+  ) {
+    tokenStore.clear();
+
+    throw new ApiError(
+      "Your session has expired. Please log in again.",
+      {
+        status:
+          401,
+      }
+    );
+  }
+
+  let message =
+    `Report generation failed (${response.status}).`;
+
+  try {
+    const contentType =
+      response.headers.get(
+        "content-type"
+      ) ||
+      "";
+
+    if (
+      contentType.includes(
+        "application/json"
+      )
+    ) {
+      const data =
+        await response.json();
+
+      message =
+        data?.message ||
+        data?.title ||
+        message;
+    } else {
+      const text =
+        await response.text();
+
+      if (text) {
+        message =
+          text;
+      }
+    }
+  } catch {
+    // Keep fallback message.
+  }
+
+  throw new ApiError(
+    message,
+    {
+      status:
+        response.status,
+    }
+  );
+}
+
+async function saveDownload(
+  response,
+  fallbackName
+) {
+  if (
+    !response.ok
+  ) {
+    await throwDownloadError(
+      response
+    );
+  }
+
+  const blob =
+    await response.blob();
+
+  const fileName =
+    fileNameFromResponse(
+      response,
+      fallbackName
+    );
 
   const objectUrl =
     URL.createObjectURL(
@@ -205,6 +199,207 @@ async function downloadFile(
   return fileName;
 }
 
+async function authenticatedFetch(
+  path,
+  init = {}
+) {
+  const token =
+    tokenStore.getToken();
+
+  try {
+    return await fetch(
+      `${API_BASE_URL}${path}`,
+      {
+        ...init,
+
+        headers: {
+          Accept:
+            "*/*",
+
+          ...(init.body
+            ? {
+                "Content-Type":
+                  "application/json",
+              }
+            : {}),
+
+          ...(token
+            ? {
+                Authorization:
+                  `Bearer ${token}`,
+              }
+            : {}),
+
+          ...(init.headers ||
+            {}),
+        },
+      }
+    );
+  } catch {
+    throw new ApiError(
+      "Can't reach the PhilaLink server.",
+      {
+        isNetworkError:
+          true,
+      }
+    );
+  }
+}
+
+async function downloadFile(
+  url,
+  fallbackName
+) {
+  const response =
+    await authenticatedFetch(
+      url,
+      {
+        method:
+          "GET",
+      }
+    );
+
+  return saveDownload(
+    response,
+    fallbackName
+  );
+}
+
+async function buildLogoJpegBase64() {
+  try {
+    const image =
+      new Image();
+
+    image.decoding =
+      "async";
+
+    const loaded =
+      new Promise(
+        (
+          resolve,
+          reject
+        ) => {
+          image.onload =
+            resolve;
+
+          image.onerror =
+            reject;
+        }
+      );
+
+    image.src =
+      "/logo2.png";
+
+    await loaded;
+
+    const size =
+      220;
+
+    const canvas =
+      document.createElement(
+        "canvas"
+      );
+
+    canvas.width =
+      size;
+
+    canvas.height =
+      size;
+
+    const context =
+      canvas.getContext(
+        "2d"
+      );
+
+    if (!context) {
+      return null;
+    }
+
+    context.fillStyle =
+      "#ffffff";
+
+    context.fillRect(
+      0,
+      0,
+      size,
+      size
+    );
+
+    const ratio =
+      Math.min(
+        size /
+          image.naturalWidth,
+        size /
+          image.naturalHeight
+      );
+
+    const width =
+      Math.max(
+        1,
+        Math.round(
+          image.naturalWidth *
+            ratio
+        )
+      );
+
+    const height =
+      Math.max(
+        1,
+        Math.round(
+          image.naturalHeight *
+            ratio
+        )
+      );
+
+    const x =
+      Math.round(
+        (
+          size -
+          width
+        ) /
+          2
+      );
+
+    const y =
+      Math.round(
+        (
+          size -
+          height
+        ) /
+          2
+      );
+
+    context.drawImage(
+      image,
+      x,
+      y,
+      width,
+      height
+    );
+
+    const dataUrl =
+      canvas.toDataURL(
+        "image/jpeg",
+        0.9
+      );
+
+    const comma =
+      dataUrl.indexOf(
+        ","
+      );
+
+    return comma >=
+      0
+      ? dataUrl.slice(
+          comma +
+            1
+        )
+      : null;
+  } catch {
+    return null;
+  }
+}
+
 export const clinicAdminApi = {
   // =====================================================
   // ANALYTICS
@@ -228,7 +423,8 @@ export const clinicAdminApi = {
   ) => {
     const query =
       role &&
-      role !== "All"
+      role !==
+        "All"
         ? `?role=${encodeURIComponent(
             role
           )}`
@@ -311,13 +507,24 @@ export const clinicAdminApi = {
       format
     ) => {
       const normalizedFormat =
-        format === "excel"
+        format ===
+        "excel"
           ? "xlsx"
           : format;
+
+      if (
+        normalizedFormat ===
+        "pdf"
+      ) {
+        throw new ApiError(
+          "PDF exports must use the secure password-protected export flow."
+        );
+      }
 
       const query =
         buildReportQuery({
           ...filters,
+
           format:
             normalizedFormat,
         });
@@ -332,33 +539,75 @@ export const clinicAdminApi = {
       );
     },
 
+  downloadSecurePdf:
+    async (
+      filters,
+      password
+    ) => {
+      if (
+        !password ||
+        password.length <
+          8
+      ) {
+        throw new ApiError(
+          "A PDF password of at least 8 characters is required."
+        );
+      }
+
+      const logoJpegBase64 =
+        await buildLogoJpegBase64();
+
+      const response =
+        await authenticatedFetch(
+          "/api/clinic-admin/report-builder/export/pdf",
+          {
+            method:
+              "POST",
+
+            body:
+              JSON.stringify({
+                filters,
+                password,
+                logoJpegBase64,
+              }),
+          }
+        );
+
+      return saveDownload(
+        response,
+        `PhilaLink-${filters?.reportType || "clinic-report"}-protected.pdf`
+      );
+    },
+
   // =====================================================
   // LEGACY REPORT EXPORT
   // =====================================================
 
-  downloadReport: async ({
-    format,
-    rangeDays,
-  }) => {
-    const normalizedFormat =
-      format === "excel"
-        ? "xlsx"
-        : format;
+  downloadReport:
+    async ({
+      format,
+      rangeDays,
+    }) => {
+      const normalizedFormat =
+        format ===
+        "excel"
+          ? "xlsx"
+          : format;
 
-    const query =
-      new URLSearchParams({
-        format:
-          normalizedFormat,
+      const query =
+        new URLSearchParams({
+          format:
+            normalizedFormat,
 
-        rangeDays:
-          String(
-            rangeDays
-          ),
-      });
+          rangeDays:
+            String(
+              rangeDays
+            ),
+        });
 
-    return downloadFile(
-      `/api/clinic-admin/reports/export?${query.toString()}`,
-      `PhilaLink-clinic-report.${normalizedFormat}`
-    );
-  },
+      return downloadFile(
+        `/api/clinic-admin/reports/export?${query.toString()}`,
+        `PhilaLink-clinic-report.${normalizedFormat}`
+      );
+    },
 };
