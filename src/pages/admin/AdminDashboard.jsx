@@ -11,16 +11,13 @@ import {
 
 import {
   AlertTriangle,
-  ArrowUpRight,
+  ArrowRight,
   BarChart3,
   Boxes,
-  CalendarCheck2,
-  CheckCircle2,
-  ClipboardList,
   FileBarChart,
   Filter,
-  PackageCheck,
   RefreshCw,
+  TableProperties,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -30,7 +27,6 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
-  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -51,74 +47,594 @@ import {
   clinicAdminApi,
 } from "../../services/api/clinicAdmin.js";
 
+import {
+  DataTable,
+  EmptyBlock,
+  FilterSummary,
+  LoadingBlock,
+  MetricStrip,
+  Notice,
+  PageHeader,
+  Panel,
+  PrimaryButton,
+  SearchField,
+  SecondaryButton,
+  SelectField,
+  StatusBadge,
+} from "../../components/admin/AdminPrimitives.jsx";
+
+const REPORT_TYPES = [
+  {
+    value:
+      "Collections",
+    label:
+      "Medication collections",
+  },
+  {
+    value:
+      "Appointments",
+    label:
+      "Appointments",
+  },
+  {
+    value:
+      "Patients",
+    label:
+      "Patients",
+  },
+  {
+    value:
+      "Medication Adherence",
+    label:
+      "Medication adherence",
+  },
+  {
+    value:
+      "Inventory",
+    label:
+      "Inventory",
+  },
+  {
+    value:
+      "Staff",
+    label:
+      "Staff",
+  },
+];
+
 const COLORS = [
   "#0f766e",
-  "#14b8a6",
   "#0f172a",
-  "#f59e0b",
-  "#059669",
-  "#64748b",
+  "#d97706",
+  "#2563eb",
+  "#7c3aed",
   "#dc2626",
 ];
 
-function safeArray(value) {
-  return Array.isArray(value)
+function dateInput(
+  offsetDays
+) {
+  const date =
+    new Date();
+
+  date.setDate(
+    date.getDate() +
+      offsetDays
+  );
+
+  return date
+    .toISOString()
+    .slice(
+      0,
+      10
+    );
+}
+
+function defaultFilters(
+  reportType =
+    "Collections"
+) {
+  return {
+    reportType,
+
+    dateFrom:
+      dateInput(
+        -29
+      ),
+
+    dateTo:
+      dateInput(
+        0
+      ),
+
+    search:
+      "",
+
+    status:
+      "All",
+
+    role:
+      "All",
+
+    provider:
+      "All",
+
+    appointmentType:
+      "All",
+
+    mode:
+      "All",
+
+    medication:
+      "All",
+  };
+}
+
+function safeArray(
+  value
+) {
+  return Array.isArray(
+    value
+  )
     ? value
     : [];
 }
 
-function number(value) {
-  return Number(value || 0)
-    .toLocaleString("en-ZA");
-}
+function number(
+  value
+) {
+  const numeric =
+    Number(
+      value
+    );
 
-function percentage(value) {
-  return `${Math.max(
-    0,
-    Math.min(
-      100,
-      Math.round(
-        Number(value || 0)
+  return Number.isFinite(
+    numeric
+  )
+    ? numeric.toLocaleString(
+        "en-ZA"
       )
-    )
-  )}%`;
+    : String(
+        value ??
+          "—"
+      );
 }
 
-function formatDateTime(value) {
-  if (!value) {
-    return "—";
-  }
-
-  const date =
-    new Date(value);
-
+function formatCell(
+  value,
+  type
+) {
   if (
-    Number.isNaN(
-      date.getTime()
-    )
+    value ===
+      null ||
+    value ===
+      undefined ||
+    value ===
+      ""
   ) {
     return "—";
   }
 
-  return date.toLocaleString(
-    "en-ZA",
-    {
-      day:
-        "2-digit",
+  if (
+    type ===
+      "date" ||
+    type ===
+      "datetime"
+  ) {
+    const date =
+      new Date(
+        value
+      );
 
-      month:
-        "short",
+    if (
+      !Number.isNaN(
+        date.getTime()
+      )
+    ) {
+      return type ===
+        "date"
+        ? date.toLocaleDateString(
+            "en-ZA",
+            {
+              year:
+                "numeric",
 
-      hour:
-        "2-digit",
+              month:
+                "short",
 
-      minute:
-        "2-digit",
+              day:
+                "2-digit",
+            }
+          )
+        : date.toLocaleString(
+            "en-ZA",
+            {
+              year:
+                "numeric",
+
+              month:
+                "short",
+
+              day:
+                "2-digit",
+
+              hour:
+                "2-digit",
+
+              minute:
+                "2-digit",
+            }
+          );
     }
+  }
+
+  if (
+    type ===
+    "number"
+  ) {
+    return number(
+      value
+    );
+  }
+
+  return String(
+    value
   );
 }
 
-function ChartTooltip({
+function chartConfig(
+  reportType
+) {
+  switch (
+    reportType
+  ) {
+    case "Patients":
+      return {
+        dateKey:
+          "registered",
+
+        statusKey:
+          "status",
+
+        categoryKey:
+          "gender",
+
+        categoryLabel:
+          "Gender",
+      };
+
+    case "Appointments":
+      return {
+        dateKey:
+          "scheduled",
+
+        statusKey:
+          "status",
+
+        categoryKey:
+          "type",
+
+        categoryLabel:
+          "Appointment type",
+      };
+
+    case "Collections":
+      return {
+        dateKey:
+          "scheduled",
+
+        statusKey:
+          "status",
+
+        categoryKey:
+          "medication",
+
+        categoryLabel:
+          "Medication",
+      };
+
+    case "Medication Adherence":
+      return {
+        dateKey:
+          "recorded",
+
+        statusKey:
+          "result",
+
+        categoryKey:
+          "medication",
+
+        categoryLabel:
+          "Medication",
+      };
+
+    case "Inventory":
+      return {
+        dateKey:
+          null,
+
+        statusKey:
+          "status",
+
+        categoryKey:
+          "medication",
+
+        categoryLabel:
+          "Medication",
+      };
+
+    case "Staff":
+      return {
+        dateKey:
+          "registered",
+
+        statusKey:
+          "status",
+
+        categoryKey:
+          "role",
+
+        categoryLabel:
+          "Role",
+      };
+
+    default:
+      return {
+        dateKey:
+          null,
+
+        statusKey:
+          "status",
+
+        categoryKey:
+          null,
+
+        categoryLabel:
+          "Category",
+      };
+  }
+}
+
+function groupCounts(
+  rows,
+  key
+) {
+  const map =
+    new Map();
+
+  safeArray(
+    rows
+  ).forEach(
+    row => {
+      const raw =
+        row?.[
+          key
+        ];
+
+      const values =
+        typeof raw ===
+          "string" &&
+        raw.includes(
+          ","
+        )
+          ? raw
+              .split(
+                ","
+              )
+              .map(
+                part =>
+                  part.trim()
+              )
+              .filter(
+                Boolean
+              )
+          : [
+              raw ||
+                "Unknown",
+            ];
+
+      values.forEach(
+        value => {
+          const label =
+            String(
+              value ||
+                "Unknown"
+            );
+
+          map.set(
+            label,
+            (
+              map.get(
+                label
+              ) ||
+              0
+            ) +
+              1
+          );
+        }
+      );
+    }
+  );
+
+  return [
+    ...map.entries(),
+  ]
+    .map(
+      ([
+        name,
+        count,
+      ]) => ({
+        name,
+        count,
+      })
+    )
+    .sort(
+      (
+        a,
+        b
+      ) =>
+        b.count -
+        a.count
+    );
+}
+
+function buildTrend(
+  rows,
+  dateKey,
+  dateFrom,
+  dateTo
+) {
+  if (!dateKey) {
+    return [];
+  }
+
+  const from =
+    dateFrom
+      ? new Date(
+          dateFrom
+        )
+      : null;
+
+  const to =
+    dateTo
+      ? new Date(
+          dateTo
+        )
+      : null;
+
+  const spanDays =
+    from &&
+    to
+      ? Math.max(
+          0,
+          Math.round(
+            (
+              to -
+              from
+            ) /
+              86400000
+          )
+        )
+      : 30;
+
+  const monthly =
+    spanDays >
+    75;
+
+  const map =
+    new Map();
+
+  safeArray(
+    rows
+  ).forEach(
+    row => {
+      const date =
+        new Date(
+          row?.[
+            dateKey
+          ]
+        );
+
+      if (
+        Number.isNaN(
+          date.getTime()
+        )
+      ) {
+        return;
+      }
+
+      const key =
+        monthly
+          ? `${date.getFullYear()}-${String(
+              date.getMonth() +
+                1
+            ).padStart(
+              2,
+              "0"
+            )}`
+          : `${date.getFullYear()}-${String(
+              date.getMonth() +
+                1
+            ).padStart(
+              2,
+              "0"
+            )}-${String(
+              date.getDate()
+            ).padStart(
+              2,
+              "0"
+            )}`;
+
+      map.set(
+        key,
+        (
+          map.get(
+            key
+          ) ||
+          0
+        ) +
+          1
+      );
+    }
+  );
+
+  return [
+    ...map.entries(),
+  ]
+    .sort(
+      (
+        [a],
+        [b]
+      ) =>
+        a.localeCompare(
+          b
+        )
+    )
+    .map(
+      ([
+        key,
+        count,
+      ]) => {
+        const date =
+          new Date(
+            `${key}${
+              monthly
+                ? "-01"
+                : ""
+            }T00:00:00`
+          );
+
+        return {
+          period:
+            monthly
+              ? date.toLocaleDateString(
+                  "en-ZA",
+                  {
+                    month:
+                      "short",
+
+                    year:
+                      "2-digit",
+                  }
+                )
+              : date.toLocaleDateString(
+                  "en-ZA",
+                  {
+                    day:
+                      "2-digit",
+
+                    month:
+                      "short",
+                  }
+                ),
+
+          count,
+        };
+      }
+    );
+}
+
+function CustomTooltip({
   active,
   payload,
   label,
@@ -131,151 +647,64 @@ function ChartTooltip({
   }
 
   return (
-    <div className="min-w-[170px] rounded-2xl border border-slate-200 bg-white/95 p-3 shadow-xl backdrop-blur">
-      {label && (
-        <p className="mb-2 text-xs font-bold text-slate-900">
+    <div className="border border-slate-200 bg-white px-3 py-2 text-xs shadow-lg">
+      {label ? (
+        <p className="mb-1 font-semibold text-slate-900">
           {label}
         </p>
+      ) : null}
+
+      {payload.map(
+        (
+          entry,
+          index
+        ) => (
+          <p
+            key={`${entry.dataKey}-${index}`}
+            className="text-slate-600"
+          >
+            {entry.name}:{" "}
+            <span className="font-semibold text-slate-900">
+              {number(
+                entry.value
+              )}
+            </span>
+          </p>
+        )
       )}
-
-      <div className="space-y-1.5">
-        {payload.map(
-          (
-            entry,
-            index
-          ) => (
-            <div
-              key={`${entry.dataKey}-${index}`}
-              className="flex items-center justify-between gap-5 text-xs"
-            >
-              <div className="flex items-center gap-2">
-                <span
-                  className="h-2.5 w-2.5 rounded-full"
-                  style={{
-                    backgroundColor:
-                      entry.color ||
-                      entry.fill,
-                  }}
-                />
-
-                <span className="text-slate-500">
-                  {entry.name}
-                </span>
-              </div>
-
-              <span className="font-bold text-slate-900">
-                {number(
-                  entry.value
-                )}
-              </span>
-            </div>
-          )
-        )}
-      </div>
     </div>
   );
 }
 
-function KpiCard({
+function TrendChart({
+  data,
   label,
-  value,
-  helper,
-  icon:
-    Icon,
-  tone =
-    "teal",
-  progress,
 }) {
-  const tones = {
-    teal:
-      "bg-teal-50 text-teal-700",
-    emerald:
-      "bg-emerald-50 text-emerald-700",
-    amber:
-      "bg-amber-50 text-amber-700",
-    slate:
-      "bg-slate-100 text-slate-700",
-    red:
-      "bg-red-50 text-red-700",
-  };
+  if (
+    !data.length
+  ) {
+    return (
+      <EmptyBlock
+        icon={
+          BarChart3
+        }
+        title="No trend data"
+        description="No dated records matched the current filters."
+      />
+    );
+  }
 
   return (
-    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[9px] font-bold uppercase tracking-[0.13em] text-slate-400">
-            {label}
-          </p>
-
-          <p className="mt-2 text-[28px] font-black tracking-tight text-slate-950">
-            {value}
-          </p>
-
-          <p className="mt-1 text-[10px] text-slate-400">
-            {helper}
-          </p>
-        </div>
-
-        <div
-          className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${
-            tones[tone] ||
-            tones.teal
-          }`}
-        >
-          <Icon
-            size={17}
-          />
-        </div>
-      </div>
-
-      {progress != null && (
-        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-slate-100">
-          <div
-            className="h-full rounded-full bg-[#0f766e]"
-            style={{
-              width:
-                percentage(
-                  progress
-                ),
-            }}
-          />
-        </div>
-      )}
-    </div>
-  );
-}
-
-function ActivityChart({
-  rows,
-  activity,
-}) {
-  const showAppointments =
-    activity ===
-      "All" ||
-    activity ===
-      "Appointments";
-
-  const showCollections =
-    activity ===
-      "All" ||
-    activity ===
-      "Collections";
-
-  return (
-    <div className="h-[330px]">
+    <div className="h-[310px] px-2 pt-4">
       <ResponsiveContainer
         width="100%"
         height="100%"
       >
         <BarChart
-          data={
-            safeArray(
-              rows
-            )
-          }
+          data={data}
           margin={{
             top:
-              14,
+              8,
 
             right:
               16,
@@ -284,20 +713,24 @@ function ActivityChart({
               -18,
 
             bottom:
-              0,
+              4,
           }}
-          barGap={8}
         >
           <CartesianGrid
-            vertical={false}
+            vertical={
+              false
+            }
             stroke="#e2e8f0"
-            strokeDasharray="4 4"
           />
 
           <XAxis
             dataKey="period"
-            axisLine={false}
-            tickLine={false}
+            axisLine={
+              false
+            }
+            tickLine={
+              false
+            }
             tick={{
               fontSize:
                 10,
@@ -308,9 +741,15 @@ function ActivityChart({
           />
 
           <YAxis
-            allowDecimals={false}
-            axisLine={false}
-            tickLine={false}
+            allowDecimals={
+              false
+            }
+            axisLine={
+              false
+            }
+            tickLine={
+              false
+            }
             tick={{
               fontSize:
                 10,
@@ -321,80 +760,34 @@ function ActivityChart({
           />
 
           <Tooltip
+            content={
+              <CustomTooltip />
+            }
             cursor={{
               fill:
-                "#f0fdfa",
+                "#f8fafc",
             }}
-            content={
-              <ChartTooltip />
+          />
+
+          <Bar
+            dataKey="count"
+            name={label}
+            fill="#0f766e"
+            maxBarSize={
+              36
             }
           />
-
-          <Legend
-            iconType="circle"
-            wrapperStyle={{
-              fontSize:
-                "10px",
-
-              paddingTop:
-                "10px",
-            }}
-          />
-
-          {showAppointments && (
-            <Bar
-              dataKey="appointments"
-              name="Appointments"
-              fill="#0f766e"
-              radius={[
-                7,
-                7,
-                2,
-                2,
-              ]}
-              maxBarSize={34}
-            />
-          )}
-
-          {showCollections && (
-            <Bar
-              dataKey="collections"
-              name="Collections"
-              fill="#14b8a6"
-              radius={[
-                7,
-                7,
-                2,
-                2,
-              ]}
-              maxBarSize={34}
-            />
-          )}
         </BarChart>
       </ResponsiveContainer>
     </div>
   );
 }
 
-function StatusDonut({
-  title,
-  subtitle,
+function StatusChart({
   data,
 }) {
-  const rows =
-    safeArray(
-      data
-    ).filter(
-      item =>
-        Number(
-          item.count ||
-          0
-        ) >
-        0
-    );
-
   const total =
-    rows.reduce(
+    data.reduce(
       (
         sum,
         item
@@ -402,470 +795,279 @@ function StatusDonut({
         sum +
         Number(
           item.count ||
-          0
+            0
         ),
       0
     );
 
+  if (
+    !data.length
+  ) {
+    return (
+      <EmptyBlock
+        title="No status data"
+        description="This report does not have status values for the current filters."
+      />
+    );
+  }
+
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-      <div className="border-b border-slate-100 pb-3">
-        <h3 className="text-sm font-black text-slate-950">
-          {title}
-        </h3>
-
-        <p className="mt-0.5 text-[10px] text-slate-400">
-          {subtitle}
-        </p>
-      </div>
-
-      {rows.length ===
-      0 ? (
-        <div className="flex h-[220px] items-center justify-center text-xs text-slate-400">
-          No status data yet
-        </div>
-      ) : (
-        <>
-          <div className="relative h-[210px]">
-            <ResponsiveContainer
-              width="100%"
-              height="100%"
+    <div>
+      <div className="relative h-[215px]">
+        <ResponsiveContainer
+          width="100%"
+          height="100%"
+        >
+          <PieChart>
+            <Pie
+              data={data}
+              dataKey="count"
+              nameKey="name"
+              innerRadius={
+                54
+              }
+              outerRadius={
+                78
+              }
+              paddingAngle={
+                2
+              }
             >
-              <PieChart>
-                <Pie
-                  data={
-                    rows
-                  }
-                  nameKey="status"
-                  dataKey="count"
-                  cx="38%"
-                  cy="50%"
-                  innerRadius={48}
-                  outerRadius={72}
-                  paddingAngle={3}
-                  cornerRadius={6}
-                >
-                  {rows.map(
-                    (
-                      item,
-                      index
-                    ) => (
-                      <Cell
-                        key={`${item.status}-${index}`}
-                        fill={
-                          COLORS[
-                            index %
-                            COLORS.length
-                          ]
-                        }
-                      />
-                    )
-                  )}
-                </Pie>
-
-                <Tooltip
-                  content={
-                    <ChartTooltip />
-                  }
-                />
-              </PieChart>
-            </ResponsiveContainer>
-
-            <div className="pointer-events-none absolute left-[38%] top-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-              <p className="text-[9px] font-bold uppercase tracking-wider text-slate-400">
-                Total
-              </p>
-
-              <p className="text-2xl font-black text-slate-950">
-                {number(
-                  total
-                )}
-              </p>
-            </div>
-          </div>
-
-          <div className="space-y-2 border-t border-slate-100 pt-3">
-            {rows
-              .slice(
-                0,
-                5
-              )
-              .map(
+              {data.map(
                 (
                   item,
                   index
                 ) => (
-                  <div
+                  <Cell
                     key={
-                      item.status
+                      item.name
                     }
-                    className="flex items-center justify-between gap-3 text-[10px]"
-                  >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{
-                          backgroundColor:
-                            COLORS[
-                              index %
-                              COLORS.length
-                            ],
-                        }}
-                      />
-
-                      <span className="truncate font-semibold text-slate-600">
-                        {item.status}
-                      </span>
-                    </div>
-
-                    <span className="font-black text-slate-900">
-                      {number(
-                        item.count
-                      )}
-                    </span>
-                  </div>
+                    fill={
+                      COLORS[
+                        index %
+                          COLORS.length
+                      ]
+                    }
+                  />
                 )
               )}
-          </div>
-        </>
-      )}
-    </section>
-  );
-}
+            </Pie>
 
-function CompletionPanel({
-  rate,
-  completed,
-  total,
-}) {
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h3 className="text-sm font-black text-slate-950">
-            Service Completion
-          </h3>
+            <Tooltip
+              content={
+                <CustomTooltip />
+              }
+            />
+          </PieChart>
+        </ResponsiveContainer>
 
-          <p className="mt-0.5 text-[10px] text-slate-400">
-            Current completion rate for clinic activity
-          </p>
-        </div>
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
+          <div className="text-center">
+            <p className="text-[10px] uppercase tracking-wide text-slate-400">
+              Total
+            </p>
 
-        <span className="rounded-lg bg-emerald-50 px-2 py-1 text-[10px] font-black text-emerald-700">
-          {percentage(
-            rate
-          )}
-        </span>
-      </div>
-
-      <div className="mt-5 flex items-center gap-5">
-        <div
-          className="relative flex h-20 w-20 shrink-0 items-center justify-center rounded-full"
-          style={{
-            background:
-              `conic-gradient(#0f766e ${Math.max(
-                0,
-                Math.min(
-                  100,
-                  rate
-                )
-              )}%, #e2e8f0 0)`,
-          }}
-        >
-          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white text-sm font-black text-slate-950">
-            {percentage(
-              rate
-            )}
-          </div>
-        </div>
-
-        <div className="min-w-0 flex-1 space-y-2 text-[10px]">
-          <div className="flex justify-between gap-3">
-            <span className="text-slate-500">
-              Completed
-            </span>
-
-            <span className="font-black text-slate-900">
-              {number(
-                completed
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between gap-3">
-            <span className="text-slate-500">
-              Remaining
-            </span>
-
-            <span className="font-black text-slate-900">
-              {number(
-                Math.max(
-                  total -
-                    completed,
-                  0
-                )
-              )}
-            </span>
-          </div>
-
-          <div className="flex justify-between gap-3 border-t border-slate-100 pt-2">
-            <span className="text-slate-500">
-              Total activity
-            </span>
-
-            <span className="font-black text-slate-900">
+            <p className="text-2xl font-semibold text-slate-950">
               {number(
                 total
               )}
-            </span>
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function RecentActivity({
-  data,
-}) {
-  const rows =
-    safeArray(
-      data
-    );
-
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h3 className="text-sm font-black text-slate-950">
-            Recent Activity
-          </h3>
-
-          <p className="mt-0.5 text-[10px] text-slate-400">
-            Latest clinic administration events
-          </p>
-        </div>
-
-        <Link
-          to="/admin/audit"
-          className="text-[10px] font-black text-[#0f766e] hover:underline"
-        >
-          View audit
-        </Link>
-      </div>
-
-      <div className="divide-y divide-slate-100">
-        {rows.length ? (
-          rows
-            .slice(
-              0,
-              6
-            )
-            .map(
-              item => (
-                <div
-                  key={
-                    item.id
-                  }
-                  className="flex gap-3 py-3"
-                >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700">
-                    <ClipboardList
-                      size={14}
-                    />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-bold text-slate-900">
-                      {item.action}
-                    </p>
-
-                    <p className="mt-0.5 truncate text-[10px] text-slate-400">
-                      {item.performedBy ||
-                        "System"}{" "}
-                      ·{" "}
-                      {formatDateTime(
-                        item.timestamp
-                      )}
-                    </p>
-                  </div>
-                </div>
-              )
-            )
-        ) : (
-          <p className="py-8 text-center text-xs text-slate-400">
-            No recent activity
-          </p>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function StockAlerts({
-  data,
-}) {
-  const rows =
-    safeArray(
-      data
-    );
-
-  return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-      <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-        <div>
-          <h3 className="text-sm font-black text-slate-950">
-            Stock Alerts
-          </h3>
-
-          <p className="mt-0.5 text-[10px] text-slate-400">
-            Medication items at or below reorder level
-          </p>
-        </div>
-
-        <Link
-          to="/admin/inventory"
-          className="text-[10px] font-black text-[#0f766e] hover:underline"
-        >
-          Inventory
-        </Link>
-      </div>
-
-      <div className="space-y-2.5 pt-3">
-        {rows.length ? (
-          rows
-            .slice(
-              0,
-              6
-            )
-            .map(
-              item => (
-                <div
-                  key={
-                    item.id
-                  }
-                  className="flex items-center justify-between gap-3 rounded-xl bg-amber-50 px-3 py-2.5"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-xs font-bold text-slate-900">
-                      {item.medicationName}{" "}
-                      {item.strength}
-                    </p>
-
-                    <p className="mt-0.5 text-[10px] text-slate-500">
-                      Reorder at{" "}
-                      {item.reorderLevel}{" "}
-                      {item.unit}
-                    </p>
-                  </div>
-
-                  <span className="shrink-0 rounded-full bg-white px-2 py-1 text-[10px] font-black text-amber-700">
-                    {item.quantityOnHand}{" "}
-                    left
-                  </span>
-                </div>
-              )
-            )
-        ) : (
-          <div className="rounded-xl bg-emerald-50 p-5 text-center">
-            <CheckCircle2
-              size={20}
-              className="mx-auto text-emerald-600"
-            />
-
-            <p className="mt-2 text-xs font-bold text-emerald-800">
-              Inventory healthy
             </p>
           </div>
-        )}
-      </div>
-    </section>
-  );
-}
-
-function QuickAction({
-  to,
-  icon:
-    Icon,
-  title,
-  detail,
-}) {
-  return (
-    <Link
-      to={to}
-      className="group flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-white px-4 py-3 transition hover:border-teal-200 hover:bg-teal-50/50"
-    >
-      <div className="flex min-w-0 items-center gap-3">
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-teal-50 text-teal-700 group-hover:bg-white">
-          <Icon
-            size={16}
-          />
-        </div>
-
-        <div className="min-w-0">
-          <p className="truncate text-xs font-black text-slate-900">
-            {title}
-          </p>
-
-          <p className="mt-0.5 truncate text-[10px] text-slate-400">
-            {detail}
-          </p>
         </div>
       </div>
 
-      <ArrowUpRight
-        size={14}
-        className="shrink-0 text-slate-400 group-hover:text-teal-700"
-      />
-    </Link>
-  );
-}
-
-function LoadingPanel() {
-  return (
-    <div className="space-y-4">
-      <div className="h-32 animate-pulse rounded-2xl bg-slate-100" />
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        {[1, 2, 3, 4, 5].map(
-          item => (
-            <div
-              key={item}
-              className="h-28 animate-pulse rounded-2xl bg-slate-100"
-            />
+      <div className="border-t border-slate-200">
+        {data
+          .slice(
+            0,
+            6
           )
-        )}
-      </div>
+          .map(
+            (
+              item,
+              index
+            ) => (
+              <div
+                key={
+                  item.name
+                }
+                className="flex items-center justify-between gap-3 border-b border-slate-100 px-1 py-2 last:border-b-0"
+              >
+                <div className="flex min-w-0 items-center gap-2 text-xs text-slate-600">
+                  <span
+                    className="h-2 w-2 shrink-0"
+                    style={{
+                      backgroundColor:
+                        COLORS[
+                          index %
+                            COLORS.length
+                        ],
+                    }}
+                  />
 
-      <div className="h-96 animate-pulse rounded-2xl bg-slate-100" />
+                  <span className="truncate">
+                    {
+                      item.name
+                    }
+                  </span>
+                </div>
+
+                <span className="text-xs font-semibold text-slate-900">
+                  {number(
+                    item.count
+                  )}
+                </span>
+              </div>
+            )
+          )}
+      </div>
     </div>
   );
 }
 
-function ErrorPanel({
-  message,
-  onRetry,
+function CategoryChart({
+  data,
+  reportType,
 }) {
-  return (
-    <div className="rounded-2xl border border-red-200 bg-red-50 p-8 text-center">
-      <AlertTriangle
-        size={24}
-        className="mx-auto text-red-600"
+  if (
+    !data.length
+  ) {
+    return (
+      <EmptyBlock
+        title="No category data"
+        description="No category breakdown is available for these records."
       />
+    );
+  }
 
-      <p className="mt-3 text-sm font-semibold text-red-800">
-        {message}
-      </p>
+  const rows =
+    data.slice(
+      0,
+      8
+    );
 
-      {onRetry && (
-        <button
-          type="button"
-          onClick={onRetry}
-          className="mt-4 rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white"
+  if (
+    reportType ===
+    "Inventory"
+  ) {
+    return (
+      <div className="space-y-3 p-1">
+        {rows.map(
+          item => (
+            <div
+              key={
+                item.name
+              }
+              className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3 border-b border-slate-100 pb-3 last:border-b-0"
+            >
+              <span className="truncate text-xs text-slate-600">
+                {
+                  item.name
+                }
+              </span>
+
+              <span className="text-xs font-semibold text-slate-900">
+                {number(
+                  item.count
+                )}{" "}
+                record(s)
+              </span>
+            </div>
+          )
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="h-[290px] pt-3">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+      >
+        <BarChart
+          data={rows}
+          layout="vertical"
+          margin={{
+            left:
+              10,
+
+            right:
+              20,
+
+            top:
+              4,
+
+            bottom:
+              4,
+          }}
         >
-          Try again
-        </button>
-      )}
+          <CartesianGrid
+            horizontal={
+              false
+            }
+            stroke="#e2e8f0"
+          />
+
+          <XAxis
+            type="number"
+            allowDecimals={
+              false
+            }
+            axisLine={
+              false
+            }
+            tickLine={
+              false
+            }
+            tick={{
+              fontSize:
+                10,
+
+              fill:
+                "#94a3b8",
+            }}
+          />
+
+          <YAxis
+            dataKey="name"
+            type="category"
+            width={105}
+            axisLine={
+              false
+            }
+            tickLine={
+              false
+            }
+            tick={{
+              fontSize:
+                10,
+
+              fill:
+                "#64748b",
+            }}
+          />
+
+          <Tooltip
+            content={
+              <CustomTooltip />
+            }
+            cursor={{
+              fill:
+                "#f8fafc",
+            }}
+          />
+
+          <Bar
+            dataKey="count"
+            name="Records"
+            fill="#0f172a"
+            maxBarSize={
+              22
+            }
+          />
+        </BarChart>
+      </ResponsiveContainer>
     </div>
   );
 }
@@ -889,134 +1091,156 @@ function SuperAdminDashboard() {
   ] =
     useState("");
 
+  const load =
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
+
+          setError(
+            ""
+          );
+
+          setData(
+            await adminApi
+              .getDashboard()
+          );
+        } catch (
+          err
+        ) {
+          setError(
+            err?.message ||
+            "Unable to load administration analytics."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      []
+    );
+
   useEffect(
     () => {
-      let active =
-        true;
-
-      adminApi
-        .getDashboard()
-        .then(
-          result => {
-            if (active) {
-              setData(
-                result
-              );
-            }
-          }
-        )
-        .catch(
-          err => {
-            if (active) {
-              setError(
-                err?.message ||
-                "Unable to load administration analytics."
-              );
-            }
-          }
-        )
-        .finally(
-          () => {
-            if (active) {
-              setLoading(
-                false
-              );
-            }
-          }
-        );
-
-      return () => {
-        active =
-          false;
-      };
+      void load();
     },
-    []
+    [
+      load,
+    ]
   );
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
-      <LoadingPanel />
-    );
-  }
-
-  if (error) {
-    return (
-      <ErrorPanel
-        message={error}
+      <LoadingBlock
+        label="Loading administration overview…"
+        minHeight={
+          320
+        }
       />
     );
   }
 
   return (
     <div className="space-y-5">
-      <section className="rounded-2xl border border-teal-100 bg-gradient-to-br from-teal-50 via-white to-white p-6">
-        <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0f766e]">
-          PhilaLink Administration
-        </p>
+      <PageHeader
+        eyebrow="PhilaLink administration"
+        title="System overview"
+        description="National account and service administration."
+        actions={
+          <SecondaryButton
+            onClick={
+              load
+            }
+          >
+            <RefreshCw
+              size={15}
+            />
+            Refresh
+          </SecondaryButton>
+        }
+      />
 
-        <h2 className="mt-2 text-3xl font-black tracking-tight text-slate-950">
-          System Overview
-        </h2>
+      {error ? (
+        <Notice type="error">
+          {error}
+        </Notice>
+      ) : null}
 
-        <p className="mt-2 text-sm text-slate-500">
-          National account and service administration.
-        </p>
-      </section>
+      <MetricStrip
+        metrics={[
+          {
+            label:
+              "Patients",
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <KpiCard
-          label="Patients"
-          value={
-            number(
-              data?.totalPatients
-            )
-          }
-          helper={`${number(
-            data?.activePatients
-          )} active`}
-          icon={Users}
-        />
+            value:
+              number(
+                data?.totalPatients
+              ),
 
-        <KpiCard
-          label="Nurses"
-          value={
-            number(
-              data?.totalNurses
-            )
-          }
-          helper={`${number(
-            data?.activeNurses
-          )} active`}
-          icon={UserPlus}
-          tone="emerald"
-        />
+            helper:
+              `${number(
+                data?.activePatients
+              )} active`,
 
-        <KpiCard
-          label="Proxies"
-          value={
-            number(
-              data?.totalProxies
-            )
-          }
-          helper={`${number(
-            data?.activeProxies
-          )} active`}
-          icon={Users}
-          tone="slate"
-        />
+            icon:
+              Users,
+          },
+          {
+            label:
+              "Nurses",
 
-        <KpiCard
-          label="Proxy links"
-          value={
-            number(
-              data?.totalProxyLinks
-            )
-          }
-          helper="Active links"
-          icon={BarChart3}
-          tone="amber"
-        />
-      </div>
+            value:
+              number(
+                data?.totalNurses
+              ),
+
+            helper:
+              `${number(
+                data?.activeNurses
+              )} active`,
+
+            icon:
+              UserPlus,
+          },
+          {
+            label:
+              "Proxies",
+
+            value:
+              number(
+                data?.totalProxies
+              ),
+
+            helper:
+              `${number(
+                data?.activeProxies
+              )} active`,
+
+            icon:
+              Users,
+          },
+          {
+            label:
+              "Proxy links",
+
+            value:
+              number(
+                data?.totalProxyLinks
+              ),
+
+            helper:
+              "Active relationships",
+
+            icon:
+              BarChart3,
+          },
+        ]}
+      />
     </div>
   );
 }
@@ -1028,20 +1252,26 @@ export default function AdminDashboard() {
     useAuth();
 
   const [
-    months,
-    setMonths,
+    filters,
+    setFilters,
   ] =
-    useState(6);
+    useState(
+      () =>
+        defaultFilters()
+    );
 
   const [
-    activity,
-    setActivity,
+    appliedFilters,
+    setAppliedFilters,
   ] =
-    useState("All");
+    useState(
+      () =>
+        defaultFilters()
+    );
 
   const [
-    data,
-    setData,
+    preview,
+    setPreview,
   ] =
     useState(null);
 
@@ -1059,40 +1289,34 @@ export default function AdminDashboard() {
 
   const load =
     useCallback(
-      async () => {
-        if (
-          role !==
-          "ClinicAdmin"
-        ) {
-          setLoading(
-            false
-          );
-
-          return;
-        }
-
+      async (
+        query
+      ) => {
         try {
           setLoading(
             true
           );
 
-          setError("");
+          setError(
+            ""
+          );
 
-          const result =
+          setPreview(
             await clinicAdminApi
-              .getAnalytics(
-                months
-              );
-
-          setData(
-            result
+              .previewReport(
+                query
+              )
           );
         } catch (
-          loadError
+          err
         ) {
           setError(
-            loadError?.message ||
+            err?.message ||
             "Unable to load clinic analytics."
+          );
+
+          setPreview(
+            null
           );
         } finally {
           setLoading(
@@ -1100,134 +1324,317 @@ export default function AdminDashboard() {
           );
         }
       },
-      [
-        months,
-        role,
-      ]
+      []
     );
 
   useEffect(
     () => {
-      void load();
+      if (
+        role ===
+        "ClinicAdmin"
+      ) {
+        void load(
+          appliedFilters
+        );
+      }
     },
     [
+      appliedFilters,
       load,
+      role,
     ]
   );
 
-  const performance =
-    useMemo(
-      () => {
-        const rows =
-          safeArray(
-            data?.monthlyActivity
-          );
+  const options =
+    preview?.filterOptions ||
+    {};
 
-        const totals =
-          rows.reduce(
-            (
-              result,
-              item
-            ) => {
-              result.total +=
-                Number(
-                  item.appointments ||
-                  0
-                ) +
-                Number(
-                  item.collections ||
-                  0
-                );
+  const reportType =
+    appliedFilters.reportType;
 
-              result.completed +=
-                Number(
-                  item.completedAppointments ||
-                  0
-                ) +
-                Number(
-                  item.completedCollections ||
-                  0
-                );
-
-              return result;
-            },
-            {
-              total:
-                0,
-
-              completed:
-                0,
-            }
-          );
-
-        return {
-          ...totals,
-
-          rate:
-            totals.total > 0
-              ? Math.round(
-                  totals.completed /
-                    totals.total *
-                    100
-                )
-              : 0,
-        };
-      },
-      [
-        data,
-      ]
+  const config =
+    chartConfig(
+      reportType
     );
 
-  const topDrivers =
+  const rows =
+    safeArray(
+      preview?.rows
+    );
+
+  const trend =
     useMemo(
       () =>
-        [
-          ...safeArray(
-            data?.appointmentStatuses
-          ).map(
-            item => ({
-              label:
-                `Appointments · ${item.status}`,
-
-              value:
-                Number(
-                  item.count ||
-                  0
-                ),
-            })
-          ),
-
-          ...safeArray(
-            data?.collectionStatuses
-          ).map(
-            item => ({
-              label:
-                `Collections · ${item.status}`,
-
-              value:
-                Number(
-                  item.count ||
-                  0
-                ),
-            })
-          ),
-        ]
-          .sort(
-            (
-              a,
-              b
-            ) =>
-              b.value -
-              a.value
-          )
-          .slice(
-            0,
-            3
-          ),
+        buildTrend(
+          rows,
+          config.dateKey,
+          appliedFilters.dateFrom,
+          appliedFilters.dateTo
+        ),
       [
-        data,
+        rows,
+        config.dateKey,
+        appliedFilters.dateFrom,
+        appliedFilters.dateTo,
       ]
     );
+
+  const statusData =
+    useMemo(
+      () =>
+        groupCounts(
+          rows,
+          config.statusKey
+        ),
+      [
+        rows,
+        config.statusKey,
+      ]
+    );
+
+  const categoryData =
+    useMemo(
+      () =>
+        config.categoryKey
+          ? groupCounts(
+              rows,
+              config.categoryKey
+            )
+          : [],
+      [
+        rows,
+        config.categoryKey,
+      ]
+    );
+
+  function update(
+    key,
+    value
+  ) {
+    setFilters(
+      current => ({
+        ...current,
+
+        [key]:
+          value,
+      })
+    );
+  }
+
+  function changeReportType(
+    value
+  ) {
+    const next =
+      defaultFilters(
+        value
+      );
+
+    setFilters(
+      next
+    );
+
+    setAppliedFilters(
+      next
+    );
+  }
+
+  function apply(
+    event
+  ) {
+    event?.preventDefault();
+
+    if (
+      filters.reportType !==
+        "Inventory" &&
+      filters.dateFrom &&
+      filters.dateTo &&
+      filters.dateFrom >
+        filters.dateTo
+    ) {
+      setError(
+        "The From date cannot be after the To date."
+      );
+
+      return;
+    }
+
+    setAppliedFilters({
+      ...filters,
+    });
+  }
+
+  function clearFilters() {
+    const next =
+      defaultFilters(
+        filters.reportType
+      );
+
+    setFilters(
+      next
+    );
+
+    setAppliedFilters(
+      next
+    );
+  }
+
+  const summaryMetrics =
+    safeArray(
+      preview?.summary
+    )
+      .slice(
+        0,
+        4
+      )
+      .map(
+        item => ({
+          label:
+            item.label,
+
+          value:
+            item.value,
+
+          helper:
+            `${rows.length.toLocaleString(
+              "en-ZA"
+            )} filtered row${
+              rows.length ===
+              1
+                ? ""
+                : "s"
+            }`,
+        })
+      );
+
+  const dataColumns =
+    safeArray(
+      preview?.columns
+    ).map(
+      column => ({
+        ...column,
+
+        render:
+          value =>
+            column.dataType ===
+            "status" ? (
+              <StatusBadge
+                value={
+                  formatCell(
+                    value,
+                    column.dataType
+                  )
+                }
+              />
+            ) : (
+              <span
+                className={
+                  column.dataType ===
+                  "number"
+                    ? "font-semibold text-slate-900"
+                    : ""
+                }
+              >
+                {formatCell(
+                  value,
+                  column.dataType
+                )}
+              </span>
+            ),
+      })
+    );
+
+  const activeFilterItems = [
+    {
+      label:
+        "Report",
+      value:
+        appliedFilters.reportType,
+    },
+    {
+      label:
+        "From",
+      value:
+        appliedFilters.reportType ===
+        "Inventory"
+          ? ""
+          : appliedFilters.dateFrom,
+    },
+    {
+      label:
+        "To",
+      value:
+        appliedFilters.reportType ===
+        "Inventory"
+          ? ""
+          : appliedFilters.dateTo,
+    },
+    {
+      label:
+        "Status",
+      value:
+        appliedFilters.status,
+    },
+    {
+      label:
+        "Medication",
+      value:
+        appliedFilters.medication,
+    },
+    {
+      label:
+        "Role",
+      value:
+        appliedFilters.role,
+    },
+    {
+      label:
+        "Provider",
+      value:
+        appliedFilters.provider,
+    },
+    {
+      label:
+        "Type",
+      value:
+        appliedFilters.appointmentType,
+    },
+    {
+      label:
+        "Mode",
+      value:
+        appliedFilters.mode,
+    },
+    {
+      label:
+        "Search",
+      value:
+        appliedFilters.search,
+    },
+  ];
+
+  const showStatus =
+    true;
+
+  const showMedication =
+    [
+      "Collections",
+      "Medication Adherence",
+      "Inventory",
+    ].includes(
+      filters.reportType
+    );
+
+  const showAppointments =
+    filters.reportType ===
+    "Appointments";
+
+  const showRole =
+    filters.reportType ===
+    "Staff";
+
+  const isInventory =
+    filters.reportType ===
+    "Inventory";
 
   if (
     role ===
@@ -1238,339 +1645,635 @@ export default function AdminDashboard() {
     );
   }
 
-  if (loading) {
-    return (
-      <LoadingPanel />
-    );
-  }
-
-  if (error) {
-    return (
-      <ErrorPanel
-        message={error}
-        onRetry={load}
-      />
-    );
-  }
-
-  const kpis =
-    data?.kpis || {};
-
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-[10px] font-black uppercase tracking-[0.16em] text-[#0f766e]">
-            Admin / Analytics
-          </p>
-
-          <h1 className="mt-1 text-3xl font-black tracking-tight text-slate-950">
-            Analytics Overview
-          </h1>
-
-          <p className="mt-1 text-xs text-slate-500">
-            Clinic service performance, patient activity and medication operations.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          onClick={load}
-          className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-xl bg-[#0f172a] px-4 text-xs font-black text-white transition hover:bg-[#1e293b] sm:self-auto"
-        >
-          <RefreshCw
-            size={14}
-          />
-
-          Refresh
-        </button>
-      </div>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-        <div className="grid gap-3 lg:grid-cols-[minmax(220px,0.7fr)_minmax(260px,1fr)_auto] lg:items-end">
-          <label>
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">
-              Time Range
+    <div className="space-y-5">
+      <PageHeader
+        eyebrow="Clinic operations"
+        title="Analytics"
+        description="Analyse live clinic records by date, workflow, status, medication and staff context. Every metric, chart and row below uses the same applied parameters."
+        meta={
+          <>
+            <span>
+              {preview?.clinicName ||
+                "Clinic"}
             </span>
 
-            <select
-              value={months}
-              onChange={
-                event =>
-                  setMonths(
-                    Number(
-                      event.target
-                        .value
-                    )
+            <span>
+              {preview
+                ? `${rows.length.toLocaleString(
+                    "en-ZA"
+                  )} matching records`
+                : "Live clinic data"}
+            </span>
+          </>
+        }
+        actions={
+          <>
+            <Link
+              to="/admin/reports"
+              className="inline-flex h-10 items-center justify-center gap-2 border border-slate-300 bg-white px-4 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <FileBarChart
+                size={15}
+              />
+              Reports
+            </Link>
+
+            <SecondaryButton
+              onClick={
+                () =>
+                  load(
+                    appliedFilters
                   )
               }
-              className="h-10 w-full rounded-xl border border-slate-200 bg-[#f8fafc] px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#0f766e]"
+              disabled={
+                loading
+              }
             >
-              <option value="3">
-                Last 3 months
-              </option>
+              <RefreshCw
+                size={15}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
+              />
+              Refresh
+            </SecondaryButton>
+          </>
+        }
+      />
 
-              <option value="6">
-                Last 6 months
-              </option>
+      {error ? (
+        <Notice type="error">
+          {error}
+        </Notice>
+      ) : null}
 
-              <option value="12">
-                Last 12 months
-              </option>
-            </select>
-          </label>
+      <Panel
+        title="Analysis parameters"
+        description="Change the report area first, then refine its contextual filters."
+        noPadding
+      >
+        <form
+          onSubmit={
+            apply
+          }
+          className="grid gap-4 px-5 py-4 md:grid-cols-2 xl:grid-cols-4"
+        >
+          <SelectField
+            label="Report area"
+            value={
+              filters.reportType
+            }
+            onChange={
+              event =>
+                changeReportType(
+                  event.target
+                    .value
+                )
+            }
+            options={
+              REPORT_TYPES
+            }
+          />
 
-          <label>
-            <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.12em] text-slate-400">
-              Activity
+          {!isInventory ? (
+            <>
+              <SelectField
+                label="Period"
+                value={`${filters.dateFrom}|${filters.dateTo}`}
+                onChange={
+                  event => {
+                    const [
+                      from,
+                      to,
+                    ] =
+                      event.target
+                        .value
+                        .split(
+                          "|"
+                        );
+
+                    setFilters(
+                      current => ({
+                        ...current,
+
+                        dateFrom:
+                          from,
+
+                        dateTo:
+                          to,
+                      })
+                    );
+                  }
+                }
+                options={[
+                  {
+                    value:
+                      `${dateInput(
+                        -6
+                      )}|${dateInput(
+                        0
+                      )}`,
+
+                    label:
+                      "Last 7 days",
+                  },
+                  {
+                    value:
+                      `${dateInput(
+                        -29
+                      )}|${dateInput(
+                        0
+                      )}`,
+
+                    label:
+                      "Last 30 days",
+                  },
+                  {
+                    value:
+                      `${dateInput(
+                        -89
+                      )}|${dateInput(
+                        0
+                      )}`,
+
+                    label:
+                      "Last 90 days",
+                  },
+                  {
+                    value:
+                      `${dateInput(
+                        -179
+                      )}|${dateInput(
+                        0
+                      )}`,
+
+                    label:
+                      "Last 6 months",
+                  },
+                  {
+                    value:
+                      `${dateInput(
+                        -364
+                      )}|${dateInput(
+                        0
+                      )}`,
+
+                    label:
+                      "Last 12 months",
+                  },
+                ]}
+              />
+
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                  Custom from
+                </span>
+
+                <input
+                  type="date"
+                  value={
+                    filters.dateFrom
+                  }
+                  onChange={
+                    event =>
+                      update(
+                        "dateFrom",
+                        event.target
+                          .value
+                      )
+                  }
+                  className="h-10 w-full border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f766e]"
+                />
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                  Custom to
+                </span>
+
+                <input
+                  type="date"
+                  value={
+                    filters.dateTo
+                  }
+                  onChange={
+                    event =>
+                      update(
+                        "dateTo",
+                        event.target
+                          .value
+                      )
+                  }
+                  className="h-10 w-full border border-slate-300 bg-white px-3 text-sm outline-none focus:border-[#0f766e]"
+                />
+              </label>
+            </>
+          ) : null}
+
+          <div>
+            <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+              Search
             </span>
 
-            <select
+            <SearchField
               value={
-                activity
+                filters.search
               }
               onChange={
                 event =>
-                  setActivity(
+                  update(
+                    "search",
                     event.target
                       .value
                   )
               }
-              className="h-10 w-full rounded-xl border border-slate-200 bg-[#f8fafc] px-3 text-xs font-semibold text-slate-700 outline-none focus:border-[#0f766e]"
+              placeholder="Patient, medication or staff…"
+            />
+          </div>
+
+          {showStatus ? (
+            <SelectField
+              label="Status"
+              value={
+                filters.status
+              }
+              onChange={
+                event =>
+                  update(
+                    "status",
+                    event.target
+                      .value
+                  )
+              }
+              options={
+                safeArray(
+                  options.status
+                ).length
+                  ? options.status
+                  : [
+                      "All",
+                    ]
+              }
+            />
+          ) : null}
+
+          {showMedication ? (
+            <SelectField
+              label="Medication"
+              value={
+                filters.medication
+              }
+              onChange={
+                event =>
+                  update(
+                    "medication",
+                    event.target
+                      .value
+                  )
+              }
+              options={
+                safeArray(
+                  options.medication
+                ).length
+                  ? options.medication
+                  : [
+                      "All",
+                    ]
+              }
+            />
+          ) : null}
+
+          {showAppointments ? (
+            <>
+              <SelectField
+                label="Appointment type"
+                value={
+                  filters.appointmentType
+                }
+                onChange={
+                  event =>
+                    update(
+                      "appointmentType",
+                      event.target
+                        .value
+                    )
+                }
+                options={
+                  safeArray(
+                    options.appointmentType
+                  ).length
+                    ? options.appointmentType
+                    : [
+                        "All",
+                      ]
+                }
+              />
+
+              <SelectField
+                label="Provider"
+                value={
+                  filters.provider
+                }
+                onChange={
+                  event =>
+                    update(
+                      "provider",
+                      event.target
+                        .value
+                    )
+                }
+                options={
+                  safeArray(
+                    options.provider
+                  ).length
+                    ? options.provider
+                    : [
+                        "All",
+                      ]
+                }
+              />
+
+              <SelectField
+                label="Mode"
+                value={
+                  filters.mode
+                }
+                onChange={
+                  event =>
+                    update(
+                      "mode",
+                      event.target
+                        .value
+                    )
+                }
+                options={
+                  safeArray(
+                    options.mode
+                  ).length
+                    ? options.mode
+                    : [
+                        "All",
+                      ]
+                }
+              />
+            </>
+          ) : null}
+
+          {showRole ? (
+            <SelectField
+              label="Role"
+              value={
+                filters.role
+              }
+              onChange={
+                event =>
+                  update(
+                    "role",
+                    event.target
+                      .value
+                  )
+              }
+              options={
+                safeArray(
+                  options.role
+                ).length
+                  ? options.role
+                  : [
+                      "All",
+                    ]
+              }
+            />
+          ) : null}
+
+          <div className="flex items-end gap-2 xl:col-span-4">
+            <PrimaryButton
+              type="submit"
+              disabled={
+                loading
+              }
             >
-              <option value="All">
-                All activity
-              </option>
+              <Filter
+                size={15}
+              />
+              Apply parameters
+            </PrimaryButton>
 
-              <option value="Appointments">
-                Appointments
-              </option>
-
-              <option value="Collections">
-                Medication collections
-              </option>
-            </select>
-          </label>
-
-          <button
-            type="button"
-            onClick={load}
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-5 text-xs font-black text-white transition hover:bg-[#115e59]"
-          >
-            <Filter
-              size={14}
-            />
-
-            Apply
-          </button>
-        </div>
-      </section>
-
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
-        <KpiCard
-          label="Completion Rate"
-          value={
-            percentage(
-              performance.rate
-            )
-          }
-          helper="Completed clinic activity"
-          icon={CheckCircle2}
-          tone="emerald"
-          progress={
-            performance.rate
-          }
-        />
-
-        <KpiCard
-          label="Appointments Today"
-          value={
-            number(
-              kpis.appointmentsToday
-            )
-          }
-          helper="Scheduled for today"
-          icon={CalendarCheck2}
-        />
-
-        <KpiCard
-          label="Collections Due"
-          value={
-            number(
-              kpis.collectionsDueToday
-            )
-          }
-          helper="Medication collections today"
-          icon={PackageCheck}
-          tone="slate"
-        />
-
-        <KpiCard
-          label="Active Patients"
-          value={
-            number(
-              kpis.activePatients
-            )
-          }
-          helper="Patients linked to clinic"
-          icon={Users}
-        />
-
-        <KpiCard
-          label="Low Stock"
-          value={
-            number(
-              kpis.lowStockItems
-            )
-          }
-          helper="Items needing attention"
-          icon={Boxes}
-          tone={
-            Number(
-              kpis.lowStockItems ||
-              0
-            ) > 0
-              ? "amber"
-              : "emerald"
-          }
-        />
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.8fr)_minmax(310px,0.9fr)]">
-        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-          <div className="flex flex-col gap-3 border-b border-slate-100 pb-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h3 className="text-sm font-black text-slate-950">
-                Clinic Activity
-              </h3>
-
-              <p className="mt-0.5 text-[10px] text-slate-400">
-                Appointments and medication collection volume
-              </p>
-            </div>
-
-            <span className="rounded-lg bg-teal-50 px-2.5 py-1 text-[10px] font-black text-teal-700">
-              {activity}
-            </span>
-          </div>
-
-          <div className="pt-2">
-            <ActivityChart
-              rows={
-                data?.monthlyActivity
+            <SecondaryButton
+              type="button"
+              onClick={
+                clearFilters
               }
-              activity={
-                activity
+              disabled={
+                loading
               }
-            />
+            >
+              Clear
+            </SecondaryButton>
           </div>
+        </form>
 
-          {topDrivers.length >
-            0 && (
-            <div className="grid gap-2 border-t border-slate-100 pt-3 sm:grid-cols-3">
-              {topDrivers.map(
-                item => (
-                  <div
-                    key={
-                      item.label
-                    }
-                    className="rounded-xl border border-slate-200 bg-[#f8fafc] px-3 py-2"
-                  >
-                    <p className="truncate text-[9px] font-bold uppercase tracking-wide text-slate-400">
-                      {item.label}
-                    </p>
+        <FilterSummary
+          items={
+            activeFilterItems
+          }
+          onClear={
+            clearFilters
+          }
+        />
+      </Panel>
 
-                    <p className="mt-1 text-sm font-black text-slate-950">
-                      {number(
-                        item.value
-                      )}
-                    </p>
-                  </div>
-                )
+      {loading &&
+      !preview ? (
+        <LoadingBlock
+          label="Building analytics…"
+          minHeight={
+            360
+          }
+        />
+      ) : null}
+
+      {preview ? (
+        <>
+          <MetricStrip
+            metrics={
+              summaryMetrics.length
+                ? summaryMetrics
+                : [
+                    {
+                      label:
+                        "Records",
+
+                      value:
+                        number(
+                          rows.length
+                        ),
+                    },
+                  ]
+            }
+          />
+
+          <div className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(320px,0.8fr)]">
+            <Panel
+              title={
+                reportType ===
+                "Inventory"
+                  ? "Inventory activity"
+                  : `${preview.title} over time`
+              }
+              description={
+                reportType ===
+                "Inventory"
+                  ? "Current filtered inventory records."
+                  : "Record volume using the same selected reporting period."
+              }
+              noPadding
+            >
+              {reportType ===
+              "Inventory" ? (
+                <CategoryChart
+                  data={
+                    categoryData
+                  }
+                  reportType={
+                    reportType
+                  }
+                />
+              ) : (
+                <TrendChart
+                  data={
+                    trend
+                  }
+                  label={
+                    preview.reportType
+                  }
+                />
               )}
-            </div>
-          )}
-        </section>
+            </Panel>
 
-        <div className="grid gap-4">
-          <StatusDonut
-            title="Appointment Status Share"
-            subtitle="Current appointment distribution"
-            data={
-              data?.appointmentStatuses
-            }
-          />
+            <Panel
+              title="Status distribution"
+              description="Share of the filtered records by current outcome or status."
+            >
+              <StatusChart
+                data={
+                  statusData
+                }
+              />
+            </Panel>
+          </div>
 
-          <CompletionPanel
-            rate={
-              performance.rate
-            }
-            completed={
-              performance.completed
-            }
-            total={
-              performance.total
-            }
-          />
-        </div>
-      </div>
+          {reportType !==
+          "Inventory" ? (
+            <Panel
+              title={`Breakdown by ${config.categoryLabel.toLowerCase()}`}
+              description="The most common categories within the current filtered result set."
+            >
+              <CategoryChart
+                data={
+                  categoryData
+                }
+                reportType={
+                  reportType
+                }
+              />
+            </Panel>
+          ) : null}
 
-      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1.1fr)_minmax(280px,0.8fr)]">
-        <StatusDonut
-          title="Collection Status Share"
-          subtitle="Medication collection workflow"
-          data={
-            data?.collectionStatuses
+          <Panel
+            title="Filtered records"
+            description="The table is the source dataset for the analytics shown above."
+            actions={
+              <div className="flex items-center gap-2 text-xs text-slate-500">
+                <TableProperties
+                  size={14}
+                />
+
+                {rows.length.toLocaleString(
+                  "en-ZA"
+                )}{" "}
+                rows
+              </div>
+            }
+            noPadding
+          >
+            {rows.length ? (
+              <DataTable
+                columns={
+                  dataColumns
+                }
+                rows={
+                  rows
+                }
+                rowKey={(
+                  _,
+                  index
+                ) =>
+                  `${preview.reportType}-${index}`
+                }
+                maxHeight={
+                  520
+                }
+              />
+            ) : (
+              <div className="p-5">
+                <EmptyBlock
+                  icon={
+                    TableProperties
+                  }
+                  title="No records matched these parameters"
+                  description="Change the date range or filters, then apply them again."
+                />
+              </div>
+            )}
+          </Panel>
+
+          <div className="grid gap-4 md:grid-cols-3">
+            <Link
+              to="/admin/reports"
+              className="flex items-center justify-between border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-800 hover:border-slate-300"
+            >
+              Build a formal report
+
+              <ArrowRight
+                size={16}
+              />
+            </Link>
+
+            <Link
+              to="/admin/inventory"
+              className="flex items-center justify-between border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-800 hover:border-slate-300"
+            >
+              Manage medication inventory
+
+              <Boxes
+                size={16}
+              />
+            </Link>
+
+            <Link
+              to="/admin/staff"
+              className="flex items-center justify-between border border-slate-200 bg-white px-5 py-4 text-sm font-medium text-slate-800 hover:border-slate-300"
+            >
+              Review clinic staff
+
+              <Users
+                size={16}
+              />
+            </Link>
+          </div>
+        </>
+      ) : !loading ? (
+        <EmptyBlock
+          icon={
+            AlertTriangle
           }
+          title="Analytics unavailable"
+          description="The clinic report service did not return a dataset."
         />
-
-        <RecentActivity
-          data={
-            data?.recentActivity
-          }
-        />
-
-        <StockAlerts
-          data={
-            data?.lowStockItems
-          }
-        />
-      </div>
-
-      <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-[0_6px_24px_rgba(15,23,42,0.035)]">
-        <div className="border-b border-slate-100 pb-3">
-          <h3 className="text-sm font-black text-slate-950">
-            Administration Shortcuts
-          </h3>
-
-          <p className="mt-0.5 text-[10px] text-slate-400">
-            Common Clinic Administrator actions
-          </p>
-        </div>
-
-        <div className="mt-3 grid gap-3 md:grid-cols-3">
-          <QuickAction
-            to="/admin/register-staff"
-            icon={UserPlus}
-            title="Register Staff"
-            detail="Create Nurse or Proxy accounts for this clinic"
-          />
-
-          <QuickAction
-            to="/admin/inventory"
-            icon={Boxes}
-            title="Manage Inventory"
-            detail="Receive, issue and review medication stock"
-          />
-
-          <QuickAction
-            to="/admin/reports"
-            icon={FileBarChart}
-            title="Clinic Reports"
-            detail="Generate operational reports"
-          />
-        </div>
-      </section>
+      ) : null}
     </div>
   );
 }
