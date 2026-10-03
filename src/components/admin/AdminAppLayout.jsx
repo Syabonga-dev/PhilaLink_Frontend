@@ -1,4 +1,6 @@
 import {
+  useEffect,
+  useMemo,
   useState,
 } from "react";
 
@@ -25,6 +27,10 @@ import {
 import {
   useAuth,
 } from "../../context/AuthContext.jsx";
+
+import {
+  adminApi,
+} from "../../services/api/admin.js";
 
 const CLINIC_ADMIN_NAV = [
   {
@@ -65,7 +71,7 @@ const CLINIC_ADMIN_NAV = [
     to:
       "/admin/register-staff",
     label:
-      "Register",
+      "Register staff",
     icon:
       UserPlus,
   },
@@ -73,7 +79,7 @@ const CLINIC_ADMIN_NAV = [
     to:
       "/admin/audit",
     label:
-      "Audit",
+      "Audit log",
     icon:
       ClipboardList,
   },
@@ -118,7 +124,7 @@ const SUPER_ADMIN_NAV = [
     to:
       "/admin/register-clinic-admin",
     label:
-      "Admins",
+      "Clinic admins",
     icon:
       ShieldCheck,
   },
@@ -126,7 +132,7 @@ const SUPER_ADMIN_NAV = [
     to:
       "/admin/audit",
     label:
-      "Audit",
+      "Audit log",
     icon:
       ClipboardList,
   },
@@ -148,10 +154,7 @@ function initials(
         Boolean
       );
 
-  if (
-    words.length ===
-    0
-  ) {
+  if (!words.length) {
     return "AD";
   }
 
@@ -163,19 +166,23 @@ function initials(
     .map(
       word =>
         word[0]
-          .toUpperCase()
+          ?.toUpperCase()
     )
     .join("");
 }
 
 function pageTitle(
-  pathname
+  pathname,
+  role
 ) {
   if (
     pathname ===
     "/admin"
   ) {
-    return "Dashboard";
+    return role ===
+      "SuperAdmin"
+      ? "Overview"
+      : "Analytics";
   }
 
   if (
@@ -199,7 +206,7 @@ function pageTitle(
       "/admin/register-staff"
     )
   ) {
-    return "Register Staff";
+    return "Register staff";
   }
 
   if (
@@ -215,7 +222,7 @@ function pageTitle(
       "/admin/audit"
     )
   ) {
-    return "Audit Log";
+    return "Audit log";
   }
 
   if (
@@ -231,10 +238,82 @@ function pageTitle(
       "/admin/register-clinic-admin"
     )
   ) {
-    return "Clinic Admins";
+    return "Clinic admins";
   }
 
   return "Administration";
+}
+
+function NavSection({
+  label,
+  items,
+  onNavigate,
+}) {
+  return (
+    <div>
+      <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
+        {label}
+      </p>
+
+      <div className="mt-2 space-y-1">
+        {items.map(
+          item => {
+            const Icon =
+              item.icon;
+
+            return (
+              <NavLink
+                key={
+                  item.to
+                }
+                to={
+                  item.to
+                }
+                end={
+                  item.end
+                }
+                onClick={
+                  onNavigate
+                }
+                className={({
+                  isActive,
+                }) =>
+                  `group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-[#e9f6f3] text-[#0f766e]"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`
+                }
+              >
+                {({
+                  isActive,
+                }) => (
+                  <>
+                    {isActive ? (
+                      <span className="absolute inset-y-0 left-0 w-[3px] bg-[#0f766e]" />
+                    ) : null}
+
+                    <Icon
+                      size={17}
+                      strokeWidth={
+                        1.8
+                      }
+                    />
+
+                    <span className="truncate">
+                      {
+                        item.label
+                      }
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            );
+          }
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function AdminAppLayout() {
@@ -256,168 +335,295 @@ export default function AdminAppLayout() {
       false
     );
 
+  const [
+    profile,
+    setProfile,
+  ] =
+    useState(null);
+
+  useEffect(
+    () => {
+      let active =
+        true;
+
+      adminApi
+        .getMe()
+        .then(
+          result => {
+            if (active) {
+              setProfile(
+                result
+              );
+            }
+          }
+        )
+        .catch(
+          () => {
+            if (active) {
+              setProfile(
+                null
+              );
+            }
+          }
+        );
+
+      return () => {
+        active =
+          false;
+      };
+    },
+    []
+  );
+
+  const displayName =
+    user?.fullName ||
+    user?.name ||
+    profile?.fullName ||
+    "Administrator";
+
+  const clinicName =
+    role ===
+    "ClinicAdmin"
+      ? profile?.clinicName ||
+        "Assigned clinic"
+      : "PhilaLink administration";
+
   const navigation =
     role ===
     "SuperAdmin"
       ? SUPER_ADMIN_NAV
       : CLINIC_ADMIN_NAV;
 
-  const displayName =
-    user?.fullName ||
-    user?.name ||
-    "Administrator";
+  const sections =
+    useMemo(
+      () => {
+        if (
+          role ===
+          "SuperAdmin"
+        ) {
+          return [
+            {
+              label:
+                "Administration",
+              items:
+                navigation.slice(
+                  0,
+                  5
+                ),
+            },
+            {
+              label:
+                "Governance",
+              items:
+                navigation.slice(
+                  5
+                ),
+            },
+          ];
+        }
+
+        return [
+          {
+            label:
+              "Clinic operations",
+            items:
+              navigation.slice(
+                0,
+                3
+              ),
+          },
+          {
+            label:
+              "Workforce",
+            items:
+              navigation.slice(
+                3,
+                5
+              ),
+          },
+          {
+            label:
+              "Governance",
+            items:
+              navigation.slice(
+                5
+              ),
+          },
+        ];
+      },
+      [
+        navigation,
+        role,
+      ]
+    );
 
   return (
-    <div className="min-h-screen bg-[#f7faf9] text-slate-950">
-      {mobileOpen && (
+    <div className="min-h-screen bg-[#f4f6f5] text-slate-950">
+      {mobileOpen ? (
         <button
           type="button"
-          aria-label="Close menu"
-          className="fixed inset-0 z-40 bg-slate-950/30 backdrop-blur-[2px] lg:hidden"
-          onClick={() =>
-            setMobileOpen(
-              false
-            )
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 bg-slate-950/35 lg:hidden"
+          onClick={
+            () =>
+              setMobileOpen(
+                false
+              )
           }
         />
-      )}
+      ) : null}
 
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex w-[92px] flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[252px] flex-col border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
           mobileOpen
             ? "translate-x-0"
             : "-translate-x-full"
         }`}
       >
-        <div className="flex h-[82px] items-center justify-center border-b border-slate-100">
+        <div className="flex h-[76px] items-center border-b border-slate-200 px-5">
           <NavLink
             to="/admin"
-            onClick={() =>
-              setMobileOpen(
-                false
-              )
+            onClick={
+              () =>
+                setMobileOpen(
+                  false
+                )
             }
-            className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-50 ring-1 ring-teal-100"
-            title="PhilaLink"
+            className="flex min-w-0 items-center gap-3"
           >
             <img
               src="/logo2.png"
               alt="PhilaLink"
-              className="h-10 w-10 object-contain"
+              className="h-9 w-9 object-contain"
             />
+
+            <div className="min-w-0">
+              <p className="truncate text-[17px] font-semibold tracking-[-0.02em] text-slate-950">
+                PhilaLink
+              </p>
+
+              <p className="truncate text-[10px] font-medium uppercase tracking-[0.12em] text-[#0f766e]">
+                {role ===
+                "SuperAdmin"
+                  ? "System admin"
+                  : "Clinic admin"}
+              </p>
+            </div>
           </NavLink>
         </div>
 
-        <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-2 py-5">
-          {navigation.map(
-            item => {
-              const Icon =
-                item.icon;
+        <div className="border-b border-slate-200 px-5 py-4">
+          <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
+            Working context
+          </p>
 
-              return (
-                <NavLink
-                  key={
-                    item.to
-                  }
-                  to={
-                    item.to
-                  }
-                  end={
-                    item.end
-                  }
-                  title={
-                    item.label
-                  }
-                  onClick={() =>
+          <p className="mt-1 truncate text-sm font-semibold text-slate-900">
+            {clinicName}
+          </p>
+
+          <p className="mt-0.5 text-[11px] text-slate-500">
+            {role ===
+            "SuperAdmin"
+              ? "National administration"
+              : "Clinic-scoped access"}
+          </p>
+        </div>
+
+        <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
+          {sections.map(
+            section => (
+              <NavSection
+                key={
+                  section.label
+                }
+                label={
+                  section.label
+                }
+                items={
+                  section.items
+                }
+                onNavigate={
+                  () =>
                     setMobileOpen(
                       false
                     )
-                  }
-                  className={({
-                    isActive,
-                  }) =>
-                    `group flex min-h-[62px] flex-col items-center justify-center gap-1 rounded-2xl px-1 text-[10px] font-semibold transition ${
-                      isActive
-                        ? "bg-teal-50 text-[#0f766e] ring-1 ring-teal-100"
-                        : "text-slate-400 hover:bg-slate-50 hover:text-slate-700"
-                    }`
-                  }
-                >
-                  <Icon
-                    size={20}
-                    strokeWidth={1.9}
-                  />
-
-                  <span className="max-w-full truncate">
-                    {item.label}
-                  </span>
-                </NavLink>
-              );
-            }
+                }
+              />
+            )
           )}
         </nav>
 
-        <div className="border-t border-slate-100 px-2 py-4">
-          <div
-            title={
-              displayName
-            }
-            className="mx-auto flex h-11 w-11 items-center justify-center rounded-2xl bg-[#0f766e] text-xs font-bold text-white shadow-sm"
-          >
-            {initials(
-              displayName
-            )}
-          </div>
+        <div className="border-t border-slate-200 p-4">
+          <div className="flex items-center gap-3">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-slate-900 text-xs font-semibold text-white">
+              {initials(
+                displayName
+              )}
+            </div>
 
-          <button
-            type="button"
-            title="Logout"
-            onClick={
-              logout
-            }
-            className="mx-auto mt-3 flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-red-50 hover:text-red-600"
-          >
-            <LogOut
-              size={18}
-            />
-          </button>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-slate-900">
+                {displayName}
+              </p>
+
+              <p className="truncate text-[10px] text-slate-500">
+                {role ===
+                "SuperAdmin"
+                  ? "Super Administrator"
+                  : "Clinic Administrator"}
+              </p>
+            </div>
+
+            <button
+              type="button"
+              onClick={
+                logout
+              }
+              title="Sign out"
+              className="flex h-8 w-8 shrink-0 items-center justify-center border border-slate-200 text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+            >
+              <LogOut
+                size={15}
+              />
+            </button>
+          </div>
         </div>
       </aside>
 
-      <div className="lg:pl-[92px]">
-        <header className="sticky top-0 z-30 flex h-[72px] items-center border-b border-slate-200/80 bg-white/90 px-4 backdrop-blur-xl sm:px-6 lg:px-8">
+      <div className="lg:pl-[252px]">
+        <header className="sticky top-0 z-30 flex h-[64px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
           <button
             type="button"
-            className="mr-3 flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 text-slate-600 lg:hidden"
-            onClick={() =>
-              setMobileOpen(
-                true
-              )
+            className="mr-3 flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-600 lg:hidden"
+            onClick={
+              () =>
+                setMobileOpen(
+                  true
+                )
             }
+            aria-label="Open navigation"
           >
             <Menu
-              size={20}
+              size={18}
             />
           </button>
 
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-bold text-slate-900">
+            <p className="truncate text-sm font-semibold text-slate-900">
               {pageTitle(
-                location.pathname
+                location.pathname,
+                role
               )}
             </p>
 
-            <p className="mt-0.5 truncate text-[11px] text-slate-400">
-              {role ===
-              "SuperAdmin"
-                ? "PhilaLink system administration"
-                : "Clinic administration"}
+            <p className="mt-0.5 truncate text-[11px] text-slate-500">
+              {clinicName}
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
-            <div className="hidden text-right sm:block">
-              <p className="max-w-[220px] truncate text-xs font-bold text-slate-900">
+          <div className="hidden items-center gap-3 sm:flex">
+            <div className="text-right">
+              <p className="max-w-[220px] truncate text-xs font-medium text-slate-800">
                 {displayName}
               </p>
 
@@ -429,7 +635,7 @@ export default function AdminAppLayout() {
               </p>
             </div>
 
-            <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-[#0f766e] text-xs font-bold text-white shadow-sm">
+            <div className="flex h-9 w-9 items-center justify-center bg-[#0f766e] text-xs font-semibold text-white">
               {initials(
                 displayName
               )}
@@ -437,26 +643,28 @@ export default function AdminAppLayout() {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-[1650px] p-4 sm:p-6 lg:p-8">
+        <main className="w-full p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>
 
-      {mobileOpen && (
+      {mobileOpen ? (
         <button
           type="button"
-          className="fixed left-[98px] top-4 z-[60] flex h-10 w-10 items-center justify-center rounded-xl bg-white text-slate-600 shadow-lg lg:hidden"
-          onClick={() =>
-            setMobileOpen(
-              false
-            )
+          onClick={
+            () =>
+              setMobileOpen(
+                false
+              )
           }
+          aria-label="Close navigation"
+          className="fixed left-[260px] top-3 z-[60] flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-600 shadow lg:hidden"
         >
           <X
-            size={19}
+            size={17}
           />
         </button>
-      )}
+      ) : null}
     </div>
   );
 }
