@@ -1,0 +1,310 @@
+.clinical-ops-root {
+  min-height: 100vh;
+
+  background:
+    #f4f6f5;
+
+  color:
+    #0f172a;
+}
+
+.clinical-ops-root
+.clinical-ops-content {
+  background:
+    #f4f6f5;
+}
+
+/*
+ * Existing Nurse and Proxy pages contain
+ * a lot of rounded cards and elevated UI.
+ *
+ * Flatten those surfaces so they follow
+ * the same visual language as Clinic Admin.
+ */
+
+.clinical-ops-root
+.rounded-sm,
+.clinical-ops-root
+.rounded,
+.clinical-ops-root
+.rounded-md,
+.clinical-ops-root
+.rounded-lg,
+.clinical-ops-root
+.rounded-xl,
+.clinical-ops-root
+.rounded-2xl,
+.clinical-ops-root
+.rounded-3xl {
+  border-radius:
+    0 !important;
+}
+
+/*
+ * Preserve actual circles such as status
+ * dots and user avatars.
+ */
+.clinical-ops-root
+.rounded-full {
+  border-radius:
+    9999px !important;
+}
+
+/*
+ * Remove the floating-card appearance.
+ */
+.clinical-ops-root
+.shadow,
+.clinical-ops-root
+.shadow-sm,
+.clinical-ops-root
+.shadow-md,
+.clinical-ops-root
+.shadow-lg,
+.clinical-ops-root
+.shadow-xl,
+.clinical-ops-root
+.shadow-2xl,
+.clinical-ops-root
+.shadow-card,
+.clinical-ops-root
+.shadow-elevated,
+.clinical-ops-root
+.shadow-patient-sm,
+.clinical-ops-root
+.shadow-patient-md,
+.clinical-ops-root
+.shadow-patient-lg,
+.clinical-ops-root
+.shadow-patient-xl {
+  box-shadow:
+    0 1px 2px
+    rgba(
+      15,
+      23,
+      42,
+      0.04
+    ) !important;
+}
+
+/*
+ * Gradients are deliberately removed from
+ * operational staff interfaces.
+ */
+.clinical-ops-root
+[class*="bg-gradient-to-"] {
+  background-image:
+    none !important;
+}
+
+/*
+ * No floating/lifting cards on hover.
+ */
+.clinical-ops-root
+a:hover,
+.clinical-ops-root
+button:hover {
+  transform:
+    none !important;
+}
+
+/*
+ * Form controls follow the same sharp,
+ * restrained pattern as Clinic Admin.
+ */
+.clinical-ops-root
+input,
+.clinical-ops-root
+select,
+.clinical-ops-root
+textarea,
+.clinical-ops-root
+button {
+  border-radius:
+    0;
+}
+
+.clinical-ops-root
+input,
+.clinical-ops-root
+select,
+.clinical-ops-root
+textarea {
+  border-color:
+    #cbd5e1;
+
+  background:
+    #ffffff;
+}
+
+.clinical-ops-root
+input:focus,
+.clinical-ops-root
+select:focus,
+.clinical-ops-root
+textarea:focus {
+  border-color:
+    #0f766e !important;
+
+  box-shadow:
+    0 0 0 1px
+    rgba(
+      15,
+      118,
+      110,
+      0.15
+    ) !important;
+
+  outline:
+    none !important;
+}
+
+/*
+ * Standard operational table treatment.
+ */
+.clinical-ops-root
+table {
+  border-collapse:
+    collapse;
+}
+
+.clinical-ops-root
+table
+thead {
+  background:
+    #0f172a !important;
+}
+
+.clinical-ops-root
+table
+thead
+th {
+  color:
+    #ffffff !important;
+
+  border-color:
+    #334155 !important;
+
+  font-size:
+    10px;
+
+  font-weight:
+    600;
+
+  letter-spacing:
+    0.08em;
+
+  text-transform:
+    uppercase;
+}
+
+.clinical-ops-root
+table
+tbody
+tr {
+  border-color:
+    #e2e8f0 !important;
+}
+
+.clinical-ops-root
+table
+tbody
+tr:hover {
+  background:
+    #f8fafc !important;
+}
+
+/*
+ * Proxy overview previously displayed five
+ * independent floating KPI cards.
+ *
+ * Join them visually into one operational strip.
+ */
+.clinical-ops-root[data-portal="proxy"]
+section[aria-label="Collection overview"] {
+  gap:
+    0 !important;
+
+  border:
+    1px solid
+    #e2e8f0;
+
+  background:
+    #ffffff;
+}
+
+.clinical-ops-root[data-portal="proxy"]
+section[aria-label="Collection overview"]
+> button {
+  min-height:
+    96px !important;
+
+  border:
+    0 !important;
+
+  border-right:
+    1px solid
+    #e2e8f0 !important;
+
+  box-shadow:
+    none !important;
+}
+
+.clinical-ops-root[data-portal="proxy"]
+section[aria-label="Collection overview"]
+> button:last-child {
+  border-right:
+    0 !important;
+}
+
+/*
+ * Tone down decorative teal icon tiles.
+ */
+.clinical-ops-root
+main
+.bg-\[\#ccfbf1\],
+.clinical-ops-root
+main
+.bg-\[\#f0fdfa\] {
+  background:
+    #f8fafc !important;
+}
+
+.clinical-ops-root
+main
+.hover\:shadow-md:hover,
+.clinical-ops-root
+main
+.hover\:shadow-lg:hover {
+  box-shadow:
+    0 1px 2px
+    rgba(
+      15,
+      23,
+      42,
+      0.04
+    ) !important;
+}
+
+.clinical-ops-root
+main
+.hover\:-translate-y-0\.5:hover,
+.clinical-ops-root
+main
+.group-hover\:translate-x-0\.5 {
+  transform:
+    none !important;
+}
+
+@media (
+  max-width:
+    1023px
+) {
+  .clinical-ops-root[data-portal="proxy"]
+  section[aria-label="Collection overview"]
+  > button {
+    border-bottom:
+      1px solid
+      #e2e8f0 !important;
+  }
+}
