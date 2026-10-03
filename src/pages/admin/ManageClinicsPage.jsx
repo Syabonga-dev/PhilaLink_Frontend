@@ -1,35 +1,76 @@
 import {
+  useCallback,
+  useEffect,
+  useMemo,
   useState,
 } from "react";
-import Card, {
-  CardBody,
-  CardHeader,
-} from "../../components/ui/Card.jsx";
-import Button from "../../components/ui/Button.jsx";
-import Input from "../../components/ui/Input.jsx";
-import Spinner from "../../components/ui/Spinner.jsx";
-import StatusChip from "../../components/ui/StatusChip.jsx";
+
 import {
-  EmptyState,
-  ErrorState,
-} from "../../components/ui/EmptyState.jsx";
-import { useToast } from "../../components/ui/Toast.jsx";
-import { useApi } from "../../lib/useApi.js";
-import { clinicsApi } from "../../services/api/clinics.js";
+  Building2,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+} from "lucide-react";
+
+import {
+  AdminModal,
+  DataTable,
+  EmptyBlock,
+  InputField,
+  LoadingBlock,
+  MetricStrip,
+  Notice,
+  PageHeader,
+  Panel,
+  PrimaryButton,
+  SearchField,
+  SecondaryButton,
+  SelectField,
+  StatusBadge,
+} from "../../components/admin/AdminPrimitives.jsx";
+
+import {
+  clinicsApi,
+} from "../../services/api/clinics.js";
+
+import {
+  superAdminApi,
+} from "../../services/api/superAdmin.js";
 
 const EMPTY_FORM = {
-  name: "",
-  type: "Clinic",
-  address: "",
-  contactNumber: "",
-  latitude: "",
-  longitude: "",
-  services: "",
-  openingTime: "",
-  closingTime: "",
+  name:
+    "",
+
+  type:
+    "Clinic",
+
+  address:
+    "",
+
+  contactNumber:
+    "",
+
+  latitude:
+    "",
+
+  longitude:
+    "",
+
+  services:
+    "",
+
+  openingTime:
+    "",
+
+  closingTime:
+    "",
+
+  isActive:
+    true,
 };
 
-function timeInputValue(
+function timeValue(
   value
 ) {
   if (!value) {
@@ -38,125 +79,355 @@ function timeInputValue(
 
   return String(
     value
-  ).slice(0, 5);
+  ).slice(
+    0,
+    5
+  );
 }
 
-function toTimeSpan(value) {
-  return value
-    ? `${value}:00`
-    : null;
+function displayTime(
+  value
+) {
+  const normalized =
+    timeValue(
+      value
+    );
+
+  return normalized ||
+    "—";
 }
 
 export default function ManageClinicsPage() {
   const [
-    showForm,
-    setShowForm,
-  ] = useState(false);
+    clinics,
+    setClinics,
+  ] =
+    useState([]);
 
   const [
-    editingClinic,
-    setEditingClinic,
-  ] = useState(null);
+    search,
+    setSearch,
+  ] =
+    useState("");
 
   const [
-    form,
-    setForm,
-  ] = useState(
-    EMPTY_FORM
-  );
+    status,
+    setStatus,
+  ] =
+    useState("All");
 
   const [
-    errors,
-    setErrors,
-  ] = useState({});
+    loading,
+    setLoading,
+  ] =
+    useState(true);
 
   const [
     saving,
     setSaving,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
-    pendingId,
-    setPendingId,
-  ] = useState(null);
-
-  const toast =
-    useToast();
-
-  const {
-    data,
-    loading,
     error,
-    refetch,
-    setData,
-  } = useApi(
-    () =>
-      clinicsApi.getAll(),
-    []
+    setError,
+  ] =
+    useState("");
+
+  const [
+    success,
+    setSuccess,
+  ] =
+    useState("");
+
+  const [
+    modalOpen,
+    setModalOpen,
+  ] =
+    useState(false);
+
+  const [
+    editingClinic,
+    setEditingClinic,
+  ] =
+    useState(null);
+
+  const [
+    form,
+    setForm,
+  ] =
+    useState(
+      EMPTY_FORM
+    );
+
+  const [
+    errors,
+    setErrors,
+  ] =
+    useState({});
+
+  const load =
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
+
+          setError(
+            ""
+          );
+
+          const result =
+            await superAdminApi
+              .getClinics();
+
+          setClinics(
+            Array.isArray(
+              result
+            )
+              ? result
+              : []
+          );
+        } catch (
+          err
+        ) {
+          setError(
+            err?.message ||
+              "Could not load clinics."
+          );
+        } finally {
+          setLoading(
+            false
+          );
+        }
+      },
+      []
+    );
+
+  useEffect(
+    () => {
+      void load();
+    },
+    [
+      load,
+    ]
   );
 
-  const clinics =
-    Array.isArray(data)
-      ? data
-      : [];
+  const visible =
+    useMemo(
+      () => {
+        const term =
+          search
+            .trim()
+            .toLowerCase();
 
-  const set =
-    (field) =>
-    (event) => {
-      setForm(
-        (current) => ({
-          ...current,
-          [field]:
-            event.target
-              .value,
-        })
-      );
+        return clinics.filter(
+          clinic => {
+            if (
+              status ===
+                "Active" &&
+              clinic.isActive ===
+                false
+            ) {
+              return false;
+            }
 
-      setErrors(
-        (current) => ({
-          ...current,
-          [field]:
-            undefined,
-        })
-      );
-    };
+            if (
+              status ===
+                "Inactive" &&
+              clinic.isActive !==
+                false
+            ) {
+              return false;
+            }
 
-  const resetForm = () => {
+            if (!term) {
+              return true;
+            }
+
+            return [
+              clinic.name,
+              clinic.type,
+              clinic.address,
+              clinic.contactNumber,
+              clinic.services,
+            ]
+              .filter(
+                Boolean
+              )
+              .some(
+                value =>
+                  String(
+                    value
+                  )
+                    .toLowerCase()
+                    .includes(
+                      term
+                    )
+              );
+          }
+        );
+      },
+      [
+        clinics,
+        search,
+        status,
+      ]
+    );
+
+  const metrics =
+    useMemo(
+      () => {
+        const active =
+          clinics.filter(
+            clinic =>
+              clinic.isActive !==
+              false
+          ).length;
+
+        const inactive =
+          clinics.length -
+          active;
+
+        return [
+          {
+            label:
+              "Clinics",
+
+            value:
+              clinics.length
+                .toLocaleString(
+                  "en-ZA"
+                ),
+
+            helper:
+              "Registered facilities",
+
+            icon:
+              Building2,
+          },
+
+          {
+            label:
+              "Active",
+
+            value:
+              active
+                .toLocaleString(
+                  "en-ZA"
+                ),
+
+            helper:
+              "Available for assignment",
+
+            icon:
+              Building2,
+          },
+
+          {
+            label:
+              "Inactive",
+
+            value:
+              inactive
+                .toLocaleString(
+                  "en-ZA"
+                ),
+
+            helper:
+              "Retained in system history",
+
+            icon:
+              Building2,
+          },
+
+          {
+            label:
+              "Visible results",
+
+            value:
+              visible.length
+                .toLocaleString(
+                  "en-ZA"
+                ),
+
+            helper:
+              status ===
+              "All"
+                ? "All statuses"
+                : status,
+
+            icon:
+              Search,
+          },
+        ];
+      },
+      [
+        clinics,
+        status,
+        visible.length,
+      ]
+    );
+
+  function setField(
+    key,
+    value
+  ) {
+    setForm(
+      current => ({
+        ...current,
+
+        [key]:
+          value,
+      })
+    );
+
+    setErrors(
+      current => ({
+        ...current,
+
+        [key]:
+          undefined,
+      })
+    );
+  }
+
+  function beginCreate() {
+    setEditingClinic(
+      null
+    );
+
     setForm(
       EMPTY_FORM
     );
 
     setErrors({});
-    setEditingClinic(
-      null
+
+    setError(
+      ""
     );
 
-    setShowForm(false);
-  };
-
-  const beginCreate = () => {
-    setForm(
-      EMPTY_FORM
+    setSuccess(
+      ""
     );
 
-    setErrors({});
-    setEditingClinic(
-      null
+    setModalOpen(
+      true
     );
+  }
 
-    setShowForm(true);
-  };
-
-  const beginEdit = (
+  function beginEdit(
     clinic
-  ) => {
+  ) {
     setEditingClinic(
       clinic
     );
 
     setForm({
       name:
-        clinic.name || "",
+        clinic.name ||
+        "",
 
       type:
         clinic.type ||
@@ -171,58 +442,67 @@ export default function ManageClinicsPage() {
         "",
 
       latitude:
-        String(
-          clinic.latitude ??
-            ""
-        ),
+        clinic.latitude ??
+        "",
 
       longitude:
-        String(
-          clinic.longitude ??
-            ""
-        ),
+        clinic.longitude ??
+        "",
 
       services:
         clinic.services ||
         "",
 
       openingTime:
-        timeInputValue(
+        timeValue(
           clinic.openingTime
         ),
 
       closingTime:
-        timeInputValue(
+        timeValue(
           clinic.closingTime
         ),
+
+      isActive:
+        clinic.isActive !==
+        false,
     });
 
     setErrors({});
-    setShowForm(true);
-  };
 
-  const validate = () => {
+    setError(
+      ""
+    );
+
+    setSuccess(
+      ""
+    );
+
+    setModalOpen(
+      true
+    );
+  }
+
+  function validate() {
     const next = {};
 
-    if (!form.name.trim()) {
+    if (
+      !form.name.trim()
+    ) {
       next.name =
         "Enter a clinic name.";
-    }
-
-    if (!form.type.trim()) {
-      next.type =
-        "Enter a clinic type.";
     }
 
     if (
       !form.address.trim()
     ) {
       next.address =
-        "Enter an address.";
+        "Enter the clinic address.";
     }
 
     if (
-      !form.contactNumber.trim()
+      !form.contactNumber
+        .trim()
     ) {
       next.contactNumber =
         "Enter a contact number.";
@@ -231,7 +511,7 @@ export default function ManageClinicsPage() {
     if (
       form.latitude ===
         "" ||
-      !Number.isFinite(
+      Number.isNaN(
         Number(
           form.latitude
         )
@@ -244,7 +524,7 @@ export default function ManageClinicsPage() {
     if (
       form.longitude ===
         "" ||
-      !Number.isFinite(
+      Number.isNaN(
         Number(
           form.longitude
         )
@@ -254,541 +534,790 @@ export default function ManageClinicsPage() {
         "Enter a valid longitude.";
     }
 
-    setErrors(next);
-
-    return (
-      Object.keys(next)
-        .length === 0
+    setErrors(
+      next
     );
-  };
 
-  const handleSubmit =
-    async (event) => {
-      event.preventDefault();
+    return Object.keys(
+      next
+    ).length ===
+      0;
+  }
 
-      if (!validate()) {
-        return;
-      }
+  async function save(
+    event
+  ) {
+    event.preventDefault();
 
-      setSaving(true);
+    if (
+      !validate()
+    ) {
+      return;
+    }
 
-      const basePayload = {
-        name:
-          form.name.trim(),
+    const payload = {
+      name:
+        form.name.trim(),
 
-        type:
-          form.type.trim(),
+      type:
+        form.type
+          .trim() ||
+        "Clinic",
 
-        address:
-          form.address.trim(),
+      address:
+        form.address
+          .trim(),
 
-        contactNumber:
-          form.contactNumber.trim(),
+      contactNumber:
+        form.contactNumber
+          .trim(),
 
-        latitude:
-          Number(
-            form.latitude
-          ),
+      latitude:
+        Number(
+          form.latitude
+        ),
 
-        longitude:
-          Number(
-            form.longitude
-          ),
+      longitude:
+        Number(
+          form.longitude
+        ),
 
-        services:
-          form.services.trim(),
+      services:
+        form.services
+          .trim(),
 
-        openingTime:
-          toTimeSpan(
-            form.openingTime
-          ),
+      openingTime:
+        form.openingTime ||
+        null,
 
-        closingTime:
-          toTimeSpan(
-            form.closingTime
-          ),
-      };
+      closingTime:
+        form.closingTime ||
+        null,
 
-      try {
-        if (
-          editingClinic
-        ) {
-          const updated =
-            await clinicsApi.update(
-              editingClinic.id,
-              {
-                ...basePayload,
-                isActive:
-                  editingClinic.isActive,
-              }
-            );
-
-          setData(
-            (current) =>
-              (
-                Array.isArray(
-                  current
-                )
-                  ? current
-                  : []
-              ).map(
-                (clinic) =>
-                  clinic.id ===
-                  editingClinic.id
-                    ? updated
-                    : clinic
-              )
-          );
-
-          toast.success(
-            "Clinic updated."
-          );
-        } else {
-          const created =
-            await clinicsApi.create(
-              basePayload
-            );
-
-          setData(
-            (current) => [
-              ...(
-                Array.isArray(
-                  current
-                )
-                  ? current
-                  : []
-              ),
-              created,
-            ]
-          );
-
-          toast.success(
-            "Clinic created."
-          );
-        }
-
-        resetForm();
-      } catch (error) {
-        toast.error(
-          error?.message ||
-            "Couldn't save the clinic."
-        );
-      } finally {
-        setSaving(false);
-      }
+      ...(editingClinic
+        ? {
+            isActive:
+              form.isActive,
+          }
+        : {}),
     };
 
-  const toggleClinic =
-    async (clinic) => {
-      setPendingId(
-        clinic.id
+    try {
+      setSaving(
+        true
       );
 
-      try {
-        if (
-          clinic.isActive
-        ) {
-          await clinicsApi.deactivate(
-            clinic.id
-          );
-        } else {
-          await clinicsApi.activate(
-            clinic.id
-          );
-        }
+      setError(
+        ""
+      );
 
-        setData(
-          (current) =>
-            (
-              Array.isArray(
-                current
-              )
-                ? current
-                : []
-            ).map(
-              (item) =>
-                item.id ===
-                clinic.id
-                  ? {
-                      ...item,
-                      isActive:
-                        !item.isActive,
-                    }
-                  : item
-            )
-        );
+      if (
+        editingClinic
+      ) {
+        await clinicsApi
+          .update(
+            editingClinic.id,
+            payload
+          );
 
-        toast.success(
-          clinic.isActive
-            ? "Clinic deactivated."
-            : "Clinic activated."
+        setSuccess(
+          `${form.name.trim()} was updated.`
         );
-      } catch (error) {
-        toast.error(
-          error?.message ||
-            "Couldn't update the clinic."
+      } else {
+        await clinicsApi
+          .create(
+            payload
+          );
+
+        setSuccess(
+          `${form.name.trim()} was created.`
         );
-      } finally {
-        setPendingId(null);
       }
-    };
+
+      setModalOpen(
+        false
+      );
+
+      setEditingClinic(
+        null
+      );
+
+      setForm(
+        EMPTY_FORM
+      );
+
+      await load();
+    } catch (
+      err
+    ) {
+      setError(
+        err?.message ||
+          "Could not save the clinic."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+  async function toggleClinic(
+    clinic
+  ) {
+    try {
+      setSaving(
+        true
+      );
+
+      setError(
+        ""
+      );
+
+      setSuccess(
+        ""
+      );
+
+      if (
+        clinic.isActive ===
+        false
+      ) {
+        await clinicsApi
+          .activate(
+            clinic.id
+          );
+
+        setSuccess(
+          `${clinic.name} was activated.`
+        );
+      } else {
+        await clinicsApi
+          .deactivate(
+            clinic.id
+          );
+
+        setSuccess(
+          `${clinic.name} was deactivated.`
+        );
+      }
+
+      await load();
+    } catch (
+      err
+    ) {
+      setError(
+        err?.message ||
+          "Could not update the clinic status."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+  const columns = [
+    {
+      key:
+        "name",
+
+      label:
+        "Clinic",
+
+      render:
+        (
+          value,
+          row
+        ) => (
+          <div>
+            <p className="font-semibold text-slate-900">
+              {value ||
+                "—"}
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              {row.type ||
+                "Clinic"}
+            </p>
+          </div>
+        ),
+    },
+
+    {
+      key:
+        "address",
+
+      label:
+        "Address",
+
+      render:
+        value => (
+          <span className="block max-w-[320px] whitespace-normal">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "contactNumber",
+
+      label:
+        "Contact",
+    },
+
+    {
+      key:
+        "hours",
+
+      label:
+        "Hours",
+
+      render:
+        (
+          _,
+          row
+        ) => (
+          <span className="whitespace-nowrap">
+            {displayTime(
+              row.openingTime
+            )}{" "}
+            –{" "}
+            {displayTime(
+              row.closingTime
+            )}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "isActive",
+
+      label:
+        "Status",
+
+      render:
+        value => (
+          <StatusBadge
+            value={
+              value ===
+              false
+                ? "Inactive"
+                : "Active"
+            }
+          />
+        ),
+    },
+
+    {
+      key:
+        "actions",
+
+      label:
+        "Actions",
+
+      render:
+        (
+          _,
+          row
+        ) => (
+          <div className="flex flex-wrap gap-2">
+
+            <button
+              type="button"
+              onClick={() =>
+                beginEdit(
+                  row
+                )
+              }
+              className="inline-flex items-center gap-1.5 border border-slate-300 bg-white px-2.5 py-1.5 text-[11px] font-medium text-slate-700 hover:bg-slate-50"
+            >
+              <Pencil
+                size={12}
+              />
+
+              Edit
+            </button>
+
+            <button
+              type="button"
+              onClick={() =>
+                toggleClinic(
+                  row
+                )
+              }
+              disabled={
+                saving
+              }
+              className={`border px-2.5 py-1.5 text-[11px] font-medium ${
+                row.isActive ===
+                false
+                  ? "border-emerald-200 bg-white text-emerald-700 hover:bg-emerald-50"
+                  : "border-red-200 bg-white text-red-700 hover:bg-red-50"
+              }`}
+            >
+              {row.isActive ===
+              false
+                ? "Activate"
+                : "Deactivate"}
+            </button>
+
+          </div>
+        ),
+    },
+  ];
 
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader
-          title="Manage clinics"
-          subtitle={`${clinics.length} clinic${
-            clinics.length ===
-            1
-              ? ""
-              : "s"
-          }`}
-          action={
-            <Button
+    <div className="space-y-5">
+
+      <PageHeader
+        eyebrow="Administration"
+        title="Clinics"
+        description="Create, update, activate and deactivate PhilaLink clinics. Inactive clinics remain visible to Super Administrators for governance and reactivation."
+        actions={
+          <>
+            <PrimaryButton
               type="button"
-              size="sm"
-              icon="add"
               onClick={
                 beginCreate
               }
             >
+              <Plus
+                size={15}
+              />
+
               Add clinic
-            </Button>
-          }
-        />
+            </PrimaryButton>
 
-        <CardBody className="pt-0">
-          {loading ? (
-            <div className="py-10">
-              <Spinner label="Loading clinics…" />
-            </div>
-          ) : error ? (
-            <ErrorState
-              description={
-                error.message
+            <SecondaryButton
+              type="button"
+              onClick={
+                load
               }
-              onRetry={
-                refetch
+              disabled={
+                loading
               }
-            />
-          ) : clinics.length ===
-            0 ? (
-            <EmptyState
-              icon="local_hospital"
-              title="No clinics found"
-              description="Create the first clinic to get started."
-            />
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-sm">
-                <thead>
-                  <tr className="border-b border-outline-variant/60 text-xs uppercase tracking-wide text-on-surface-variant">
-                    <th className="py-2 pr-4 font-medium">
-                      Clinic
-                    </th>
-
-                    <th className="py-2 pr-4 font-medium">
-                      Address
-                    </th>
-
-                    <th className="py-2 pr-4 font-medium">
-                      Contact
-                    </th>
-
-                    <th className="py-2 pr-4 font-medium">
-                      Hours
-                    </th>
-
-                    <th className="py-2 pr-4 font-medium">
-                      Status
-                    </th>
-
-                    <th className="py-2 font-medium">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-
-                <tbody className="divide-y divide-outline-variant/50">
-                  {clinics.map(
-                    (clinic) => (
-                      <tr
-                        key={
-                          clinic.id
-                        }
-                      >
-                        <td className="py-3 pr-4">
-                          <p className="font-semibold text-on-surface">
-                            {clinic.name}
-                          </p>
-
-                          <p className="text-xs text-on-surface-variant">
-                            {clinic.type}
-                          </p>
-                        </td>
-
-                        <td className="py-3 pr-4 text-on-surface-variant">
-                          {clinic.address ||
-                            "—"}
-                        </td>
-
-                        <td className="py-3 pr-4 text-on-surface-variant">
-                          {clinic.contactNumber ||
-                            "—"}
-                        </td>
-
-                        <td className="whitespace-nowrap py-3 pr-4 text-on-surface-variant">
-                          {clinic.openingTime
-                            ? timeInputValue(
-                                clinic.openingTime
-                              )
-                            : "—"}
-                          {" – "}
-                          {clinic.closingTime
-                            ? timeInputValue(
-                                clinic.closingTime
-                              )
-                            : "—"}
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          <StatusChip
-                            tone={
-                              clinic.isActive
-                                ? "success-soft"
-                                : "neutral"
-                            }
-                          >
-                            {clinic.isActive
-                              ? "Active"
-                              : "Inactive"}
-                          </StatusChip>
-                        </td>
-
-                        <td className="py-3">
-                          <div className="flex gap-3">
-                            <button
-                              type="button"
-                              className="text-xs font-semibold text-primary hover:underline"
-                              onClick={() =>
-                                beginEdit(
-                                  clinic
-                                )
-                              }
-                            >
-                              Edit
-                            </button>
-
-                            <button
-                              type="button"
-                              disabled={
-                                pendingId ===
-                                clinic.id
-                              }
-                              className={`text-xs font-semibold hover:underline disabled:opacity-50 ${
-                                clinic.isActive
-                                  ? "text-error"
-                                  : "text-primary"
-                              }`}
-                              onClick={() =>
-                                toggleClinic(
-                                  clinic
-                                )
-                              }
-                            >
-                              {pendingId ===
-                              clinic.id
-                                ? "Updating…"
-                                : clinic.isActive
-                                ? "Deactivate"
-                                : "Activate"}
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    )
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </CardBody>
-      </Card>
-
-      {showForm && (
-        <Card>
-          <CardHeader
-            title={
-              editingClinic
-                ? "Edit clinic"
-                : "Create clinic"
-            }
-            subtitle="Clinic details are stored in the backend database."
-          />
-
-          <CardBody>
-            <form
-              onSubmit={
-                handleSubmit
-              }
-              className="space-y-4"
             >
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Name"
-                  value={
-                    form.name
-                  }
-                  onChange={set(
-                    "name"
-                  )}
-                  error={
-                    errors.name
-                  }
-                />
-
-                <Input
-                  label="Type"
-                  value={
-                    form.type
-                  }
-                  onChange={set(
-                    "type"
-                  )}
-                  error={
-                    errors.type
-                  }
-                />
-              </div>
-
-              <Input
-                label="Address"
-                value={
-                  form.address
-                }
-                onChange={set(
-                  "address"
-                )}
-                error={
-                  errors.address
+              <RefreshCw
+                size={15}
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
                 }
               />
 
-              <Input
+              Refresh
+            </SecondaryButton>
+          </>
+        }
+      />
+
+      {error ? (
+        <Notice type="error">
+          {error}
+        </Notice>
+      ) : null}
+
+      {success ? (
+        <Notice type="success">
+          {success}
+        </Notice>
+      ) : null}
+
+      <MetricStrip
+        metrics={
+          metrics
+        }
+      />
+
+      <Panel
+        title="Clinic directory"
+        description={`${visible.length.toLocaleString(
+          "en-ZA"
+        )} clinic record${
+          visible.length ===
+          1
+            ? ""
+            : "s"
+        } match the current view.`}
+        noPadding
+      >
+
+        <div className="grid gap-3 border-b border-slate-200 px-5 py-4 md:grid-cols-[minmax(0,1fr)_220px]">
+
+          <SearchField
+            value={
+              search
+            }
+            onChange={
+              event =>
+                setSearch(
+                  event.target
+                    .value
+                )
+            }
+            placeholder="Clinic, type, address or service…"
+          />
+
+          <SelectField
+            value={
+              status
+            }
+            onChange={
+              event =>
+                setStatus(
+                  event.target
+                    .value
+                )
+            }
+            options={[
+              "All",
+              "Active",
+              "Inactive",
+            ]}
+          />
+
+        </div>
+
+        {loading ? (
+          <LoadingBlock
+            label="Loading clinics…"
+            minHeight={
+              320
+            }
+          />
+        ) : visible.length ? (
+          <DataTable
+            columns={
+              columns
+            }
+            rows={
+              visible
+            }
+            rowKey={
+              row =>
+                row.id
+            }
+            maxHeight={
+              680
+            }
+          />
+        ) : (
+          <div className="p-5">
+            <EmptyBlock
+              icon={
+                Building2
+              }
+              title="No clinics found"
+              description="Change the filters or create a clinic."
+            />
+          </div>
+        )}
+
+      </Panel>
+
+      {modalOpen ? (
+        <AdminModal
+          title={
+            editingClinic
+              ? "Edit clinic"
+              : "Create clinic"
+          }
+          description={
+            editingClinic
+              ? "Update the clinic's operational details."
+              : "Add a clinic to PhilaLink."
+          }
+          onClose={() => {
+            if (
+              !saving
+            ) {
+              setModalOpen(
+                false
+              );
+
+              setEditingClinic(
+                null
+              );
+
+              setForm(
+                EMPTY_FORM
+              );
+
+              setErrors({});
+            }
+          }}
+          width="max-w-3xl"
+        >
+
+          <form
+            onSubmit={
+              save
+            }
+            className="space-y-4 p-5"
+          >
+
+            <div className="grid gap-4 md:grid-cols-2">
+
+              <InputField
+                label="Clinic name"
+                value={
+                  form.name
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "name",
+                      event.target
+                        .value
+                    )
+                }
+                error={
+                  errors.name
+                }
+              />
+
+              <InputField
+                label="Type"
+                value={
+                  form.type
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "type",
+                      event.target
+                        .value
+                    )
+                }
+              />
+
+            </div>
+
+            <InputField
+              label="Address"
+              value={
+                form.address
+              }
+              onChange={
+                event =>
+                  setField(
+                    "address",
+                    event.target
+                      .value
+                  )
+              }
+              error={
+                errors.address
+              }
+            />
+
+            <div className="grid gap-4 md:grid-cols-2">
+
+              <InputField
                 label="Contact number"
                 value={
                   form.contactNumber
                 }
-                onChange={set(
-                  "contactNumber"
-                )}
+                onChange={
+                  event =>
+                    setField(
+                      "contactNumber",
+                      event.target
+                        .value
+                    )
+                }
                 error={
                   errors.contactNumber
                 }
               />
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Latitude"
+              <InputField
+                label="Services"
+                value={
+                  form.services
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "services",
+                      event.target
+                        .value
+                    )
+                }
+                placeholder="Primary care, medication collection…"
+              />
+
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                  Latitude
+                </span>
+
+                <input
                   type="number"
                   step="any"
                   value={
                     form.latitude
                   }
-                  onChange={set(
-                    "latitude"
-                  )}
-                  error={
-                    errors.latitude
+                  onChange={
+                    event =>
+                      setField(
+                        "latitude",
+                        event.target
+                          .value
+                      )
                   }
+                  className={`h-10 w-full border bg-white px-3 text-sm outline-none focus:border-[#0f766e] ${
+                    errors.latitude
+                      ? "border-red-300"
+                      : "border-slate-300"
+                  }`}
                 />
 
-                <Input
-                  label="Longitude"
+                {errors.latitude ? (
+                  <span className="mt-1 block text-[11px] text-red-600">
+                    {errors.latitude}
+                  </span>
+                ) : null}
+              </label>
+
+              <label className="block">
+                <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
+                  Longitude
+                </span>
+
+                <input
                   type="number"
                   step="any"
                   value={
                     form.longitude
                   }
-                  onChange={set(
-                    "longitude"
-                  )}
-                  error={
+                  onChange={
+                    event =>
+                      setField(
+                        "longitude",
+                        event.target
+                          .value
+                      )
+                  }
+                  className={`h-10 w-full border bg-white px-3 text-sm outline-none focus:border-[#0f766e] ${
                     errors.longitude
-                  }
-                />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-medium text-on-surface">
-                  Services
-                </label>
-
-                <textarea
-                  value={
-                    form.services
-                  }
-                  onChange={set(
-                    "services"
-                  )}
-                  rows={3}
-                  className="w-full rounded-md border border-outline-variant bg-white px-3.5 py-3 text-sm text-on-surface focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/30"
-                  placeholder="Services offered by this clinic"
-                />
-              </div>
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <Input
-                  label="Opening time"
-                  type="time"
-                  value={
-                    form.openingTime
-                  }
-                  onChange={set(
-                    "openingTime"
-                  )}
+                      ? "border-red-300"
+                      : "border-slate-300"
+                  }`}
                 />
 
-                <Input
-                  label="Closing time"
-                  type="time"
-                  value={
-                    form.closingTime
-                  }
-                  onChange={set(
-                    "closingTime"
-                  )}
-                />
-              </div>
+                {errors.longitude ? (
+                  <span className="mt-1 block text-[11px] text-red-600">
+                    {errors.longitude}
+                  </span>
+                ) : null}
+              </label>
 
-              <div className="flex gap-3">
-                <Button
-                  type="submit"
-                  loading={
-                    saving
-                  }
-                  className="flex-1"
-                >
-                  {editingClinic
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+
+              <InputField
+                label="Opening time"
+                type="time"
+                value={
+                  form.openingTime
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "openingTime",
+                      event.target
+                        .value
+                    )
+                }
+              />
+
+              <InputField
+                label="Closing time"
+                type="time"
+                value={
+                  form.closingTime
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "closingTime",
+                      event.target
+                        .value
+                    )
+                }
+              />
+
+            </div>
+
+            {editingClinic ? (
+              <SelectField
+                label="Status"
+                value={
+                  form.isActive
+                    ? "Active"
+                    : "Inactive"
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "isActive",
+                      event.target
+                        .value ===
+                        "Active"
+                    )
+                }
+                options={[
+                  "Active",
+                  "Inactive",
+                ]}
+              />
+            ) : null}
+
+            <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
+
+              <SecondaryButton
+                type="button"
+                onClick={() =>
+                  setModalOpen(
+                    false
+                  )
+                }
+                disabled={
+                  saving
+                }
+              >
+                Cancel
+              </SecondaryButton>
+
+              <PrimaryButton
+                type="submit"
+                disabled={
+                  saving
+                }
+              >
+                {saving
+                  ? "Saving…"
+                  : editingClinic
                     ? "Save changes"
                     : "Create clinic"}
-                </Button>
+              </PrimaryButton>
 
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={
-                    resetForm
-                  }
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </CardBody>
-        </Card>
-      )}
+            </div>
+
+          </form>
+
+        </AdminModal>
+      ) : null}
+
     </div>
   );
 }
