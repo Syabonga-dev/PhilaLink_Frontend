@@ -86,6 +86,9 @@ import ManageStaffPage from "./pages/admin/ManageStaffPage.jsx";
 import AdminAuditLogPage from "./pages/admin/AdminAuditLogPage.jsx";
 import ManageClinicsPage from "./pages/admin/ManageClinicsPage.jsx";
 import RegisterClinicAdminPage from "./pages/admin/RegisterClinicAdminPage.jsx";
+import ManageClinicAdminsPage from "./pages/admin/ManageClinicAdminsPage.jsx";
+import SuperAdminAnalyticsPage from "./pages/admin/SuperAdminAnalyticsPage.jsx";
+import SuperAdminReportsPage from "./pages/admin/SuperAdminReportsPage.jsx";
 
 /* ========================================================= */
 /* AUTH REDIRECT                                             */
@@ -102,7 +105,9 @@ function RedirectIfAuthenticated({
   } =
     useAuth();
 
-  if (isLoading) {
+  if (
+    isLoading
+  ) {
     return children;
   }
 
@@ -126,10 +131,6 @@ function RedirectIfAuthenticated({
   return children;
 }
 
-/* ========================================================= */
-/* PATIENT THEME                                             */
-/* ========================================================= */
-
 function PatientLayoutWithTheme() {
   return (
     <ThemePreferenceSync>
@@ -138,17 +139,11 @@ function PatientLayoutWithTheme() {
   );
 }
 
-/* ========================================================= */
-/* APP                                                       */
-/* ========================================================= */
-
 export default function App() {
   return (
     <Routes>
 
-      {/* =================================================== */}
-      {/* PUBLIC                                              */}
-      {/* =================================================== */}
+      {/* PUBLIC */}
 
       <Route
         path="/"
@@ -226,9 +221,7 @@ export default function App() {
         }
       />
 
-      {/* =================================================== */}
-      {/* AUTHENTICATED                                       */}
-      {/* =================================================== */}
+      {/* AUTHENTICATED */}
 
       <Route
         element={
@@ -264,9 +257,7 @@ export default function App() {
           }
         >
 
-          {/* =============================================== */}
-          {/* PATIENT                                         */}
-          {/* =============================================== */}
+          {/* PATIENT */}
 
           <Route
             element={
@@ -331,9 +322,7 @@ export default function App() {
 
           </Route>
 
-          {/* =============================================== */}
-          {/* PROXY                                           */}
-          {/* =============================================== */}
+          {/* PROXY */}
 
           <Route
             element={
@@ -384,9 +373,7 @@ export default function App() {
 
           </Route>
 
-          {/* =============================================== */}
-          {/* NURSE                                           */}
-          {/* =============================================== */}
+          {/* NURSE */}
 
           <Route
             element={
@@ -451,9 +438,7 @@ export default function App() {
 
           </Route>
 
-          {/* =============================================== */}
-          {/* ADMIN                                           */}
-          {/* =============================================== */}
+          {/* ADMIN */}
 
           <Route
             element={
@@ -542,9 +527,30 @@ export default function App() {
               >
 
                 <Route
+                  path="analytics"
+                  element={
+                    <SuperAdminAnalyticsPage />
+                  }
+                />
+
+                <Route
+                  path="system-reports"
+                  element={
+                    <SuperAdminReportsPage />
+                  }
+                />
+
+                <Route
                   path="clinics"
                   element={
                     <ManageClinicsPage />
+                  }
+                />
+
+                <Route
+                  path="clinic-admins"
+                  element={
+                    <ManageClinicAdminsPage />
                   }
                 />
 
