@@ -1,104 +1,191 @@
 import {
+  useEffect,
   useState,
 } from "react";
-import Card, {
-  CardBody,
-  CardHeader,
-} from "../../components/ui/Card.jsx";
-import Button from "../../components/ui/Button.jsx";
-import Input, {
-  Select,
-} from "../../components/ui/Input.jsx";
-import Spinner from "../../components/ui/Spinner.jsx";
+
 import {
-  EmptyState,
-  ErrorState,
-} from "../../components/ui/EmptyState.jsx";
-import { useToast } from "../../components/ui/Toast.jsx";
-import { useApi } from "../../lib/useApi.js";
-import { adminApi } from "../../services/api/admin.js";
-import { clinicsApi } from "../../services/api/clinics.js";
+  ClipboardCopy,
+  ShieldCheck,
+} from "lucide-react";
+
+import {
+  InputField,
+  LoadingBlock,
+  Notice,
+  PageHeader,
+  Panel,
+  PrimaryButton,
+  SecondaryButton,
+  SelectField,
+} from "../../components/admin/AdminPrimitives.jsx";
+
+import {
+  adminApi,
+} from "../../services/api/admin.js";
+
+import {
+  superAdminApi,
+} from "../../services/api/superAdmin.js";
 
 const INITIAL_FORM = {
-  fullName: "",
-  idNumber: "",
-  phoneNumber: "",
-  email: "",
-  clinicId: "",
+  fullName:
+    "",
+
+  idNumber:
+    "",
+
+  phoneNumber:
+    "",
+
+  email:
+    "",
+
+  clinicId:
+    "",
 };
 
 export default function RegisterClinicAdminPage() {
   const [
     form,
     setForm,
-  ] = useState(
-    INITIAL_FORM
-  );
+  ] =
+    useState(
+      INITIAL_FORM
+    );
 
   const [
     errors,
     setErrors,
-  ] = useState({});
+  ] =
+    useState({});
+
+  const [
+    clinics,
+    setClinics,
+  ] =
+    useState([]);
+
+  const [
+    loadingClinics,
+    setLoadingClinics,
+  ] =
+    useState(true);
 
   const [
     saving,
     setSaving,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     createdAccount,
     setCreatedAccount,
-  ] = useState(null);
+  ] =
+    useState(null);
 
-  const toast =
-    useToast();
-
-  const {
-    data: clinics,
-    loading,
+  const [
     error,
-    refetch,
-  } = useApi(
-    () =>
-      clinicsApi.getAll(),
+    setError,
+  ] =
+    useState("");
+
+  const [
+    success,
+    setSuccess,
+  ] =
+    useState("");
+
+  useEffect(
+    () => {
+      let active =
+        true;
+
+      async function loadClinics() {
+        try {
+          setLoadingClinics(
+            true
+          );
+
+          const result =
+            await superAdminApi
+              .getClinics();
+
+          if (!active) {
+            return;
+          }
+
+          setClinics(
+            Array.isArray(
+              result
+            )
+              ? result.filter(
+                  clinic =>
+                    clinic.isActive !==
+                    false
+                )
+              : []
+          );
+        } catch (
+          err
+        ) {
+          if (
+            active
+          ) {
+            setError(
+              err?.message ||
+                "Could not load clinics."
+            );
+          }
+        } finally {
+          if (
+            active
+          ) {
+            setLoadingClinics(
+              false
+            );
+          }
+        }
+      }
+
+      void loadClinics();
+
+      return () => {
+        active =
+          false;
+      };
+    },
     []
   );
 
-  const clinicList =
-    Array.isArray(clinics)
-      ? clinics.filter(
-          (clinic) =>
-            clinic.isActive !==
-            false
-        )
-      : [];
+  function setField(
+    key,
+    value
+  ) {
+    setForm(
+      current => ({
+        ...current,
 
-  const set =
-    (field) =>
-    (event) => {
-      setForm(
-        (current) => ({
-          ...current,
-          [field]:
-            event.target
-              .value,
-        })
-      );
+        [key]:
+          value,
+      })
+    );
 
-      setErrors(
-        (current) => ({
-          ...current,
-          [field]:
-            undefined,
-        })
-      );
-    };
+    setErrors(
+      current => ({
+        ...current,
 
-  const validate = () => {
+        [key]:
+          undefined,
+      })
+    );
+  }
+
+  function validate() {
     const next = {};
 
     if (
-      !form.fullName.trim()
+      !form.fullName
+        .trim()
     ) {
       next.fullName =
         "Enter the administrator's full name.";
@@ -131,263 +218,465 @@ export default function RegisterClinicAdminPage() {
         "Enter a valid email address.";
     }
 
-    if (!form.clinicId) {
+    if (
+      !form.clinicId
+    ) {
       next.clinicId =
-        "Select a clinic.";
+        "Select the clinic this administrator will manage.";
     }
 
-    setErrors(next);
-
-    return (
-      Object.keys(next)
-        .length === 0
+    setErrors(
+      next
     );
-  };
 
-  const handleSubmit =
-    async (event) => {
-      event.preventDefault();
+    return Object.keys(
+      next
+    ).length ===
+      0;
+  }
 
-      if (!validate()) {
-        return;
-      }
+  async function submit(
+    event
+  ) {
+    event.preventDefault();
 
-      setSaving(true);
+    if (
+      !validate()
+    ) {
+      return;
+    }
 
-      try {
-        const result =
-          await adminApi.registerClinicAdmin(
-            {
-              fullName:
-                form.fullName.trim(),
+    try {
+      setSaving(
+        true
+      );
 
-              idNumber:
-                form.idNumber.trim(),
+      setError(
+        ""
+      );
 
-              phoneNumber:
-                form.phoneNumber.trim(),
+      setSuccess(
+        ""
+      );
 
-              email:
-                form.email.trim(),
+      const result =
+        await adminApi
+          .registerClinicAdmin({
+            fullName:
+              form.fullName
+                .trim(),
 
-              clinicId:
-                form.clinicId,
-            }
-          );
+            idNumber:
+              form.idNumber
+                .trim(),
 
-        setCreatedAccount(
-          result
+            phoneNumber:
+              form.phoneNumber
+                .trim(),
+
+            email:
+              form.email
+                .trim(),
+
+            clinicId:
+              form.clinicId,
+          });
+
+      setCreatedAccount(
+        result
+      );
+
+      setSuccess(
+        "Clinic Administrator account created successfully."
+      );
+    } catch (
+      err
+    ) {
+      setError(
+        err?.message ||
+          "Could not create the Clinic Administrator account."
+      );
+    } finally {
+      setSaving(
+        false
+      );
+    }
+  }
+
+  async function copyPassword() {
+    if (
+      !createdAccount
+        ?.temporaryPassword
+    ) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard
+        .writeText(
+          createdAccount
+            .temporaryPassword
         );
 
-        toast.success(
-          "Clinic Admin account created."
-        );
-      } catch (error) {
-        toast.error(
-          error?.message ||
-            "Couldn't create the Clinic Admin account."
-        );
-      } finally {
-        setSaving(false);
-      }
-    };
+      setSuccess(
+        "Temporary password copied to the clipboard."
+      );
+    } catch {
+      setError(
+        "Could not copy the temporary password automatically."
+      );
+    }
+  }
 
-  if (createdAccount) {
-    return (
-      <Card className="mx-auto max-w-xl">
-        <CardHeader
-          title="Clinic Admin created"
-          subtitle="Save the temporary password now."
-        />
+  function reset() {
+    setForm(
+      INITIAL_FORM
+    );
 
-        <CardBody>
-          <div className="space-y-4">
-            <div className="rounded-lg border border-outline-variant/60 bg-surface-container-low p-4">
-              <p className="font-semibold text-on-surface">
-                {createdAccount.fullName}
-              </p>
+    setErrors({});
 
-              <p className="mt-1 text-sm text-on-surface-variant">
-                {createdAccount.idNumber}
-              </p>
+    setCreatedAccount(
+      null
+    );
 
-              <p className="mt-1 text-sm text-on-surface-variant">
-                {createdAccount.role}
-              </p>
-            </div>
+    setError(
+      ""
+    );
 
-            <div className="rounded-lg border border-warning/40 bg-warning/10 p-4">
-              <p className="text-sm font-semibold text-on-surface">
-                Temporary password
-              </p>
-
-              <p className="mt-2 break-all font-mono text-lg font-bold text-on-surface">
-                {createdAccount.temporaryPassword}
-              </p>
-            </div>
-
-            <Button
-              type="button"
-              className="w-full"
-              onClick={() => {
-                setForm(
-                  INITIAL_FORM
-                );
-
-                setCreatedAccount(
-                  null
-                );
-
-                setErrors(
-                  {}
-                );
-              }}
-            >
-              Register another
-              Clinic Admin
-            </Button>
-          </div>
-        </CardBody>
-      </Card>
+    setSuccess(
+      ""
     );
   }
 
+  const selectedClinic =
+    clinics.find(
+      clinic =>
+        clinic.id ===
+        form.clinicId
+    );
+
   return (
-    <Card className="mx-auto max-w-2xl">
-      <CardHeader
-        title="Register Clinic Admin"
-        subtitle="Super Admin only"
+    <div className="space-y-5">
+
+      <PageHeader
+        eyebrow="Administration"
+        title="Register Clinic Administrator"
+        description="Create a Clinic Administrator account and assign its initial clinic boundary. The assignment can be changed or removed later from Clinic Administrators."
       />
 
-      <CardBody>
-        {loading ? (
-          <Spinner label="Loading clinics…" />
-        ) : error ? (
-          <ErrorState
-            description={
-              error.message
-            }
-            onRetry={
-              refetch
-            }
-          />
-        ) : clinicList.length ===
-          0 ? (
-          <EmptyState
-            icon="local_hospital"
-            title="No active clinics"
-            description="Create or activate a clinic before assigning a Clinic Admin."
-          />
-        ) : (
-          <form
-            onSubmit={
-              handleSubmit
-            }
-            className="space-y-4"
-          >
-            <Input
-              label="Full name"
-              value={
-                form.fullName
-              }
-              onChange={set(
-                "fullName"
-              )}
-              error={
-                errors.fullName
-              }
-            />
+      {error ? (
+        <Notice type="error">
+          {error}
+        </Notice>
+      ) : null}
 
-            <Input
-              label="SA ID number"
-              value={
-                form.idNumber
-              }
-              onChange={set(
-                "idNumber"
-              )}
-              error={
-                errors.idNumber
-              }
-              maxLength={
-                13
-              }
-              inputMode="numeric"
-            />
+      {success ? (
+        <Notice type="success">
+          {success}
+        </Notice>
+      ) : null}
 
-            <Input
-              label="Cellphone number"
-              value={
-                form.phoneNumber
-              }
-              onChange={set(
-                "phoneNumber"
-              )}
-              error={
-                errors.phoneNumber
-              }
-              inputMode="tel"
-            />
+      {loadingClinics ? (
+        <LoadingBlock
+          label="Loading active clinics…"
+          minHeight={
+            260
+          }
+        />
+      ) : createdAccount ? (
+        <Panel
+          title="Clinic Administrator created"
+          description="Save the temporary password now. It is not stored in plaintext and cannot be retrieved later."
+        >
 
-            <Input
-              label="Email"
-              type="email"
-              value={
-                form.email
-              }
-              onChange={set(
-                "email"
-              )}
-              error={
-                errors.email
-              }
-            />
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
 
-            <Select
-              label="Clinic"
-              value={
-                form.clinicId
-              }
-              onChange={set(
-                "clinicId"
-              )}
-              error={
-                errors.clinicId
+            <div className="border border-slate-200 bg-slate-50 p-4">
+
+              <p className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                Account
+              </p>
+
+              <p className="mt-2 text-lg font-semibold text-slate-950">
+                {
+                  createdAccount
+                    .fullName
+                }
+              </p>
+
+              <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
+
+                <div>
+                  <dt className="text-slate-400">
+                    Role
+                  </dt>
+
+                  <dd className="mt-0.5 font-medium text-slate-800">
+                    {
+                      createdAccount
+                        .role
+                    }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-slate-400">
+                    Clinic
+                  </dt>
+
+                  <dd className="mt-0.5 font-medium text-slate-800">
+                    {selectedClinic
+                      ?.name ||
+                      "Assigned clinic"}
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-slate-400">
+                    ID number
+                  </dt>
+
+                  <dd className="mt-0.5 font-medium text-slate-800">
+                    {
+                      createdAccount
+                        .idNumber
+                    }
+                  </dd>
+                </div>
+
+                <div>
+                  <dt className="text-slate-400">
+                    Account ID
+                  </dt>
+
+                  <dd className="mt-0.5 break-all font-mono text-slate-700">
+                    {
+                      createdAccount
+                        .userId
+                    }
+                  </dd>
+                </div>
+
+              </dl>
+
+            </div>
+
+            <div className="border border-amber-200 bg-amber-50 p-4">
+
+              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
+                Temporary password
+              </p>
+
+              <p className="mt-3 break-all font-mono text-xl font-semibold text-slate-950">
+                {
+                  createdAccount
+                    .temporaryPassword
+                }
+              </p>
+
+              <p className="mt-2 text-xs leading-5 text-amber-900">
+                The user must replace this password before normal application use.
+              </p>
+
+              <SecondaryButton
+                type="button"
+                onClick={
+                  copyPassword
+                }
+                className="mt-4"
+              >
+                <ClipboardCopy
+                  size={15}
+                />
+
+                Copy password
+              </SecondaryButton>
+
+            </div>
+
+          </div>
+
+          <div className="mt-5 border-t border-slate-200 pt-4">
+            <PrimaryButton
+              type="button"
+              onClick={
+                reset
               }
             >
-              <option value="">
-                Select clinic
-              </option>
+              Register another Clinic Administrator
+            </PrimaryButton>
+          </div>
 
-              {clinicList.map(
-                (clinic) => (
-                  <option
-                    key={
-                      clinic.id
-                    }
-                    value={
-                      clinic.id
-                    }
-                  >
-                    {clinic.name}
-                  </option>
-                )
-              )}
-            </Select>
+        </Panel>
+      ) : (
+        <Panel
+          title="Account details"
+          description="Clinic Administrator accounts are created verified, receive a temporary password and must belong to an active clinic when first registered."
+        >
 
-            <Button
-              type="submit"
-              className="w-full"
-              loading={
-                saving
+          {!clinics.length ? (
+            <Notice type="warning">
+              No active clinics are available. Create or reactivate a clinic before registering a Clinic Administrator.
+            </Notice>
+          ) : (
+            <form
+              onSubmit={
+                submit
               }
+              className="space-y-5"
             >
-              Create Clinic
-              Admin
-            </Button>
-          </form>
-        )}
-      </CardBody>
-    </Card>
+
+              <div className="grid gap-4 md:grid-cols-2">
+
+                <InputField
+                  label="Full name"
+                  value={
+                    form.fullName
+                  }
+                  onChange={
+                    event =>
+                      setField(
+                        "fullName",
+                        event.target
+                          .value
+                      )
+                  }
+                  error={
+                    errors.fullName
+                  }
+                />
+
+                <InputField
+                  label="SA ID number"
+                  value={
+                    form.idNumber
+                  }
+                  onChange={
+                    event =>
+                      setField(
+                        "idNumber",
+                        event.target
+                          .value
+                      )
+                  }
+                  error={
+                    errors.idNumber
+                  }
+                  maxLength={
+                    13
+                  }
+                  inputMode="numeric"
+                />
+
+                <InputField
+                  label="Cellphone number"
+                  value={
+                    form.phoneNumber
+                  }
+                  onChange={
+                    event =>
+                      setField(
+                        "phoneNumber",
+                        event.target
+                          .value
+                      )
+                  }
+                  error={
+                    errors.phoneNumber
+                  }
+                  inputMode="tel"
+                />
+
+                <InputField
+                  label="Email"
+                  type="email"
+                  value={
+                    form.email
+                  }
+                  onChange={
+                    event =>
+                      setField(
+                        "email",
+                        event.target
+                          .value
+                      )
+                  }
+                  error={
+                    errors.email
+                  }
+                />
+
+              </div>
+
+              <SelectField
+                label="Assigned clinic"
+                value={
+                  form.clinicId
+                }
+                onChange={
+                  event =>
+                    setField(
+                      "clinicId",
+                      event.target
+                        .value
+                    )
+                }
+                error={
+                  errors.clinicId
+                }
+              >
+
+                <option value="">
+                  Select clinic
+                </option>
+
+                {clinics.map(
+                  clinic => (
+                    <option
+                      key={
+                        clinic.id
+                      }
+                      value={
+                        clinic.id
+                      }
+                    >
+                      {clinic.name}
+                    </option>
+                  )
+                )}
+
+              </SelectField>
+
+              <Notice type="info">
+                Clinic assignment controls the Clinic Administrator's patient, staff, inventory, analytics, reporting and audit scope. A Super Administrator can reassign or deassign the account later.
+              </Notice>
+
+              <div className="flex justify-end border-t border-slate-200 pt-4">
+
+                <PrimaryButton
+                  type="submit"
+                  disabled={
+                    saving ||
+                    !clinics.length
+                  }
+                >
+                  <ShieldCheck
+                    size={15}
+                  />
+
+                  {saving
+                    ? "Creating…"
+                    : "Create Clinic Administrator"}
+                </PrimaryButton>
+
+              </div>
+
+            </form>
+          )}
+
+        </Panel>
+      )}
+
+    </div>
   );
 }
