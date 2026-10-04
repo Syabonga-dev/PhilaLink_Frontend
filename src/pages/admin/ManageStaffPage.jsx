@@ -238,6 +238,7 @@ export default function ManageStaffPage() {
             icon:
               Users,
           },
+
           {
             label:
               "Active accounts",
@@ -253,6 +254,7 @@ export default function ManageStaffPage() {
             icon:
               Users,
           },
+
           {
             label:
               "Nurses",
@@ -268,6 +270,7 @@ export default function ManageStaffPage() {
             icon:
               Users,
           },
+
           {
             label:
               "Proxies",
@@ -406,6 +409,7 @@ export default function ManageStaffPage() {
           </div>
         ),
     },
+
     {
       key:
         "role",
@@ -421,6 +425,7 @@ export default function ManageStaffPage() {
           </span>
         ),
     },
+
     {
       key:
         "idNumber",
@@ -436,13 +441,20 @@ export default function ManageStaffPage() {
           </span>
         ),
     },
+
     {
       key:
         "phoneNumber",
 
       label:
         "Contact",
+
+      render:
+        value =>
+          value ||
+          "—",
     },
+
     {
       key:
         "isActive",
@@ -461,6 +473,7 @@ export default function ManageStaffPage() {
           />
         ),
     },
+
     {
       key:
         "actions",
@@ -504,6 +517,7 @@ export default function ManageStaffPage() {
 
   return (
     <div className="space-y-5">
+
       <PageHeader
         eyebrow={
           role ===
@@ -545,16 +559,19 @@ export default function ManageStaffPage() {
               Refresh
             </SecondaryButton>
 
-            <Link
-              to="/admin/register-staff"
-              className="inline-flex h-10 items-center justify-center gap-2 bg-[#0f766e] px-4 text-sm font-medium text-white hover:bg-[#0b655e]"
-            >
-              <UserPlus
-                size={15}
-              />
+            {role ===
+            "ClinicAdmin" ? (
+              <Link
+                to="/admin/register-staff"
+                className="inline-flex h-10 items-center justify-center gap-2 bg-[#0f766e] px-4 text-sm font-medium text-white hover:bg-[#0b655e]"
+              >
+                <UserPlus
+                  size={15}
+                />
 
-              Register staff
-            </Link>
+                Register staff
+              </Link>
+            ) : null}
           </>
         }
       />
@@ -572,11 +589,23 @@ export default function ManageStaffPage() {
       />
 
       <Panel
-        title="Staff directory"
-        description="Filter accounts by role or search identifying and contact details."
+        title={
+          role ===
+          "ClinicAdmin"
+            ? "Staff directory"
+            : "Account directory"
+        }
+        description={
+          role ===
+          "ClinicAdmin"
+            ? "Filter Nurses and Proxies assigned to your clinic."
+            : "Filter system accounts by role or search identifying and contact details."
+        }
         noPadding
       >
+
         <div className="grid gap-3 border-b border-slate-200 px-5 py-4 lg:grid-cols-[minmax(260px,1fr)_220px_auto] lg:items-end">
+
           <div>
             <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
               Search
@@ -624,11 +653,17 @@ export default function ManageStaffPage() {
               ? ""
               : "s"}
           </div>
+
         </div>
 
         {loading ? (
           <LoadingBlock
-            label="Loading staff…"
+            label={
+              role ===
+              "ClinicAdmin"
+                ? "Loading staff…"
+                : "Loading accounts…"
+            }
             minHeight={
               320
             }
@@ -655,12 +690,24 @@ export default function ManageStaffPage() {
               icon={
                 Search
               }
-              title="No staff found"
-              description="Change the role filter or search term, or register a new clinic account."
+              title={
+                role ===
+                "ClinicAdmin"
+                  ? "No staff found"
+                  : "No accounts found"
+              }
+              description={
+                role ===
+                "ClinicAdmin"
+                  ? "Change the role filter or search term, or register a new Nurse or Proxy account."
+                  : "Change the role filter or search term."
+              }
             />
           </div>
         )}
+
       </Panel>
+
     </div>
   );
 }
