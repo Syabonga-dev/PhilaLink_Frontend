@@ -12,6 +12,7 @@ import {
 import {
   RefreshCw,
   Search,
+  ShieldCheck,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -21,12 +22,16 @@ import {
 } from "../../context/AuthContext.jsx";
 
 import {
-  adminApi,
-} from "../../services/api/admin.js";
-
-import {
   clinicAdminApi,
 } from "../../services/api/clinicAdmin.js";
+
+import {
+  superAdminAccountsApi,
+} from "../../services/api/superAdminAccounts.js";
+
+import {
+  adminApi,
+} from "../../services/api/admin.js";
 
 import {
   DataTable,
@@ -42,6 +47,10 @@ import {
   StatusBadge,
 } from "../../components/admin/AdminPrimitives.jsx";
 
+/* ========================================================= */
+/* HELPERS                                                   */
+/* ========================================================= */
+
 function number(
   value
 ) {
@@ -53,17 +62,80 @@ function number(
   );
 }
 
+function formatDate(
+  value
+) {
+  if (!value) {
+    return "—";
+  }
+
+  const date =
+    new Date(
+      value
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return "—";
+  }
+
+  return date.toLocaleDateString(
+    "en-ZA",
+    {
+      day:
+        "2-digit",
+
+      month:
+        "short",
+
+      year:
+        "numeric",
+    }
+  );
+}
+
+function accountClinic(
+  row
+) {
+  if (
+    row.role ===
+    "SuperAdmin"
+  ) {
+    return "System-wide";
+  }
+
+  return row.clinicName ||
+    "Unassigned";
+}
+
+/* ========================================================= */
+/* PAGE                                                      */
+/* ========================================================= */
+
 export default function ManageStaffPage() {
   const {
     role,
   } =
     useAuth();
 
+  const isClinicAdmin =
+    role ===
+    "ClinicAdmin";
+
+  const isSuperAdmin =
+    role ===
+    "SuperAdmin";
+
   const [
     filter,
     setFilter,
   ] =
-    useState("All");
+    useState(
+      "All"
+    );
 
   const [
     search,
@@ -95,6 +167,10 @@ export default function ManageStaffPage() {
   ] =
     useState(null);
 
+  /* ======================================================= */
+  /* LOAD                                                    */
+  /* ======================================================= */
+
   const load =
     useCallback(
       async () => {
@@ -108,14 +184,13 @@ export default function ManageStaffPage() {
           );
 
           const result =
-            role ===
-            "ClinicAdmin"
+            isClinicAdmin
               ? await clinicAdminApi
                   .getStaff(
                     filter
                   )
-              : await adminApi
-                  .listAccounts(
+              : await superAdminAccountsApi
+                  .getAccounts(
                     filter
                   );
 
@@ -131,7 +206,11 @@ export default function ManageStaffPage() {
         ) {
           setError(
             err?.message ||
-            "Could not load staff accounts."
+              (
+                isClinicAdmin
+                  ? "Could not load clinic staff accounts."
+                  : "Could not load system accounts."
+              )
           );
         } finally {
           setLoading(
@@ -140,8 +219,8 @@ export default function ManageStaffPage() {
         }
       },
       [
-        role,
         filter,
+        isClinicAdmin,
       ]
     );
 
@@ -153,6 +232,10 @@ export default function ManageStaffPage() {
       load,
     ]
   );
+
+  /* ======================================================= */
+  /* SEARCH                                                  */
+  /* ======================================================= */
 
   const visible =
     useMemo(
@@ -174,6 +257,7 @@ export default function ManageStaffPage() {
               item.email,
               item.phoneNumber,
               item.role,
+              item.clinicName,
             ]
               .filter(
                 Boolean
@@ -196,6 +280,10 @@ export default function ManageStaffPage() {
       ]
     );
 
+  /* ======================================================= */
+  /* METRICS                                                 */
+  /* ======================================================= */
+
   const metrics =
     useMemo(
       () => {
@@ -205,18 +293,103 @@ export default function ManageStaffPage() {
               item.isActive
           ).length;
 
-        const nurses =
+        if (
+          isClinicAdmin
+        ) {
+          const nurses =
+            staff.filter(
+              item =>
+                item.role ===
+                "Nurse"
+            ).length;
+
+          const proxies =
+            staff.filter(
+              item =>
+                item.role ===
+                "Proxy"
+            ).length;
+
+          return [
+            {
+              label:
+                "Visible accounts",
+
+              value:
+                number(
+                  staff.length
+                ),
+
+              helper:
+                filter ===
+                "All"
+                  ? "All clinic staff"
+                  : filter,
+
+              icon:
+                Users,
+            },
+
+            {
+              label:
+                "Active accounts",
+
+              value:
+                number(
+                  active
+                ),
+
+              helper:
+                "Currently enabled",
+
+              icon:
+                ShieldCheck,
+            },
+
+            {
+              label:
+                "Nurses",
+
+              value:
+                number(
+                  nurses
+                ),
+
+              helper:
+                "Professional staff",
+
+              icon:
+                Users,
+            },
+
+            {
+              label:
+                "Proxies",
+
+              value:
+                number(
+                  proxies
+                ),
+
+              helper:
+                "Registered proxies",
+
+              icon:
+                Users,
+            },
+          ];
+        }
+
+        const verified =
           staff.filter(
             item =>
-              item.role ===
-              "Nurse"
+              item.isVerified
           ).length;
 
-        const proxies =
+        const passwordSetupPending =
           staff.filter(
             item =>
-              item.role ===
-              "Proxy"
+              item.mustChangePassword
           ).length;
 
         return [
@@ -232,7 +405,7 @@ export default function ManageStaffPage() {
             helper:
               filter ===
               "All"
-                ? "All roles"
+                ? "System-wide"
                 : filter,
 
             icon:
@@ -249,50 +422,55 @@ export default function ManageStaffPage() {
               ),
 
             helper:
-              "Currently enabled",
+              "Authentication enabled",
 
             icon:
-              Users,
+              ShieldCheck,
           },
 
           {
             label:
-              "Nurses",
+              "Verified accounts",
 
             value:
               number(
-                nurses
+                verified
               ),
 
             helper:
-              "Professional staff",
+              "Identity/account verified",
 
             icon:
-              Users,
+              ShieldCheck,
           },
 
           {
             label:
-              "Proxies",
+              "Password setup pending",
 
             value:
               number(
-                proxies
+                passwordSetupPending
               ),
 
             helper:
-              "Registered proxy accounts",
+              "Temporary credential active",
 
             icon:
-              Users,
+              UserPlus,
           },
         ];
       },
       [
         filter,
+        isClinicAdmin,
         staff,
       ]
     );
+
+  /* ======================================================= */
+  /* ACTIVATE / DEACTIVATE                                   */
+  /* ======================================================= */
 
   async function toggle(
     item
@@ -307,8 +485,7 @@ export default function ManageStaffPage() {
       );
 
       if (
-        role ===
-        "ClinicAdmin"
+        isClinicAdmin
       ) {
         if (
           item.isActive
@@ -357,7 +534,7 @@ export default function ManageStaffPage() {
     ) {
       setError(
         err?.message ||
-        "Could not update account."
+          "Could not update account."
       );
     } finally {
       setPendingId(
@@ -366,9 +543,12 @@ export default function ManageStaffPage() {
     }
   }
 
+  /* ======================================================= */
+  /* ROLE OPTIONS                                            */
+  /* ======================================================= */
+
   const roleOptions =
-    role ===
-    "ClinicAdmin"
+    isClinicAdmin
       ? [
           "All",
           "Nurse",
@@ -376,14 +556,18 @@ export default function ManageStaffPage() {
         ]
       : [
           "All",
+          "Patient",
           "Nurse",
           "Proxy",
-          "Patient",
           "ClinicAdmin",
           "SuperAdmin",
         ];
 
-  const columns = [
+  /* ======================================================= */
+  /* CLINIC ADMIN TABLE                                      */
+  /* ======================================================= */
+
+  const clinicAdminColumns = [
     {
       key:
         "fullName",
@@ -515,27 +699,274 @@ export default function ManageStaffPage() {
     },
   ];
 
+  /* ======================================================= */
+  /* SUPER ADMIN TABLE                                       */
+  /* ======================================================= */
+
+  const superAdminColumns = [
+    {
+      key:
+        "fullName",
+
+      label:
+        "Account",
+
+      render:
+        (
+          value,
+          row
+        ) => (
+          <div className="min-w-[190px]">
+            <p className="font-semibold text-slate-900">
+              {value ||
+                "—"}
+            </p>
+
+            <p className="mt-0.5 text-[11px] text-slate-400">
+              {row.email ||
+                "No email"}
+            </p>
+          </div>
+        ),
+    },
+
+    {
+      key:
+        "role",
+
+      label:
+        "Role",
+
+      render:
+        value => (
+          <span className="whitespace-nowrap border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "clinicName",
+
+      label:
+        "Clinic / scope",
+
+      render:
+        (
+          _,
+          row
+        ) => (
+          <span
+            className={
+              row.role ===
+              "SuperAdmin"
+                ? "font-medium text-[#0f766e]"
+                : row.clinicName
+                  ? "text-slate-800"
+                  : "text-amber-700"
+            }
+          >
+            {accountClinic(
+              row
+            )}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "phoneNumber",
+
+      label:
+        "Contact",
+
+      render:
+        value =>
+          value ||
+          "—",
+    },
+
+    {
+      key:
+        "idNumber",
+
+      label:
+        "ID number",
+
+      render:
+        value => (
+          <span className="whitespace-nowrap font-mono text-[11px] text-slate-600">
+            {value ||
+              "—"}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "isVerified",
+
+      label:
+        "Verification",
+
+      render:
+        value => (
+          <span
+            className={`inline-flex border px-2 py-0.5 text-[10px] font-semibold ${
+              value
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-700"
+            }`}
+          >
+            {value
+              ? "Verified"
+              : "Pending"}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "mustChangePassword",
+
+      label:
+        "Onboarding",
+
+      render:
+        (
+          value,
+          row
+        ) => {
+          if (
+            !value
+          ) {
+            return (
+              <span className="inline-flex border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                Ready
+              </span>
+            );
+          }
+
+          return (
+            <div>
+              <span className="inline-flex border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                Password setup pending
+              </span>
+
+              <p className="mt-1 text-[10px] text-slate-400">
+                First login required
+              </p>
+            </div>
+          );
+        },
+    },
+
+    {
+      key:
+        "createdAt",
+
+      label:
+        "Created",
+
+      render:
+        value => (
+          <span className="whitespace-nowrap text-xs text-slate-600">
+            {formatDate(
+              value
+            )}
+          </span>
+        ),
+    },
+
+    {
+      key:
+        "isActive",
+
+      label:
+        "Access",
+
+      render:
+        value => (
+          <StatusBadge
+            value={
+              value
+                ? "Active"
+                : "Inactive"
+            }
+          />
+        ),
+    },
+
+    {
+      key:
+        "actions",
+
+      label:
+        "Action",
+
+      render:
+        (
+          _,
+          row
+        ) => (
+          <button
+            type="button"
+            disabled={
+              pendingId ===
+              row.userId
+            }
+            onClick={
+              () =>
+                toggle(
+                  row
+                )
+            }
+            className={`whitespace-nowrap text-[11px] font-medium hover:underline disabled:opacity-50 ${
+              row.isActive
+                ? "text-red-600"
+                : "text-[#0f766e]"
+            }`}
+          >
+            {pendingId ===
+            row.userId
+              ? "Updating…"
+              : row.isActive
+                ? "Deactivate"
+                : "Activate"}
+          </button>
+        ),
+    },
+  ];
+
+  const columns =
+    isClinicAdmin
+      ? clinicAdminColumns
+      : superAdminColumns;
+
+  /* ======================================================= */
+  /* RENDER                                                  */
+  /* ======================================================= */
+
   return (
     <div className="space-y-5">
 
       <PageHeader
         eyebrow={
-          role ===
-          "ClinicAdmin"
+          isClinicAdmin
             ? "Clinic workforce"
             : "Administration"
         }
         title={
-          role ===
-          "ClinicAdmin"
+          isClinicAdmin
             ? "Staff"
             : "Accounts"
         }
         description={
-          role ===
-          "ClinicAdmin"
+          isClinicAdmin
             ? "Review Nurse and Proxy accounts assigned to your clinic and control account access."
-            : "Review administrative and service accounts across PhilaLink."
+            : "Review account identity, clinic scope, verification, onboarding and access across PhilaLink."
         }
         actions={
           <>
@@ -559,8 +990,7 @@ export default function ManageStaffPage() {
               Refresh
             </SecondaryButton>
 
-            {role ===
-            "ClinicAdmin" ? (
+            {isClinicAdmin ? (
               <Link
                 to="/admin/register-staff"
                 className="inline-flex h-10 items-center justify-center gap-2 bg-[#0f766e] px-4 text-sm font-medium text-white hover:bg-[#0b655e]"
@@ -590,16 +1020,14 @@ export default function ManageStaffPage() {
 
       <Panel
         title={
-          role ===
-          "ClinicAdmin"
+          isClinicAdmin
             ? "Staff directory"
-            : "Account directory"
+            : "System account directory"
         }
         description={
-          role ===
-          "ClinicAdmin"
-            ? "Filter Nurses and Proxies assigned to your clinic."
-            : "Filter system accounts by role or search identifying and contact details."
+          isClinicAdmin
+            ? "Nurses and Proxies assigned to your clinic."
+            : "System-wide account information with clinic scope and onboarding state."
         }
         noPadding
       >
@@ -622,7 +1050,11 @@ export default function ManageStaffPage() {
                       .value
                   )
               }
-              placeholder="Name, ID, email or phone…"
+              placeholder={
+                isClinicAdmin
+                  ? "Name, ID, email or phone…"
+                  : "Name, ID, email, phone, role or clinic…"
+              }
             />
           </div>
 
@@ -659,10 +1091,9 @@ export default function ManageStaffPage() {
         {loading ? (
           <LoadingBlock
             label={
-              role ===
-              "ClinicAdmin"
+              isClinicAdmin
                 ? "Loading staff…"
-                : "Loading accounts…"
+                : "Loading system accounts…"
             }
             minHeight={
               320
@@ -681,7 +1112,7 @@ export default function ManageStaffPage() {
                 row.userId
             }
             maxHeight={
-              650
+              680
             }
           />
         ) : (
@@ -691,14 +1122,12 @@ export default function ManageStaffPage() {
                 Search
               }
               title={
-                role ===
-                "ClinicAdmin"
+                isClinicAdmin
                   ? "No staff found"
                   : "No accounts found"
               }
               description={
-                role ===
-                "ClinicAdmin"
+                isClinicAdmin
                   ? "Change the role filter or search term, or register a new Nurse or Proxy account."
                   : "Change the role filter or search term."
               }
