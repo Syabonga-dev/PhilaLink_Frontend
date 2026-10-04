@@ -466,13 +466,6 @@ export default function App() {
               />
 
               <Route
-                path="register-staff"
-                element={
-                  <RegisterStaffPage />
-                }
-              />
-
-              <Route
                 path="staff"
                 element={
                   <ManageStaffPage />
@@ -497,6 +490,13 @@ export default function App() {
                   />
                 }
               >
+
+                <Route
+                  path="register-staff"
+                  element={
+                    <RegisterStaffPage />
+                  }
+                />
 
                 <Route
                   path="inventory"
