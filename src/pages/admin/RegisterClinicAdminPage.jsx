@@ -4,7 +4,9 @@ import {
 } from "react";
 
 import {
-  ClipboardCopy,
+  MailCheck,
+  MailWarning,
+  RefreshCw,
   ShieldCheck,
 } from "lucide-react";
 
@@ -78,6 +80,12 @@ export default function RegisterClinicAdminPage() {
     useState(false);
 
   const [
+    resending,
+    setResending,
+  ] =
+    useState(false);
+
+  const [
     createdAccount,
     setCreatedAccount,
   ] =
@@ -92,6 +100,12 @@ export default function RegisterClinicAdminPage() {
   const [
     success,
     setSuccess,
+  ] =
+    useState("");
+
+  const [
+    warning,
+    setWarning,
   ] =
     useState("");
 
@@ -133,7 +147,7 @@ export default function RegisterClinicAdminPage() {
           ) {
             setError(
               err?.message ||
-                "Could not load clinics."
+              "Could not load clinics."
             );
           }
         } finally {
@@ -259,6 +273,10 @@ export default function RegisterClinicAdminPage() {
         ""
       );
 
+      setWarning(
+        ""
+      );
+
       const result =
         await adminApi
           .registerClinicAdmin({
@@ -286,15 +304,24 @@ export default function RegisterClinicAdminPage() {
         result
       );
 
-      setSuccess(
-        "Clinic Administrator account created successfully."
-      );
+      if (
+        result?.emailSent
+      ) {
+        setSuccess(
+          result.message
+        );
+      } else {
+        setWarning(
+          result?.message ||
+          "The account was created, but the invitation email could not be delivered."
+        );
+      }
     } catch (
       err
     ) {
       setError(
         err?.message ||
-          "Could not create the Clinic Administrator account."
+        "Could not create the Clinic Administrator account."
       );
     } finally {
       setSaving(
@@ -303,27 +330,64 @@ export default function RegisterClinicAdminPage() {
     }
   }
 
-  async function copyPassword() {
+  async function resendInvitation() {
     if (
       !createdAccount
-        ?.temporaryPassword
+        ?.userId
     ) {
       return;
     }
 
     try {
-      await navigator.clipboard
-        .writeText(
-          createdAccount
-            .temporaryPassword
-        );
+      setResending(
+        true
+      );
+
+      setError(
+        ""
+      );
 
       setSuccess(
-        "Temporary password copied to the clipboard."
+        ""
       );
-    } catch {
+
+      setWarning(
+        ""
+      );
+
+      const result =
+        await adminApi
+          .resendInvitation(
+            createdAccount
+              .userId
+          );
+
+      setCreatedAccount(
+        result
+      );
+
+      if (
+        result?.emailSent
+      ) {
+        setSuccess(
+          result.message
+        );
+      } else {
+        setWarning(
+          result?.message ||
+          "The new invitation email could not be delivered."
+        );
+      }
+    } catch (
+      err
+    ) {
       setError(
-        "Could not copy the temporary password automatically."
+        err?.message ||
+        "Could not resend the Clinic Administrator invitation."
+      );
+    } finally {
+      setResending(
+        false
       );
     }
   }
@@ -346,6 +410,10 @@ export default function RegisterClinicAdminPage() {
     setSuccess(
       ""
     );
+
+    setWarning(
+      ""
+    );
   }
 
   const selectedClinic =
@@ -361,7 +429,7 @@ export default function RegisterClinicAdminPage() {
       <PageHeader
         eyebrow="Administration"
         title="Register Clinic Administrator"
-        description="Create a Clinic Administrator account and assign its initial clinic boundary. The assignment can be changed or removed later from Clinic Administrators."
+        description="Create a Clinic Administrator and set the initial clinic assignment. PhilaLink generates and emails the temporary credential directly to the administrator."
       />
 
       {error ? (
@@ -376,6 +444,12 @@ export default function RegisterClinicAdminPage() {
         </Notice>
       ) : null}
 
+      {warning ? (
+        <Notice type="warning">
+          {warning}
+        </Notice>
+      ) : null}
+
       {loadingClinics ? (
         <LoadingBlock
           label="Loading active clinics…"
@@ -386,10 +460,10 @@ export default function RegisterClinicAdminPage() {
       ) : createdAccount ? (
         <Panel
           title="Clinic Administrator created"
-          description="Save the temporary password now. It is not stored in plaintext and cannot be retrieved later."
+          description="The temporary password was generated on the backend and is not returned to the Super Administrator."
         >
 
-          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(320px,0.8fr)]">
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
 
             <div className="border border-slate-200 bg-slate-50 p-4">
 
@@ -398,10 +472,8 @@ export default function RegisterClinicAdminPage() {
               </p>
 
               <p className="mt-2 text-lg font-semibold text-slate-950">
-                {
-                  createdAccount
-                    .fullName
-                }
+                {createdAccount
+                  .fullName}
               </p>
 
               <dl className="mt-4 grid gap-3 text-xs sm:grid-cols-2">
@@ -412,10 +484,8 @@ export default function RegisterClinicAdminPage() {
                   </dt>
 
                   <dd className="mt-0.5 font-medium text-slate-800">
-                    {
-                      createdAccount
-                        .role
-                    }
+                    {createdAccount
+                      .role}
                   </dd>
                 </div>
 
@@ -425,22 +495,23 @@ export default function RegisterClinicAdminPage() {
                   </dt>
 
                   <dd className="mt-0.5 font-medium text-slate-800">
-                    {selectedClinic
-                      ?.name ||
+                    {createdAccount
+                      .clinicName ||
+                      selectedClinic
+                        ?.name ||
                       "Assigned clinic"}
                   </dd>
                 </div>
 
                 <div>
                   <dt className="text-slate-400">
-                    ID number
+                    Email
                   </dt>
 
                   <dd className="mt-0.5 font-medium text-slate-800">
-                    {
-                      createdAccount
-                        .idNumber
-                    }
+                    {createdAccount
+                      .email ||
+                      form.email}
                   </dd>
                 </div>
 
@@ -450,10 +521,8 @@ export default function RegisterClinicAdminPage() {
                   </dt>
 
                   <dd className="mt-0.5 break-all font-mono text-slate-700">
-                    {
-                      createdAccount
-                        .userId
-                    }
+                    {createdAccount
+                      .userId}
                   </dd>
                 </div>
 
@@ -461,42 +530,90 @@ export default function RegisterClinicAdminPage() {
 
             </div>
 
-            <div className="border border-amber-200 bg-amber-50 p-4">
+            <div
+              className={`border p-4 ${
+                createdAccount
+                  .emailSent
+                  ? "border-emerald-200 bg-emerald-50"
+                  : "border-amber-200 bg-amber-50"
+              }`}
+            >
 
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-800">
-                Temporary password
-              </p>
+              <div className="flex items-start gap-3">
 
-              <p className="mt-3 break-all font-mono text-xl font-semibold text-slate-950">
-                {
-                  createdAccount
-                    .temporaryPassword
-                }
-              </p>
+                {createdAccount
+                  .emailSent ? (
+                  <MailCheck
+                    size={19}
+                    className="mt-0.5 shrink-0 text-emerald-700"
+                  />
+                ) : (
+                  <MailWarning
+                    size={19}
+                    className="mt-0.5 shrink-0 text-amber-700"
+                  />
+                )}
 
-              <p className="mt-2 text-xs leading-5 text-amber-900">
-                The user must replace this password before normal application use.
-              </p>
+                <div className="min-w-0">
 
-              <SecondaryButton
-                type="button"
-                onClick={
-                  copyPassword
-                }
-                className="mt-4"
-              >
-                <ClipboardCopy
-                  size={15}
-                />
+                  <p
+                    className={`text-xs font-semibold uppercase tracking-wide ${
+                      createdAccount
+                        .emailSent
+                        ? "text-emerald-800"
+                        : "text-amber-800"
+                    }`}
+                  >
+                    {createdAccount
+                      .emailSent
+                      ? "Credentials emailed"
+                      : "Email delivery failed"}
+                  </p>
 
-                Copy password
-              </SecondaryButton>
+                  <p className="mt-2 text-xs leading-5 text-slate-700">
+                    {createdAccount
+                      .emailSent
+                      ? `The login credential was sent directly to ${createdAccount.email}. The Super Administrator cannot view the temporary password.`
+                      : "The account exists, but the temporary password was not exposed to you. Resending creates a new temporary password and invalidates the previous one."}
+                  </p>
+
+                  {!createdAccount
+                    .emailSent ? (
+                    <SecondaryButton
+                      type="button"
+                      onClick={
+                        resendInvitation
+                      }
+                      disabled={
+                        resending
+                      }
+                      className="mt-4"
+                    >
+                      <RefreshCw
+                        size={14}
+                        className={
+                          resending
+                            ? "animate-spin"
+                            : ""
+                        }
+                      />
+
+                      {resending
+                        ? "Resending…"
+                        : "Resend invitation"}
+                    </SecondaryButton>
+                  ) : null}
+
+                </div>
+
+              </div>
 
             </div>
 
           </div>
 
           <div className="mt-5 border-t border-slate-200 pt-4">
+
             <PrimaryButton
               type="button"
               onClick={
@@ -505,13 +622,14 @@ export default function RegisterClinicAdminPage() {
             >
               Register another Clinic Administrator
             </PrimaryButton>
+
           </div>
 
         </Panel>
       ) : (
         <Panel
           title="Account details"
-          description="Clinic Administrator accounts are created verified, receive a temporary password and must belong to an active clinic when first registered."
+          description="The registered email receives the temporary password. The recipient is forced to replace it at first login."
         >
 
           {!clinics.length ? (
@@ -648,7 +766,7 @@ export default function RegisterClinicAdminPage() {
               </SelectField>
 
               <Notice type="info">
-                Clinic assignment controls the Clinic Administrator's patient, staff, inventory, analytics, reporting and audit scope. A Super Administrator can reassign or deassign the account later.
+                The backend generates the initial password and sends it directly to the registered email. The Super Administrator never sees or receives the plaintext password.
               </Notice>
 
               <div className="flex justify-end border-t border-slate-200 pt-4">
