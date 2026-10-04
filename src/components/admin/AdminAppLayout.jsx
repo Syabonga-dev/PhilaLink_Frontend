@@ -16,6 +16,7 @@ import {
   Building2,
   ClipboardList,
   FileBarChart,
+  LayoutDashboard,
   LogOut,
   Menu,
   ShieldCheck,
@@ -36,105 +37,184 @@ const CLINIC_ADMIN_NAV = [
   {
     to:
       "/admin",
+
     label:
       "Analytics",
+
     icon:
       BarChart3,
+
     end:
       true,
   },
+
   {
     to:
       "/admin/inventory",
+
     label:
       "Inventory",
+
     icon:
       Boxes,
   },
+
   {
     to:
       "/admin/reports",
+
     label:
       "Reports",
+
     icon:
       FileBarChart,
   },
+
   {
     to:
       "/admin/staff",
+
     label:
       "Staff",
+
     icon:
       Users,
   },
+
   {
     to:
       "/admin/register-staff",
+
     label:
       "Register staff",
+
     icon:
       UserPlus,
   },
+
   {
     to:
       "/admin/audit",
+
     label:
       "Audit log",
+
     icon:
       ClipboardList,
   },
 ];
 
-const SUPER_ADMIN_NAV = [
+const SUPER_ADMIN_SECTIONS = [
   {
-    to:
-      "/admin",
     label:
-      "Overview",
-    icon:
-      BarChart3,
-    end:
-      true,
+      "System",
+
+    items: [
+      {
+        to:
+          "/admin",
+
+        label:
+          "Overview",
+
+        icon:
+          LayoutDashboard,
+
+        end:
+          true,
+      },
+
+      {
+        to:
+          "/admin/analytics",
+
+        label:
+          "Analytics",
+
+        icon:
+          BarChart3,
+      },
+
+      {
+        to:
+          "/admin/system-reports",
+
+        label:
+          "Reports",
+
+        icon:
+          FileBarChart,
+      },
+    ],
   },
+
   {
-    to:
-      "/admin/staff",
     label:
-      "Accounts",
-    icon:
-      Users,
+      "Administration",
+
+    items: [
+      {
+        to:
+          "/admin/staff",
+
+        label:
+          "Accounts",
+
+        icon:
+          Users,
+      },
+
+      {
+        to:
+          "/admin/register-staff",
+
+        label:
+          "Register staff",
+
+        icon:
+          UserPlus,
+      },
+
+      {
+        to:
+          "/admin/clinics",
+
+        label:
+          "Clinics",
+
+        icon:
+          Building2,
+      },
+
+      {
+        to:
+          "/admin/clinic-admins",
+
+        label:
+          "Clinic admins",
+
+        icon:
+          ShieldCheck,
+      },
+    ],
   },
+
   {
-    to:
-      "/admin/register-staff",
     label:
-      "Register",
-    icon:
-      UserPlus,
-  },
-  {
-    to:
-      "/admin/clinics",
-    label:
-      "Clinics",
-    icon:
-      Building2,
-  },
-  {
-    to:
-      "/admin/register-clinic-admin",
-    label:
-      "Clinic admins",
-    icon:
-      ShieldCheck,
-  },
-  {
-    to:
-      "/admin/audit",
-    label:
-      "Audit log",
-    icon:
-      ClipboardList,
+      "Governance",
+
+    items: [
+      {
+        to:
+          "/admin/audit",
+
+        label:
+          "Audit log",
+
+        icon:
+          ClipboardList,
+      },
+    ],
   },
 ];
 
@@ -154,7 +234,9 @@ function initials(
         Boolean
       );
 
-  if (!words.length) {
+  if (
+    !words.length
+  ) {
     return "AD";
   }
 
@@ -187,6 +269,22 @@ function pageTitle(
 
   if (
     pathname.startsWith(
+      "/admin/analytics"
+    )
+  ) {
+    return "Analytics";
+  }
+
+  if (
+    pathname.startsWith(
+      "/admin/system-reports"
+    )
+  ) {
+    return "Reports";
+  }
+
+  if (
+    pathname.startsWith(
       "/admin/inventory"
     )
   ) {
@@ -214,7 +312,10 @@ function pageTitle(
       "/admin/staff"
     )
   ) {
-    return "Staff";
+    return role ===
+      "SuperAdmin"
+      ? "Accounts"
+      : "Staff";
   }
 
   if (
@@ -227,10 +328,10 @@ function pageTitle(
 
   if (
     pathname.startsWith(
-      "/admin/clinics"
+      "/admin/clinic-admins"
     )
   ) {
-    return "Clinics";
+    return "Clinic admins";
   }
 
   if (
@@ -238,7 +339,15 @@ function pageTitle(
       "/admin/register-clinic-admin"
     )
   ) {
-    return "Clinic admins";
+    return "Register Clinic Administrator";
+  }
+
+  if (
+    pathname.startsWith(
+      "/admin/clinics"
+    )
+  ) {
+    return "Clinics";
   }
 
   return "Administration";
@@ -251,11 +360,13 @@ function NavSection({
 }) {
   return (
     <div>
+
       <p className="px-3 text-[10px] font-semibold uppercase tracking-[0.12em] text-slate-400">
         {label}
       </p>
 
       <div className="mt-2 space-y-1">
+
         {items.map(
           item => {
             const Icon =
@@ -289,6 +400,7 @@ function NavSection({
                   isActive,
                 }) => (
                   <>
+
                     {isActive ? (
                       <span className="absolute inset-y-0 left-0 w-[3px] bg-[#0f766e]" />
                     ) : null}
@@ -305,13 +417,16 @@ function NavSection({
                         item.label
                       }
                     </span>
+
                   </>
                 )}
               </NavLink>
             );
           }
         )}
+
       </div>
+
     </div>
   );
 }
@@ -331,9 +446,7 @@ export default function AdminAppLayout() {
     mobileOpen,
     setMobileOpen,
   ] =
-    useState(
-      false
-    );
+    useState(false);
 
   const [
     profile,
@@ -350,7 +463,9 @@ export default function AdminAppLayout() {
         .getMe()
         .then(
           result => {
-            if (active) {
+            if (
+              active
+            ) {
               setProfile(
                 result
               );
@@ -359,7 +474,9 @@ export default function AdminAppLayout() {
         )
         .catch(
           () => {
-            if (active) {
+            if (
+              active
+            ) {
               setProfile(
                 null
               );
@@ -375,24 +492,30 @@ export default function AdminAppLayout() {
     []
   );
 
+  useEffect(
+    () => {
+      setMobileOpen(
+        false
+      );
+    },
+    [
+      location.pathname,
+    ]
+  );
+
   const displayName =
     user?.fullName ||
     user?.name ||
     profile?.fullName ||
     "Administrator";
 
-  const clinicName =
+  const contextName =
     role ===
     "ClinicAdmin"
-      ? profile?.clinicName ||
+      ? profile
+          ?.clinicName ||
         "Assigned clinic"
       : "PhilaLink administration";
-
-  const navigation =
-    role ===
-    "SuperAdmin"
-      ? SUPER_ADMIN_NAV
-      : CLINIC_ADMIN_NAV;
 
   const sections =
     useMemo(
@@ -401,74 +524,63 @@ export default function AdminAppLayout() {
           role ===
           "SuperAdmin"
         ) {
-          return [
-            {
-              label:
-                "Administration",
-              items:
-                navigation.slice(
-                  0,
-                  5
-                ),
-            },
-            {
-              label:
-                "Governance",
-              items:
-                navigation.slice(
-                  5
-                ),
-            },
-          ];
+          return SUPER_ADMIN_SECTIONS;
         }
 
         return [
           {
             label:
               "Clinic operations",
+
             items:
-              navigation.slice(
-                0,
-                3
-              ),
+              CLINIC_ADMIN_NAV
+                .slice(
+                  0,
+                  3
+                ),
           },
+
           {
             label:
               "Workforce",
+
             items:
-              navigation.slice(
-                3,
-                5
-              ),
+              CLINIC_ADMIN_NAV
+                .slice(
+                  3,
+                  5
+                ),
           },
+
           {
             label:
               "Governance",
+
             items:
-              navigation.slice(
-                5
-              ),
+              CLINIC_ADMIN_NAV
+                .slice(
+                  5
+                ),
           },
         ];
       },
       [
-        navigation,
         role,
       ]
     );
 
   return (
     <div className="min-h-screen bg-[#f4f6f5] text-slate-950">
+
       {mobileOpen ? (
         <button
           type="button"
           aria-label="Close navigation"
           className="fixed inset-0 z-40 bg-slate-950/35 lg:hidden"
-          onClick={
-            () =>
-              setMobileOpen(
-                false
-              )
+          onClick={() =>
+            setMobileOpen(
+              false
+            )
           }
         />
       ) : null}
@@ -480,17 +592,19 @@ export default function AdminAppLayout() {
             : "-translate-x-full"
         }`}
       >
+
         <div className="flex h-[76px] items-center border-b border-slate-200 px-5">
+
           <NavLink
             to="/admin"
-            onClick={
-              () =>
-                setMobileOpen(
-                  false
-                )
+            onClick={() =>
+              setMobileOpen(
+                false
+              )
             }
             className="flex min-w-0 items-center gap-3"
           >
+
             <img
               src="/logo2.png"
               alt="PhilaLink"
@@ -498,6 +612,7 @@ export default function AdminAppLayout() {
             />
 
             <div className="min-w-0">
+
               <p className="truncate text-[17px] font-semibold tracking-[-0.02em] text-slate-950">
                 PhilaLink
               </p>
@@ -508,17 +623,21 @@ export default function AdminAppLayout() {
                   ? "System admin"
                   : "Clinic admin"}
               </p>
+
             </div>
+
           </NavLink>
+
         </div>
 
         <div className="border-b border-slate-200 px-5 py-4">
+
           <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
             Working context
           </p>
 
           <p className="mt-1 truncate text-sm font-semibold text-slate-900">
-            {clinicName}
+            {contextName}
           </p>
 
           <p className="mt-0.5 text-[11px] text-slate-500">
@@ -527,9 +646,11 @@ export default function AdminAppLayout() {
               ? "National administration"
               : "Clinic-scoped access"}
           </p>
+
         </div>
 
         <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto px-3 py-5">
+
           {sections.map(
             section => (
               <NavSection
@@ -542,19 +663,21 @@ export default function AdminAppLayout() {
                 items={
                   section.items
                 }
-                onNavigate={
-                  () =>
-                    setMobileOpen(
-                      false
-                    )
+                onNavigate={() =>
+                  setMobileOpen(
+                    false
+                  )
                 }
               />
             )
           )}
+
         </nav>
 
         <div className="border-t border-slate-200 p-4">
+
           <div className="flex items-center gap-3">
+
             <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-slate-900 text-xs font-semibold text-white">
               {initials(
                 displayName
@@ -562,6 +685,7 @@ export default function AdminAppLayout() {
             </div>
 
             <div className="min-w-0 flex-1">
+
               <p className="truncate text-xs font-semibold text-slate-900">
                 {displayName}
               </p>
@@ -572,6 +696,7 @@ export default function AdminAppLayout() {
                   ? "Super Administrator"
                   : "Clinic Administrator"}
               </p>
+
             </div>
 
             <button
@@ -586,20 +711,24 @@ export default function AdminAppLayout() {
                 size={15}
               />
             </button>
+
           </div>
+
         </div>
+
       </aside>
 
       <div className="lg:pl-[252px]">
+
         <header className="sticky top-0 z-30 flex h-[64px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+
           <button
             type="button"
             className="mr-3 flex h-9 w-9 items-center justify-center border border-slate-200 text-slate-600 lg:hidden"
-            onClick={
-              () =>
-                setMobileOpen(
-                  true
-                )
+            onClick={() =>
+              setMobileOpen(
+                true
+              )
             }
             aria-label="Open navigation"
           >
@@ -609,6 +738,7 @@ export default function AdminAppLayout() {
           </button>
 
           <div className="min-w-0 flex-1">
+
             <p className="truncate text-sm font-semibold text-slate-900">
               {pageTitle(
                 location.pathname,
@@ -617,12 +747,15 @@ export default function AdminAppLayout() {
             </p>
 
             <p className="mt-0.5 truncate text-[11px] text-slate-500">
-              {clinicName}
+              {contextName}
             </p>
+
           </div>
 
           <div className="hidden items-center gap-3 sm:flex">
+
             <div className="text-right">
+
               <p className="max-w-[220px] truncate text-xs font-medium text-slate-800">
                 {displayName}
               </p>
@@ -633,6 +766,7 @@ export default function AdminAppLayout() {
                   ? "Super Administrator"
                   : "Clinic Administrator"}
               </p>
+
             </div>
 
             <div className="flex h-9 w-9 items-center justify-center bg-[#0f766e] text-xs font-semibold text-white">
@@ -640,22 +774,24 @@ export default function AdminAppLayout() {
                 displayName
               )}
             </div>
+
           </div>
+
         </header>
 
         <main className="w-full p-4 sm:p-6 lg:p-8">
           <Outlet />
         </main>
+
       </div>
 
       {mobileOpen ? (
         <button
           type="button"
-          onClick={
-            () =>
-              setMobileOpen(
-                false
-              )
+          onClick={() =>
+            setMobileOpen(
+              false
+            )
           }
           aria-label="Close navigation"
           className="fixed left-[260px] top-3 z-[60] flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-600 shadow lg:hidden"
@@ -665,6 +801,7 @@ export default function AdminAppLayout() {
           />
         </button>
       ) : null}
+
     </div>
   );
 }
