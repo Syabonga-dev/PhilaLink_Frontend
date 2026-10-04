@@ -1,4 +1,6 @@
-import { api } from "./client.js";
+import {
+  api,
+} from "./client.js";
 
 export const adminApi = {
   getMe: () =>
@@ -45,12 +47,27 @@ export const adminApi = {
       payload
     ),
 
+  resendInvitation: (
+    userId
+  ) => {
+    if (!userId) {
+      throw new Error(
+        "A user ID is required."
+      );
+    }
+
+    return api.post(
+      `/api/admin/accounts/${userId}/resend-invitation`
+    );
+  },
+
   listAccounts: (
     role
   ) => {
     const qs =
       role &&
-      role !== "All"
+      role !==
+        "All"
         ? `?role=${encodeURIComponent(
             role
           )}`
