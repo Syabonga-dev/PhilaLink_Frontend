@@ -166,17 +166,6 @@ const SUPER_ADMIN_SECTIONS = [
 
       {
         to:
-          "/admin/register-staff",
-
-        label:
-          "Register staff",
-
-        icon:
-          UserPlus,
-      },
-
-      {
-        to:
           "/admin/clinics",
 
         label:
@@ -328,18 +317,18 @@ function pageTitle(
 
   if (
     pathname.startsWith(
-      "/admin/clinic-admins"
-    )
-  ) {
-    return "Clinic admins";
-  }
-
-  if (
-    pathname.startsWith(
       "/admin/register-clinic-admin"
     )
   ) {
     return "Register Clinic Administrator";
+  }
+
+  if (
+    pathname.startsWith(
+      "/admin/clinic-admins"
+    )
+  ) {
+    return "Clinic admins";
   }
 
   if (
@@ -413,9 +402,7 @@ function NavSection({
                     />
 
                     <span className="truncate">
-                      {
-                        item.label
-                      }
+                      {item.label}
                     </span>
 
                   </>
