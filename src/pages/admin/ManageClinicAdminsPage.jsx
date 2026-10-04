@@ -91,6 +91,12 @@ export default function ManageClinicAdminsPage() {
     useState("");
 
   const [
+    warning,
+    setWarning,
+  ] =
+    useState("");
+
+  const [
     assigning,
     setAssigning,
   ] =
@@ -152,7 +158,7 @@ export default function ManageClinicAdminsPage() {
         ) {
           setError(
             err?.message ||
-              "Could not load Clinic Administrator assignments."
+            "Could not load Clinic Administrator assignments."
           );
         } finally {
           setLoading(
@@ -337,9 +343,7 @@ export default function ManageClinicAdminsPage() {
       ]
     );
 
-  function beginAssign(
-    admin
-  ) {
+  function clearMessages() {
     setError(
       ""
     );
@@ -348,6 +352,16 @@ export default function ManageClinicAdminsPage() {
       ""
     );
 
+    setWarning(
+      ""
+    );
+  }
+
+  function beginAssign(
+    admin
+  ) {
+    clearMessages();
+
     setAssigning(
       admin
     );
@@ -355,6 +369,54 @@ export default function ManageClinicAdminsPage() {
     setSelectedClinicId(
       admin.clinicId ||
       ""
+    );
+  }
+
+  function updateAdmin(
+    updated
+  ) {
+    setAdmins(
+      current =>
+        current.map(
+          item =>
+            item.userId ===
+            updated.userId
+              ? {
+                  ...item,
+                  ...updated,
+                }
+              : item
+        )
+    );
+  }
+
+  function handleNotificationResult(
+    updated,
+    actionText
+  ) {
+    if (
+      updated
+        ?.notificationEmailSent ===
+      false
+    ) {
+      setSuccess(
+        actionText
+      );
+
+      setWarning(
+        updated
+          ?.notificationEmailMessage ||
+        "The assignment was saved, but the notification email could not be delivered."
+      );
+
+      return;
+    }
+
+    setSuccess(
+      updated
+        ?.notificationEmailMessage
+        ? `${actionText} ${updated.notificationEmailMessage}`
+        : actionText
     );
   }
 
@@ -379,9 +441,7 @@ export default function ManageClinicAdminsPage() {
         true
       );
 
-      setError(
-        ""
-      );
+      clearMessages();
 
       const updated =
         await superAdminApi
@@ -390,18 +450,12 @@ export default function ManageClinicAdminsPage() {
             selectedClinicId
           );
 
-      setAdmins(
-        current =>
-          current.map(
-            item =>
-              item.userId ===
-              updated.userId
-                ? updated
-                : item
-          )
+      updateAdmin(
+        updated
       );
 
-      setSuccess(
+      handleNotificationResult(
+        updated,
         `${updated.fullName} is now assigned to ${updated.clinicName}.`
       );
 
@@ -417,7 +471,7 @@ export default function ManageClinicAdminsPage() {
     ) {
       setError(
         err?.message ||
-          "Could not assign the Clinic Administrator."
+        "Could not assign the Clinic Administrator."
       );
     } finally {
       setPending(
@@ -438,9 +492,7 @@ export default function ManageClinicAdminsPage() {
         true
       );
 
-      setError(
-        ""
-      );
+      clearMessages();
 
       const updated =
         await superAdminApi
@@ -449,18 +501,12 @@ export default function ManageClinicAdminsPage() {
               .userId
           );
 
-      setAdmins(
-        current =>
-          current.map(
-            item =>
-              item.userId ===
-              updated.userId
-                ? updated
-                : item
-          )
+      updateAdmin(
+        updated
       );
 
-      setSuccess(
+      handleNotificationResult(
+        updated,
         `${updated.fullName} has been deassigned from the clinic.`
       );
 
@@ -472,7 +518,7 @@ export default function ManageClinicAdminsPage() {
     ) {
       setError(
         err?.message ||
-          "Could not deassign the Clinic Administrator."
+        "Could not deassign the Clinic Administrator."
       );
     } finally {
       setPending(
@@ -613,13 +659,7 @@ export default function ManageClinicAdminsPage() {
               <button
                 type="button"
                 onClick={() => {
-                  setError(
-                    ""
-                  );
-
-                  setSuccess(
-                    ""
-                  );
+                  clearMessages();
 
                   setDeassigning(
                     row
@@ -642,7 +682,7 @@ export default function ManageClinicAdminsPage() {
       <PageHeader
         eyebrow="Administration"
         title="Clinic administrators"
-        description="Assign, reassign or deassign Clinic Administrator accounts. An unassigned Clinic Administrator account cannot resolve clinic-scoped administration data."
+        description="Assign, reassign or deassign Clinic Administrator accounts. PhilaLink emails each assignment change directly to the affected administrator."
         actions={
           <>
             <Link
@@ -689,6 +729,12 @@ export default function ManageClinicAdminsPage() {
       {success ? (
         <Notice type="success">
           {success}
+        </Notice>
+      ) : null}
+
+      {warning ? (
+        <Notice type="warning">
+          {warning}
         </Notice>
       ) : null}
 
@@ -791,7 +837,7 @@ export default function ManageClinicAdminsPage() {
               ? "Reassign Clinic Administrator"
               : "Assign Clinic Administrator"
           }
-          description={`${assigning.fullName} will receive clinic-scoped administrator access to the selected clinic.`}
+          description={`${assigning.fullName} will receive clinic-scoped administrator access to the selected clinic. The change will also be emailed to ${assigning.email}.`}
           onClose={() => {
             if (
               !pending
@@ -850,7 +896,7 @@ export default function ManageClinicAdminsPage() {
             </SelectField>
 
             <Notice type="info">
-              Reassigning an administrator immediately changes the clinic boundary used by their Clinic Admin endpoints.
+              Reassignment immediately changes the clinic boundary used by Clinic Administrator endpoints. The administrator will receive an email confirming the change.
             </Notice>
 
             <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
@@ -910,7 +956,7 @@ export default function ManageClinicAdminsPage() {
           <div className="space-y-4 p-5">
 
             <Notice type="warning">
-              {deassigning.fullName} will no longer be able to resolve Clinic Admin data for {deassigning.clinicName || "the current clinic"}. The account remains present and can be assigned again later.
+              {deassigning.fullName} will lose clinic-scoped administration access to {deassigning.clinicName || "the current clinic"}. PhilaLink will email this change to {deassigning.email}.
             </Notice>
 
             <div className="flex justify-end gap-2 border-t border-slate-200 pt-4">
