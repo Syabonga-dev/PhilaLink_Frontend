@@ -4,22 +4,16 @@ import {
 } from "react";
 
 import {
-  ClipboardCopy,
+  MailCheck,
+  MailWarning,
+  RefreshCw,
   ShieldCheck,
   UserPlus,
 } from "lucide-react";
 
 import {
-  useAuth,
-} from "../../context/AuthContext.jsx";
-
-import {
   adminApi,
 } from "../../services/api/admin.js";
-
-import {
-  clinicsApi,
-} from "../../services/api/clinics.js";
 
 import {
   ApiError,
@@ -125,9 +119,7 @@ function mapApiErrors(
           1
         );
 
-      mapped[
-        field
-      ] =
+      mapped[field] =
         Array.isArray(
           messages
         )
@@ -159,15 +151,6 @@ function SectionHeading({
 }
 
 export default function RegisterStaffPage() {
-  const {
-    role,
-  } =
-    useAuth();
-
-  const isClinicAdmin =
-    role ===
-    "ClinicAdmin";
-
   const [
     form,
     setForm,
@@ -185,6 +168,12 @@ export default function RegisterStaffPage() {
   const [
     loading,
     setLoading,
+  ] =
+    useState(false);
+
+  const [
+    resending,
+    setResending,
   ] =
     useState(false);
 
@@ -207,12 +196,6 @@ export default function RegisterStaffPage() {
     useState(null);
 
   const [
-    clinics,
-    setClinics,
-  ] =
-    useState([]);
-
-  const [
     createdAccount,
     setCreatedAccount,
   ] =
@@ -221,6 +204,12 @@ export default function RegisterStaffPage() {
   const [
     success,
     setSuccess,
+  ] =
+    useState("");
+
+  const [
+    warning,
+    setWarning,
   ] =
     useState("");
 
@@ -253,54 +242,26 @@ export default function RegisterStaffPage() {
             return;
           }
 
+          if (
+            !me?.clinicId
+          ) {
+            throw new Error(
+              "Your Clinic Administrator account does not have an assigned clinic."
+            );
+          }
+
           setAdminProfile(
             me
           );
 
-          if (
-            isClinicAdmin
-          ) {
-            if (
-              !me?.clinicId
-            ) {
-              throw new Error(
-                "Your Clinic Administrator account does not have an assigned clinic."
-              );
-            }
+          setForm(
+            current => ({
+              ...current,
 
-            setForm(
-              current => ({
-                ...current,
-
-                clinicId:
-                  me.clinicId,
-              })
-            );
-
-            setClinics(
-              []
-            );
-          } else {
-            const result =
-              await clinicsApi
-                .getAll();
-
-            if (!active) {
-              return;
-            }
-
-            setClinics(
-              Array.isArray(
-                result
-              )
-                ? result.filter(
-                    clinic =>
-                      clinic?.isActive !==
-                      false
-                  )
-                : []
-            );
-          }
+              clinicId:
+                me.clinicId,
+            })
+          );
         } catch (
           err
         ) {
@@ -309,7 +270,7 @@ export default function RegisterStaffPage() {
           ) {
             setProfileError(
               err?.message ||
-              "Could not load registration context."
+              "Could not load your Clinic Administrator profile."
             );
           }
         } finally {
@@ -330,9 +291,7 @@ export default function RegisterStaffPage() {
           false;
       };
     },
-    [
-      isClinicAdmin,
-    ]
+    []
   );
 
   function setField(
@@ -368,11 +327,9 @@ export default function RegisterStaffPage() {
         nextRole,
 
       clinicId:
-        isClinicAdmin
-          ? adminProfile
-              ?.clinicId ||
-            ""
-          : "",
+        adminProfile
+          ?.clinicId ||
+        "",
     });
 
     setErrors({});
@@ -382,6 +339,10 @@ export default function RegisterStaffPage() {
     );
 
     setSuccess(
+      ""
+    );
+
+    setWarning(
       ""
     );
 
@@ -420,12 +381,6 @@ export default function RegisterStaffPage() {
     }
 
     if (
-      !form.email
-        .trim()
-    ) {
-      next.email =
-        "Enter an email address.";
-    } else if (
       !/^\S+@\S+\.\S+$/.test(
         form.email
       )
@@ -519,9 +474,7 @@ export default function RegisterStaffPage() {
       !form.clinicId
     ) {
       next.clinicId =
-        isClinicAdmin
-          ? "Your Clinic Administrator account must have an assigned clinic."
-          : "Select a clinic.";
+        "Your Clinic Administrator account must have an assigned clinic.";
     }
 
     if (
@@ -564,12 +517,10 @@ export default function RegisterStaffPage() {
       next
     );
 
-    return (
-      Object.keys(
-        next
-      ).length ===
-      0
-    );
+    return Object.keys(
+      next
+    ).length ===
+      0;
   }
 
   function buildPayload() {
@@ -591,7 +542,8 @@ export default function RegisterStaffPage() {
           .trim(),
 
       clinicId:
-        form.clinicId,
+        adminProfile
+          ?.clinicId,
 
       addressLine1:
         form.addressLine1
@@ -692,6 +644,10 @@ export default function RegisterStaffPage() {
         ""
       );
 
+      setWarning(
+        ""
+      );
+
       const payload =
         buildPayload();
 
@@ -711,9 +667,19 @@ export default function RegisterStaffPage() {
         result
       );
 
-      setSuccess(
-        `${form.role} account created successfully.`
-      );
+      if (
+        result?.emailSent
+      ) {
+        setSuccess(
+          result.message ||
+          `Account created and credentials sent to ${form.email}.`
+        );
+      } else {
+        setWarning(
+          result?.message ||
+          "The account was created, but the credential email could not be delivered."
+        );
+      }
     } catch (
       err
     ) {
@@ -740,26 +706,65 @@ export default function RegisterStaffPage() {
     }
   }
 
-  async function copyPassword() {
+  async function resendInvitation() {
     if (
-      !createdAccount?.temporaryPassword
+      !createdAccount
+        ?.userId
     ) {
       return;
     }
 
     try {
-      await navigator.clipboard
-        .writeText(
-          createdAccount
-            .temporaryPassword
-        );
+      setResending(
+        true
+      );
+
+      setError(
+        ""
+      );
 
       setSuccess(
-        "Temporary password copied to the clipboard."
+        ""
       );
-    } catch {
+
+      setWarning(
+        ""
+      );
+
+      const result =
+        await adminApi
+          .resendInvitation(
+            createdAccount
+              .userId
+          );
+
+      setCreatedAccount(
+        result
+      );
+
+      if (
+        result?.emailSent
+      ) {
+        setSuccess(
+          result.message ||
+          "A new invitation was sent."
+        );
+      } else {
+        setWarning(
+          result?.message ||
+          "The new invitation email could not be delivered."
+        );
+      }
+    } catch (
+      err
+    ) {
       setError(
-        "Could not copy the temporary password automatically."
+        err?.message ||
+        "Could not resend the account invitation."
+      );
+    } finally {
+      setResending(
+        false
       );
     }
   }
@@ -790,29 +795,24 @@ export default function RegisterStaffPage() {
   if (
     createdAccount
   ) {
-    const clinicLabel =
-      isClinicAdmin
-        ? adminProfile
-            ?.clinicName ||
-          "Assigned clinic"
-        : clinics.find(
-            clinic =>
-              clinic.id ===
-              form.clinicId
-          )?.name ||
-          "Selected clinic";
-
     return (
       <div className="space-y-5">
+
         <PageHeader
           eyebrow="Clinic workforce"
           title="Account created"
-          description="The account is ready. Relay the temporary login credentials securely to the staff member."
+          description="PhilaLink generated the temporary password on the backend. It is never shown to the Clinic Administrator."
         />
 
         {success ? (
           <Notice type="success">
             {success}
+          </Notice>
+        ) : null}
+
+        {warning ? (
+          <Notice type="warning">
+            {warning}
           </Notice>
         ) : null}
 
@@ -824,10 +824,13 @@ export default function RegisterStaffPage() {
 
         <Panel
           title="New staff account"
-          description="The temporary password is shown only in this registration response."
+          description="The staff member must use the credentials delivered to their registered email and change the temporary password at first login."
         >
-          <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+
+          <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+
             <dl className="grid gap-x-6 gap-y-4 sm:grid-cols-2">
+
               <div>
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
                   Full name
@@ -856,13 +859,26 @@ export default function RegisterStaffPage() {
                 </dt>
 
                 <dd className="mt-1 text-sm font-semibold text-slate-900">
-                  {clinicLabel}
+                  {createdAccount.clinicName ||
+                    adminProfile?.clinicName ||
+                    "Assigned clinic"}
                 </dd>
               </div>
 
               <div>
                 <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  User ID
+                  Email
+                </dt>
+
+                <dd className="mt-1 text-sm text-slate-800">
+                  {createdAccount.email ||
+                    form.email}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
+                  Account ID
                 </dt>
 
                 <dd className="mt-1 break-all font-mono text-xs text-slate-600">
@@ -871,66 +887,92 @@ export default function RegisterStaffPage() {
                 </dd>
               </div>
 
-              <div>
-                <dt className="text-[11px] font-medium uppercase tracking-wide text-slate-400">
-                  ID number
-                </dt>
-
-                <dd className="mt-1 font-mono text-sm text-slate-800">
-                  {createdAccount.idNumber ||
-                    form.idNumber}
-                </dd>
-              </div>
             </dl>
 
-            <div className="border border-amber-200 bg-amber-50 p-4">
+            <div
+              className={`border p-4 ${
+                createdAccount.emailSent
+                  ? "border-emerald-200 bg-emerald-50"
+                  : "border-amber-200 bg-amber-50"
+              }`}
+            >
+
               <div className="flex items-start gap-3">
-                <ShieldCheck
-                  size={18}
-                  className="mt-0.5 shrink-0 text-amber-700"
-                />
 
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-medium uppercase tracking-wide text-amber-800">
-                    Temporary password
+                {createdAccount.emailSent ? (
+                  <MailCheck
+                    size={19}
+                    className="mt-0.5 shrink-0 text-emerald-700"
+                  />
+                ) : (
+                  <MailWarning
+                    size={19}
+                    className="mt-0.5 shrink-0 text-amber-700"
+                  />
+                )}
+
+                <div className="min-w-0">
+
+                  <p
+                    className={`text-xs font-semibold uppercase tracking-wide ${
+                      createdAccount.emailSent
+                        ? "text-emerald-800"
+                        : "text-amber-800"
+                    }`}
+                  >
+                    {createdAccount.emailSent
+                      ? "Credentials emailed"
+                      : "Email delivery failed"}
                   </p>
 
-                  <p className="mt-2 break-all font-mono text-lg font-semibold text-slate-950">
-                    {createdAccount.temporaryPassword ||
-                      "Not returned"}
+                  <p className="mt-2 text-xs leading-5 text-slate-700">
+                    {createdAccount.emailSent
+                      ? `The backend sent the temporary login password directly to ${createdAccount.email}. You cannot view or retrieve that password.`
+                      : "The account exists, but the generated password was not exposed to you. Resending will generate a completely new temporary password and email it directly to the staff member."}
                   </p>
 
-                  <p className="mt-2 text-xs leading-5 text-amber-800">
-                    Share this securely. It cannot be retrieved again after registration.
-                  </p>
-
-                  {createdAccount.temporaryPassword ? (
-                    <button
+                  {!createdAccount.emailSent ? (
+                    <SecondaryButton
                       type="button"
                       onClick={
-                        copyPassword
+                        resendInvitation
                       }
-                      className="mt-3 inline-flex h-9 items-center gap-2 border border-amber-300 bg-white px-3 text-xs font-medium text-amber-900 hover:bg-amber-100"
+                      disabled={
+                        resending
+                      }
+                      className="mt-4"
                     >
-                      <ClipboardCopy
+                      <RefreshCw
                         size={14}
+                        className={
+                          resending
+                            ? "animate-spin"
+                            : ""
+                        }
                       />
 
-                      Copy password
-                    </button>
+                      {resending
+                        ? "Resending…"
+                        : "Resend invitation"}
+                    </SecondaryButton>
                   ) : null}
+
                 </div>
+
               </div>
+
             </div>
+
           </div>
 
           <div className="mt-6 border-t border-slate-200 pt-4">
+
             <PrimaryButton
-              onClick={
-                () =>
-                  resetForRole(
-                    form.role
-                  )
+              type="button"
+              onClick={() =>
+                resetForRole(
+                  form.role
+                )
               }
             >
               <UserPlus
@@ -939,26 +981,29 @@ export default function RegisterStaffPage() {
 
               Register another account
             </PrimaryButton>
+
           </div>
+
         </Panel>
+
       </div>
     );
   }
 
   return (
     <div className="space-y-5">
+
       <PageHeader
         eyebrow="Clinic workforce"
         title="Register staff"
-        description="Create Nurse or Proxy accounts. Clinic Administrators register staff directly into their assigned clinic."
+        description="Create Nurse or Proxy accounts for your assigned clinic. Login credentials are generated by the backend and sent directly to the staff member's email."
         meta={
-          isClinicAdmin ? (
-            <span>
-              Assigned clinic:{" "}
-              {adminProfile?.clinicName ||
-                "Clinic"}
-            </span>
-          ) : null
+          <span>
+            Assigned clinic:{" "}
+            {adminProfile
+              ?.clinicName ||
+              "Clinic"}
+          </span>
         }
       />
 
@@ -968,23 +1013,20 @@ export default function RegisterStaffPage() {
         </Notice>
       ) : null}
 
-      {success ? (
-        <Notice type="success">
-          {success}
-        </Notice>
-      ) : null}
-
       <form
         onSubmit={
           handleSubmit
         }
         className="space-y-5"
       >
+
         <Panel
           title="Account type"
-          description="Choose the staff profile to create."
+          description="Choose the clinic workforce profile to create."
         >
+
           <div className="inline-flex border border-slate-300 bg-slate-50 p-1">
+
             {[
               "Nurse",
               "Proxy",
@@ -995,11 +1037,10 @@ export default function RegisterStaffPage() {
                     item
                   }
                   type="button"
-                  onClick={
-                    () =>
-                      resetForRole(
-                        item
-                      )
+                  onClick={() =>
+                    resetForRole(
+                      item
+                    )
                   }
                   className={`px-5 py-2 text-sm font-medium transition ${
                     form.role ===
@@ -1012,18 +1053,24 @@ export default function RegisterStaffPage() {
                 </button>
               )
             )}
+
           </div>
+
         </Panel>
 
         <Panel>
+
           <div className="space-y-6">
+
             <section className="space-y-4">
+
               <SectionHeading
                 title="Personal details"
                 description="Identifying and contact information for the new account."
               />
 
               <div className="grid gap-4 md:grid-cols-2">
+
                 <InputField
                   label="Full name"
                   value={
@@ -1150,6 +1197,7 @@ export default function RegisterStaffPage() {
                     errors.gender
                   }
                 >
+
                   <option value="">
                     Select gender
                   </option>
@@ -1165,93 +1213,47 @@ export default function RegisterStaffPage() {
                   <option value="Other">
                     Other
                   </option>
+
                 </SelectField>
+
               </div>
+
             </section>
 
             <section className="space-y-4">
+
               <SectionHeading
                 title="Clinic assignment"
-                description={
-                  isClinicAdmin
-                    ? "Your clinic is locked to your Clinic Administrator profile."
-                    : "Choose the clinic that should own this account."
-                }
+                description="Staff created here are automatically attached to your Clinic Administrator assignment."
               />
 
-              {isClinicAdmin ? (
-                <div className="border border-teal-200 bg-teal-50 px-4 py-3">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-teal-700">
-                    Assigned clinic
-                  </p>
+              <div className="border border-teal-200 bg-teal-50 px-4 py-3">
 
-                  <p className="mt-1 text-sm font-semibold text-slate-950">
-                    {adminProfile?.clinicName ||
-                      "Assigned clinic"}
-                  </p>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-teal-700">
+                  Assigned clinic
+                </p>
 
-                  {errors.clinicId ? (
-                    <p className="mt-1 text-xs text-red-600">
-                      {
-                        errors.clinicId
-                      }
-                    </p>
-                  ) : null}
-                </div>
-              ) : (
-                <SelectField
-                  label="Clinic"
-                  value={
-                    form.clinicId
-                  }
-                  onChange={
-                    event =>
-                      setField(
-                        "clinicId",
-                        event.target
-                          .value
-                      )
-                  }
-                  error={
-                    errors.clinicId
-                  }
-                >
-                  <option value="">
-                    Select clinic
-                  </option>
+                <p className="mt-1 text-sm font-semibold text-slate-950">
+                  {adminProfile
+                    ?.clinicName ||
+                    "Assigned clinic"}
+                </p>
 
-                  {clinics.map(
-                    clinic => (
-                      <option
-                        key={
-                          clinic.id
-                        }
-                        value={
-                          clinic.id
-                        }
-                      >
-                        {
-                          clinic.name
-                        }
-                        {clinic.type
-                          ? ` — ${clinic.type}`
-                          : ""}
-                      </option>
-                    )
-                  )}
-                </SelectField>
-              )}
+              </div>
+
             </section>
 
             {form.role ===
             "Nurse" ? (
               <section className="space-y-4">
+
                 <SectionHeading
                   title="Professional details"
                   description="Nursing registration and employment information."
                 />
 
                 <div className="grid gap-4 md:grid-cols-2">
+
                   <InputField
                     label="Employee number"
                     value={
@@ -1328,17 +1330,21 @@ export default function RegisterStaffPage() {
                     }
                     required
                   />
+
                 </div>
+
               </section>
             ) : null}
 
             <section className="space-y-4">
+
               <SectionHeading
                 title="Address"
                 description="Residential information for the staff profile."
               />
 
               <div className="grid gap-4 md:grid-cols-2">
+
                 <div className="md:col-span-2">
                   <InputField
                     label="Address line 1"
@@ -1452,16 +1458,20 @@ export default function RegisterStaffPage() {
                   }
                   required
                 />
+
               </div>
+
             </section>
 
             <section className="space-y-4">
+
               <SectionHeading
                 title="Emergency contact"
                 description="A contact to use if the staff member cannot be reached during an emergency."
               />
 
               <div className="grid gap-4 md:grid-cols-2">
+
                 <div className="md:col-span-2">
                   <InputField
                     label="Emergency contact name"
@@ -1521,19 +1531,27 @@ export default function RegisterStaffPage() {
                   }
                   required
                 />
+
               </div>
+
             </section>
+
+            <Notice type="info">
+              PhilaLink will generate a temporary password on the server and email it directly to the staff member. The Clinic Administrator will never see the password.
+            </Notice>
+
           </div>
+
         </Panel>
 
         <div className="flex flex-col-reverse gap-2 border-t border-slate-200 pt-5 sm:flex-row sm:justify-end">
+
           <SecondaryButton
             type="button"
-            onClick={
-              () =>
-                resetForRole(
-                  form.role
-                )
+            onClick={() =>
+              resetForRole(
+                form.role
+              )
             }
             disabled={
               loading
@@ -1557,8 +1575,11 @@ export default function RegisterStaffPage() {
               ? "Creating account…"
               : `Register ${form.role}`}
           </PrimaryButton>
+
         </div>
+
       </form>
+
     </div>
   );
 }
