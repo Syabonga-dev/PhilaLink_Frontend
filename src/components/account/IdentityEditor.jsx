@@ -4,6 +4,10 @@ import {
 } from "react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   AlertCircle,
   CalendarDays,
   CheckCircle2,
@@ -44,41 +48,52 @@ export default function IdentityEditor({
   dateOfBirth,
   onUpdated,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const [
     dob,
     setDob,
-  ] = useState(
-    normalizeDate(
-      dateOfBirth
-    )
-  );
+  ] =
+    useState(
+      normalizeDate(
+        dateOfBirth
+      )
+    );
 
   const [
     fullIdNumber,
     setFullIdNumber,
-  ] = useState(
-    idNumber ?? ""
-  );
+  ] =
+    useState(
+      idNumber ?? ""
+    );
 
   const [
     savingDob,
     setSavingDob,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     savingId,
     setSavingId,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     error,
     setError,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     success,
     setSuccess,
-  ] = useState("");
+  ] =
+    useState("");
 
   useEffect(
     () => {
@@ -110,12 +125,14 @@ export default function IdentityEditor({
   ) {
     setDob(
       normalizeDate(
-        response?.dateOfBirth
+        response
+          ?.dateOfBirth
       )
     );
 
     setFullIdNumber(
-      response?.idNumber ??
+      response
+        ?.idNumber ??
         ""
     );
 
@@ -123,9 +140,7 @@ export default function IdentityEditor({
       message
     );
 
-    setError(
-      ""
-    );
+    setError("");
 
     onUpdated?.(
       response
@@ -139,7 +154,9 @@ export default function IdentityEditor({
 
     if (!dob) {
       setError(
-        "Select a date of birth."
+        t(
+          "identity.selectDob"
+        )
       );
 
       return;
@@ -150,13 +167,8 @@ export default function IdentityEditor({
         true
       );
 
-      setError(
-        ""
-      );
-
-      setSuccess(
-        ""
-      );
+      setError("");
+      setSuccess("");
 
       const response =
         await identityApi
@@ -167,17 +179,24 @@ export default function IdentityEditor({
 
       applyResponse(
         response,
-        "Date of birth updated. Only the first six digits of the ID number were changed."
+        t(
+          "identity.dobUpdated"
+        )
       );
-    } catch (updateError) {
+    } catch (
+      updateError
+    ) {
       console.error(
         "Failed to update date of birth:",
         updateError
       );
 
       setError(
-        updateError?.message ||
-          "Could not update the date of birth."
+        updateError
+          ?.message ||
+        t(
+          "identity.dobUpdateError"
+        )
       );
     } finally {
       setSavingDob(
@@ -192,7 +211,8 @@ export default function IdentityEditor({
     }
 
     const normalized =
-      fullIdNumber.trim();
+      fullIdNumber
+        .trim();
 
     if (
       !/^\d{13}$/.test(
@@ -200,7 +220,9 @@ export default function IdentityEditor({
       )
     ) {
       setError(
-        "Enter a valid 13-digit South African ID number."
+        t(
+          "identity.invalidId"
+        )
       );
 
       return;
@@ -211,13 +233,8 @@ export default function IdentityEditor({
         true
       );
 
-      setError(
-        ""
-      );
-
-      setSuccess(
-        ""
-      );
+      setError("");
+      setSuccess("");
 
       const response =
         await identityApi
@@ -228,17 +245,24 @@ export default function IdentityEditor({
 
       applyResponse(
         response,
-        "Full ID number updated. Date of birth was synchronized from its first six digits."
+        t(
+          "identity.idUpdated"
+        )
       );
-    } catch (updateError) {
+    } catch (
+      updateError
+    ) {
       console.error(
         "Failed to update ID number:",
         updateError
       );
 
       setError(
-        updateError?.message ||
-          "Could not update the ID number."
+        updateError
+          ?.message ||
+        t(
+          "identity.idUpdateError"
+        )
       );
     } finally {
       setSavingId(
@@ -247,45 +271,10 @@ export default function IdentityEditor({
     }
   }
 
-  function handleDobKeyDown(
-    event
-  ) {
-    if (
-      event.key !==
-      "Enter"
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    handleDobSubmit();
-  }
-
-  function handleIdKeyDown(
-    event
-  ) {
-    if (
-      event.key !==
-      "Enter"
-    ) {
-      return;
-    }
-
-    event.preventDefault();
-    event.stopPropagation();
-
-    handleIdSubmit();
-  }
-
   return (
     <section className="overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white">
-
       <div className="border-b border-[#e2e8f0] px-5 py-5 sm:px-6">
-
         <div className="flex items-start gap-3">
-
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#ccfbf1] text-[#0f766e]">
             <IdCard
               size={18}
@@ -293,30 +282,30 @@ export default function IdentityEditor({
           </div>
 
           <div className="min-w-0">
-
             <h2 className="font-semibold text-[#0f172a]">
-              Identity details
+              {t(
+                "identity.title"
+              )}
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-[#64748b]">
-              Correct your date of birth or, when necessary, replace the complete South African ID number.
+              {t(
+                "identity.description"
+              )}
             </p>
 
             <p className="mt-2 text-xs leading-5 text-[#64748b]">
-              Identity changes are saved separately from the rest of your profile. Use the relevant update button below.
+              {t(
+                "identity.separateSave"
+              )}
             </p>
-
           </div>
-
         </div>
-
       </div>
 
       <div className="space-y-6 p-5 sm:p-6">
-
         {error && (
           <div className="flex items-start gap-3 rounded-xl bg-[#fee2e2] p-4 text-[#b91c1c]">
-
             <AlertCircle
               size={18}
               className="mt-0.5 shrink-0"
@@ -325,13 +314,11 @@ export default function IdentityEditor({
             <p className="text-sm leading-5">
               {error}
             </p>
-
           </div>
         )}
 
         {success && (
           <div className="flex items-start gap-3 rounded-xl bg-[#dcfce7] p-4 text-[#166534]">
-
             <CheckCircle2
               size={18}
               className="mt-0.5 shrink-0"
@@ -340,73 +327,61 @@ export default function IdentityEditor({
             <p className="text-sm leading-5">
               {success}
             </p>
-
           </div>
         )}
 
         <div className="rounded-xl bg-[#f8fafc] p-4">
-
           <p className="text-xs font-semibold uppercase tracking-wide text-[#64748b]">
-            Current ID number
+            {t(
+              "identity.currentId"
+            )}
           </p>
 
           <p className="mt-2 break-all font-mono text-sm font-semibold text-[#0f172a]">
             {idNumber ||
-              "Not available"}
+              t(
+                "identity.notAvailable"
+              )}
           </p>
-
         </div>
 
-        {/* ================================================= */}
-        {/* DATE OF BIRTH                                     */}
-        {/* ================================================= */}
-
         <div className="space-y-4">
-
           <div>
-
             <div className="flex items-center gap-2">
-
               <CalendarDays
                 size={16}
                 className="text-[#0f766e]"
               />
 
               <h3 className="text-sm font-semibold text-[#0f172a]">
-                Correct date of birth
+                {t(
+                  "identity.correctDob"
+                )}
               </h3>
-
             </div>
 
             <p className="mt-1 text-xs leading-5 text-[#64748b]">
-              This changes only the YYMMDD prefix of your current ID number. The remaining seven digits stay exactly the same.
+              {t(
+                "identity.dobDescription"
+              )}
             </p>
-
           </div>
 
           <input
             type="date"
-            value={
-              dob
-            }
-            onKeyDown={
-              handleDobKeyDown
-            }
-            onChange={(
-              event
-            ) => {
-              setDob(
-                event.target.value
-              );
+            value={dob}
+            onChange={
+              event => {
+                setDob(
+                  event
+                    .target
+                    .value
+                );
 
-              setError(
-                ""
-              );
-
-              setSuccess(
-                ""
-              );
-            }}
+                setError("");
+                setSuccess("");
+              }
+            }
             className="h-11 w-full rounded-xl border border-[#cbd5e1] bg-white px-4 text-sm text-[#0f172a] outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
           />
 
@@ -420,46 +395,42 @@ export default function IdentityEditor({
             }
             className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl bg-[#0f766e] px-4 text-sm font-semibold text-white transition hover:bg-[#115e59] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-
             <Save
               size={16}
             />
 
             {savingDob
-              ? "Updating..."
-              : "Update date of birth"}
-
+              ? t(
+                  "identity.updating"
+                )
+              : t(
+                  "identity.updateDob"
+                )}
           </button>
-
         </div>
 
         <div className="border-t border-[#e2e8f0]" />
 
-        {/* ================================================= */}
-        {/* FULL ID NUMBER                                    */}
-        {/* ================================================= */}
-
         <div className="space-y-4">
-
           <div>
-
             <div className="flex items-center gap-2">
-
               <IdCard
                 size={16}
                 className="text-[#0f766e]"
               />
 
               <h3 className="text-sm font-semibold text-[#0f172a]">
-                Correct full ID number
+                {t(
+                  "identity.correctFullId"
+                )}
               </h3>
-
             </div>
 
             <p className="mt-1 text-xs leading-5 text-[#64748b]">
-              Use this only when digits outside the date prefix are also wrong. Your date of birth will be updated from the new ID&apos;s first six digits.
+              {t(
+                "identity.fullIdDescription"
+              )}
             </p>
-
           </div>
 
           <input
@@ -469,33 +440,29 @@ export default function IdentityEditor({
             value={
               fullIdNumber
             }
-            onKeyDown={
-              handleIdKeyDown
+            onChange={
+              event => {
+                setFullIdNumber(
+                  event
+                    .target
+                    .value
+                    .replace(
+                      /\D/g,
+                      ""
+                    )
+                    .slice(
+                      0,
+                      13
+                    )
+                );
+
+                setError("");
+                setSuccess("");
+              }
             }
-            onChange={(
-              event
-            ) => {
-              setFullIdNumber(
-                event.target.value
-                  .replace(
-                    /\D/g,
-                    ""
-                  )
-                  .slice(
-                    0,
-                    13
-                  )
-              );
-
-              setError(
-                ""
-              );
-
-              setSuccess(
-                ""
-              );
-            }}
-            placeholder="13-digit SA ID number"
+            placeholder={t(
+              "identity.idPlaceholder"
+            )}
             className="h-11 w-full rounded-xl border border-[#cbd5e1] bg-white px-4 font-mono text-sm text-[#0f172a] outline-none transition focus:border-[#0f766e] focus:ring-2 focus:ring-[#0f766e]/10"
           />
 
@@ -509,25 +476,26 @@ export default function IdentityEditor({
             }
             className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-xl border border-[#0f766e] px-4 text-sm font-semibold text-[#0f766e] transition hover:bg-[#f0fdfa] disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
           >
-
             <IdCard
               size={16}
             />
 
             {savingId
-              ? "Updating..."
-              : "Update full ID number"}
-
+              ? t(
+                  "identity.updating"
+                )
+              : t(
+                  "identity.updateFullId"
+                )}
           </button>
 
           <p className="text-xs leading-5 text-[#64748b]">
-            Your SA ID number is also your login identifier, so use the corrected number the next time you sign in.
+            {t(
+              "identity.loginIdentifier"
+            )}
           </p>
-
         </div>
-
       </div>
-
     </section>
   );
 }
