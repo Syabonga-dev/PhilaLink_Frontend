@@ -1,4 +1,10 @@
-import { useState } from "react";
+import {
+  useState,
+} from "react";
+
+import {
+  useTranslation,
+} from "react-i18next";
 
 import {
   Button,
@@ -12,6 +18,10 @@ import {
   Plus,
   X,
 } from "lucide-react";
+
+import {
+  translateAssessmentValue,
+} from "../../../../i18n/patientText.js";
 
 const commonConditions = [
   "Diabetes",
@@ -29,63 +39,78 @@ export default function AssessmentConditions({
   onNext,
   onBack,
 }) {
-  const [customCondition, setCustomCondition] =
+  const {
+    t,
+  } =
+    useTranslation();
+
+  const [
+    customCondition,
+    setCustomCondition,
+  ] =
     useState("");
 
   const conditions =
-    assessment.conditions || [];
+    assessment.conditions ||
+    [];
 
-  const toggleCondition = (condition) => {
-    if (
-      conditions.includes(
-        condition
-      )
-    ) {
-      onUpdate({
-        conditions:
-          conditions.filter(
-            (item) =>
-              item !== condition
-          ),
-      });
+  const toggleCondition =
+    condition => {
+      if (
+        conditions.includes(
+          condition
+        )
+      ) {
+        onUpdate({
+          conditions:
+            conditions.filter(
+              item =>
+                item !==
+                condition
+            ),
+        });
 
-      return;
-    }
+        return;
+      }
 
-    onUpdate({
-      conditions: [
-        ...conditions,
-        condition,
-      ],
-    });
-  };
-
-  const addCondition = () => {
-    const value =
-      customCondition.trim();
-
-    if (!value) {
-      return;
-    }
-
-    const exists =
-      conditions.some(
-        (item) =>
-          item.toLowerCase() ===
-          value.toLowerCase()
-      );
-
-    if (!exists) {
       onUpdate({
         conditions: [
           ...conditions,
-          value,
+          condition,
         ],
       });
-    }
+    };
 
-    setCustomCondition("");
-  };
+  const addCondition =
+    () => {
+      const value =
+        customCondition
+          .trim();
+
+      if (!value) {
+        return;
+      }
+
+      const exists =
+        conditions.some(
+          item =>
+            item.toLowerCase() ===
+            value.toLowerCase()
+        );
+
+      if (!exists) {
+        onUpdate({
+          conditions: [
+            ...conditions,
+            value,
+          ],
+        });
+      }
+
+      setCustomCondition(
+        ""
+      );
+    };
 
   return (
     <div className="flex flex-col gap-xl">
@@ -98,18 +123,21 @@ export default function AssessmentConditions({
         </div>
 
         <h2 className="mt-lg text-title text-text-primary">
-          Do you have any existing medical conditions?
+          {t(
+            "chatbot.conditionsTitle"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          This step is optional, but it can help make
-          the assessment more relevant.
+          {t(
+            "chatbot.conditionsDescription"
+          )}
         </p>
       </div>
 
       <div className="flex flex-wrap gap-sm">
         {commonConditions.map(
-          (condition) => {
+          condition => {
             const selected =
               conditions.includes(
                 condition
@@ -117,7 +145,9 @@ export default function AssessmentConditions({
 
             return (
               <button
-                key={condition}
+                key={
+                  condition
+                }
                 type="button"
                 onClick={() =>
                   toggleCondition(
@@ -130,7 +160,10 @@ export default function AssessmentConditions({
                     : "border-border-secondary bg-white text-text-secondary hover:border-brand-primary hover:text-text-primary"
                 }`}
               >
-                {condition}
+                {translateAssessmentValue(
+                  "condition",
+                  condition
+                )}
               </button>
             );
           }
@@ -142,55 +175,82 @@ export default function AssessmentConditions({
           htmlFor="custom-condition"
           className="mb-xs block text-video-title font-medium text-text-secondary"
         >
-          Add another condition
+          {t(
+            "chatbot.addCondition"
+          )}
         </label>
 
         <div className="flex gap-sm">
           <Input
             id="custom-condition"
-            value={customCondition}
-            onChange={(event) =>
-              setCustomCondition(
-                event.target.value
-              )
+            value={
+              customCondition
             }
-            onKeyDown={(event) => {
-              if (
-                event.key ===
-                "Enter"
-              ) {
-                event.preventDefault();
-                addCondition();
+            onChange={
+              event =>
+                setCustomCondition(
+                  event
+                    .target
+                    .value
+                )
+            }
+            onKeyDown={
+              event => {
+                if (
+                  event.key ===
+                  "Enter"
+                ) {
+                  event
+                    .preventDefault();
+
+                  addCondition();
+                }
               }
-            }}
-            placeholder="Condition name"
+            }
+            placeholder={t(
+              "chatbot.conditionPlaceholder"
+            )}
           />
 
           <button
             type="button"
-            onClick={addCondition}
+            onClick={
+              addCondition
+            }
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-md bg-brand-primary text-white"
-            aria-label="Add condition"
+            aria-label={t(
+              "chatbot.addConditionAria"
+            )}
           >
-            <Plus size={16} />
+            <Plus
+              size={16}
+            />
           </button>
         </div>
       </div>
 
-      {conditions.length > 0 && (
+      {conditions.length >
+        0 && (
         <div>
           <p className="mb-sm text-video-title font-medium text-text-secondary">
-            Selected conditions
+            {t(
+              "chatbot.selectedConditions"
+            )}
           </p>
 
           <div className="flex flex-wrap gap-sm">
             {conditions.map(
-              (condition) => (
+              condition => (
                 <span
-                  key={condition}
+                  key={
+                    condition
+                  }
                   className="inline-flex items-center gap-xs rounded-corner-full bg-bg-faint px-md py-sm text-video-title text-text-primary"
                 >
-                  {condition}
+                  {translateAssessmentValue(
+                    "condition",
+                    condition
+                  )}
 
                   <button
                     type="button"
@@ -199,9 +259,20 @@ export default function AssessmentConditions({
                         condition
                       )
                     }
-                    aria-label={`Remove ${condition}`}
+                    aria-label={t(
+                      "chatbot.removeCondition",
+                      {
+                        item:
+                          translateAssessmentValue(
+                            "condition",
+                            condition
+                          ),
+                      }
+                    )}
                   >
-                    <X size={12} />
+                    <X
+                      size={12}
+                    />
                   </button>
                 </span>
               )
@@ -214,23 +285,35 @@ export default function AssessmentConditions({
         <Button
           variant="subtle"
           iconStart={
-            <ArrowLeft size={15} />
+            <ArrowLeft
+              size={15}
+            />
           }
-          onClick={onBack}
+          onClick={
+            onBack
+          }
           className="flex-1"
         >
-          Back
+          {t(
+            "chatbot.back"
+          )}
         </Button>
 
         <Button
           variant="primary"
           iconEnd={
-            <ArrowRight size={15} />
+            <ArrowRight
+              size={15}
+            />
           }
-          onClick={onNext}
+          onClick={
+            onNext
+          }
           className="flex-1"
         >
-          Review
+          {t(
+            "chatbot.review"
+          )}
         </Button>
       </div>
     </div>
