@@ -56,9 +56,9 @@ function getWeatherKind(
 ) {
   const value =
     String(
-      description || ""
-    )
-      .toLowerCase();
+      description ||
+        ""
+    ).toLowerCase();
 
   if (
     value.includes(
@@ -151,7 +151,8 @@ function WeatherVisual({
     );
 
   if (
-    kind === "clear"
+    kind ===
+    "clear"
   ) {
     return isNight
       ? (
@@ -210,7 +211,8 @@ function WeatherVisual({
   }
 
   if (
-    kind === "rain"
+    kind ===
+    "rain"
   ) {
     return (
       <CloudRain
@@ -237,7 +239,8 @@ function WeatherVisual({
   }
 
   if (
-    kind === "snow"
+    kind ===
+    "snow"
   ) {
     return (
       <Snowflake
@@ -250,7 +253,8 @@ function WeatherVisual({
   }
 
   if (
-    kind === "fog"
+    kind ===
+    "fog"
   ) {
     return (
       <CloudFog
@@ -277,7 +281,8 @@ function formatLocationName(
 ) {
   let value =
     String(
-      locationName || ""
+      locationName ||
+        ""
     )
       .trim()
       .replace(
@@ -339,7 +344,8 @@ function getBestCurrentPosition() {
         !navigator.geolocation
       ) {
         reject({
-          code: 0,
+          code:
+            0,
         });
 
         return;
@@ -386,11 +392,14 @@ function getBestCurrentPosition() {
 
       const finish =
         () => {
-          if (settled) {
+          if (
+            settled
+          ) {
             return;
           }
 
-          settled = true;
+          settled =
+            true;
 
           cleanup();
 
@@ -406,7 +415,8 @@ function getBestCurrentPosition() {
 
           reject(
             lastError || {
-              code: 2,
+              code:
+                2,
             }
           );
         };
@@ -480,7 +490,8 @@ function getBestCurrentPosition() {
             {
               enableHighAccuracy:
                 true,
-              maximumAge: 0,
+              maximumAge:
+                0,
               timeout:
                 GPS_COLLECTION_WINDOW_MS,
             }
@@ -507,7 +518,8 @@ function getLocationErrorMessage(
   }
 
   if (
-    error.code === 1
+    error.code ===
+    1
   ) {
     return t(
       "weather.preciseLocationDenied"
@@ -515,7 +527,8 @@ function getLocationErrorMessage(
   }
 
   if (
-    error.code === 2
+    error.code ===
+    2
   ) {
     return t(
       "weather.locationUndetermined"
@@ -523,7 +536,8 @@ function getLocationErrorMessage(
   }
 
   if (
-    error.code === 3
+    error.code ===
+    3
   ) {
     return t(
       "weather.locationTimeout"
@@ -540,6 +554,7 @@ export default function WeatherChip({
 }) {
   const {
     t,
+    i18n,
   } =
     useTranslation();
 
@@ -584,7 +599,8 @@ export default function WeatherChip({
     setClockTime,
   ] =
     useState(
-      () => Date.now()
+      () =>
+        Date.now()
     );
 
   const lastRefreshRef =
@@ -593,12 +609,54 @@ export default function WeatherChip({
   const containerRef =
     useRef(null);
 
+  /*
+   * Keep the newest parent callback without making its changing
+   * identity part of the weather loader dependency chain.
+   */
+  const onNotificationCreatedRef =
+    useRef(
+      onNotificationCreated
+    );
+
+  /*
+   * Prevent overlapping requests from this component.
+   *
+   * The backend remains the final duplicate-notification safety
+   * mechanism, but these guards prevent unnecessary browser/API
+   * traffic.
+   */
+  const weatherLoadInFlightRef =
+    useRef(false);
+
+  const tipRequestInFlightRef =
+    useRef(false);
+
+  useEffect(
+    () => {
+      onNotificationCreatedRef.current =
+        onNotificationCreated;
+    },
+    [
+      onNotificationCreated,
+    ]
+  );
+
   const generateWeatherTip =
     useCallback(
       async (
         latitude,
         longitude
       ) => {
+        if (
+          tipRequestInFlightRef
+            .current
+        ) {
+          return;
+        }
+
+        tipRequestInFlightRef.current =
+          true;
+
         try {
           const result =
             await weatherApi
@@ -611,7 +669,8 @@ export default function WeatherChip({
             result
               ?.notificationCreated
           ) {
-            await onNotificationCreated?.();
+            await onNotificationCreatedRef
+              .current?.();
           }
         } catch (
           tipError
@@ -620,17 +679,19 @@ export default function WeatherChip({
             "Failed to generate weather health tip:",
             tipError
           );
+        } finally {
+          tipRequestInFlightRef.current =
+            false;
         }
       },
-      [
-        onNotificationCreated,
-      ]
+      []
     );
 
   const loadClinicWeather =
     useCallback(
       async ({
-        background = false,
+        background =
+          false,
       } = {}) => {
         const result =
           await weatherApi
@@ -644,7 +705,9 @@ export default function WeatherChip({
           "clinic"
         );
 
-        setError("");
+        setError(
+          ""
+        );
 
         lastRefreshRef.current =
           Date.now();
@@ -669,8 +732,23 @@ export default function WeatherChip({
   const loadWeather =
     useCallback(
       async ({
-        background = false,
+        background =
+          false,
       } = {}) => {
+        /*
+         * Do not start another location/OpenWeather request while
+         * one is already active.
+         */
+        if (
+          weatherLoadInFlightRef
+            .current
+        ) {
+          return;
+        }
+
+        weatherLoadInFlightRef.current =
+          true;
+
         if (
           !background
         ) {
@@ -679,16 +757,26 @@ export default function WeatherChip({
           );
         }
 
-        setError("");
-        setLocationError("");
+        setError(
+          ""
+        );
+
+        setLocationError(
+          ""
+        );
 
         const useClinicFallback =
           async geoError => {
-            if (geoError) {
+            if (
+              geoError
+            ) {
               setLocationError(
                 getLocationErrorMessage(
                   geoError,
-                  t
+                  key =>
+                    i18n.t(
+                      key
+                    )
                 )
               );
             }
@@ -717,7 +805,7 @@ export default function WeatherChip({
                 );
 
                 setError(
-                  t(
+                  i18n.t(
                     "weather.unavailable"
                   )
                 );
@@ -752,7 +840,8 @@ export default function WeatherChip({
             )
           ) {
             throw {
-              code: 2,
+              code:
+                2,
             };
           }
 
@@ -771,8 +860,13 @@ export default function WeatherChip({
             "current"
           );
 
-          setError("");
-          setLocationError("");
+          setError(
+            ""
+          );
+
+          setLocationError(
+            ""
+          );
 
           lastRefreshRef.current =
             Date.now();
@@ -793,6 +887,9 @@ export default function WeatherChip({
             locationWeatherError
           );
         } finally {
+          weatherLoadInFlightRef.current =
+            false;
+
           if (
             !background
           ) {
@@ -804,11 +901,18 @@ export default function WeatherChip({
       },
       [
         generateWeatherTip,
+        i18n,
         loadClinicWeather,
-        t,
       ]
     );
 
+  /*
+   * Weather lifecycle.
+   *
+   * Language changes do not recreate this effect because the
+   * stable i18n object is used instead of the translated `t`
+   * function as a dependency.
+   */
   useEffect(
     () => {
       void loadWeather();
@@ -817,19 +921,60 @@ export default function WeatherChip({
         window
           .setInterval(
             () => {
-              void loadWeather({
-                background:
-                  true,
-              });
+              if (
+                document
+                  .visibilityState ===
+                "visible"
+              ) {
+                void loadWeather({
+                  background:
+                    true,
+                });
+              }
             },
             WEATHER_REFRESH_INTERVAL_MS
           );
 
+      const handleVisibilityChange =
+        () => {
+          if (
+            document
+              .visibilityState !==
+            "visible"
+          ) {
+            return;
+          }
+
+          const lastRefresh =
+            lastRefreshRef.current;
+
+          if (
+            !lastRefresh ||
+            Date.now() -
+              lastRefresh >=
+              WEATHER_REFRESH_INTERVAL_MS
+          ) {
+            void loadWeather({
+              background:
+                true,
+            });
+          }
+        };
+
+      document.addEventListener(
+        "visibilitychange",
+        handleVisibilityChange
+      );
+
       return () => {
-        window
-          .clearInterval(
-            intervalId
-          );
+        window.clearInterval(
+          intervalId
+        );
+
+        document.removeEventListener(
+          "visibilitychange",
+          handleVisibilityChange
+        );
       };
     },
     [
@@ -837,6 +982,9 @@ export default function WeatherChip({
     ]
   );
 
+  /*
+   * Update day/night presentation without requesting weather.
+   */
   useEffect(
     () => {
       const intervalId =
@@ -894,30 +1042,26 @@ export default function WeatherChip({
           }
         };
 
-      document
-        .addEventListener(
+      document.addEventListener(
+        "pointerdown",
+        handlePointerDown
+      );
+
+      document.addEventListener(
+        "keydown",
+        handleKeyDown
+      );
+
+      return () => {
+        document.removeEventListener(
           "pointerdown",
           handlePointerDown
         );
 
-      document
-        .addEventListener(
+        document.removeEventListener(
           "keydown",
           handleKeyDown
         );
-
-      return () => {
-        document
-          .removeEventListener(
-            "pointerdown",
-            handlePointerDown
-          );
-
-        document
-          .removeEventListener(
-            "keydown",
-            handleKeyDown
-          );
       };
     },
     [
@@ -925,7 +1069,9 @@ export default function WeatherChip({
     ]
   );
 
-  if (loading) {
+  if (
+    loading
+  ) {
     return (
       <div
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] sm:w-auto sm:px-3"
@@ -1054,7 +1200,9 @@ export default function WeatherChip({
 
   return (
     <div
-      ref={containerRef}
+      ref={
+        containerRef
+      }
       className="relative"
     >
       <button
@@ -1066,7 +1214,9 @@ export default function WeatherChip({
           )
         }
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#334155] transition hover:bg-[#f8fafc] sm:w-auto sm:min-w-0 sm:gap-2 sm:px-3"
-        title={title}
+        title={
+          title
+        }
         aria-label={`${title}. ${description}. ${
           temperature !==
           null
@@ -1229,7 +1379,9 @@ export default function WeatherChip({
                 </p>
 
                 <p className="mt-0.5 text-sm font-semibold text-[#334155]">
-                  {locationText}
+                  {
+                    locationText
+                  }
                 </p>
               </div>
             </div>
