@@ -1,4 +1,10 @@
-import { Button } from "../AstraCompat.jsx";
+import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  Button,
+} from "../AstraCompat.jsx";
 
 import {
   AlertTriangle,
@@ -7,15 +13,52 @@ import {
   RefreshCcw,
 } from "lucide-react";
 
+import {
+  translateKnownServerText,
+} from "../../../../i18n/patientText.js";
+
 export default function EmergencyScreen({
   assessmentResult,
   onContinue,
   onRestart,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const recommendation =
-    assessmentResult
-      ?.recommendation ||
-    "Your symptoms may require immediate medical attention. Please seek emergency medical help now or go to the nearest emergency facility. Do not rely on PhilaLink for emergency treatment.";
+    translateKnownServerText(
+      assessmentResult
+        ?.recommendation
+    ) ||
+    t(
+      "chatbot.defaultEmergencyRecommendation"
+    );
+
+  const warningSigns = [
+    t(
+      "chatbot.warningChestPain"
+    ),
+    t(
+      "chatbot.warningBreathing"
+    ),
+    t(
+      "chatbot.warningConsciousness"
+    ),
+    t(
+      "chatbot.warningSeizure"
+    ),
+    t(
+      "chatbot.warningBleeding"
+    ),
+    t(
+      "chatbot.warningStroke"
+    ),
+    t(
+      "chatbot.warningAllergy"
+    ),
+  ];
 
   return (
     <div className="flex flex-col gap-xl">
@@ -30,18 +73,21 @@ export default function EmergencyScreen({
 
           <div>
             <p className="text-video-title font-semibold uppercase tracking-wide text-danger">
-              Emergency
+              {t(
+                "chatbot.emergency"
+              )}
             </p>
 
             <h2 className="mt-xs text-title text-danger">
-              Seek emergency medical attention now
+              {t(
+                "chatbot.emergencyTitle"
+              )}
             </h2>
 
             <p className="mt-sm text-label-sm leading-6 text-text-secondary">
-              One or more of the symptoms you submitted
-              matched a serious warning sign. PhilaChatBot
-              cannot safely determine the cause through
-              this chat.
+              {t(
+                "chatbot.emergencyDescription"
+              )}
             </p>
           </div>
         </div>
@@ -58,7 +104,9 @@ export default function EmergencyScreen({
 
           <div className="min-w-0">
             <p className="text-label-sm font-semibold text-danger">
-              Emergency recommendation
+              {t(
+                "chatbot.emergencyRecommendation"
+              )}
             </p>
 
             <p className="mt-xs text-label-sm leading-6 text-text-primary">
@@ -70,17 +118,23 @@ export default function EmergencyScreen({
 
       <div className="rounded-corner-lg bg-bg-faint p-lg">
         <p className="text-video-title font-medium text-text-secondary">
-          Serious warning signs may include:
+          {t(
+            "chatbot.warningSigns"
+          )}
         </p>
 
         <ul className="mt-md flex list-disc flex-col gap-sm pl-lg text-label-sm text-text-primary">
-          <li>Chest pain</li>
-          <li>Severe difficulty breathing</li>
-          <li>Loss of consciousness</li>
-          <li>Seizure</li>
-          <li>Severe bleeding</li>
-          <li>Signs of stroke</li>
-          <li>Severe allergic reaction</li>
+          {warningSigns.map(
+            sign => (
+              <li
+                key={
+                  sign
+                }
+              >
+                {sign}
+              </li>
+            )
+          )}
         </ul>
       </div>
 
@@ -98,7 +152,9 @@ export default function EmergencyScreen({
           }}
           className="w-full"
         >
-          Call emergency services
+          {t(
+            "chatbot.callEmergency"
+          )}
         </Button>
 
         <Button
@@ -108,7 +164,9 @@ export default function EmergencyScreen({
           }
           className="w-full"
         >
-          View assessment details
+          {t(
+            "chatbot.viewAssessment"
+          )}
         </Button>
 
         <Button
@@ -123,13 +181,16 @@ export default function EmergencyScreen({
           }
           className="w-full"
         >
-          Start another assessment
+          {t(
+            "chatbot.anotherAssessment"
+          )}
         </Button>
       </div>
 
       <p className="text-center text-video-title leading-5 text-text-tertiary">
-        Do not delay emergency care while using
-        PhilaChatBot.
+        {t(
+          "chatbot.emergencyFooter"
+        )}
       </p>
     </div>
   );
