@@ -24,6 +24,11 @@ import {
   patientPageResources,
 } from "./patientPageResources.js";
 
+import {
+  patientExperienceResources,
+  patientPageFixes,
+} from "./patientExperienceResources.js";
+
 function applyDocumentLanguage(
   language
 ) {
@@ -62,7 +67,8 @@ const resources =
           ] ??
           dashboardResources[
             DEFAULT_LANGUAGE
-          ];
+          ] ??
+          {};
 
         const pageTranslation =
           patientPageResources[
@@ -70,32 +76,99 @@ const resources =
           ] ??
           patientPageResources[
             DEFAULT_LANGUAGE
-          ];
+          ] ??
+          {};
+
+        const pageFix =
+          patientPageFixes[
+            language
+          ] ??
+          {};
+
+        /*
+         * PatientExperienceResources currently contains
+         * complete English and isiZulu coverage for the
+         * newly-localised patient components.
+         *
+         * Other existing language packs continue to use
+         * their current translations and fall back to
+         * English for new namespaces until their linguistic
+         * review is completed.
+         */
+        const experienceTranslation =
+          patientExperienceResources[
+            language
+          ]?.translation ??
+          patientExperienceResources[
+            DEFAULT_LANGUAGE
+          ]?.translation ??
+          {};
 
         return [
           language,
           {
             translation: {
               ...baseTranslation,
+              ...experienceTranslation,
 
               dashboard:
                 dashboardTranslation,
 
-              medications:
-                pageTranslation
-                  .medications,
+              medications: {
+                ...(
+                  pageTranslation
+                    .medications ??
+                  {}
+                ),
 
-              appointments:
-                pageTranslation
-                  .appointments,
+                ...(
+                  pageFix
+                    .medications ??
+                  {}
+                ),
+              },
 
-              records:
-                pageTranslation
-                  .records,
+              appointments: {
+                ...(
+                  pageTranslation
+                    .appointments ??
+                  {}
+                ),
 
-              clinics:
-                pageTranslation
-                  .clinics,
+                ...(
+                  pageFix
+                    .appointments ??
+                  {}
+                ),
+              },
+
+              records: {
+                ...(
+                  pageTranslation
+                    .records ??
+                  {}
+                ),
+
+                ...(
+                  pageFix
+                    .records ??
+                  {}
+                ),
+              },
+
+              clinics: {
+                ...(
+                  pageTranslation
+                    .clinics ??
+                  {}
+                ),
+
+                ...(
+                  pageFix
+                    .clinics ??
+                  {}
+                ),
+              },
             },
           },
         ];
