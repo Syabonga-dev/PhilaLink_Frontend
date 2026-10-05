@@ -1,4 +1,13 @@
-import { api } from "./client.js";
+import i18n from "../../i18n/index.js";
+
+import {
+  api,
+} from "./client.js";
+
+import {
+  localizeAppointments,
+  localizeDashboard,
+} from "../../i18n/patientText.js";
 
 export const patientsApi = {
   getMe: () =>
@@ -6,27 +15,23 @@ export const patientsApi = {
       "/api/patients/me"
     ),
 
-  updateMe: (payload) =>
+  updateMe: payload =>
     api.put(
       "/api/patients/me",
       payload
     ),
 
-  /*
-   * Dashboard data only.
-   *
-   * Medication supply is intentionally NOT fetched here.
-   * DashboardPage.jsx already loads supply separately.
-   *
-   * This prevents:
-   * - duplicate /api/medications/me/supply requests
-   * - supply timeouts from blocking the whole dashboard
-   * - unnecessary concurrent database load
-   */
-  getDashboard: () =>
-    api.get(
-      "/api/patients/me/dashboard"
-    ),
+  getDashboard:
+    async () => {
+      const result =
+        await api.get(
+          "/api/patients/me/dashboard"
+        );
+
+      return localizeDashboard(
+        result
+      );
+    },
 
   getRecords: () =>
     api.get(
@@ -47,7 +52,9 @@ export const patientsApi = {
   ) => {
     if (!medicationId) {
       throw new Error(
-        "A medication ID is required."
+        i18n.t(
+          "api.medicationIdRequired"
+        )
       );
     }
 
@@ -60,14 +67,19 @@ export const patientsApi = {
     );
   },
 
-  getAppointments: () =>
-    api.get(
-      "/api/patients/me/appointments"
-    ),
+  getAppointments:
+    async () => {
+      const result =
+        await api.get(
+          "/api/patients/me/appointments"
+        );
 
-  bookAppointment: (
-    payload
-  ) =>
+      return localizeAppointments(
+        result
+      );
+    },
+
+  bookAppointment: payload =>
     api.post(
       "/api/patients/me/appointments",
       payload
@@ -79,7 +91,9 @@ export const patientsApi = {
   ) => {
     if (!appointmentId) {
       throw new Error(
-        "An appointment ID is required."
+        i18n.t(
+          "api.appointmentIdRequired"
+        )
       );
     }
 
@@ -89,19 +103,20 @@ export const patientsApi = {
     );
   },
 
-  cancelAppointment: (
-    appointmentId
-  ) => {
-    if (!appointmentId) {
-      throw new Error(
-        "An appointment ID is required."
-      );
-    }
+  cancelAppointment:
+    appointmentId => {
+      if (!appointmentId) {
+        throw new Error(
+          i18n.t(
+            "api.appointmentIdRequired"
+          )
+        );
+      }
 
-    return api.patch(
-      `/api/patients/me/appointments/${appointmentId}/cancel`
-    );
-  },
+      return api.patch(
+        `/api/patients/me/appointments/${appointmentId}/cancel`
+      );
+    },
 
   getCollections: () =>
     api.get(
@@ -118,28 +133,27 @@ export const patientsApi = {
       "/api/patients/me/notifications"
     ),
 
-  markNotificationRead: (
-    notificationId
-  ) => {
-    if (!notificationId) {
-      throw new Error(
-        "A notification ID is required."
-      );
-    }
+  markNotificationRead:
+    notificationId => {
+      if (!notificationId) {
+        throw new Error(
+          i18n.t(
+            "api.notificationIdRequired"
+          )
+        );
+      }
 
-    return api.patch(
-      `/api/patients/me/notifications/${notificationId}/read`
-    );
-  },
+      return api.patch(
+        `/api/patients/me/notifications/${notificationId}/read`
+      );
+    },
 
   getPreferences: () =>
     api.get(
       "/api/patients/me/preferences"
     ),
 
-  updatePreferences: (
-    payload
-  ) =>
+  updatePreferences: payload =>
     api.put(
       "/api/patients/me/preferences",
       payload
@@ -150,9 +164,7 @@ export const patientsApi = {
       "/api/patients/me/language"
     ),
 
-  updateLanguage: (
-    language
-  ) =>
+  updateLanguage: language =>
     api.put(
       "/api/patients/me/language",
       {
