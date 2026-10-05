@@ -13,8 +13,12 @@ import {
 } from "./languages.js";
 
 import {
-  resources,
+  resources as baseResources,
 } from "./resources.js";
+
+import {
+  dashboardResources,
+} from "./dashboardResources.js";
 
 function applyDocumentLanguage(
   language
@@ -34,6 +38,44 @@ function applyDocumentLanguage(
 
 const initialLanguage =
   getStoredLanguage();
+
+const resources =
+  Object.fromEntries(
+    SUPPORTED_LANGUAGE_CODES.map(
+      (
+        language
+      ) => {
+        const baseTranslation =
+          baseResources[
+            language
+          ]?.translation ??
+          baseResources[
+            DEFAULT_LANGUAGE
+          ]?.translation ??
+          {};
+
+        const dashboardTranslation =
+          dashboardResources[
+            language
+          ] ??
+          dashboardResources[
+            DEFAULT_LANGUAGE
+          ];
+
+        return [
+          language,
+          {
+            translation: {
+              ...baseTranslation,
+
+              dashboard:
+                dashboardTranslation,
+            },
+          },
+        ];
+      }
+    )
+  );
 
 void i18n
   .use(
