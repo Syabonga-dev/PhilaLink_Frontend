@@ -1,4 +1,10 @@
-import { Button } from "../AstraCompat.jsx";
+import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  Button,
+} from "../AstraCompat.jsx";
 
 import {
   Bot,
@@ -8,6 +14,11 @@ import {
 export default function WelcomeScreen({
   onAccept,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   return (
     <div className="flex flex-col gap-xl">
       <div className="text-center">
@@ -19,14 +30,15 @@ export default function WelcomeScreen({
         </div>
 
         <h2 className="mt-lg text-title text-text-primary">
-          Hi, I'm PhilaChatBot
+          {t(
+            "chatbot.welcomeTitle"
+          )}
         </h2>
 
         <p className="mt-sm text-label-sm leading-6 text-text-secondary">
-          Your AI health assistant from PhilaLink. I can
-          help you understand your symptoms, check
-          medication information, and provide general
-          health guidance.
+          {t(
+            "chatbot.welcomeBody"
+          )}
         </p>
       </div>
 
@@ -41,15 +53,15 @@ export default function WelcomeScreen({
 
           <div>
             <p className="text-label-sm font-semibold text-text-primary">
-              Important disclaimer
+              {t(
+                "chatbot.disclaimerTitle"
+              )}
             </p>
 
             <p className="mt-xs text-video-title leading-5 text-text-secondary">
-              PhilaChatBot provides general health
-              information and does not replace a doctor,
-              nurse, pharmacist, or other healthcare
-              professional. Always seek professional
-              medical advice for any health concerns.
+              {t(
+                "chatbot.disclaimerBody"
+              )}
             </p>
           </div>
         </div>
@@ -57,10 +69,14 @@ export default function WelcomeScreen({
 
       <Button
         variant="primary"
-        onClick={onAccept}
+        onClick={
+          onAccept
+        }
         className="w-full"
       >
-        I understand — continue
+        {t(
+          "chatbot.understandContinue"
+        )}
       </Button>
     </div>
   );
