@@ -64,7 +64,8 @@ const APPOINTMENT_TYPE_KEYS = {
   "symptoms / feeling unwell":
     "symptoms",
 
-  other: "other",
+  other:
+    "other",
 
   appointment:
     "appointment",
@@ -87,21 +88,154 @@ export function translateAppointmentType(
 }
 
 // =========================================================
+// PROVIDER ROLES
+// =========================================================
+
+const PROVIDER_ROLE_KEYS = {
+  nurse:
+    "nurse",
+
+  "registered nurse":
+    "nurse",
+
+  doctor:
+    "doctor",
+
+  physician:
+    "doctor",
+
+  pharmacist:
+    "pharmacist",
+
+  "primary health care worker":
+    "healthcareWorker",
+
+  "primary healthcare worker":
+    "healthcareWorker",
+
+  "health care worker":
+    "healthcareWorker",
+
+  "healthcare worker":
+    "healthcareWorker",
+};
+
+export function translateProviderRole(
+  value
+) {
+  if (!value) {
+    return value;
+  }
+
+  return keyLookup(
+    value,
+    PROVIDER_ROLE_KEYS,
+    "dynamic.providerRoles"
+  );
+}
+
+// =========================================================
+// MEDICATION FORMS
+// =========================================================
+
+const MEDICATION_FORM_KEYS = {
+  tablet:
+    "tablet",
+
+  tablets:
+    "tablet",
+
+  capsule:
+    "capsule",
+
+  capsules:
+    "capsule",
+
+  syrup:
+    "syrup",
+
+  liquid:
+    "liquid",
+
+  injection:
+    "injection",
+
+  injectable:
+    "injection",
+
+  cream:
+    "cream",
+
+  ointment:
+    "ointment",
+
+  inhaler:
+    "inhaler",
+
+  drops:
+    "drops",
+
+  drop:
+    "drops",
+
+  patch:
+    "patch",
+
+  patches:
+    "patch",
+};
+
+export function translateMedicationForm(
+  value
+) {
+  if (!value) {
+    return value;
+  }
+
+  return keyLookup(
+    value,
+    MEDICATION_FORM_KEYS,
+    "dynamic.medicationForms"
+  );
+}
+
+// =========================================================
 // STATUS
 // =========================================================
 
 const STATUS_KEYS = {
-  scheduled: "scheduled",
-  confirmed: "confirmed",
-  pending: "pending",
-  completed: "completed",
-  cancelled: "cancelled",
-  canceled: "cancelled",
-  rescheduled: "rescheduled",
-  missed: "missed",
-  available: "available",
-  final: "final",
-  draft: "draft",
+  scheduled:
+    "scheduled",
+
+  confirmed:
+    "confirmed",
+
+  pending:
+    "pending",
+
+  completed:
+    "completed",
+
+  cancelled:
+    "cancelled",
+
+  canceled:
+    "cancelled",
+
+  rescheduled:
+    "rescheduled",
+
+  missed:
+    "missed",
+
+  available:
+    "available",
+
+  final:
+    "final",
+
+  draft:
+    "draft",
 };
 
 export function translateKnownStatus(
@@ -119,11 +253,126 @@ export function translateKnownStatus(
 }
 
 // =========================================================
+// HEALTH METRIC TYPES
+// =========================================================
+
+const HEALTH_METRIC_KEYS = {
+  "blood pressure":
+    "bloodPressure",
+
+  bloodpressure:
+    "bloodPressure",
+
+  bp:
+    "bloodPressure",
+
+  weight:
+    "weight",
+
+  glucose:
+    "glucose",
+
+  "blood glucose":
+    "glucose",
+
+  bloodglucose:
+    "glucose",
+
+  temperature:
+    "temperature",
+
+  "heart rate":
+    "heartRate",
+
+  heartrate:
+    "heartRate",
+
+  pulse:
+    "heartRate",
+
+  bmi:
+    "bmi",
+
+  "body mass index":
+    "bmi",
+
+  "oxygen saturation":
+    "oxygenSaturation",
+
+  oxygensaturation:
+    "oxygenSaturation",
+
+  spo2:
+    "oxygenSaturation",
+
+  "spo2":
+    "oxygenSaturation",
+};
+
+export function translateHealthMetricType(
+  value
+) {
+  if (!value) {
+    return value;
+  }
+
+  return keyLookup(
+    value,
+    HEALTH_METRIC_KEYS,
+    "dynamic.healthMetrics"
+  );
+}
+
+// =========================================================
+// HEALTH METRIC STATUS
+// =========================================================
+
+const HEALTH_METRIC_STATUS_KEYS = {
+  normal:
+    "normal",
+
+  healthy:
+    "healthy",
+
+  high:
+    "high",
+
+  low:
+    "low",
+
+  elevated:
+    "elevated",
+
+  critical:
+    "critical",
+
+  stable:
+    "stable",
+};
+
+export function translateHealthMetricStatus(
+  value
+) {
+  if (!value) {
+    return value;
+  }
+
+  return keyLookup(
+    value,
+    HEALTH_METRIC_STATUS_KEYS,
+    "dynamic.healthMetricStatuses"
+  );
+}
+
+// =========================================================
 // HEALTH RECORD TYPES / CATEGORIES
 // =========================================================
 
 const RECORD_KEYS = {
   consultation:
+    "consultation",
+
+  consultations:
     "consultation",
 
   "clinical consultation":
@@ -144,9 +393,13 @@ const RECORD_KEYS = {
   "laboratory result":
     "labResult",
 
-  test: "test",
+  test:
+    "test",
 
   medication:
+    "medication",
+
+  medications:
     "medication",
 
   observation:
@@ -155,7 +408,8 @@ const RECORD_KEYS = {
   observations:
     "observation",
 
-  vitals: "vitals",
+  vitals:
+    "vitals",
 
   "vital signs":
     "vitals",
@@ -186,8 +440,11 @@ export function translateRecordValue(
 // =========================================================
 
 const FACILITY_KEYS = {
-  clinic: "clinic",
-  hospital: "hospital",
+  clinic:
+    "clinic",
+
+  hospital:
+    "hospital",
 
   "health centre":
     "healthCentre",
@@ -221,9 +478,14 @@ export function translateFacilityType(
 // =========================================================
 
 const DIRECTION_KEYS = {
-  left: "left",
-  right: "right",
-  straight: "straight",
+  left:
+    "left",
+
+  right:
+    "right",
+
+  straight:
+    "straight",
 
   "slight left":
     "slightLeft",
@@ -237,8 +499,11 @@ const DIRECTION_KEYS = {
   "sharp right":
     "sharpRight",
 
-  uturn: "uturn",
-  "u-turn": "uturn",
+  uturn:
+    "uturn",
+
+  "u-turn":
+    "uturn",
 };
 
 export function translateRouteModifier(
@@ -264,16 +529,29 @@ export function translateRouteModifier(
 // =========================================================
 
 const SYMPTOM_KEYS = {
-  headache: "headache",
-  fever: "fever",
-  cough: "cough",
+  headache:
+    "headache",
+
+  fever:
+    "fever",
+
+  cough:
+    "cough",
 
   "sore throat":
     "soreThroat",
 
-  nausea: "nausea",
-  vomiting: "vomiting",
-  diarrhea: "diarrhea",
+  nausea:
+    "nausea",
+
+  vomiting:
+    "vomiting",
+
+  diarrhea:
+    "diarrhea",
+
+  diarrhoea:
+    "diarrhea",
 
   "stomach pain":
     "stomachPain",
@@ -284,7 +562,8 @@ const SYMPTOM_KEYS = {
   dizziness:
     "dizziness",
 
-  fatigue: "fatigue",
+  fatigue:
+    "fatigue",
 
   "runny nose":
     "runnyNose",
@@ -326,21 +605,37 @@ const DURATION_KEYS = {
 };
 
 const ALLERGY_KEYS = {
-  penicillin: "penicillin",
-  ibuprofen: "ibuprofen",
-  aspirin: "aspirin",
+  penicillin:
+    "penicillin",
+
+  ibuprofen:
+    "ibuprofen",
+
+  aspirin:
+    "aspirin",
+
   sulfonamides:
     "sulfonamides",
-  peanuts: "peanuts",
-  shellfish: "shellfish",
-  latex: "latex",
+
+  peanuts:
+    "peanuts",
+
+  shellfish:
+    "shellfish",
+
+  latex:
+    "latex",
 };
 
 const CONDITION_KEYS = {
-  diabetes: "diabetes",
+  diabetes:
+    "diabetes",
+
   hypertension:
     "hypertension",
-  asthma: "asthma",
+
+  asthma:
+    "asthma",
 
   "high cholesterol":
     "highCholesterol",
@@ -351,14 +646,34 @@ const CONDITION_KEYS = {
   "kidney disease":
     "kidneyDisease",
 
-  epilepsy: "epilepsy",
+  epilepsy:
+    "epilepsy",
 };
 
 const UNIT_KEYS = {
-  hours: "hours",
-  days: "days",
-  weeks: "weeks",
-  months: "months",
+  hours:
+    "hours",
+
+  hour:
+    "hours",
+
+  days:
+    "days",
+
+  day:
+    "days",
+
+  weeks:
+    "weeks",
+
+  week:
+    "weeks",
+
+  months:
+    "months",
+
+  month:
+    "months",
 };
 
 export function translateAssessmentValue(
@@ -510,14 +825,19 @@ function formatBackendDate(
           {
             weekday:
               "short",
+
             day:
               "numeric",
+
             month:
               "short",
+
             year:
               "numeric",
+
             hour:
               "2-digit",
+
             minute:
               "2-digit",
           }
@@ -528,9 +848,14 @@ function formatBackendDate(
       .toLocaleDateString(
         locale,
         {
-          day: "numeric",
-          month: "short",
-          year: "numeric",
+          day:
+            "numeric",
+
+          month:
+            "short",
+
+          year:
+            "numeric",
         }
       );
   } catch {
@@ -550,7 +875,9 @@ export function translateKnownNotificationMessage(
   }
 
   const text =
-    String(message);
+    String(
+      message
+    );
 
   const exactWeather = {
     "Weather health tip: Hot conditions are expected. Stay hydrated, avoid prolonged heat exposure, and seek medical help if you develop severe heat-related symptoms.":
@@ -567,9 +894,13 @@ export function translateKnownNotificationMessage(
   };
 
   const exactKey =
-    exactWeather[text];
+    exactWeather[
+      text
+    ];
 
-  if (exactKey) {
+  if (
+    exactKey
+  ) {
     return i18n.t(
       exactKey
     );
@@ -580,14 +911,18 @@ export function translateKnownNotificationMessage(
       /^Medication reminder:\s*(.+?)\s+is scheduled for\s+(\d{2}:\d{2})\s+on\s+(.+?)\.$/i
     );
 
-  if (match) {
+  if (
+    match
+  ) {
     return i18n.t(
       "systemNotifications.medicationReminder",
       {
         medication:
           match[1],
+
         time:
           match[2],
+
         date:
           formatBackendDate(
             match[3]
@@ -601,7 +936,9 @@ export function translateKnownNotificationMessage(
       /^Appointment update:\s*Your\s+(.+?)\s+at\s+(.+?)\s+is\s+(.+?)\s+for\s+(.+?)\.$/i
     );
 
-  if (match) {
+  if (
+    match
+  ) {
     return i18n.t(
       "systemNotifications.appointmentUpdate",
       {
@@ -631,7 +968,9 @@ export function translateKnownNotificationMessage(
       /^Appointment reminder - soon:\s*Your\s+(.+?)\s+at\s+(.+?)\s+starts at\s+(\d{2}:\d{2})\s+today\.$/i
     );
 
-  if (match) {
+  if (
+    match
+  ) {
     return i18n.t(
       "systemNotifications.appointmentSoon",
       {
@@ -639,8 +978,10 @@ export function translateKnownNotificationMessage(
           translateAppointmentType(
             match[1]
           ),
+
         clinic:
           match[2],
+
         time:
           match[3],
       }
@@ -652,7 +993,9 @@ export function translateKnownNotificationMessage(
       /^Appointment reminder:\s*Your\s+(.+?)\s+at\s+(.+?)\s+is scheduled for\s+(.+?)\.$/i
     );
 
-  if (match) {
+  if (
+    match
+  ) {
     return i18n.t(
       "systemNotifications.appointmentReminder",
       {
@@ -660,8 +1003,10 @@ export function translateKnownNotificationMessage(
           translateAppointmentType(
             match[1]
           ),
+
         clinic:
           match[2],
+
         date:
           formatBackendDate(
             match[3]
@@ -671,9 +1016,8 @@ export function translateKnownNotificationMessage(
   }
 
   /*
-   * Unknown/manual notification content is deliberately
-   * preserved. Clinic staff may have authored it themselves
-   * and PhilaLink should not alter clinical meaning.
+   * Unknown manually-authored notifications are preserved.
+   * We should not alter free clinical communication.
    */
   return text;
 }
@@ -686,54 +1030,71 @@ const SERVER_TEXT_PREFIXES = [
   {
     prefix:
       "Your symptoms may require immediate medical attention.",
+
     key:
       "serverText.emergencyAssessment",
   },
+
   {
     prefix:
       "These symptoms should be assessed by a healthcare professional soon.",
+
     key:
       "serverText.urgentAssessment",
   },
+
   {
     prefix:
       "Breathing symptoms should be assessed promptly by a healthcare professional.",
+
     key:
       "serverText.breathingUrgent",
   },
+
   {
     prefix:
       "No emergency or urgent warning phrase was detected from the information provided.",
+
     key:
       "serverText.nonEmergencyAssessment",
   },
+
   {
     prefix:
       "Your message contains symptoms or information that may indicate a medical emergency.",
+
     key:
       "serverText.chatbotEmergency",
   },
+
   {
     prefix:
       "Your message contains symptoms that should be assessed promptly by a healthcare professional.",
+
     key:
       "serverText.chatbotUrgent",
   },
+
   {
     prefix:
       "I’m unable to access the health assistant right now.",
+
     key:
       "serverText.chatbotUnavailable",
   },
+
   {
     prefix:
       "I'm unable to access the health assistant right now.",
+
     key:
       "serverText.chatbotUnavailable",
   },
+
   {
     prefix:
       "I could not generate a response right now.",
+
     key:
       "serverText.chatbotNoResponse",
   },
@@ -747,8 +1108,9 @@ export function translateKnownServerText(
   }
 
   const text =
-    String(value)
-      .trim();
+    String(
+      value
+    ).trim();
 
   const entry =
     SERVER_TEXT_PREFIXES.find(
@@ -768,8 +1130,29 @@ export function translateKnownServerText(
 }
 
 // =========================================================
-// APPOINTMENT OBJECT LOCALISATION
+// OBJECT LOCALISATION
 // =========================================================
+
+function requestedProviderFromNotes(
+  notes
+) {
+  if (!notes) {
+    return "";
+  }
+
+  const match =
+    String(
+      notes
+    ).match(
+      /^Requested provider:\s*(.+)$/im
+    );
+
+  return (
+    match?.[1]
+      ?.trim() ||
+    ""
+  );
+}
 
 export function localizeAppointment(
   appointment
@@ -782,18 +1165,49 @@ export function localizeAppointment(
     return appointment;
   }
 
+  const rawType =
+    appointment.rawType ??
+    appointment.type;
+
+  const providerValue =
+    appointment.providerName ||
+    appointment.nurseName ||
+    requestedProviderFromNotes(
+      appointment.notes
+    );
+
+  const translatedProvider =
+    providerValue
+      ? translateProviderRole(
+          providerValue
+        )
+      : providerValue;
+
   return {
     ...appointment,
 
-    rawType:
-      appointment.rawType ??
-      appointment.type,
+    rawType,
 
     type:
       translateAppointmentType(
-        appointment.rawType ??
-          appointment.type
+        rawType
       ),
+
+    /*
+     * Only role-like provider strings are translated.
+     * A real person's name passes through unchanged because
+     * translateProviderRole returns unknown values verbatim.
+     */
+    providerName:
+      translatedProvider ||
+      appointment.providerName,
+
+    nurseName:
+      appointment.nurseName
+        ? translateProviderRole(
+            appointment.nurseName
+          )
+        : appointment.nurseName,
   };
 }
 
@@ -807,6 +1221,104 @@ export function localizeAppointments(
         localizeAppointment
       )
     : [];
+}
+
+export function localizeMedication(
+  medication
+) {
+  if (
+    !medication ||
+    typeof medication !==
+      "object"
+  ) {
+    return medication;
+  }
+
+  const translatedCondition =
+    medication.conditionName
+      ? translateAssessmentValue(
+          "condition",
+          medication.conditionName
+        )
+      : medication.conditionName;
+
+  return {
+    ...medication,
+
+    /*
+     * Names and instructions remain untouched.
+     * Only known enum-like values are localised.
+     */
+    form:
+      translateMedicationForm(
+        medication.form
+      ),
+
+    conditionName:
+      translatedCondition,
+
+    prescribedBy:
+      translateProviderRole(
+        medication.prescribedBy
+      ),
+  };
+}
+
+export function localizeMedications(
+  value
+) {
+  return Array.isArray(
+    value
+  )
+    ? value.map(
+        localizeMedication
+      )
+    : [];
+}
+
+function localizeHealthMetric(
+  metric
+) {
+  if (
+    !metric ||
+    typeof metric !==
+      "object"
+  ) {
+    return metric;
+  }
+
+  const translatedStatus =
+    translateHealthMetricStatus(
+      metric.status
+    );
+
+  const statusChanged =
+    Boolean(
+      metric.status
+    ) &&
+    translatedStatus !==
+      metric.status;
+
+  return {
+    ...metric,
+
+    /*
+     * Keep the original raw status because DashboardPage
+     * uses it to determine the green/normal icon.
+     */
+    metricType:
+      translateHealthMetricType(
+        metric.metricType
+      ),
+
+    note:
+      metric.note ||
+      (
+        statusChanged
+          ? translatedStatus
+          : metric.note
+      ),
+  };
 }
 
 export function localizeDashboard(
@@ -835,5 +1347,18 @@ export function localizeDashboard(
             )
         : dashboard
             .upcomingAppointments,
+
+    healthMetrics:
+      Array.isArray(
+        dashboard
+          .healthMetrics
+      )
+        ? dashboard
+            .healthMetrics
+            .map(
+              localizeHealthMetric
+            )
+        : dashboard
+            .healthMetrics,
   };
 }
