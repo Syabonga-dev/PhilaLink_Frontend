@@ -1,212 +1,121 @@
-import { useState } from "react";
+import {
+  useTranslation,
+} from "react-i18next";
 
 import {
   Button,
-  Input,
 } from "../AstraCompat.jsx";
 
 import {
-  AlertTriangle,
   ArrowLeft,
   ArrowRight,
-  Plus,
-  X,
+  UserRound,
 } from "lucide-react";
 
-const commonAllergies = [
-  "Penicillin",
-  "Ibuprofen",
-  "Aspirin",
-  "Sulfonamides",
-  "Peanuts",
-  "Shellfish",
-  "Latex",
-];
-
-export default function AssessmentAllergies({
+export default function AssessmentAge({
   assessment,
   onUpdate,
   onNext,
   onBack,
 }) {
-  const [customAllergy, setCustomAllergy] =
-    useState("");
+  const {
+    t,
+  } =
+    useTranslation();
 
-  const allergies = assessment.allergies || [];
+  const age =
+    assessment.age || "";
 
-  const toggleAllergy = (allergy) => {
-    if (allergies.includes(allergy)) {
-      onUpdate({
-        allergies: allergies.filter(
-          (item) => item !== allergy
-        ),
-      });
+  const numericAge =
+    Number(age);
 
-      return;
-    }
+  const isValid =
+    age !== "" &&
+    numericAge >= 1 &&
+    numericAge <= 120;
 
-    onUpdate({
-      allergies: [
-        ...allergies,
-        allergy,
-      ],
-    });
-  };
+  const handleChange =
+    event => {
+      const value =
+        event.target
+          .value;
 
-  const addCustomAllergy = () => {
-    const value =
-      customAllergy.trim();
-
-    if (!value) {
-      return;
-    }
-
-    const exists =
-      allergies.some(
-        (item) =>
-          item.toLowerCase() ===
-          value.toLowerCase()
-      );
-
-    if (!exists) {
-      onUpdate({
-        allergies: [
-          ...allergies,
-          value,
-        ],
-      });
-    }
-
-    setCustomAllergy("");
-  };
+      if (
+        value === "" ||
+        /^\d{0,3}$/.test(
+          value
+        )
+      ) {
+        onUpdate({
+          age: value,
+        });
+      }
+    };
 
   return (
     <div className="flex flex-col gap-xl">
       <div>
-        <div className="flex h-10 w-10 items-center justify-center rounded-corner-full bg-warning/10">
-          <AlertTriangle
+        <div className="flex h-10 w-10 items-center justify-center rounded-corner-full bg-brand-tertiary">
+          <UserRound
             size={17}
-            className="text-warning"
+            className="text-brand-primary"
           />
         </div>
 
         <h2 className="mt-lg text-title text-text-primary">
-          Do you have any known allergies?
+          {t(
+            "chatbot.ageTitle"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Your allergy information helps PhilaChatBot
-          avoid unsafe medication guidance.
+          {t(
+            "chatbot.ageDescription"
+          )}
         </p>
-      </div>
-
-      <div className="flex flex-wrap gap-sm">
-        {commonAllergies.map(
-          (allergy) => {
-            const selected =
-              allergies.includes(
-                allergy
-              );
-
-            return (
-              <button
-                key={allergy}
-                type="button"
-                onClick={() =>
-                  toggleAllergy(
-                    allergy
-                  )
-                }
-                className={`rounded-corner-full border px-md py-sm text-label-sm font-medium transition ${
-                  selected
-                    ? "border-warning bg-warning/10 text-warning"
-                    : "border-border-secondary bg-white text-text-secondary hover:border-warning hover:text-text-primary"
-                }`}
-              >
-                {allergy}
-              </button>
-            );
-          }
-        )}
       </div>
 
       <div>
         <label
-          htmlFor="custom-allergy"
+          htmlFor="assessment-age"
           className="mb-xs block text-video-title font-medium text-text-secondary"
         >
-          Add another allergy
+          {t(
+            "chatbot.age"
+          )}
         </label>
 
-        <div className="flex gap-sm">
-          <Input
-            id="custom-allergy"
-            value={customAllergy}
-            onChange={(event) =>
-              setCustomAllergy(
-                event.target.value
-              )
-            }
-            onKeyDown={(event) => {
-              if (
-                event.key ===
-                "Enter"
-              ) {
-                event.preventDefault();
-                addCustomAllergy();
-              }
-            }}
-            placeholder="Type allergy"
-          />
+        <input
+          id="assessment-age"
+          type="number"
+          min="1"
+          max="120"
+          inputMode="numeric"
+          value={age}
+          onChange={
+            handleChange
+          }
+          placeholder={t(
+            "chatbot.agePlaceholder"
+          )}
+          className="w-full rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none transition placeholder:text-text-tertiary focus:border-brand-primary"
+        />
 
-          <button
-            type="button"
-            onClick={addCustomAllergy}
-            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-md bg-brand-primary text-white"
-            aria-label="Add allergy"
-          >
-            <Plus size={16} />
-          </button>
-        </div>
+        {age !== "" &&
+          !isValid && (
+            <p className="mt-xs text-video-title text-danger">
+              {t(
+                "chatbot.ageInvalid"
+              )}
+            </p>
+          )}
       </div>
-
-      {allergies.length > 0 && (
-        <div>
-          <p className="mb-sm text-video-title font-medium text-text-secondary">
-            Allergies selected
-          </p>
-
-          <div className="flex flex-wrap gap-sm">
-            {allergies.map(
-              (allergy) => (
-                <span
-                  key={allergy}
-                  className="inline-flex items-center gap-xs rounded-corner-full bg-warning/10 px-md py-sm text-video-title text-warning"
-                >
-                  {allergy}
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      toggleAllergy(
-                        allergy
-                      )
-                    }
-                    aria-label={`Remove ${allergy}`}
-                  >
-                    <X size={12} />
-                  </button>
-                </span>
-              )
-            )}
-          </div>
-        </div>
-      )}
 
       <div className="rounded-corner-md bg-bg-faint p-md">
         <p className="text-video-title leading-5 text-text-secondary">
-          If you have no known allergies, you can
-          continue without selecting anything.
+          {t(
+            "chatbot.agePrivacy"
+          )}
         </p>
       </div>
 
@@ -214,23 +123,38 @@ export default function AssessmentAllergies({
         <Button
           variant="subtle"
           iconStart={
-            <ArrowLeft size={15} />
+            <ArrowLeft
+              size={15}
+            />
           }
-          onClick={onBack}
+          onClick={
+            onBack
+          }
           className="flex-1"
         >
-          Back
+          {t(
+            "chatbot.back"
+          )}
         </Button>
 
         <Button
           variant="primary"
           iconEnd={
-            <ArrowRight size={15} />
+            <ArrowRight
+              size={15}
+            />
           }
-          onClick={onNext}
+          onClick={
+            onNext
+          }
+          disabled={
+            !isValid
+          }
           className="flex-1"
         >
-          Continue
+          {t(
+            "chatbot.continue"
+          )}
         </Button>
       </div>
     </div>
