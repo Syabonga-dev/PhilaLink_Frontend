@@ -37,6 +37,10 @@ import {
   patientFinalOverrides,
 } from "./patientFinalOverrides.js";
 
+import {
+  appointmentReasonOverrides,
+} from "./appointmentReasonOverrides.js";
+
 function isPlainObject(
   value
 ) {
@@ -262,16 +266,31 @@ const resources =
           );
 
         /*
-         * Always merge the final reviewed corrections last.
-         *
-         * This prevents older partial language packs from
-         * leaking their inherited English values back into
-         * the patient portal.
+         * Reviewed patient corrections remain above older,
+         * partial translation resources.
          */
         translation =
           deepMerge(
             translation,
             patientFinalOverrides[
+              language
+            ] ??
+              {}
+          );
+
+        /*
+         * Appointment reason translations are intentionally
+         * merged last.
+         *
+         * Some of the older completeness resources used the
+         * generic "unavailable" text for the default appointment
+         * reason in several languages. These values replace those
+         * placeholders with the actual translated reason.
+         */
+        translation =
+          deepMerge(
+            translation,
+            appointmentReasonOverrides[
               language
             ] ??
               {}
