@@ -4,6 +4,11 @@ import {
   useMemo,
   useState,
 } from "react";
+
+import {
+  useTranslation,
+} from "react-i18next";
+
 import {
   Activity,
   AlertCircle,
@@ -16,80 +21,154 @@ import {
   Search,
   Stethoscope,
 } from "lucide-react";
-import { Badge, Button } from "../../components/patient/chatbot/AstraCompat.jsx";
-import { patientsApi } from "../../services/api/patients.js";
+
+import {
+  Badge,
+  Button,
+} from "../../components/patient/chatbot/AstraCompat.jsx";
+
+import {
+  patientsApi,
+} from "../../services/api/patients.js";
+
+import {
+  getLanguageLocale,
+} from "../../i18n/languages.js";
 
 const filters = [
   {
     value: "all",
-    label: "All records",
+    labelKey:
+      "records.allRecords",
   },
   {
-    value: "consultation",
-    label: "Consultations",
+    value:
+      "consultation",
+    labelKey:
+      "records.consultations",
   },
   {
-    value: "laboratory",
-    label: "Laboratory",
+    value:
+      "laboratory",
+    labelKey:
+      "records.laboratory",
   },
   {
-    value: "medication",
-    label: "Medication",
+    value:
+      "medication",
+    labelKey:
+      "records.medication",
   },
   {
-    value: "observation",
-    label: "Observations",
+    value:
+      "observation",
+    labelKey:
+      "records.observations",
   },
 ];
 
-function normalize(value) {
-  return String(value ?? "")
+function normalize(
+  value
+) {
+  return String(
+    value ?? ""
+  )
     .trim()
     .toLowerCase();
 }
 
-function formatDate(value) {
+function formatDate(
+  value,
+  locale,
+  t
+) {
   if (!value) {
-    return "Date unavailable";
+    return t(
+      "records.dateUnavailable"
+    );
   }
 
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date unavailable";
-  }
-
-  return date.toLocaleDateString("en-ZA", {
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  });
-}
-
-function iconForCategory(category) {
-  const value = normalize(category);
+  const date =
+    new Date(value);
 
   if (
-    value.includes("consult") ||
-    value.includes("clinical")
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return t(
+      "records.dateUnavailable"
+    );
+  }
+
+  try {
+    return date
+      .toLocaleDateString(
+        locale,
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }
+      );
+  } catch {
+    return date
+      .toLocaleDateString(
+        "en-ZA",
+        {
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }
+      );
+  }
+}
+
+function iconForCategory(
+  category
+) {
+  const value =
+    normalize(
+      category
+    );
+
+  if (
+    value.includes(
+      "consult"
+    ) ||
+    value.includes(
+      "clinical"
+    )
   ) {
     return Stethoscope;
   }
 
   if (
-    value.includes("lab") ||
-    value.includes("test")
+    value.includes(
+      "lab"
+    ) ||
+    value.includes(
+      "test"
+    )
   ) {
     return FileText;
   }
 
-  if (value.includes("med")) {
+  if (
+    value.includes(
+      "med"
+    )
+  ) {
     return Pill;
   }
 
   if (
-    value.includes("observation") ||
-    value.includes("vital")
+    value.includes(
+      "observation"
+    ) ||
+    value.includes(
+      "vital"
+    )
   ) {
     return Activity;
   }
@@ -97,66 +176,137 @@ function iconForCategory(category) {
   return FileText;
 }
 
-function categoryForFilter(record) {
-  const category = normalize(
-    record?.category
-  );
+function categoryForFilter(
+  record
+) {
+  const category =
+    normalize(
+      record?.category
+    );
 
-  const type = normalize(record?.type);
+  const type =
+    normalize(
+      record?.type
+    );
 
-  const combined = `${category} ${type}`;
+  const combined =
+    `${category} ${type}`;
 
-  if (combined.includes("consult")) {
+  if (
+    combined.includes(
+      "consult"
+    )
+  ) {
     return "consultation";
   }
 
   if (
-    combined.includes("lab") ||
-    combined.includes("test")
+    combined.includes(
+      "lab"
+    ) ||
+    combined.includes(
+      "test"
+    )
   ) {
     return "laboratory";
   }
 
-  if (combined.includes("med")) {
+  if (
+    combined.includes(
+      "med"
+    )
+  ) {
     return "medication";
   }
 
   if (
-    combined.includes("observation") ||
-    combined.includes("vital")
+    combined.includes(
+      "observation"
+    ) ||
+    combined.includes(
+      "vital"
+    )
   ) {
     return "observation";
   }
 
-  return category || type || "other";
+  return (
+    category ||
+    type ||
+    "other"
+  );
 }
 
-function statusDetails(statusValue) {
-  const status = normalize(statusValue);
+function statusDetails(
+  statusValue,
+  t
+) {
+  const status =
+    normalize(
+      statusValue
+    );
 
   switch (status) {
     case "available":
+      return {
+        label:
+          t(
+            "records.available"
+          ),
+        variant:
+          "success",
+      };
+
     case "completed":
+      return {
+        label:
+          t(
+            "records.completed"
+          ),
+        variant:
+          "success",
+      };
+
     case "final":
       return {
         label:
-          statusValue || "Available",
-        variant: "success",
+          t(
+            "records.final"
+          ),
+        variant:
+          "success",
       };
 
     case "pending":
+      return {
+        label:
+          t(
+            "records.pending"
+          ),
+        variant:
+          "warning",
+      };
+
     case "draft":
       return {
         label:
-          statusValue || "Pending",
-        variant: "warning",
+          t(
+            "records.draft"
+          ),
+        variant:
+          "warning",
       };
 
     default:
       return {
         label:
-          statusValue || "Record",
-        variant: "default",
+          statusValue ||
+          t(
+            "records.record"
+          ),
+
+        variant:
+          "default",
       };
   }
 }
@@ -164,22 +314,26 @@ function statusDetails(statusValue) {
 function LoadingState() {
   return (
     <div className="flex flex-col gap-md">
-      {[1, 2, 3].map((item) => (
-        <div
-          key={item}
-          className="rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl animate-pulse"
-        >
-          <div className="flex gap-md">
-            <div className="h-10 w-10 rounded-corner-full bg-border-secondary" />
+      {[1, 2, 3].map(
+        item => (
+          <div
+            key={item}
+            className="animate-pulse rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl"
+          >
+            <div className="flex gap-md">
+              <div className="h-10 w-10 rounded-corner-full bg-border-secondary" />
 
-            <div className="flex-1">
-              <div className="mb-sm h-4 w-44 rounded bg-border-secondary" />
-              <div className="mb-sm h-3 w-32 rounded bg-border-secondary" />
-              <div className="h-3 w-56 rounded bg-border-secondary" />
+              <div className="flex-1">
+                <div className="mb-sm h-4 w-44 rounded bg-border-secondary" />
+
+                <div className="mb-sm h-3 w-32 rounded bg-border-secondary" />
+
+                <div className="h-3 w-56 rounded bg-border-secondary" />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        )
+      )}
     </div>
   );
 }
@@ -187,6 +341,11 @@ function LoadingState() {
 function EmptyState({
   hasSearch,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   return (
     <div className="rounded-corner-lg border border-border-secondary bg-surface-bg p-2xl text-center">
       <FileText
@@ -196,146 +355,241 @@ function EmptyState({
 
       <h3 className="mt-md text-label font-semibold text-text-primary">
         {hasSearch
-          ? "No records found"
-          : "No health records yet"}
+          ? t(
+              "records.noRecordsFound"
+            )
+          : t(
+              "records.noRecordsYet"
+            )}
       </h3>
 
       <p className="mt-xs text-label-sm text-text-secondary">
         {hasSearch
-          ? "Try changing your search or filter."
-          : "Your clinical records will appear here when they are added by your healthcare team."}
+          ? t(
+              "records.noRecordsFoundBody"
+            )
+          : t(
+              "records.noRecordsYetBody"
+            )}
       </p>
     </div>
   );
 }
 
 export default function RecordsPage() {
-  const [records, setRecords] =
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation();
+
+  const locale =
+    getLanguageLocale(
+      i18n.resolvedLanguage ||
+        i18n.language
+    );
+
+  const [
+    records,
+    setRecords,
+  ] =
     useState([]);
 
-  const [filter, setFilter] =
-    useState("all");
+  const [
+    filter,
+    setFilter,
+  ] =
+    useState(
+      "all"
+    );
 
-  const [search, setSearch] =
+  const [
+    search,
+    setSearch,
+  ] =
     useState("");
 
-  const [selected, setSelected] =
+  const [
+    selected,
+    setSelected,
+  ] =
     useState(null);
 
-  const [loading, setLoading] =
+  const [
+    loading,
+    setLoading,
+  ] =
     useState(true);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
 
   const loadRecords =
-    useCallback(async () => {
-      try {
-        setLoading(true);
-        setError("");
+    useCallback(
+      async () => {
+        try {
+          setLoading(
+            true
+          );
 
-        const result =
-          await patientsApi.getRecords();
+          setError(
+            ""
+          );
 
-        setRecords(
-          Array.isArray(result)
-            ? result
-            : []
-        );
-      } catch (err) {
-        console.error(
-          "Failed to load health records:",
+          const result =
+            await patientsApi
+              .getRecords();
+
+          setRecords(
+            Array.isArray(
+              result
+            )
+              ? result
+              : []
+          );
+        } catch (
           err
-        );
+        ) {
+          console.error(
+            "Failed to load health records:",
+            err
+          );
 
-        setRecords([]);
+          setRecords(
+            []
+          );
 
-        setError(
-          err?.message ||
-            "We could not load your health records."
-        );
-      } finally {
-        setLoading(false);
-      }
-    }, []);
-
-  useEffect(() => {
-    loadRecords();
-  }, [loadRecords]);
-
-  const filteredRecords =
-    useMemo(() => {
-      const query =
-        search.trim().toLowerCase();
-
-      return records.filter(
-        (record) => {
-          const matchesFilter =
-            filter === "all" ||
-            categoryForFilter(
-              record
-            ) === filter;
-
-          if (!matchesFilter) {
-            return false;
-          }
-
-          if (!query) {
-            return true;
-          }
-
-          const searchable = [
-            record.title,
-            record.type,
-            record.category,
-            record.providerName,
-            record.facility,
-            record.summary,
-            record.status,
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-          return searchable.includes(
-            query
+          setError(
+            err?.message ||
+              i18n.t(
+                "records.loadError"
+              )
+          );
+        } finally {
+          setLoading(
+            false
           );
         }
-      );
-    }, [
-      records,
-      filter,
-      search,
-    ]);
+      },
+      [
+        i18n,
+      ]
+    );
+
+  useEffect(
+    () => {
+      void loadRecords();
+    },
+    [
+      loadRecords,
+    ]
+  );
+
+  const filteredRecords =
+    useMemo(
+      () => {
+        const query =
+          search
+            .trim()
+            .toLowerCase();
+
+        return records.filter(
+          record => {
+            const matchesFilter =
+              filter ===
+                "all" ||
+              categoryForFilter(
+                record
+              ) ===
+                filter;
+
+            if (
+              !matchesFilter
+            ) {
+              return false;
+            }
+
+            if (
+              !query
+            ) {
+              return true;
+            }
+
+            const searchable =
+              [
+                record.title,
+                record.type,
+                record.category,
+                record.providerName,
+                record.facility,
+                record.summary,
+                record.status,
+              ]
+                .filter(
+                  Boolean
+                )
+                .join(" ")
+                .toLowerCase();
+
+            return searchable
+              .includes(
+                query
+              );
+          }
+        );
+      },
+      [
+        records,
+        filter,
+        search,
+      ]
+    );
 
   return (
     <div className="p-lg md:p-xl lg:p-2xl">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-lg lg:mb-xl gap-md">
+      <div className="mb-lg flex flex-col gap-md sm:flex-row sm:items-start sm:justify-between lg:mb-xl">
         <div>
           <h1 className="text-title text-text-primary">
-            Health Records
+            {t(
+              "records.title"
+            )}
           </h1>
 
-          <p className="text-label-sm text-text-secondary mt-xs">
+          <p className="mt-xs text-label-sm text-text-secondary">
             {loading
-              ? "Loading your clinical records..."
-              : `${records.length} ${
-                  records.length === 1
-                    ? "record"
-                    : "records"
-                } on file`}
+              ? t(
+                  "records.loading"
+                )
+              : t(
+                  "records.recordCount",
+                  {
+                    count:
+                      records.length,
+                  }
+                )}
           </p>
         </div>
 
         <Button
           variant="subtle"
           iconStart={
-            <RefreshCw size={15} />
+            <RefreshCw
+              size={15}
+            />
           }
-          onClick={loadRecords}
-          disabled={loading}
+          onClick={
+            loadRecords
+          }
+          disabled={
+            loading
+          }
         >
-          Refresh
+          {t(
+            "records.refresh"
+          )}
         </Button>
       </div>
 
@@ -358,14 +612,16 @@ export default function RecordsPage() {
               }
               className="mt-xs text-label-sm text-brand-primary transition-opacity hover:opacity-70"
             >
-              Try again
+              {t(
+                "common.tryAgain"
+              )}
             </button>
           </div>
         </div>
       )}
 
-      <div className="bg-surface-bg rounded-corner-lg border border-border-secondary p-lg lg:p-xl mb-lg">
-        <div className="flex flex-col md:flex-row gap-md">
+      <div className="mb-lg rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl">
+        <div className="flex flex-col gap-md md:flex-row">
           <div className="relative flex-1">
             <Search
               size={16}
@@ -374,13 +630,20 @@ export default function RecordsPage() {
 
             <input
               type="text"
-              value={search}
-              onChange={(event) =>
-                setSearch(
-                  event.target.value
-                )
+              value={
+                search
               }
-              placeholder="Search health records"
+              onChange={
+                event =>
+                  setSearch(
+                    event
+                      .target
+                      .value
+                  )
+              }
+              placeholder={t(
+                "records.searchPlaceholder"
+              )}
               className="w-full rounded-corner-md border border-border-secondary bg-white py-2.5 pl-10 pr-4 text-label-sm text-text-primary outline-none transition focus:border-brand-primary"
             />
           </div>
@@ -392,16 +655,21 @@ export default function RecordsPage() {
             />
 
             <select
-              value={filter}
-              onChange={(event) =>
-                setFilter(
-                  event.target.value
-                )
+              value={
+                filter
+              }
+              onChange={
+                event =>
+                  setFilter(
+                    event
+                      .target
+                      .value
+                  )
               }
               className="bg-transparent py-2.5 text-label-sm text-text-primary outline-none"
             >
               {filters.map(
-                (item) => (
+                item => (
                   <option
                     key={
                       item.value
@@ -410,7 +678,10 @@ export default function RecordsPage() {
                       item.value
                     }
                   >
-                    {item.label}
+                    {t(
+                      item
+                        .labelKey
+                    )}
                   </option>
                 )
               )}
@@ -421,11 +692,12 @@ export default function RecordsPage() {
 
       {loading ? (
         <LoadingState />
-      ) : filteredRecords.length >
+      ) : filteredRecords
+          .length >
         0 ? (
         <div className="flex flex-col gap-md">
           {filteredRecords.map(
-            (record) => {
+            record => {
               const Icon =
                 iconForCategory(
                   record.category ||
@@ -438,7 +710,8 @@ export default function RecordsPage() {
 
               const status =
                 statusDetails(
-                  record.status
+                  record.status,
+                  t
                 );
 
               return (
@@ -461,7 +734,7 @@ export default function RecordsPage() {
                           : record.id
                       )
                     }
-                    className="w-full p-lg lg:p-xl text-left"
+                    className="w-full p-lg text-left lg:p-xl"
                   >
                     <div className="flex items-start justify-between gap-md">
                       <div className="flex min-w-0 flex-1 items-start gap-md">
@@ -476,7 +749,9 @@ export default function RecordsPage() {
                           <div className="flex flex-wrap items-center gap-sm">
                             <h3 className="text-label-sm font-semibold text-text-primary">
                               {record.title ||
-                                "Health record"}
+                                t(
+                                  "records.healthRecord"
+                                )}
                             </h3>
 
                             {record.type && (
@@ -500,7 +775,9 @@ export default function RecordsPage() {
 
                           <p className="mt-xs text-video-title text-text-secondary">
                             {record.providerName ||
-                              "Healthcare provider"}
+                              t(
+                                "records.healthcareProvider"
+                              )}
                           </p>
 
                           <div className="mt-sm flex flex-wrap items-center gap-md">
@@ -512,7 +789,9 @@ export default function RecordsPage() {
 
                               <span className="text-video-title text-text-secondary">
                                 {formatDate(
-                                  record.recordDate
+                                  record.recordDate,
+                                  locale,
+                                  t
                                 )}
                               </span>
                             </div>
@@ -543,18 +822,24 @@ export default function RecordsPage() {
                     <div className="px-lg pb-lg lg:px-xl lg:pb-xl">
                       <div className="border-t border-border-secondary pt-lg">
                         <p className="text-video-title text-text-tertiary">
-                          Clinical summary
+                          {t(
+                            "records.clinicalSummary"
+                          )}
                         </p>
 
                         <p className="mt-sm text-label-sm leading-6 text-text-primary">
                           {record.summary ||
-                            "No clinical summary was recorded."}
+                            t(
+                              "records.noSummary"
+                            )}
                         </p>
 
                         {record.category && (
                           <div className="mt-lg">
                             <p className="text-video-title text-text-tertiary">
-                              Category
+                              {t(
+                                "records.category"
+                              )}
                             </p>
 
                             <p className="mt-xs text-label-sm text-text-primary">
@@ -578,7 +863,8 @@ export default function RecordsPage() {
             Boolean(
               search.trim()
             ) ||
-            filter !== "all"
+            filter !==
+              "all"
           }
         />
       )}
