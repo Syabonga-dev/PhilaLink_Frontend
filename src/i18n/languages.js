@@ -109,8 +109,43 @@ export function storeLanguage(
       normalized
     );
   } catch {
-    // Backend preference remains authoritative.
+    /*
+     * localStorage may be unavailable
+     * in restricted browser contexts.
+     *
+     * The backend preference remains
+     * authoritative.
+     */
   }
 
   return normalized;
+}
+
+export function isSupportedLanguage(
+  language
+) {
+  return SUPPORTED_LANGUAGE_CODES
+    .includes(
+      normalizeLanguage(
+        language
+      )
+    );
+}
+
+export function getLanguageName(
+  language
+) {
+  const normalized =
+    normalizeLanguage(
+      language
+    );
+
+  return SUPPORTED_LANGUAGES
+    .find(
+      (item) =>
+        item.code ===
+        normalized
+    )
+    ?.name ??
+    "English";
 }
