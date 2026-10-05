@@ -1,37 +1,85 @@
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   Button,
   Badge,
 } from "../AstraCompat.jsx";
 
 import {
-  ArrowLeft,
-  Sparkles,
-  Pencil,
-  UserRound,
   Activity,
-  Clock3,
   AlertTriangle,
-  Pill,
+  ArrowLeft,
+  Clock3,
   HeartPulse,
+  Pencil,
+  Pill,
+  Sparkles,
+  UserRound,
 } from "lucide-react";
 
-function displayDuration(assessment) {
+import {
+  translateAssessmentValue,
+} from "../../../../i18n/patientText.js";
+
+function displayDuration(
+  assessment,
+  t
+) {
   if (
-    assessment.duration === "custom"
+    assessment.duration ===
+    "custom"
   ) {
     if (
-      !assessment.customDurationValue
+      !assessment
+        .customDurationValue
     ) {
-      return "Not specified";
+      return t(
+        "chatbot.notSpecified"
+      );
     }
 
-    return `${assessment.customDurationValue} ${assessment.customDurationUnit}`;
+    return `${
+      assessment
+        .customDurationValue
+    } ${translateAssessmentValue(
+      "durationUnit",
+      assessment
+        .customDurationUnit
+    )}`;
   }
 
-  return (
-    assessment.duration ||
-    "Not specified"
-  );
+  return assessment.duration
+    ? translateAssessmentValue(
+        "duration",
+        assessment.duration
+      )
+    : t(
+        "chatbot.notSpecified"
+      );
+}
+
+function displayList(
+  items,
+  category,
+  fallback
+) {
+  return Array.isArray(
+    items
+  ) &&
+    items.length >
+      0
+    ? items
+        .map(
+          value =>
+            translateAssessmentValue(
+              category,
+              value
+            )
+        )
+        .join(", ")
+    : fallback;
 }
 
 export default function ReviewScreen({
@@ -40,71 +88,137 @@ export default function ReviewScreen({
   onAnalyze,
   onBack,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const sections = [
     {
-      title: "Age",
+      title:
+        t(
+          "chatbot.fields.age"
+        ),
+
       value:
         assessment.age ||
-        "Not provided",
-      icon: UserRound,
-      editTarget: "age",
+        t(
+          "chatbot.notProvided"
+        ),
+
+      icon:
+        UserRound,
+
+      editTarget:
+        "age",
     },
+
     {
-      title: "Symptoms",
+      title:
+        t(
+          "chatbot.fields.symptoms"
+        ),
+
       value:
-        assessment.symptoms
-          .length > 0
-          ? assessment.symptoms.join(
-              ", "
-            )
-          : "None selected",
+        displayList(
+          assessment
+            .symptoms,
+          "symptom",
+          t(
+            "chatbot.noneSelected"
+          )
+        ),
+
       icon: Activity,
-      editTarget: "symptoms",
+
+      editTarget:
+        "symptoms",
     },
+
     {
-      title: "Duration",
+      title:
+        t(
+          "chatbot.fields.duration"
+        ),
+
       value:
         displayDuration(
-          assessment
+          assessment,
+          t
         ),
+
       icon: Clock3,
-      editTarget: "duration",
+
+      editTarget:
+        "duration",
     },
+
     {
-      title: "Allergies",
+      title:
+        t(
+          "chatbot.fields.allergies"
+        ),
+
       value:
-        assessment.allergies
-          .length > 0
-          ? assessment.allergies.join(
-              ", "
-            )
-          : "No known allergies selected",
-      icon: AlertTriangle,
-      editTarget: "allergies",
+        displayList(
+          assessment
+            .allergies,
+          "allergy",
+          t(
+            "chatbot.noKnownAllergies"
+          )
+        ),
+
+      icon:
+        AlertTriangle,
+
+      editTarget:
+        "allergies",
     },
+
     {
-      title: "Current medications",
+      title:
+        t(
+          "chatbot.fields.medications"
+        ),
+
       value:
-        assessment.medications
-          .length > 0
-          ? assessment.medications.join(
-              ", "
-            )
-          : "None selected",
+        displayList(
+          assessment
+            .medications,
+          "medication",
+          t(
+            "chatbot.noneSelected"
+          )
+        ),
+
       icon: Pill,
-      editTarget: "medications",
+
+      editTarget:
+        "medications",
     },
+
     {
-      title: "Medical conditions",
+      title:
+        t(
+          "chatbot.fields.conditions"
+        ),
+
       value:
-        assessment.conditions
-          .length > 0
-          ? assessment.conditions.join(
-              ", "
-            )
-          : "None selected",
-      icon: HeartPulse,
-      editTarget: "conditions",
+        displayList(
+          assessment
+            .conditions,
+          "condition",
+          t(
+            "chatbot.noneSelected"
+          )
+        ),
+
+      icon:
+        HeartPulse,
+
+      editTarget:
+        "conditions",
     },
   ];
 
@@ -112,69 +226,93 @@ export default function ReviewScreen({
     <div className="flex flex-col gap-xl">
       <div>
         <Badge
-          label="Review"
+          label={t(
+            "chatbot.reviewBadge"
+          )}
           variant="default"
         />
 
         <h2 className="mt-md text-title text-text-primary">
-          Review your information
+          {t(
+            "chatbot.reviewTitle"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Make sure everything is correct before
-          PhilaChatBot prepares your health guidance.
+          {t(
+            "chatbot.reviewDescription"
+          )}
         </p>
       </div>
 
       <div className="flex flex-col divide-y divide-border-secondary rounded-corner-lg border border-border-secondary bg-white">
-        {sections.map((section) => {
-          const Icon =
-            section.icon;
+        {sections.map(
+          section => {
+            const Icon =
+              section.icon;
 
-          return (
-            <div
-              key={section.title}
-              className="flex items-start gap-md p-md"
-            >
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-corner-full bg-bg-faint">
-                <Icon
-                  size={15}
-                  className="text-text-secondary"
-                />
-              </div>
-
-              <div className="min-w-0 flex-1">
-                <p className="text-video-title font-medium text-text-tertiary">
-                  {section.title}
-                </p>
-
-                <p className="mt-xs text-label-sm leading-5 text-text-primary">
-                  {section.value}
-                </p>
-              </div>
-
-              <button
-                type="button"
-                onClick={() =>
-                  onEdit(
-                    section.editTarget
-                  )
+            return (
+              <div
+                key={
+                  section
+                    .editTarget
                 }
-                className="flex h-8 w-8 shrink-0 items-center justify-center rounded-corner-md text-text-secondary transition hover:bg-bg-faint hover:text-brand-primary"
-                aria-label={`Edit ${section.title}`}
+                className="flex items-start gap-md p-md"
               >
-                <Pencil size={14} />
-              </button>
-            </div>
-          );
-        })}
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-corner-full bg-bg-faint">
+                  <Icon
+                    size={15}
+                    className="text-text-secondary"
+                  />
+                </div>
+
+                <div className="min-w-0 flex-1">
+                  <p className="text-video-title font-medium text-text-tertiary">
+                    {
+                      section.title
+                    }
+                  </p>
+
+                  <p className="mt-xs text-label-sm leading-5 text-text-primary">
+                    {
+                      section.value
+                    }
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    onEdit(
+                      section
+                        .editTarget
+                    )
+                  }
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-corner-md text-text-secondary transition hover:bg-bg-faint hover:text-brand-primary"
+                  aria-label={t(
+                    "chatbot.edit",
+                    {
+                      item:
+                        section
+                          .title,
+                    }
+                  )}
+                >
+                  <Pencil
+                    size={14}
+                  />
+                </button>
+              </div>
+            );
+          }
+        )}
       </div>
 
       <div className="rounded-corner-md bg-brand-tertiary/50 p-md">
         <p className="text-video-title leading-5 text-text-secondary">
-          PhilaChatBot will first check for serious
-          warning signs before preparing possible
-          causes, medication guidance, and next steps.
+          {t(
+            "chatbot.reviewSafety"
+          )}
         </p>
       </div>
 
@@ -182,23 +320,35 @@ export default function ReviewScreen({
         <Button
           variant="subtle"
           iconStart={
-            <ArrowLeft size={15} />
+            <ArrowLeft
+              size={15}
+            />
           }
-          onClick={onBack}
+          onClick={
+            onBack
+          }
           className="flex-1"
         >
-          Back
+          {t(
+            "chatbot.back"
+          )}
         </Button>
 
         <Button
           variant="primary"
           iconStart={
-            <Sparkles size={15} />
+            <Sparkles
+              size={15}
+            />
           }
-          onClick={onAnalyze}
+          onClick={
+            onAnalyze
+          }
           className="flex-1"
         >
-          Analyze symptoms
+          {t(
+            "chatbot.analyzeSymptoms"
+          )}
         </Button>
       </div>
     </div>
