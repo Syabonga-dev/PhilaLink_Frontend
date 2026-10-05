@@ -12,6 +12,10 @@ import {
   storeLanguage,
 } from "./languages.js";
 
+import {
+  resources,
+} from "./resources.js";
+
 function applyDocumentLanguage(
   language
 ) {
@@ -36,6 +40,8 @@ void i18n
     initReactI18next
   )
   .init({
+    resources,
+
     lng:
       initialLanguage,
 
@@ -51,16 +57,6 @@ void i18n
     nonExplicitSupportedLngs:
       true,
 
-    /*
-     * Translation resources are deliberately
-     * added separately from the localization
-     * infrastructure.
-     *
-     * This file establishes the runtime,
-     * persistence and React integration first.
-     */
-    resources: {},
-
     interpolation: {
       escapeValue:
         false,
@@ -72,6 +68,9 @@ void i18n
     },
 
     returnNull:
+      false,
+
+    returnEmptyString:
       false,
   });
 

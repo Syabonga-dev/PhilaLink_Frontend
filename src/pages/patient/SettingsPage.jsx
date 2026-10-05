@@ -11,6 +11,7 @@ import {
   Eye,
   EyeOff,
   KeyRound,
+  Languages,
   Mail,
   MapPin,
   Moon,
@@ -23,6 +24,10 @@ import {
 } from "lucide-react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   Button,
 } from "../../components/patient/chatbot/AstraCompat.jsx";
 
@@ -33,6 +38,11 @@ import {
 import {
   useAuth,
 } from "../../context/AuthContext.jsx";
+
+import {
+  SUPPORTED_LANGUAGES,
+  normalizeLanguage,
+} from "../../i18n/languages.js";
 
 import IdentityEditor from "../../components/account/IdentityEditor.jsx";
 
@@ -73,11 +83,15 @@ const emptyPasswords = {
   confirmNewPassword: "",
 };
 
-function fieldValue(value) {
+function fieldValue(
+  value
+) {
   return value ?? "";
 }
 
-function dateInputValue(value) {
+function dateInputValue(
+  value
+) {
   if (!value) {
     return "";
   }
@@ -109,7 +123,10 @@ function dateInputValue(value) {
 
   return date
     .toISOString()
-    .slice(0, 10);
+    .slice(
+      0,
+      10
+    );
 }
 
 function getInitialTheme() {
@@ -185,6 +202,12 @@ function passwordIsValid(
 }
 
 export default function SettingsPage() {
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation();
+
   const {
     user,
     changePassword,
@@ -285,6 +308,12 @@ export default function SettingsPage() {
       passwords.newPassword
     );
 
+  const currentLanguage =
+    normalizeLanguage(
+      i18n.resolvedLanguage ||
+        i18n.language
+    );
+
   const loadSettings =
     useCallback(
       async () => {
@@ -317,7 +346,8 @@ export default function SettingsPage() {
 
             email:
               fieldValue(
-                patient?.email
+                patient
+                  ?.email
               ),
 
             phoneNumber:
@@ -334,7 +364,8 @@ export default function SettingsPage() {
 
             gender:
               fieldValue(
-                patient?.gender
+                patient
+                  ?.gender
               ),
 
             addressLine1:
@@ -351,12 +382,14 @@ export default function SettingsPage() {
 
             suburb:
               fieldValue(
-                patient?.suburb
+                patient
+                  ?.suburb
               ),
 
             city:
               fieldValue(
-                patient?.city
+                patient
+                  ?.city
               ),
 
             province:
@@ -437,7 +470,9 @@ export default function SettingsPage() {
 
           setError(
             err?.message ||
-              "We could not load your settings."
+              i18n.t(
+                "settings.loadError"
+              )
           );
         } finally {
           setLoading(
@@ -445,7 +480,9 @@ export default function SettingsPage() {
           );
         }
       },
-      []
+      [
+        i18n,
+      ]
     );
 
   useEffect(
@@ -471,7 +508,7 @@ export default function SettingsPage() {
           theme
         );
       } catch {
-        // Theme still works for the current session.
+        // Theme still works for this session.
       }
     },
     [
@@ -489,7 +526,9 @@ export default function SettingsPage() {
       event.target;
 
     setProfile(
-      (current) => ({
+      (
+        current
+      ) => ({
         ...current,
         [name]:
           value,
@@ -505,7 +544,9 @@ export default function SettingsPage() {
     setSuccess("");
 
     setPreferences(
-      (current) => ({
+      (
+        current
+      ) => ({
         ...current,
 
         [key]:
@@ -516,12 +557,28 @@ export default function SettingsPage() {
 
   function toggleTheme() {
     setTheme(
-      (current) =>
+      (
+        current
+      ) =>
         current ===
         "light"
           ? "dark"
           : "light"
     );
+  }
+
+  async function handleLanguageChange(
+    event
+  ) {
+    const language =
+      normalizeLanguage(
+        event.target.value
+      );
+
+    await i18n
+      .changeLanguage(
+        language
+      );
   }
 
   function handlePasswordChange(
@@ -534,7 +591,9 @@ export default function SettingsPage() {
       event.target;
 
     setPasswords(
-      (current) => ({
+      (
+        current
+      ) => ({
         ...current,
 
         [name]:
@@ -543,7 +602,9 @@ export default function SettingsPage() {
     );
 
     setPasswordErrors(
-      (current) => ({
+      (
+        current
+      ) => ({
         ...current,
 
         [name]:
@@ -565,11 +626,13 @@ export default function SettingsPage() {
         await patientsApi
           .updateMe({
             fullName:
-              profile.fullName
+              profile
+                .fullName
                 .trim(),
 
             email:
-              profile.email
+              profile
+                .email
                 .trim(),
 
             phoneNumber:
@@ -577,9 +640,9 @@ export default function SettingsPage() {
                 .phoneNumber
                 .trim(),
 
-
             gender:
-              profile.gender
+              profile
+                .gender
                 .trim(),
 
             addressLine1:
@@ -594,15 +657,18 @@ export default function SettingsPage() {
               null,
 
             suburb:
-              profile.suburb
+              profile
+                .suburb
                 .trim(),
 
             city:
-              profile.city
+              profile
+                .city
                 .trim(),
 
             province:
-              profile.province
+              profile
+                .province
                 .trim(),
 
             postalCode:
@@ -631,69 +697,59 @@ export default function SettingsPage() {
           preferences
         );
 
-setPatientInfo(
-  updatedPatient
-);
+      setPatientInfo(
+        updatedPatient
+      );
 
-/*
- * Keep AuthContext synchronized with profile changes so
- * components such as the top bar immediately display the
- * patient's latest name and contact information.
- *
- * Do not replace the authenticated user with updatedPatient
- * because PatientMeDto does not contain all authentication
- * fields such as role and mustChangePassword.
- */
-if (user) {
-  setUser({
-    ...user,
+      if (user) {
+        setUser({
+          ...user,
 
-    fullName:
-      updatedPatient
-        ?.fullName ??
-      user.fullName,
+          fullName:
+            updatedPatient
+              ?.fullName ??
+            user.fullName,
 
-    email:
-      updatedPatient
-        ?.email ??
-      user.email,
+          email:
+            updatedPatient
+              ?.email ??
+            user.email,
 
-    phoneNumber:
-      updatedPatient
-        ?.phoneNumber ??
-      user.phoneNumber,
-  });
-}
+          phoneNumber:
+            updatedPatient
+              ?.phoneNumber ??
+            user.phoneNumber,
+        });
+      }
 
-/*
- * Use the values returned by the backend because the server
- * may normalize them, for example converting email to
- * lowercase.
- */
-setProfile(
-  (current) => ({
-    ...current,
+      setProfile(
+        (
+          current
+        ) => ({
+          ...current,
 
-    fullName:
-      updatedPatient
-        ?.fullName ??
-      current.fullName,
+          fullName:
+            updatedPatient
+              ?.fullName ??
+            current.fullName,
 
-    email:
-      updatedPatient
-        ?.email ??
-      current.email,
+          email:
+            updatedPatient
+              ?.email ??
+            current.email,
 
-    phoneNumber:
-      updatedPatient
-        ?.phoneNumber ??
-      current.phoneNumber,
-  })
-);
+          phoneNumber:
+            updatedPatient
+              ?.phoneNumber ??
+            current.phoneNumber,
+        })
+      );
 
-setSuccess(
-  "Your settings have been saved."
-);
+      setSuccess(
+        t(
+          "settings.saved"
+        )
+      );
     } catch (
       err
     ) {
@@ -704,22 +760,29 @@ setSuccess(
 
       setError(
         err?.message ||
-          "We could not save your settings."
+          t(
+            "settings.saveError"
+          )
       );
     } finally {
-      setSaving(false);
+      setSaving(
+        false
+      );
     }
   }
 
   function validatePasswordChange() {
-    const next = {};
+    const next =
+      {};
 
     if (
       !passwords
         .currentPassword
     ) {
       next.currentPassword =
-        "Enter your current password.";
+        t(
+          "settings.currentPasswordRequired"
+        );
     }
 
     if (
@@ -727,7 +790,9 @@ setSuccess(
         .newPassword
     ) {
       next.newPassword =
-        "Enter a new password.";
+        t(
+          "settings.newPasswordRequired"
+        );
     } else if (
       !passwordIsValid(
         passwords
@@ -735,7 +800,9 @@ setSuccess(
       )
     ) {
       next.newPassword =
-        "Your new password must meet all the requirements below.";
+        t(
+          "settings.newPasswordInvalid"
+        );
     }
 
     if (
@@ -743,7 +810,9 @@ setSuccess(
         .confirmNewPassword
     ) {
       next.confirmNewPassword =
-        "Confirm your new password.";
+        t(
+          "settings.confirmPasswordRequired"
+        );
     } else if (
       passwords
         .newPassword !==
@@ -751,7 +820,9 @@ setSuccess(
         .confirmNewPassword
     ) {
       next.confirmNewPassword =
-        "Passwords don't match.";
+        t(
+          "settings.passwordsMismatch"
+        );
     }
 
     if (
@@ -765,7 +836,9 @@ setSuccess(
           .newPassword
     ) {
       next.newPassword =
-        "Your new password must be different from your current password.";
+        t(
+          "settings.passwordSame"
+        );
     }
 
     setPasswordErrors(
@@ -834,7 +907,9 @@ setSuccess(
       );
 
       setPasswordSuccess(
-        "Your password has been changed successfully."
+        t(
+          "settings.passwordChanged"
+        )
       );
     } catch (
       err
@@ -846,7 +921,9 @@ setSuccess(
 
       setPasswordError(
         err?.message ||
-          "We could not change your password. Please try again."
+          t(
+            "settings.passwordChangeError"
+          )
       );
     } finally {
       setChangingPassword(
@@ -878,14 +955,15 @@ setSuccess(
       <div className="mx-auto w-full max-w-[1500px]">
         <div className="mb-6 lg:mb-8">
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
-            Settings
+            {t(
+              "settings.title"
+            )}
           </h1>
 
           <p className="mt-1 text-sm text-slate-500">
-            Manage your profile,
-            security,
-            notifications,
-            privacy and appearance.
+            {t(
+              "settings.subtitle"
+            )}
           </p>
         </div>
 
@@ -908,7 +986,9 @@ setSuccess(
                 }
                 className="mt-2 text-sm font-medium text-teal-700 transition hover:text-teal-800"
               >
-                Reload settings
+                {t(
+                  "settings.reloadSettings"
+                )}
               </button>
             </div>
           </div>
@@ -930,18 +1010,20 @@ setSuccess(
         <div className="grid grid-cols-1 gap-6 xl:grid-cols-3">
           <div className="flex min-w-0 flex-col gap-6 xl:col-span-2">
 
-            {/* ================================================= */}
-            {/* PERSONAL INFORMATION */}
-            {/* ================================================= */}
-
             <SettingsSection
               icon={User}
-              title="Personal information"
-              description="Keep your personal and contact details up to date."
+              title={t(
+                "settings.personalTitle"
+              )}
+              description={t(
+                "settings.personalDescription"
+              )}
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <Field
-                  label="Full name"
+                  label={t(
+                    "settings.fullName"
+                  )}
                   name="fullName"
                   value={
                     profile
@@ -954,11 +1036,14 @@ setSuccess(
                 />
 
                 <Field
-                  label="Email address"
+                  label={t(
+                    "settings.email"
+                  )}
                   name="email"
                   type="email"
                   value={
-                    profile.email
+                    profile
+                      .email
                   }
                   onChange={
                     handleProfileChange
@@ -967,7 +1052,9 @@ setSuccess(
                 />
 
                 <Field
-                  label="Phone number"
+                  label={t(
+                    "settings.phone"
+                  )}
                   name="phoneNumber"
                   type="tel"
                   value={
@@ -980,20 +1067,22 @@ setSuccess(
                   icon={Phone}
                 />
 
-
                 <div className="md:col-span-2">
                   <label
                     htmlFor="gender"
                     className="mb-2 block text-sm font-medium text-slate-700"
                   >
-                    Gender
+                    {t(
+                      "settings.gender"
+                    )}
                   </label>
 
                   <select
                     id="gender"
                     name="gender"
                     value={
-                      profile.gender
+                      profile
+                        .gender
                     }
                     onChange={
                       handleProfileChange
@@ -1001,23 +1090,33 @@ setSuccess(
                     className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10"
                   >
                     <option value="">
-                      Select gender
+                      {t(
+                        "settings.selectGender"
+                      )}
                     </option>
 
                     <option value="Male">
-                      Male
+                      {t(
+                        "settings.male"
+                      )}
                     </option>
 
                     <option value="Female">
-                      Female
+                      {t(
+                        "settings.female"
+                      )}
                     </option>
 
                     <option value="Other">
-                      Other
+                      {t(
+                        "settings.other"
+                      )}
                     </option>
 
                     <option value="Prefer not to say">
-                      Prefer not to say
+                      {t(
+                        "settings.preferNot"
+                      )}
                     </option>
                   </select>
                 </div>
@@ -1026,49 +1125,63 @@ setSuccess(
 
             <IdentityEditor
               idNumber={
-                patientInfo?.idNumber
+                patientInfo
+                  ?.idNumber
               }
               dateOfBirth={
-                profile.dateOfBirth
+                profile
+                  .dateOfBirth
               }
               onUpdated={(
                 identity
               ) => {
                 setPatientInfo(
-                  (current) => ({
+                  (
+                    current
+                  ) => ({
                     ...current,
+
                     idNumber:
-                      identity.idNumber,
+                      identity
+                        .idNumber,
+
                     dateOfBirth:
-                      identity.dateOfBirth,
+                      identity
+                        .dateOfBirth,
                   })
                 );
 
                 setProfile(
-                  (current) => ({
+                  (
+                    current
+                  ) => ({
                     ...current,
+
                     dateOfBirth:
                       dateInputValue(
-                        identity.dateOfBirth
+                        identity
+                          .dateOfBirth
                       ),
                   })
                 );
               }}
             />
 
-            {/* ================================================= */}
-            {/* ADDRESS */}
-            {/* ================================================= */}
-
             <SettingsSection
               icon={MapPin}
-              title="Address"
-              description="Update your residential address."
+              title={t(
+                "settings.addressTitle"
+              )}
+              description={t(
+                "settings.addressDescription"
+              )}
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <Field
-                    label="Address line 1"
+                    label={t(
+                      "settings.addressLine1"
+                    )}
                     name="addressLine1"
                     value={
                       profile
@@ -1082,7 +1195,9 @@ setSuccess(
 
                 <div className="md:col-span-2">
                   <Field
-                    label="Address line 2"
+                    label={t(
+                      "settings.addressLine2"
+                    )}
                     name="addressLine2"
                     value={
                       profile
@@ -1095,10 +1210,13 @@ setSuccess(
                 </div>
 
                 <Field
-                  label="Suburb"
+                  label={t(
+                    "settings.suburb"
+                  )}
                   name="suburb"
                   value={
-                    profile.suburb
+                    profile
+                      .suburb
                   }
                   onChange={
                     handleProfileChange
@@ -1106,10 +1224,13 @@ setSuccess(
                 />
 
                 <Field
-                  label="City"
+                  label={t(
+                    "settings.city"
+                  )}
                   name="city"
                   value={
-                    profile.city
+                    profile
+                      .city
                   }
                   onChange={
                     handleProfileChange
@@ -1117,7 +1238,9 @@ setSuccess(
                 />
 
                 <Field
-                  label="Province"
+                  label={t(
+                    "settings.province"
+                  )}
                   name="province"
                   value={
                     profile
@@ -1129,7 +1252,9 @@ setSuccess(
                 />
 
                 <Field
-                  label="Postal code"
+                  label={t(
+                    "settings.postalCode"
+                  )}
                   name="postalCode"
                   value={
                     profile
@@ -1142,18 +1267,20 @@ setSuccess(
               </div>
             </SettingsSection>
 
-            {/* ================================================= */}
-            {/* EMERGENCY CONTACT */}
-            {/* ================================================= */}
-
             <SettingsSection
               icon={Phone}
-              title="Emergency contact"
-              description="Keep your emergency contact information current."
+              title={t(
+                "settings.emergencyTitle"
+              )}
+              description={t(
+                "settings.emergencyDescription"
+              )}
             >
               <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
                 <Field
-                  label="Contact name"
+                  label={t(
+                    "settings.contactName"
+                  )}
                   name="emergencyContactName"
                   value={
                     profile
@@ -1165,7 +1292,9 @@ setSuccess(
                 />
 
                 <Field
-                  label="Contact number"
+                  label={t(
+                    "settings.contactNumber"
+                  )}
                   name="emergencyContactPhone"
                   type="tel"
                   value={
@@ -1179,7 +1308,9 @@ setSuccess(
 
                 <div className="md:col-span-2">
                   <Field
-                    label="Relationship"
+                    label={t(
+                      "settings.relationship"
+                    )}
                     name="emergencyContactRelationship"
                     value={
                       profile
@@ -1193,14 +1324,14 @@ setSuccess(
               </div>
             </SettingsSection>
 
-            {/* ================================================= */}
-            {/* SECURITY */}
-            {/* ================================================= */}
-
             <SettingsSection
               icon={KeyRound}
-              title="Account security"
-              description="Change your PhilaLink account password."
+              title={t(
+                "settings.securityTitle"
+              )}
+              description={t(
+                "settings.securityDescription"
+              )}
             >
               <form
                 onSubmit={
@@ -1209,38 +1340,30 @@ setSuccess(
                 noValidate
               >
                 {passwordError && (
-                  <div className="mb-5 flex items-start gap-3 rounded-xl border border-red-200 bg-red-50 p-4">
-                    <AlertCircle
-                      size={17}
-                      className="mt-0.5 shrink-0 text-red-600"
-                    />
-
-                    <p className="text-sm text-slate-900">
-                      {
-                        passwordError
-                      }
-                    </p>
-                  </div>
+                  <MessageBox
+                    type="error"
+                  >
+                    {
+                      passwordError
+                    }
+                  </MessageBox>
                 )}
 
                 {passwordSuccess && (
-                  <div className="mb-5 flex items-start gap-3 rounded-xl border border-green-200 bg-green-50 p-4">
-                    <CheckCircle
-                      size={17}
-                      className="mt-0.5 shrink-0 text-green-600"
-                    />
-
-                    <p className="text-sm text-slate-900">
-                      {
-                        passwordSuccess
-                      }
-                    </p>
-                  </div>
+                  <MessageBox
+                    type="success"
+                  >
+                    {
+                      passwordSuccess
+                    }
+                  </MessageBox>
                 )}
 
                 <div className="grid grid-cols-1 gap-5">
                   <PasswordField
-                    label="Current password"
+                    label={t(
+                      "settings.currentPassword"
+                    )}
                     name="currentPassword"
                     value={
                       passwords
@@ -1258,7 +1381,9 @@ setSuccess(
                     }
                     onToggle={() =>
                       setShowCurrentPassword(
-                        (current) =>
+                        (
+                          current
+                        ) =>
                           !current
                       )
                     }
@@ -1266,7 +1391,9 @@ setSuccess(
                   />
 
                   <PasswordField
-                    label="New password"
+                    label={t(
+                      "settings.newPassword"
+                    )}
                     name="newPassword"
                     value={
                       passwords
@@ -1284,7 +1411,9 @@ setSuccess(
                     }
                     onToggle={() =>
                       setShowNewPassword(
-                        (current) =>
+                        (
+                          current
+                        ) =>
                           !current
                       )
                     }
@@ -1292,7 +1421,9 @@ setSuccess(
                   />
 
                   <PasswordField
-                    label="Confirm new password"
+                    label={t(
+                      "settings.confirmPassword"
+                    )}
                     name="confirmNewPassword"
                     value={
                       passwords
@@ -1310,7 +1441,9 @@ setSuccess(
                     }
                     onToggle={() =>
                       setShowConfirmPassword(
-                        (current) =>
+                        (
+                          current
+                        ) =>
                           !current
                       )
                     }
@@ -1320,7 +1453,9 @@ setSuccess(
 
                 <div className="mt-5 rounded-xl bg-slate-50 p-4">
                   <p className="text-sm font-medium text-slate-800">
-                    Your new password must contain:
+                    {t(
+                      "settings.passwordMustContain"
+                    )}
                   </p>
 
                   <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -1330,7 +1465,9 @@ setSuccess(
                           .length
                       }
                     >
-                      At least 12 characters
+                      {t(
+                        "settings.requirementLength"
+                      )}
                     </PasswordRequirement>
 
                     <PasswordRequirement
@@ -1339,7 +1476,9 @@ setSuccess(
                           .uppercase
                       }
                     >
-                      1 uppercase letter
+                      {t(
+                        "settings.requirementUppercase"
+                      )}
                     </PasswordRequirement>
 
                     <PasswordRequirement
@@ -1348,7 +1487,9 @@ setSuccess(
                           .lowercase
                       }
                     >
-                      1 lowercase letter
+                      {t(
+                        "settings.requirementLowercase"
+                      )}
                     </PasswordRequirement>
 
                     <PasswordRequirement
@@ -1357,7 +1498,9 @@ setSuccess(
                           .number
                       }
                     >
-                      1 number
+                      {t(
+                        "settings.requirementNumber"
+                      )}
                     </PasswordRequirement>
 
                     <PasswordRequirement
@@ -1366,7 +1509,9 @@ setSuccess(
                           .special
                       }
                     >
-                      1 special character
+                      {t(
+                        "settings.requirementSpecial"
+                      )}
                     </PasswordRequirement>
                   </div>
                 </div>
@@ -1384,27 +1529,37 @@ setSuccess(
                       changingPassword
                     }
                   >
-                    {changingPassword
-                      ? "Changing password..."
-                      : "Change password"}
+                    {
+                      changingPassword
+                        ? t(
+                            "settings.changingPassword"
+                          )
+                        : t(
+                            "settings.changePassword"
+                          )
+                    }
                   </Button>
                 </div>
               </form>
             </SettingsSection>
 
-            {/* ================================================= */}
-            {/* NOTIFICATIONS */}
-            {/* ================================================= */}
-
             <SettingsSection
               icon={Bell}
-              title="Notifications"
-              description="Choose which reminders and updates you want to receive."
+              title={t(
+                "settings.notificationsTitle"
+              )}
+              description={t(
+                "settings.notificationsDescription"
+              )}
             >
               <div className="divide-y divide-slate-200">
                 <SettingToggle
-                  title="Medication reminders"
-                  description="Receive reminders when your medication is due."
+                  title={t(
+                    "settings.medicationReminders"
+                  )}
+                  description={t(
+                    "settings.medicationRemindersDescription"
+                  )}
                   checked={
                     preferences
                       .medicationReminders
@@ -1417,8 +1572,12 @@ setSuccess(
                 />
 
                 <SettingToggle
-                  title="Appointment reminders"
-                  description="Get notified before upcoming appointments."
+                  title={t(
+                    "settings.appointmentReminders"
+                  )}
+                  description={t(
+                    "settings.appointmentRemindersDescription"
+                  )}
                   checked={
                     preferences
                       .appointmentReminders
@@ -1431,8 +1590,12 @@ setSuccess(
                 />
 
                 <SettingToggle
-                  title="Clinic notifications"
-                  description="Receive updates from your registered clinic."
+                  title={t(
+                    "settings.clinicNotifications"
+                  )}
+                  description={t(
+                    "settings.clinicNotificationsDescription"
+                  )}
                   checked={
                     preferences
                       .clinicNotifications
@@ -1445,8 +1608,12 @@ setSuccess(
                 />
 
                 <SettingToggle
-                  title="General health updates"
-                  description="Receive health information from PhilaLink."
+                  title={t(
+                    "settings.healthUpdates"
+                  )}
+                  description={t(
+                    "settings.healthUpdatesDescription"
+                  )}
                   checked={
                     preferences
                       .healthUpdates
@@ -1460,19 +1627,23 @@ setSuccess(
               </div>
             </SettingsSection>
 
-            {/* ================================================= */}
-            {/* PRIVACY */}
-            {/* ================================================= */}
-
             <SettingsSection
               icon={Shield}
-              title="Privacy"
-              description="Control how your information is used inside PhilaLink."
+              title={t(
+                "settings.privacyTitle"
+              )}
+              description={t(
+                "settings.privacyDescription"
+              )}
             >
               <div className="divide-y divide-slate-200">
                 <SettingToggle
-                  title="Share relevant health data"
-                  description="Allow authorized healthcare staff to access relevant information in your PhilaLink record."
+                  title={t(
+                    "settings.shareHealthData"
+                  )}
+                  description={t(
+                    "settings.shareHealthDataDescription"
+                  )}
                   checked={
                     preferences
                       .shareHealthData
@@ -1485,8 +1656,12 @@ setSuccess(
                 />
 
                 <SettingToggle
-                  title="Allow PhilaChatBot profile access"
-                  description="Allow PhilaChatBot to use saved profile and health information during assessments."
+                  title={t(
+                    "settings.chatbotAccess"
+                  )}
+                  description={t(
+                    "settings.chatbotAccessDescription"
+                  )}
                   checked={
                     preferences
                       .allowChatbotProfileAccess
@@ -1515,18 +1690,29 @@ setSuccess(
                   saving
                 }
               >
-                {saving
-                  ? "Saving..."
-                  : "Save changes"}
+                {
+                  saving
+                    ? t(
+                        "settings.saving"
+                      )
+                    : t(
+                        "settings.saveChanges"
+                      )
+                }
               </Button>
             </div>
           </div>
 
-          {/* ================================================= */}
-          {/* RIGHT SIDEBAR */}
-          {/* ================================================= */}
-
           <aside className="flex min-w-0 flex-col gap-6">
+            <LanguageCard
+              value={
+                currentLanguage
+              }
+              onChange={
+                handleLanguageChange
+              }
+            />
+
             <ThemeCard
               theme={
                 theme
@@ -1538,12 +1724,16 @@ setSuccess(
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6">
               <h2 className="text-base font-semibold text-slate-900">
-                Patient details
+                {t(
+                  "settings.patientDetails"
+                )}
               </h2>
 
               <div className="mt-5 flex flex-col gap-5">
                 <InfoItem
-                  label="Patient number"
+                  label={t(
+                    "settings.patientNumber"
+                  )}
                   value={
                     patientInfo
                       ?.patientNumber ||
@@ -1552,21 +1742,31 @@ setSuccess(
                 />
 
                 <InfoItem
-                  label="Registered clinic"
+                  label={t(
+                    "settings.registeredClinic"
+                  )}
                   value={
                     patientInfo
                       ?.clinicName ||
-                    "Not assigned"
+                    t(
+                      "settings.notAssigned"
+                    )
                   }
                 />
 
                 <InfoItem
-                  label="Profile status"
+                  label={t(
+                    "settings.profileStatus"
+                  )}
                   value={
                     patientInfo
                       ?.isProfileComplete
-                      ? "Complete"
-                      : "Incomplete"
+                      ? t(
+                          "settings.complete"
+                        )
+                      : t(
+                          "settings.incomplete"
+                        )
                   }
                 />
               </div>
@@ -1574,77 +1774,99 @@ setSuccess(
 
             <section className="rounded-2xl border border-slate-200 bg-white p-5 lg:p-6">
               <h2 className="text-base font-semibold text-slate-900">
-                Medical profile
+                {t(
+                  "settings.medicalProfile"
+                )}
               </h2>
 
               <div className="mt-5">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Allergies
+                  {t(
+                    "settings.allergies"
+                  )}
                 </p>
 
-                {patientInfo
-                  ?.allergies
-                  ?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {patientInfo
-                      .allergies
-                      .map(
-                        (
-                          allergy
-                        ) => (
-                          <span
-                            key={
-                              allergy.id
-                            }
-                            className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
-                          >
-                            {
-                              allergy.name
-                            }
-                          </span>
-                        )
-                      )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    None recorded
-                  </p>
-                )}
+                {
+                  patientInfo
+                    ?.allergies
+                    ?.length
+                    ? (
+                        <div className="flex flex-wrap gap-2">
+                          {
+                            patientInfo
+                              .allergies
+                              .map(
+                                (
+                                  allergy
+                                ) => (
+                                  <span
+                                    key={
+                                      allergy.id
+                                    }
+                                    className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
+                                  >
+                                    {
+                                      allergy.name
+                                    }
+                                  </span>
+                                )
+                              )
+                          }
+                        </div>
+                      )
+                    : (
+                        <p className="text-sm text-slate-500">
+                          {t(
+                            "common.noneRecorded"
+                          )}
+                        </p>
+                      )
+                }
               </div>
 
               <div className="mt-6">
                 <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">
-                  Conditions
+                  {t(
+                    "settings.conditions"
+                  )}
                 </p>
 
-                {patientInfo
-                  ?.conditions
-                  ?.length ? (
-                  <div className="flex flex-wrap gap-2">
-                    {patientInfo
-                      .conditions
-                      .map(
-                        (
-                          condition
-                        ) => (
-                          <span
-                            key={
-                              condition.id
-                            }
-                            className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
-                          >
-                            {
-                              condition.name
-                            }
-                          </span>
-                        )
-                      )}
-                  </div>
-                ) : (
-                  <p className="text-sm text-slate-500">
-                    None recorded
-                  </p>
-                )}
+                {
+                  patientInfo
+                    ?.conditions
+                    ?.length
+                    ? (
+                        <div className="flex flex-wrap gap-2">
+                          {
+                            patientInfo
+                              .conditions
+                              .map(
+                                (
+                                  condition
+                                ) => (
+                                  <span
+                                    key={
+                                      condition.id
+                                    }
+                                    className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700"
+                                  >
+                                    {
+                                      condition.name
+                                    }
+                                  </span>
+                                )
+                              )
+                          }
+                        </div>
+                      )
+                    : (
+                        <p className="text-sm text-slate-500">
+                          {t(
+                            "common.noneRecorded"
+                          )}
+                        </p>
+                      )
+                }
               </div>
             </section>
           </aside>
@@ -1656,14 +1878,103 @@ setSuccess(
   );
 }
 
-/* =========================================================
-   APPEARANCE CARD
-========================================================= */
+function LanguageCard({
+  value,
+  onChange,
+}) {
+  const {
+    t,
+  } =
+    useTranslation();
+
+  return (
+    <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white">
+      <div className="border-b border-slate-100 px-5 py-5 lg:px-6">
+        <div className="flex items-start gap-3">
+          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-teal-100">
+            <Languages
+              size={18}
+              className="text-teal-700"
+            />
+          </div>
+
+          <div className="min-w-0">
+            <h2 className="text-base font-semibold text-slate-900">
+              {t(
+                "settings.languageTitle"
+              )}
+            </h2>
+
+            <p className="mt-1 text-sm leading-5 text-slate-500">
+              {t(
+                "settings.languageDescription"
+              )}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div className="px-5 py-5 lg:px-6 lg:py-6">
+        <label
+          htmlFor="preferred-language"
+          className="mb-2 block text-sm font-medium text-slate-700"
+        >
+          {t(
+            "settings.preferredLanguage"
+          )}
+        </label>
+
+        <select
+          id="preferred-language"
+          value={
+            value
+          }
+          onChange={
+            onChange
+          }
+          className="h-11 w-full rounded-xl border border-slate-300 bg-white px-4 text-sm text-slate-900 outline-none transition focus:border-teal-600 focus:ring-2 focus:ring-teal-600/10"
+        >
+          {
+            SUPPORTED_LANGUAGES.map(
+              (
+                language
+              ) => (
+                <option
+                  key={
+                    language.code
+                  }
+                  value={
+                    language.code
+                  }
+                >
+                  {
+                    language.name
+                  }
+                </option>
+              )
+            )
+          }
+        </select>
+
+        <p className="mt-4 text-xs leading-5 text-slate-400">
+          {t(
+            "settings.languageSaved"
+          )}
+        </p>
+      </div>
+    </section>
+  );
+}
 
 function ThemeCard({
   theme,
   onToggle,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const isDark =
     theme ===
     "dark";
@@ -1681,13 +1992,15 @@ function ThemeCard({
 
           <div className="min-w-0">
             <h2 className="text-base font-semibold text-slate-900">
-              Appearance
+              {t(
+                "settings.appearanceTitle"
+              )}
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-500">
-              Choose how the
-              patient portal looks
-              on this device.
+              {t(
+                "settings.appearanceDescription"
+              )}
             </p>
           </div>
         </div>
@@ -1697,13 +2010,21 @@ function ThemeCard({
         <div className="flex items-center justify-between gap-5">
           <div className="min-w-0">
             <p className="text-sm font-medium text-slate-900">
-              Theme
+              {t(
+                "settings.theme"
+              )}
             </p>
 
             <p className="mt-1 text-sm leading-5 text-slate-500">
-              {isDark
-                ? "Dark mode is on."
-                : "Light mode is on."}
+              {
+                isDark
+                  ? t(
+                      "settings.darkModeOn"
+                    )
+                  : t(
+                      "settings.lightModeOn"
+                    )
+              }
             </p>
           </div>
 
@@ -1713,7 +2034,9 @@ function ThemeCard({
             aria-checked={
               isDark
             }
-            aria-label="Toggle dark mode"
+            aria-label={t(
+              "settings.toggleDarkMode"
+            )}
             onClick={
               onToggle
             }
@@ -1725,39 +2048,38 @@ function ThemeCard({
           >
             <span
               aria-hidden="true"
-              className={`absolute left-[3px] top-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-[#ffffff] text-[#10201a] shadow-md transition-transform duration-300 ${
+              className={`absolute left-[3px] top-[3px] flex h-6 w-6 items-center justify-center rounded-full bg-white text-[#10201a] shadow-md transition-transform duration-300 ${
                 isDark
                   ? "translate-x-7"
                   : "translate-x-0"
               }`}
             >
-              {isDark ? (
-                <Moon
-                  size={14}
-                />
-              ) : (
-                <Sun
-                  size={14}
-                />
-              )}
+              {
+                isDark
+                  ? (
+                      <Moon
+                        size={14}
+                      />
+                    )
+                  : (
+                      <Sun
+                        size={14}
+                      />
+                    )
+              }
             </span>
           </button>
         </div>
 
         <p className="mt-4 text-xs leading-5 text-slate-400">
-          Your choice is saved
-          automatically and will
-          still be active when you
-          return.
+          {t(
+            "settings.appearanceSaved"
+          )}
         </p>
       </div>
     </section>
   );
 }
-
-/* =========================================================
-   GENERIC SETTINGS SECTION
-========================================================= */
 
 function SettingsSection({
   icon: Icon,
@@ -1782,7 +2104,9 @@ function SettingsSection({
             </h2>
 
             <p className="mt-1 text-sm leading-5 text-slate-500">
-              {description}
+              {
+                description
+              }
             </p>
           </div>
         </div>
@@ -1795,10 +2119,6 @@ function SettingsSection({
   );
 }
 
-/* =========================================================
-   STANDARD FIELD
-========================================================= */
-
 function Field({
   label,
   name,
@@ -1810,7 +2130,9 @@ function Field({
   return (
     <div className="min-w-0">
       <label
-        htmlFor={name}
+        htmlFor={
+          name
+        }
         className="mb-2 block text-sm font-medium text-slate-700"
       >
         {label}
@@ -1825,10 +2147,18 @@ function Field({
         )}
 
         <input
-          id={name}
-          name={name}
-          type={type}
-          value={value}
+          id={
+            name
+          }
+          name={
+            name
+          }
+          type={
+            type
+          }
+          value={
+            value
+          }
           onChange={
             onChange
           }
@@ -1843,10 +2173,6 @@ function Field({
   );
 }
 
-/* =========================================================
-   PASSWORD FIELD
-========================================================= */
-
 function PasswordField({
   label,
   name,
@@ -1857,10 +2183,17 @@ function PasswordField({
   onToggle,
   autoComplete,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   return (
     <div className="min-w-0">
       <label
-        htmlFor={name}
+        htmlFor={
+          name
+        }
         className="mb-2 block text-sm font-medium text-slate-700"
       >
         {label}
@@ -1868,8 +2201,12 @@ function PasswordField({
 
       <div className="relative">
         <input
-          id={name}
-          name={name}
+          id={
+            name
+          }
+          name={
+            name
+          }
           type={
             show
               ? "text"
@@ -1899,19 +2236,35 @@ function PasswordField({
           className="absolute right-2 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-slate-500 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-teal-600/20"
           aria-label={
             show
-              ? `Hide ${label.toLowerCase()}`
-              : `Show ${label.toLowerCase()}`
+              ? t(
+                  "settings.hidePassword",
+                  {
+                    label:
+                      label.toLowerCase(),
+                  }
+                )
+              : t(
+                  "settings.showPassword",
+                  {
+                    label:
+                      label.toLowerCase(),
+                  }
+                )
           }
         >
-          {show ? (
-            <EyeOff
-              size={17}
-            />
-          ) : (
-            <Eye
-              size={17}
-            />
-          )}
+          {
+            show
+              ? (
+                  <EyeOff
+                    size={17}
+                  />
+                )
+              : (
+                  <Eye
+                    size={17}
+                  />
+                )
+          }
         </button>
       </div>
 
@@ -1923,10 +2276,6 @@ function PasswordField({
     </div>
   );
 }
-
-/* =========================================================
-   PASSWORD REQUIREMENT
-========================================================= */
 
 function PasswordRequirement({
   met,
@@ -1942,9 +2291,11 @@ function PasswordRequirement({
             : "bg-slate-200 text-slate-500"
         }`}
       >
-        {met
-          ? "✓"
-          : "○"}
+        {
+          met
+            ? "✓"
+            : "○"
+        }
       </span>
 
       <span
@@ -1959,10 +2310,6 @@ function PasswordRequirement({
     </div>
   );
 }
-
-/* =========================================================
-   INFORMATION ITEM
-========================================================= */
 
 function InfoItem({
   label,
@@ -1981,10 +2328,6 @@ function InfoItem({
   );
 }
 
-/* =========================================================
-   TOGGLE
-========================================================= */
-
 function SettingToggle({
   title,
   description,
@@ -1999,7 +2342,9 @@ function SettingToggle({
         </p>
 
         <p className="mt-1 max-w-3xl text-sm leading-5 text-slate-500">
-          {description}
+          {
+            description
+          }
         </p>
       </div>
 
@@ -2030,6 +2375,45 @@ function SettingToggle({
           }`}
         />
       </button>
+    </div>
+  );
+}
+
+function MessageBox({
+  type,
+  children,
+}) {
+  const success =
+    type ===
+    "success";
+
+  return (
+    <div
+      className={`mb-5 flex items-start gap-3 rounded-xl border p-4 ${
+        success
+          ? "border-green-200 bg-green-50"
+          : "border-red-200 bg-red-50"
+      }`}
+    >
+      {
+        success
+          ? (
+              <CheckCircle
+                size={17}
+                className="mt-0.5 shrink-0 text-green-600"
+              />
+            )
+          : (
+              <AlertCircle
+                size={17}
+                className="mt-0.5 shrink-0 text-red-600"
+              />
+            )
+      }
+
+      <p className="text-sm text-slate-900">
+        {children}
+      </p>
     </div>
   );
 }
