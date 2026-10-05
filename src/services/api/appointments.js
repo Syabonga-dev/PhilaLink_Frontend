@@ -1,30 +1,58 @@
-import { api } from "./client.js";
+import i18n from "../../i18n/index.js";
+
+import {
+  api,
+} from "./client.js";
+
+import {
+  localizeAppointment,
+  localizeAppointments,
+} from "../../i18n/patientText.js";
 
 export const appointmentsApi = {
-  getMine: () =>
-    api.get(
-      "/api/appointments/me"
-    ),
+  getMine: async () => {
+    const result =
+      await api.get(
+        "/api/appointments/me"
+      );
 
-  book: (payload) =>
-    api.post(
-      "/api/patients/me/appointments",
-      payload
-    ),
+    return localizeAppointments(
+      result
+    );
+  },
 
-  reschedule: (
+  book: async payload => {
+    const result =
+      await api.post(
+        "/api/patients/me/appointments",
+        payload
+      );
+
+    return localizeAppointment(
+      result
+    );
+  },
+
+  reschedule: async (
     appointmentId,
     payload
   ) => {
     if (!appointmentId) {
       throw new Error(
-        "An appointment ID is required."
+        i18n.t(
+          "api.appointmentIdRequired"
+        )
       );
     }
 
-    return api.patch(
-      `/api/patients/me/appointments/${appointmentId}/reschedule`,
-      payload
+    const result =
+      await api.patch(
+        `/api/patients/me/appointments/${appointmentId}/reschedule`,
+        payload
+      );
+
+    return localizeAppointment(
+      result
     );
   },
 
@@ -33,7 +61,9 @@ export const appointmentsApi = {
   ) => {
     if (!appointmentId) {
       throw new Error(
-        "An appointment ID is required."
+        i18n.t(
+          "api.appointmentIdRequired"
+        )
       );
     }
 
