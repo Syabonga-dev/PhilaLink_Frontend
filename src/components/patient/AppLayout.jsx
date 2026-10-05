@@ -155,10 +155,14 @@ function formatNotificationDate(
       .toLocaleString(
         locale,
         {
-          day: "numeric",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
+          day:
+            "numeric",
+          month:
+            "short",
+          hour:
+            "2-digit",
+          minute:
+            "2-digit",
         }
       );
   } catch {
@@ -166,10 +170,14 @@ function formatNotificationDate(
       .toLocaleString(
         "en-ZA",
         {
-          day: "numeric",
-          month: "short",
-          hour: "2-digit",
-          minute: "2-digit",
+          day:
+            "numeric",
+          month:
+            "short",
+          hour:
+            "2-digit",
+          minute:
+            "2-digit",
         }
       );
   }
@@ -186,8 +194,10 @@ function splitNotificationMessage(
 
   if (!text) {
     return {
-      title: "",
-      body: "",
+      title:
+        "",
+      body:
+        "",
     };
   }
 
@@ -201,7 +211,8 @@ function splitNotificationMessage(
     0
   ) {
     return {
-      title: "",
+      title:
+        "",
       body:
         text,
     };
@@ -236,37 +247,44 @@ export default function AppLayout() {
   const [
     mobileOpen,
     setMobileOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     notificationsOpen,
     setNotificationsOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     notifications,
     setNotifications,
-  ] = useState([]);
+  ] =
+    useState([]);
 
   const [
     notificationsLoading,
     setNotificationsLoading,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     notificationsError,
     setNotificationsError,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     notificationActionError,
     setNotificationActionError,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     markingAllRead,
     setMarkingAllRead,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const location =
     useLocation();
@@ -292,17 +310,18 @@ export default function AppLayout() {
       displayName
     );
 
+  const currentLanguage =
+    i18n.resolvedLanguage ||
+    i18n.language;
+
   const locale =
     getLanguageLocale(
-      i18n.resolvedLanguage ||
-        i18n.language
+      currentLanguage
     );
 
   const currentPage =
     navigationItems.find(
-      (
-        item
-      ) => {
+      item => {
         if (
           item.path ===
           "/patient"
@@ -388,10 +407,29 @@ export default function AppLayout() {
       ]
     );
 
+  /*
+   * Notification messages are translated at the API boundary.
+   *
+   * Reload when language changes so existing stored weather
+   * notifications immediately appear in the newly selected
+   * language without regenerating weather or creating another
+   * notification.
+   */
   useEffect(
     () => {
       void loadNotifications();
+    },
+    [
+      currentLanguage,
+      loadNotifications,
+    ]
+  );
 
+  /*
+   * Notification polling is separate from language changes.
+   */
+  useEffect(
+    () => {
       const intervalId =
         window.setInterval(
           () => {
@@ -486,11 +524,27 @@ export default function AppLayout() {
     ]
   );
 
+  /*
+   * Stable callback passed to WeatherChip.
+   *
+   * Notification state changes can no longer change the
+   * identity of WeatherChip's weather-loading dependency chain.
+   */
+  const handleWeatherNotificationCreated =
+    useCallback(
+      () =>
+        loadNotifications({
+          background:
+            true,
+        }),
+      [
+        loadNotifications,
+      ]
+    );
+
   const unreadNotifications =
     notifications.filter(
-      (
-        notification
-      ) =>
+      notification =>
         !notification
           .isRead
     );
@@ -516,13 +570,9 @@ export default function AppLayout() {
         );
 
       setNotifications(
-        (
-          current
-        ) =>
+        current =>
           current.map(
-            (
-              item
-            ) =>
+            item =>
               item.id ===
               notification.id
                 ? {
@@ -573,13 +623,9 @@ export default function AppLayout() {
         .markAllRead();
 
       setNotifications(
-        (
-          current
-        ) =>
+        current =>
           current.map(
-            (
-              notification
-            ) => ({
+            notification => ({
               ...notification,
               isRead:
                 true,
@@ -624,9 +670,7 @@ export default function AppLayout() {
       false,
   } = {}) {
     return navigationItems.map(
-      (
-        item
-      ) => {
+      item => {
         const Icon =
           item.icon;
 
@@ -804,9 +848,7 @@ export default function AppLayout() {
                 type="button"
                 onClick={() => {
                   setNotificationsOpen(
-                    (
-                      current
-                    ) => {
+                    current => {
                       const next =
                         !current;
 
@@ -1009,9 +1051,7 @@ export default function AppLayout() {
                             </div>
                           )
                         : notifications.map(
-                            (
-                              notification
-                            ) => {
+                            notification => {
                               const {
                                 title,
                                 body,
@@ -1095,11 +1135,8 @@ export default function AppLayout() {
             </div>
 
             <WeatherChip
-              onNotificationCreated={() =>
-                loadNotifications({
-                  background:
-                    true,
-                })
+              onNotificationCreated={
+                handleWeatherNotificationCreated
               }
             />
 
