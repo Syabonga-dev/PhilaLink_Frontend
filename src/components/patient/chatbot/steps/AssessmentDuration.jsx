@@ -1,10 +1,20 @@
-import { Button } from "../AstraCompat.jsx";
+import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  Button,
+} from "../AstraCompat.jsx";
 
 import {
   ArrowLeft,
   ArrowRight,
   Clock3,
 } from "lucide-react";
+
+import {
+  translateAssessmentValue,
+} from "../../../../i18n/patientText.js";
 
 const durationOptions = [
   "Less than 1 day",
@@ -21,31 +31,34 @@ export default function AssessmentDuration({
   onNext,
   onBack,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const duration =
-    assessment.duration || "";
+    assessment.duration ||
+    "";
 
   const customDurationValue =
-    assessment.customDurationValue || "";
+    assessment
+      .customDurationValue ||
+    "";
 
   const customDurationUnit =
-    assessment.customDurationUnit || "days";
-
-  const selectDuration = (value) => {
-    onUpdate({
-      duration: value,
-    });
-  };
-
-  const selectCustom = () => {
-    onUpdate({
-      duration: "custom",
-    });
-  };
+    assessment
+      .customDurationUnit ||
+    "days";
 
   const canContinue =
     duration &&
-    (duration !== "custom" ||
-      Number(customDurationValue) > 0);
+    (
+      duration !==
+        "custom" ||
+      Number(
+        customDurationValue
+      ) > 0
+    );
 
   return (
     <div className="flex flex-col gap-xl">
@@ -58,58 +71,83 @@ export default function AssessmentDuration({
         </div>
 
         <h2 className="mt-lg text-title text-text-primary">
-          How long have you had these symptoms?
+          {t(
+            "chatbot.durationTitle"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Select the option that best describes how long
-          your symptoms have been present.
+          {t(
+            "chatbot.durationDescription"
+          )}
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-sm">
-        {durationOptions.map((option) => {
-          const selected =
-            duration === option;
+        {durationOptions.map(
+          option => {
+            const selected =
+              duration ===
+              option;
 
-          return (
-            <button
-              key={option}
-              type="button"
-              onClick={() =>
-                selectDuration(option)
-              }
-              className={`rounded-corner-md border px-md py-md text-left text-label-sm transition ${
-                selected
-                  ? "border-brand-primary bg-brand-tertiary text-brand-primary"
-                  : "border-border-secondary bg-surface-bg text-text-primary hover:border-brand-primary"
-              }`}
-            >
-              {option}
-            </button>
-          );
-        })}
+            return (
+              <button
+                key={
+                  option
+                }
+                type="button"
+                onClick={() =>
+                  onUpdate({
+                    duration:
+                      option,
+                  })
+                }
+                className={`rounded-corner-md border px-md py-md text-left text-label-sm transition ${
+                  selected
+                    ? "border-brand-primary bg-brand-tertiary text-brand-primary"
+                    : "border-border-secondary bg-surface-bg text-text-primary hover:border-brand-primary"
+                }`}
+              >
+                {translateAssessmentValue(
+                  "duration",
+                  option
+                )}
+              </button>
+            );
+          }
+        )}
 
         <button
           type="button"
-          onClick={selectCustom}
+          onClick={() =>
+            onUpdate({
+              duration:
+                "custom",
+            })
+          }
           className={`rounded-corner-md border px-md py-md text-left text-label-sm transition ${
-            duration === "custom"
+            duration ===
+            "custom"
               ? "border-brand-primary bg-brand-tertiary text-brand-primary"
               : "border-border-secondary bg-surface-bg text-text-primary hover:border-brand-primary"
           }`}
         >
-          Enter a specific duration
+          {t(
+            "chatbot.specificDuration"
+          )}
         </button>
       </div>
 
-      {duration === "custom" && (
+      {duration ===
+        "custom" && (
         <div>
           <label
             htmlFor="custom-duration"
             className="mb-xs block text-video-title font-medium text-text-secondary"
           >
-            Duration
+            {t(
+              "chatbot.duration"
+            )}
           </label>
 
           <div className="flex gap-sm">
@@ -118,49 +156,72 @@ export default function AssessmentDuration({
               type="number"
               min="1"
               inputMode="numeric"
-              value={customDurationValue}
-              onChange={(event) =>
-                onUpdate({
-                  customDurationValue:
-                    event.target.value,
-                })
+              value={
+                customDurationValue
               }
-              placeholder="Enter number"
+              onChange={
+                event =>
+                  onUpdate({
+                    customDurationValue:
+                      event
+                        .target
+                        .value,
+                  })
+              }
+              placeholder={t(
+                "chatbot.enterNumber"
+              )}
               className="min-w-0 flex-1 rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none transition placeholder:text-text-tertiary focus:border-brand-primary"
             />
 
             <select
-              value={customDurationUnit}
-              onChange={(event) =>
-                onUpdate({
-                  customDurationUnit:
-                    event.target.value,
-                })
+              value={
+                customDurationUnit
+              }
+              onChange={
+                event =>
+                  onUpdate({
+                    customDurationUnit:
+                      event
+                        .target
+                        .value,
+                  })
               }
               className="rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none transition focus:border-brand-primary"
             >
-              <option value="hours">
-                Hours
-              </option>
-
-              <option value="days">
-                Days
-              </option>
-
-              <option value="weeks">
-                Weeks
-              </option>
-
-              <option value="months">
-                Months
-              </option>
+              {[
+                "hours",
+                "days",
+                "weeks",
+                "months",
+              ].map(
+                unit => (
+                  <option
+                    key={
+                      unit
+                    }
+                    value={
+                      unit
+                    }
+                  >
+                    {translateAssessmentValue(
+                      "durationUnit",
+                      unit
+                    )}
+                  </option>
+                )
+              )}
             </select>
           </div>
 
           {customDurationValue &&
-            Number(customDurationValue) <= 0 && (
+            Number(
+              customDurationValue
+            ) <= 0 && (
               <p className="mt-xs text-video-title text-danger">
-                Please enter a valid duration.
+                {t(
+                  "chatbot.invalidDuration"
+                )}
               </p>
             )}
         </div>
@@ -170,24 +231,38 @@ export default function AssessmentDuration({
         <Button
           variant="subtle"
           iconStart={
-            <ArrowLeft size={15} />
+            <ArrowLeft
+              size={15}
+            />
           }
-          onClick={onBack}
+          onClick={
+            onBack
+          }
           className="flex-1"
         >
-          Back
+          {t(
+            "chatbot.back"
+          )}
         </Button>
 
         <Button
           variant="primary"
           iconEnd={
-            <ArrowRight size={15} />
+            <ArrowRight
+              size={15}
+            />
           }
-          onClick={onNext}
-          disabled={!canContinue}
+          onClick={
+            onNext
+          }
+          disabled={
+            !canContinue
+          }
           className="flex-1"
         >
-          Continue
+          {t(
+            "chatbot.continue"
+          )}
         </Button>
       </div>
     </div>
