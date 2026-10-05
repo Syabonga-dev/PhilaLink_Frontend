@@ -6,6 +6,10 @@ import {
 } from "react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   AlertCircle,
   Calendar,
   Clock,
@@ -23,22 +27,71 @@ import {
   appointmentsApi,
 } from "../../services/api/appointments.js";
 
+import {
+  getLanguageLocale,
+} from "../../i18n/languages.js";
+
 const APPOINTMENT_TYPES = [
-  "Routine Checkup",
-  "General Consultation",
-  "Medication Review",
-  "Chronic Care Follow-up",
-  "Follow-up Visit",
-  "Symptoms / Feeling Unwell",
-  "Other",
+  {
+    value:
+      "Routine Checkup",
+    labelKey:
+      "appointments.routineCheckup",
+  },
+  {
+    value:
+      "General Consultation",
+    labelKey:
+      "appointments.generalConsultation",
+  },
+  {
+    value:
+      "Medication Review",
+    labelKey:
+      "appointments.medicationReview",
+  },
+  {
+    value:
+      "Chronic Care Follow-up",
+    labelKey:
+      "appointments.chronicFollowup",
+  },
+  {
+    value:
+      "Follow-up Visit",
+    labelKey:
+      "appointments.followupVisit",
+  },
+  {
+    value:
+      "Symptoms / Feeling Unwell",
+    labelKey:
+      "appointments.symptoms",
+  },
+  {
+    value:
+      "Other",
+    labelKey:
+      "appointments.other",
+  },
 ];
 
 const PROVIDER_TYPES = [
-  "Nurse",
-  "Doctor",
+  {
+    value: "Nurse",
+    labelKey:
+      "appointments.nurse",
+  },
+  {
+    value: "Doctor",
+    labelKey:
+      "appointments.doctor",
+  },
 ];
 
-function parseDate(value) {
+function parseDate(
+  value
+) {
   if (!value) {
     return null;
   }
@@ -53,32 +106,51 @@ function parseDate(value) {
     : date;
 }
 
-function formatDate(value) {
+function formatDate(
+  value,
+  locale,
+  t
+) {
   const date =
-    parseDate(value);
+    parseDate(
+      value
+    );
 
   if (!date) {
-    return "Date not available";
+    return t(
+      "appointments.dateUnavailable"
+    );
   }
 
-  return date.toLocaleDateString(
-    "en-ZA",
-    {
-      weekday:
-        "long",
-      day:
-        "numeric",
-      month:
-        "long",
-      year:
-        "numeric",
-    }
-  );
+  try {
+    return date
+      .toLocaleDateString(
+        locale,
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }
+      );
+  } catch {
+    return date
+      .toLocaleDateString(
+        "en-ZA",
+        {
+          weekday: "long",
+          day: "numeric",
+          month: "long",
+          year: "numeric",
+        }
+      );
+  }
 }
 
 function formatTimeRange(
   scheduledAt,
-  durationMinutes
+  durationMinutes,
+  locale
 ) {
   const start =
     parseDate(
@@ -92,7 +164,8 @@ function formatTimeRange(
   const duration =
     Number(
       durationMinutes
-    ) > 0
+    ) >
+    0
       ? Number(
           durationMinutes
         )
@@ -105,13 +178,27 @@ function formatTimeRange(
       "2-digit",
   };
 
-  const startText =
-    start.toLocaleTimeString(
-      "en-ZA",
-      options
-    );
+  let startText;
 
-  if (!duration) {
+  try {
+    startText =
+      start
+        .toLocaleTimeString(
+          locale,
+          options
+        );
+  } catch {
+    startText =
+      start
+        .toLocaleTimeString(
+          "en-ZA",
+          options
+        );
+  }
+
+  if (
+    !duration
+  ) {
     return startText;
   }
 
@@ -123,21 +210,40 @@ function formatTimeRange(
           1000
     );
 
-  return `${startText} – ${end.toLocaleTimeString(
-    "en-ZA",
-    options
-  )}`;
+  let endText;
+
+  try {
+    endText =
+      end
+        .toLocaleTimeString(
+          locale,
+          options
+        );
+  } catch {
+    endText =
+      end
+        .toLocaleTimeString(
+          "en-ZA",
+          options
+        );
+  }
+
+  return `${startText} – ${endText}`;
 }
 
 function toLocalDateTimeInput(
   value = null
 ) {
-  let date =
+  const date =
     value
-      ? new Date(value)
+      ? new Date(
+          value
+        )
       : new Date();
 
-  if (!value) {
+  if (
+    !value
+  ) {
     date.setMinutes(
       date.getMinutes() +
         60
@@ -153,7 +259,8 @@ function toLocalDateTimeInput(
   }
 
   const offset =
-    date.getTimezoneOffset();
+    date
+      .getTimezoneOffset();
 
   return new Date(
     date.getTime() -
@@ -168,7 +275,9 @@ function toLocalDateTimeInput(
     );
 }
 
-function normaliseStatus(value) {
+function normaliseStatus(
+  value
+) {
   return String(
     value ?? ""
   )
@@ -220,19 +329,21 @@ function canChange(
       appointment?.status
     );
 
-  return ![
-    "completed",
-    "cancelled",
-    "canceled",
-    "missed",
-    "noshow",
-    "no-show",
-  ].includes(
-    status
-  ) &&
+  return (
+    ![
+      "completed",
+      "cancelled",
+      "canceled",
+      "missed",
+      "noshow",
+      "no-show",
+    ].includes(
+      status
+    ) &&
     !isPastAppointment(
       appointment
-    );
+    )
+  );
 }
 
 function requestedProviderFromNotes(
@@ -243,20 +354,29 @@ function requestedProviderFromNotes(
   }
 
   const match =
-    String(notes).match(
+    String(
+      notes
+    ).match(
       /^Requested provider:\s*(.+)$/im
     );
 
-  return match?.[1]?.trim() ||
-    "";
+  return (
+    match?.[1]
+      ?.trim() ||
+    ""
+  );
 }
 
-function displayNotes(notes) {
+function displayNotes(
+  notes
+) {
   if (!notes) {
     return "";
   }
 
-  return String(notes)
+  return String(
+    notes
+  )
     .replace(
       /^Requested provider:\s*.+(?:\r?\n){0,2}/i,
       ""
@@ -264,24 +384,66 @@ function displayNotes(notes) {
     .trim();
 }
 
-function getProviderName(
-  appointment
+function statusLabel(
+  value,
+  t
 ) {
-  return (
-    appointment
-      ?.providerName ||
-    appointment
-      ?.nurseName ||
-    requestedProviderFromNotes(
-      appointment?.notes
-    ) ||
-    "Clinic provider"
-  );
+  switch (
+    normaliseStatus(
+      value
+    )
+  ) {
+    case "confirmed":
+      return t(
+        "appointments.confirmed"
+      );
+
+    case "pending":
+      return t(
+        "appointments.pending"
+      );
+
+    case "completed":
+      return t(
+        "appointments.completed"
+      );
+
+    case "cancelled":
+    case "canceled":
+      return t(
+        "appointments.cancelled"
+      );
+
+    case "rescheduled":
+      return t(
+        "appointments.rescheduled"
+      );
+
+    case "missed":
+    case "noshow":
+    case "no-show":
+      return t(
+        "appointments.missed"
+      );
+
+    default:
+      return (
+        value ||
+        t(
+          "appointments.scheduled"
+        )
+      );
+  }
 }
 
 function StatusBadge({
   value,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const status =
     normaliseStatus(
       value
@@ -300,7 +462,7 @@ function StatusBadge({
       "bg-emerald-50 text-emerald-700";
   } else if (
     status ===
-      "pending"
+    "pending"
   ) {
     classes =
       "bg-amber-50 text-amber-700";
@@ -314,7 +476,7 @@ function StatusBadge({
       "bg-red-50 text-red-700";
   } else if (
     status ===
-      "rescheduled"
+    "rescheduled"
   ) {
     classes =
       "bg-teal-50 text-teal-700";
@@ -324,18 +486,26 @@ function StatusBadge({
     <span
       className={`rounded-full px-2.5 py-1 text-xs font-semibold ${classes}`}
     >
-      {value ||
-        "Scheduled"}
+      {statusLabel(
+        value,
+        t
+      )}
     </span>
   );
 }
 
 function AppointmentCard({
   appointment,
+  locale,
   past = false,
   onReschedule,
   onCancel,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const telehealth =
     String(
       appointment.mode ??
@@ -348,6 +518,18 @@ function AppointmentCard({
   const notes =
     displayNotes(
       appointment.notes
+    );
+
+  const providerName =
+    appointment
+      ?.providerName ||
+    appointment
+      ?.nurseName ||
+    requestedProviderFromNotes(
+      appointment?.notes
+    ) ||
+    t(
+      "appointments.clinicProvider"
     );
 
   return (
@@ -364,7 +546,9 @@ function AppointmentCard({
             <div>
               <h3 className="text-base font-semibold text-slate-950">
                 {appointment.type ||
-                  "Appointment"}
+                  t(
+                    "appointments.appointment"
+                  )}
               </h3>
 
               {appointment.reason && (
@@ -389,9 +573,12 @@ function AppointmentCard({
                 size={15}
                 className="text-[#0f766e]"
               />
+
               <span>
                 {formatDate(
-                  appointment.scheduledAt
+                  appointment.scheduledAt,
+                  locale,
+                  t
                 )}
               </span>
             </div>
@@ -401,10 +588,12 @@ function AppointmentCard({
                 size={15}
                 className="text-[#0f766e]"
               />
+
               <span>
                 {formatTimeRange(
                   appointment.scheduledAt,
-                  appointment.durationMinutes
+                  appointment.durationMinutes,
+                  locale
                 )}
               </span>
             </div>
@@ -424,10 +613,13 @@ function AppointmentCard({
 
               <span>
                 {telehealth
-                  ? "Telehealth"
-                  : appointment
-                      .clinicName ||
-                    "Clinic"}
+                  ? t(
+                      "appointments.telehealth"
+                    )
+                  : appointment.clinicName ||
+                    t(
+                      "dashboard.myClinic"
+                    )}
               </span>
             </div>
 
@@ -436,10 +628,11 @@ function AppointmentCard({
                 size={15}
                 className="text-[#0f766e]"
               />
+
               <span>
-                {getProviderName(
-                  appointment
-                )}
+                {
+                  providerName
+                }
               </span>
             </div>
           </div>
@@ -447,8 +640,11 @@ function AppointmentCard({
           {notes && (
             <div className="mt-4 border-t border-slate-100 pt-4">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Notes
+                {t(
+                  "appointments.notes"
+                )}
               </p>
+
               <p className="mt-1 text-sm text-slate-600">
                 {notes}
               </p>
@@ -472,7 +668,10 @@ function AppointmentCard({
                   <Pencil
                     size={14}
                   />
-                  Reschedule
+
+                  {t(
+                    "appointments.reschedule"
+                  )}
                 </button>
 
                 <button
@@ -487,7 +686,10 @@ function AppointmentCard({
                   <Trash2
                     size={14}
                   />
-                  Cancel
+
+                  {t(
+                    "appointments.cancel"
+                  )}
                 </button>
               </div>
             )}
@@ -502,89 +704,124 @@ function BookingModal({
   onClose,
   onBooked,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const [
     scheduledAt,
     setScheduledAt,
-  ] = useState(
-    toLocalDateTimeInput()
-  );
+  ] =
+    useState(
+      toLocalDateTimeInput()
+    );
 
   const [
     durationMinutes,
     setDurationMinutes,
-  ] = useState("30");
+  ] =
+    useState("30");
 
   const [
     type,
     setType,
-  ] = useState(
-    "Routine Checkup"
-  );
+  ] =
+    useState(
+      "Routine Checkup"
+    );
 
   const [
     providerType,
     setProviderType,
-  ] = useState(
-    "Nurse"
-  );
+  ] =
+    useState(
+      "Nurse"
+    );
 
   const [
     reason,
     setReason,
-  ] = useState(
-    "Routine patient checkup"
-  );
+  ] =
+    useState("");
 
   const [
     mode,
     setMode,
-  ] = useState(
-    "InPerson"
-  );
+  ] =
+    useState(
+      "InPerson"
+    );
 
   const [
     notes,
     setNotes,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     submitting,
     setSubmitting,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     submitError,
     setSubmitError,
-  ] = useState("");
+  ] =
+    useState("");
 
-  useEffect(() => {
-    if (!open) {
-      return;
-    }
+  useEffect(
+    () => {
+      if (
+        !open
+      ) {
+        return;
+      }
 
-    setScheduledAt(
-      toLocalDateTimeInput()
-    );
-    setDurationMinutes(
-      "30"
-    );
-    setType(
-      "Routine Checkup"
-    );
-    setProviderType(
-      "Nurse"
-    );
-    setReason(
-      "Routine patient checkup"
-    );
-    setMode(
-      "InPerson"
-    );
-    setNotes("");
-    setSubmitError("");
-  }, [open]);
+      setScheduledAt(
+        toLocalDateTimeInput()
+      );
 
-  if (!open) {
+      setDurationMinutes(
+        "30"
+      );
+
+      setType(
+        "Routine Checkup"
+      );
+
+      setProviderType(
+        "Nurse"
+      );
+
+      setReason(
+        t(
+          "appointments.defaultReason"
+        )
+      );
+
+      setMode(
+        "InPerson"
+      );
+
+      setNotes(
+        ""
+      );
+
+      setSubmitError(
+        ""
+      );
+    },
+    [
+      open,
+      t,
+    ]
+  );
+
+  if (
+    !open
+  ) {
     return null;
   }
 
@@ -606,29 +843,34 @@ function BookingModal({
         Date.now()
     ) {
       setSubmitError(
-        "Please choose a future appointment date and time."
+        t(
+          "appointments.futureDateRequired"
+        )
       );
+
       return;
     }
 
-    if (!reason.trim()) {
+    if (
+      !reason.trim()
+    ) {
       setSubmitError(
-        "Please enter the reason for your appointment."
+        t(
+          "appointments.reasonRequired"
+        )
       );
+
       return;
     }
-
-    const duration =
-      Number(
-        durationMinutes
-      );
 
     const persistedNotes =
       [
         `Requested provider: ${providerType}`,
         notes.trim(),
       ]
-        .filter(Boolean)
+        .filter(
+          Boolean
+        )
         .join(
           "\n\n"
         );
@@ -637,31 +879,47 @@ function BookingModal({
       setSubmitting(
         true
       );
-      setSubmitError("");
+
+      setSubmitError(
+        ""
+      );
 
       await appointmentsApi
         .book({
           scheduledAt:
             parsedDate
               .toISOString(),
+
           durationMinutes:
-            duration,
+            Number(
+              durationMinutes
+            ),
+
           type,
+
           reason:
             reason.trim(),
+
           providerName:
             providerType,
+
           mode,
+
           notes:
             persistedNotes,
         });
 
       await onBooked();
+
       onClose();
-    } catch (error) {
+    } catch (
+      error
+    ) {
       setSubmitError(
         error?.message ||
-          "We could not book your appointment."
+          t(
+            "appointments.bookingError"
+          )
       );
     } finally {
       setSubmitting(
@@ -676,16 +934,26 @@ function BookingModal({
         <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
           <div>
             <h2 className="font-semibold text-slate-950">
-              Book appointment
+              {t(
+                "appointments.bookingTitle"
+              )}
             </h2>
+
             <p className="mt-1 text-xs text-slate-500">
-              Choose the service and whether you want to see a Nurse or Doctor.
+              {t(
+                "appointments.bookingDescription"
+              )}
             </p>
           </div>
 
           <button
             type="button"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
+            aria-label={t(
+              "appointments.close"
+            )}
             className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
           >
             <X
@@ -701,38 +969,61 @@ function BookingModal({
           className="space-y-4 p-5"
         >
           {submitError && (
-            <div className="flex gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
-              <AlertCircle
-                size={17}
-              />
-              {submitError}
-            </div>
+            <ErrorBox>
+              {
+                submitError
+              }
+            </ErrorBox>
           )}
 
           <SelectField
-            label="Appointment type"
-            value={type}
-            onChange={setType}
-            options={
-              APPOINTMENT_TYPES
+            label={t(
+              "appointments.appointmentType"
+            )}
+            value={
+              type
             }
+            onChange={
+              setType
+            }
+            options={APPOINTMENT_TYPES.map(
+              item => ({
+                value:
+                  item.value,
+                label:
+                  t(
+                    item.labelKey
+                  ),
+              })
+            )}
           />
 
           <SelectField
-            label="Who do you want to see?"
+            label={t(
+              "appointments.providerQuestion"
+            )}
             value={
               providerType
             }
             onChange={
               setProviderType
             }
-            options={
-              PROVIDER_TYPES
-            }
+            options={PROVIDER_TYPES.map(
+              item => ({
+                value:
+                  item.value,
+                label:
+                  t(
+                    item.labelKey
+                  ),
+              })
+            )}
           />
 
           <Field
-            label="Date and time"
+            label={t(
+              "appointments.dateAndTime"
+            )}
             type="datetime-local"
             value={
               scheduledAt
@@ -744,8 +1035,12 @@ function BookingModal({
           />
 
           <TextArea
-            label="Reason"
-            value={reason}
+            label={t(
+              "appointments.reason"
+            )}
+            value={
+              reason
+            }
             onChange={
               setReason
             }
@@ -754,27 +1049,39 @@ function BookingModal({
 
           <div className="grid gap-4 sm:grid-cols-2">
             <SelectField
-              label="Visit mode"
-              value={mode}
-              onChange={setMode}
+              label={t(
+                "appointments.visitMode"
+              )}
+              value={
+                mode
+              }
+              onChange={
+                setMode
+              }
               options={[
                 {
                   value:
                     "InPerson",
                   label:
-                    "In person",
+                    t(
+                      "appointments.inPerson"
+                    ),
                 },
                 {
                   value:
                     "Telehealth",
                   label:
-                    "Telehealth",
+                    t(
+                      "appointments.telehealth"
+                    ),
                 },
               ]}
             />
 
             <SelectField
-              label="Duration"
+              label={t(
+                "appointments.duration"
+              )}
               value={
                 durationMinutes
               }
@@ -782,64 +1089,56 @@ function BookingModal({
                 setDurationMinutes
               }
               options={[
-                {
+                15,
+                30,
+                45,
+                60,
+              ].map(
+                value => ({
                   value:
-                    "15",
+                    String(
+                      value
+                    ),
+
                   label:
-                    "15 minutes",
-                },
-                {
-                  value:
-                    "30",
-                  label:
-                    "30 minutes",
-                },
-                {
-                  value:
-                    "45",
-                  label:
-                    "45 minutes",
-                },
-                {
-                  value:
-                    "60",
-                  label:
-                    "60 minutes",
-                },
-              ]}
+                    t(
+                      "appointments.minutes",
+                      {
+                        count:
+                          value,
+                      }
+                    ),
+                })
+              )}
             />
           </div>
 
           <TextArea
-            label="Notes (optional)"
-            value={notes}
-            onChange={setNotes}
+            label={t(
+              "appointments.optionalNotes"
+            )}
+            value={
+              notes
+            }
+            onChange={
+              setNotes
+            }
           />
 
-          <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
-            <button
-              type="button"
-              onClick={onClose}
-              disabled={
-                submitting
-              }
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
-            >
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={
-                submitting
-              }
-              className="rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
-            >
-              {submitting
-                ? "Booking..."
-                : "Book appointment"}
-            </button>
-          </div>
+          <ModalActions
+            saving={
+              submitting
+            }
+            onCancel={
+              onClose
+            }
+            submitLabel={t(
+              "appointments.bookAppointment"
+            )}
+            savingLabel={t(
+              "appointments.booking"
+            )}
+          />
         </form>
       </div>
     </div>
@@ -851,31 +1150,53 @@ function RescheduleModal({
   onClose,
   onRescheduled,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const [
     scheduledAt,
     setScheduledAt,
-  ] = useState("");
+  ] =
+    useState("");
+
   const [
     submitting,
     setSubmitting,
-  ] = useState(false);
+  ] =
+    useState(false);
+
   const [
     error,
     setError,
-  ] = useState("");
+  ] =
+    useState("");
 
-  useEffect(() => {
-    if (appointment) {
-      setScheduledAt(
-        toLocalDateTimeInput(
-          appointment.scheduledAt
-        )
-      );
-      setError("");
-    }
-  }, [appointment]);
+  useEffect(
+    () => {
+      if (
+        appointment
+      ) {
+        setScheduledAt(
+          toLocalDateTimeInput(
+            appointment.scheduledAt
+          )
+        );
 
-  if (!appointment) {
+        setError(
+          ""
+        );
+      }
+    },
+    [
+      appointment,
+    ]
+  );
+
+  if (
+    !appointment
+  ) {
     return null;
   }
 
@@ -897,8 +1218,11 @@ function RescheduleModal({
         Date.now()
     ) {
       setError(
-        "Choose a future appointment date and time."
+        t(
+          "appointments.futureRescheduleRequired"
+        )
       );
+
       return;
     }
 
@@ -906,23 +1230,32 @@ function RescheduleModal({
       setSubmitting(
         true
       );
-      setError("");
+
+      setError(
+        ""
+      );
 
       await appointmentsApi
         .reschedule(
           appointment.id,
           {
             scheduledAt:
-              date.toISOString(),
+              date
+                .toISOString(),
           }
         );
 
       await onRescheduled();
+
       onClose();
-    } catch (saveError) {
+    } catch (
+      saveError
+    ) {
       setError(
         saveError?.message ||
-          "We could not reschedule this appointment."
+          t(
+            "appointments.rescheduleError"
+          )
       );
     } finally {
       setSubmitting(
@@ -933,11 +1266,17 @@ function RescheduleModal({
 
   return (
     <SimpleModal
-      title="Reschedule appointment"
-      onClose={onClose}
+      title={t(
+        "appointments.rescheduleTitle"
+      )}
+      onClose={
+        onClose
+      }
     >
       <form
-        onSubmit={submit}
+        onSubmit={
+          submit
+        }
         className="space-y-4"
       >
         {error && (
@@ -947,7 +1286,9 @@ function RescheduleModal({
         )}
 
         <Field
-          label="New date and time"
+          label={t(
+            "appointments.newDateTime"
+          )}
           type="datetime-local"
           value={
             scheduledAt
@@ -962,8 +1303,15 @@ function RescheduleModal({
           saving={
             submitting
           }
-          onCancel={onClose}
-          submitLabel="Confirm reschedule"
+          onCancel={
+            onClose
+          }
+          submitLabel={t(
+            "appointments.confirmReschedule"
+          )}
+          savingLabel={t(
+            "appointments.saving"
+          )}
         />
       </form>
     </SimpleModal>
@@ -972,19 +1320,30 @@ function RescheduleModal({
 
 function CancelModal({
   appointment,
+  locale,
   onClose,
   onCancelled,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const [
     submitting,
     setSubmitting,
-  ] = useState(false);
+  ] =
+    useState(false);
+
   const [
     error,
     setError,
-  ] = useState("");
+  ] =
+    useState("");
 
-  if (!appointment) {
+  if (
+    !appointment
+  ) {
     return null;
   }
 
@@ -993,7 +1352,10 @@ function CancelModal({
       setSubmitting(
         true
       );
-      setError("");
+
+      setError(
+        ""
+      );
 
       await appointmentsApi
         .cancel(
@@ -1001,11 +1363,16 @@ function CancelModal({
         );
 
       await onCancelled();
+
       onClose();
-    } catch (saveError) {
+    } catch (
+      saveError
+    ) {
       setError(
         saveError?.message ||
-          "We could not cancel this appointment."
+          t(
+            "appointments.cancellationError"
+          )
       );
     } finally {
       setSubmitting(
@@ -1016,8 +1383,12 @@ function CancelModal({
 
   return (
     <SimpleModal
-      title="Cancel appointment"
-      onClose={onClose}
+      title={t(
+        "appointments.cancelTitle"
+      )}
+      onClose={
+        onClose
+      }
     >
       <div className="space-y-4">
         {error && (
@@ -1027,35 +1398,58 @@ function CancelModal({
         )}
 
         <p className="text-sm text-slate-600">
-          Are you sure you want to cancel your {appointment.type ||
-            "appointment"} on {formatDate(
-            appointment.scheduledAt
-          )}?
+          {t(
+            "appointments.cancelQuestion",
+            {
+              type:
+                appointment.type ||
+                t(
+                  "appointments.appointment"
+                ),
+
+              date:
+                formatDate(
+                  appointment.scheduledAt,
+                  locale,
+                  t
+                ),
+            }
+          )}
         </p>
 
         <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
           <button
             type="button"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
             disabled={
               submitting
             }
             className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
           >
-            Keep appointment
+            {t(
+              "appointments.keepAppointment"
+            )}
           </button>
 
           <button
             type="button"
-            onClick={cancel}
+            onClick={
+              cancel
+            }
             disabled={
               submitting
             }
             className="rounded-xl bg-red-600 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
           >
             {submitting
-              ? "Cancelling..."
-              : "Cancel appointment"}
+              ? t(
+                  "appointments.cancelling"
+                )
+              : t(
+                  "appointments.cancelAppointment"
+                )}
           </button>
         </div>
       </div>
@@ -1064,36 +1458,61 @@ function CancelModal({
 }
 
 export default function AppointmentsPage() {
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation();
+
+  const locale =
+    getLanguageLocale(
+      i18n.resolvedLanguage ||
+        i18n.language
+    );
+
   const [
     appointments,
     setAppointments,
-  ] = useState([]);
+  ] =
+    useState([]);
+
   const [
     tab,
     setTab,
-  ] = useState(
-    "upcoming"
-  );
+  ] =
+    useState(
+      "upcoming"
+    );
+
   const [
     loading,
     setLoading,
-  ] = useState(true);
+  ] =
+    useState(true);
+
   const [
     error,
     setError,
-  ] = useState("");
+  ] =
+    useState("");
+
   const [
     bookingOpen,
     setBookingOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
+
   const [
     rescheduleAppointment,
     setRescheduleAppointment,
-  ] = useState(null);
+  ] =
+    useState(null);
+
   const [
     cancelAppointment,
     setCancelAppointment,
-  ] = useState(null);
+  ] =
+    useState(null);
 
   const loadAppointments =
     useCallback(
@@ -1102,7 +1521,10 @@ export default function AppointmentsPage() {
           setLoading(
             true
           );
-          setError("");
+
+          setError(
+            ""
+          );
 
           const result =
             await appointmentsApi
@@ -1115,24 +1537,38 @@ export default function AppointmentsPage() {
               ? result
               : []
           );
-        } catch (loadError) {
+        } catch (
+          loadError
+        ) {
           setError(
             loadError?.message ||
-              "We could not load your appointments."
+              i18n.t(
+                "appointments.loadError"
+              )
           );
-          setAppointments([]);
+
+          setAppointments(
+            []
+          );
         } finally {
           setLoading(
             false
           );
         }
       },
-      []
+      [
+        i18n,
+      ]
     );
 
-  useEffect(() => {
-    void loadAppointments();
-  }, [loadAppointments]);
+  useEffect(
+    () => {
+      void loadAppointments();
+    },
+    [
+      loadAppointments,
+    ]
+  );
 
   const upcoming =
     useMemo(
@@ -1145,17 +1581,28 @@ export default function AppointmentsPage() {
               )
           )
           .sort(
-            (a, b) =>
-              (parseDate(
-                a.scheduledAt
-              )?.getTime() ||
-                0) -
-              (parseDate(
-                b.scheduledAt
-              )?.getTime() ||
-                0)
+            (
+              a,
+              b
+            ) =>
+              (
+                parseDate(
+                  a.scheduledAt
+                )
+                  ?.getTime() ||
+                0
+              ) -
+              (
+                parseDate(
+                  b.scheduledAt
+                )
+                  ?.getTime() ||
+                0
+              )
           ),
-      [appointments]
+      [
+        appointments,
+      ]
     );
 
   const past =
@@ -1169,27 +1616,39 @@ export default function AppointmentsPage() {
               )
           )
           .sort(
-            (a, b) =>
-              (parseDate(
-                b.scheduledAt
-              )?.getTime() ||
-                0) -
-              (parseDate(
-                a.scheduledAt
-              )?.getTime() ||
-                0)
+            (
+              a,
+              b
+            ) =>
+              (
+                parseDate(
+                  b.scheduledAt
+                )
+                  ?.getTime() ||
+                0
+              ) -
+              (
+                parseDate(
+                  a.scheduledAt
+                )
+                  ?.getTime() ||
+                0
+              )
           ),
-      [appointments]
+      [
+        appointments,
+      ]
     );
 
   const visible =
     tab ===
-      "upcoming"
+    "upcoming"
       ? upcoming
       : past;
 
   async function refreshed() {
     await loadAppointments();
+
     setTab(
       "upcoming"
     );
@@ -1201,10 +1660,15 @@ export default function AppointmentsPage() {
         <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-slate-950">
-              Appointments
+              {t(
+                "appointments.title"
+              )}
             </h1>
+
             <p className="mt-1 text-sm text-slate-500">
-              Book a clinic visit and choose whether you want to see a Nurse or Doctor.
+              {t(
+                "appointments.subtitle"
+              )}
             </p>
           </div>
 
@@ -1214,13 +1678,18 @@ export default function AppointmentsPage() {
               onClick={
                 loadAppointments
               }
-              disabled={loading}
+              disabled={
+                loading
+              }
               className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
             >
               <RefreshCw
                 size={15}
               />
-              Refresh
+
+              {t(
+                "appointments.refresh"
+              )}
             </button>
 
             <button
@@ -1235,7 +1704,10 @@ export default function AppointmentsPage() {
               <Plus
                 size={16}
               />
-              Book appointment
+
+              {t(
+                "appointments.bookAppointment"
+              )}
             </button>
           </div>
         </div>
@@ -1258,7 +1730,13 @@ export default function AppointmentsPage() {
               )
             }
           >
-            Upcoming ({upcoming.length})
+            {t(
+              "appointments.upcomingCount",
+              {
+                count:
+                  upcoming.length,
+              }
+            )}
           </TabButton>
 
           <TabButton
@@ -1272,7 +1750,13 @@ export default function AppointmentsPage() {
               )
             }
           >
-            Past ({past.length})
+            {t(
+              "appointments.pastCount",
+              {
+                count:
+                  past.length,
+              }
+            )}
           </TabButton>
         </div>
 
@@ -1298,6 +1782,9 @@ export default function AppointmentsPage() {
                   appointment={
                     appointment
                   }
+                  locale={
+                    locale
+                  }
                   past={
                     tab ===
                     "past"
@@ -1318,12 +1805,18 @@ export default function AppointmentsPage() {
               size={28}
               className="mx-auto text-[#0f766e]"
             />
+
             <h2 className="mt-3 font-semibold text-slate-900">
               {tab ===
               "upcoming"
-                ? "No upcoming appointments"
-                : "No previous appointments"}
+                ? t(
+                    "appointments.noUpcoming"
+                  )
+                : t(
+                    "appointments.noPrevious"
+                  )}
             </h2>
+
             {tab ===
               "upcoming" && (
               <button
@@ -1335,7 +1828,9 @@ export default function AppointmentsPage() {
                 }
                 className="mt-4 text-sm font-semibold text-[#0f766e]"
               >
-                Book an appointment
+                {t(
+                  "appointments.bookAnAppointment"
+                )}
               </button>
             )}
           </div>
@@ -1343,13 +1838,17 @@ export default function AppointmentsPage() {
       </div>
 
       <BookingModal
-        open={bookingOpen}
+        open={
+          bookingOpen
+        }
         onClose={() =>
           setBookingOpen(
             false
           )
         }
-        onBooked={refreshed}
+        onBooked={
+          refreshed
+        }
       />
 
       <RescheduleModal
@@ -1369,6 +1868,9 @@ export default function AppointmentsPage() {
       <CancelModal
         appointment={
           cancelAppointment
+        }
+        locale={
+          locale
         }
         onClose={() =>
           setCancelAppointment(
@@ -1391,7 +1893,9 @@ function TabButton({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={
+        onClick
+      }
       className={`-mb-px border-b-2 pb-3 text-sm font-semibold ${
         active
           ? "border-[#0f766e] text-[#0f766e]"
@@ -1408,6 +1912,11 @@ function SimpleModal({
   onClose,
   children,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   return (
     <div className="fixed inset-0 z-[80] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-6">
       <div className="w-full rounded-t-2xl bg-white shadow-xl sm:max-w-lg sm:rounded-2xl">
@@ -1415,9 +1924,15 @@ function SimpleModal({
           <h2 className="font-semibold text-slate-950">
             {title}
           </h2>
+
           <button
             type="button"
-            onClick={onClose}
+            onClick={
+              onClose
+            }
+            aria-label={t(
+              "appointments.close"
+            )}
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
           >
             <X
@@ -1425,6 +1940,7 @@ function SimpleModal({
             />
           </button>
         </div>
+
         <div className="p-5">
           {children}
         </div>
@@ -1442,6 +1958,7 @@ function ErrorBox({
         size={17}
         className="mt-0.5 shrink-0"
       />
+
       <span>
         {children}
       </span>
@@ -1461,14 +1978,23 @@ function Field({
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
         {label}
       </span>
+
       <input
-        type={type}
-        value={value}
-        required={required}
-        onChange={event =>
-          onChange(
-            event.target.value
-          )
+        type={
+          type
+        }
+        value={
+          value
+        }
+        required={
+          required
+        }
+        onChange={
+          event =>
+            onChange(
+              event.target
+                .value
+            )
         }
         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
       />
@@ -1487,14 +2013,21 @@ function TextArea({
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
         {label}
       </span>
+
       <textarea
         rows={3}
-        value={value}
-        required={required}
-        onChange={event =>
-          onChange(
-            event.target.value
-          )
+        value={
+          value
+        }
+        required={
+          required
+        }
+        onChange={
+          event =>
+            onChange(
+              event.target
+                .value
+            )
         }
         className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
       />
@@ -1513,41 +2046,35 @@ function SelectField({
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
         {label}
       </span>
+
       <select
-        value={value}
-        onChange={event =>
-          onChange(
-            event.target.value
-          )
+        value={
+          value
+        }
+        onChange={
+          event =>
+            onChange(
+              event.target
+                .value
+            )
         }
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
       >
         {options.map(
-          option => {
-            const item =
-              typeof option ===
-              "string"
-                ? {
-                    value:
-                      option,
-                    label:
-                      option,
-                  }
-                : option;
-
-            return (
-              <option
-                key={
-                  item.value
-                }
-                value={
-                  item.value
-                }
-              >
-                {item.label}
-              </option>
-            );
-          }
+          option => (
+            <option
+              key={
+                option.value
+              }
+              value={
+                option.value
+              }
+            >
+              {
+                option.label
+              }
+            </option>
+          )
         )}
       </select>
     </label>
@@ -1558,24 +2085,39 @@ function ModalActions({
   saving,
   onCancel,
   submitLabel,
+  savingLabel,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   return (
     <div className="flex justify-end gap-2 border-t border-slate-100 pt-4">
       <button
         type="button"
-        onClick={onCancel}
-        disabled={saving}
+        onClick={
+          onCancel
+        }
+        disabled={
+          saving
+        }
         className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
       >
-        Cancel
+        {t(
+          "appointments.cancel"
+        )}
       </button>
+
       <button
         type="submit"
-        disabled={saving}
+        disabled={
+          saving
+        }
         className="rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50"
       >
         {saving
-          ? "Saving..."
+          ? savingLabel
           : submitLabel}
       </button>
     </div>
