@@ -3,6 +3,10 @@ import {
   useRef,
 } from "react";
 
+import {
+  useTranslation,
+} from "react-i18next";
+
 import ReactMarkdown from "react-markdown";
 
 import {
@@ -13,12 +17,6 @@ import {
   Sparkles,
   UserRound,
 } from "lucide-react";
-
-const quickReplies = [
-  "What could be causing this?",
-  "What should I monitor?",
-  "How many days of medication do I have left?",
-];
 
 function AssistantMessage({
   text,
@@ -31,9 +29,7 @@ function AssistantMessage({
             children,
           }) => (
             <p className="mb-2 last:mb-0">
-              {
-                children
-              }
+              {children}
             </p>
           ),
 
@@ -41,9 +37,7 @@ function AssistantMessage({
             children,
           }) => (
             <strong className="font-semibold text-text-primary">
-              {
-                children
-              }
+              {children}
             </strong>
           ),
 
@@ -51,9 +45,7 @@ function AssistantMessage({
             children,
           }) => (
             <em className="text-text-secondary">
-              {
-                children
-              }
+              {children}
             </em>
           ),
 
@@ -61,9 +53,7 @@ function AssistantMessage({
             children,
           }) => (
             <ul className="my-2 list-disc space-y-1 pl-5">
-              {
-                children
-              }
+              {children}
             </ul>
           ),
 
@@ -71,9 +61,7 @@ function AssistantMessage({
             children,
           }) => (
             <ol className="my-2 list-decimal space-y-1 pl-5">
-              {
-                children
-              }
+              {children}
             </ol>
           ),
 
@@ -81,9 +69,7 @@ function AssistantMessage({
             children,
           }) => (
             <li className="pl-1">
-              {
-                children
-              }
+              {children}
             </li>
           ),
 
@@ -91,9 +77,7 @@ function AssistantMessage({
             children,
           }) => (
             <h1 className="mb-2 mt-3 text-base font-semibold text-text-primary first:mt-0">
-              {
-                children
-              }
+              {children}
             </h1>
           ),
 
@@ -101,9 +85,7 @@ function AssistantMessage({
             children,
           }) => (
             <h2 className="mb-2 mt-3 text-sm font-semibold text-text-primary first:mt-0">
-              {
-                children
-              }
+              {children}
             </h2>
           ),
 
@@ -111,9 +93,7 @@ function AssistantMessage({
             children,
           }) => (
             <h3 className="mb-1 mt-2 text-sm font-semibold text-text-primary first:mt-0">
-              {
-                children
-              }
+              {children}
             </h3>
           ),
 
@@ -121,9 +101,7 @@ function AssistantMessage({
             children,
           }) => (
             <blockquote className="my-2 border-l-2 border-brand-primary/40 pl-3 text-text-secondary">
-              {
-                children
-              }
+              {children}
             </blockquote>
           ),
 
@@ -131,9 +109,7 @@ function AssistantMessage({
             children,
           }) => (
             <code className="rounded bg-white px-1 py-0.5 font-mono text-[0.85em] text-text-primary">
-              {
-                children
-              }
+              {children}
             </code>
           ),
 
@@ -142,16 +118,12 @@ function AssistantMessage({
             href,
           }) => (
             <a
-              href={
-                href
-              }
+              href={href}
               target="_blank"
               rel="noreferrer"
               className="font-medium text-brand-primary underline underline-offset-2"
             >
-              {
-                children
-              }
+              {children}
             </a>
           ),
         }}
@@ -172,24 +144,45 @@ export default function FollowUpScreen({
   onSend,
   onMenu,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
+  const quickReplies = [
+    t(
+      "chatbot.quickCause"
+    ),
+    t(
+      "chatbot.quickMonitor"
+    ),
+    t(
+      "chatbot.quickSupply"
+    ),
+  ];
+
   const bottomRef =
     useRef(null);
 
-  useEffect(() => {
-    bottomRef.current?.scrollIntoView(
-      {
-        behavior:
-          "smooth",
-      }
-    );
-  }, [
-    messages,
-    sending,
-  ]);
+  useEffect(
+    () => {
+      bottomRef
+        .current
+        ?.scrollIntoView({
+          behavior:
+            "smooth",
+        });
+    },
+    [
+      messages,
+      sending,
+    ]
+  );
 
   const handleSubmit =
-    (event) => {
-      event.preventDefault();
+    event => {
+      event
+        .preventDefault();
 
       if (!sending) {
         onSend();
@@ -215,12 +208,16 @@ export default function FollowUpScreen({
           />
 
           <span>
-            Menu
+            {t(
+              "chatbot.menu"
+            )}
           </span>
         </button>
 
         <p className="text-video-title font-medium text-text-tertiary">
-          Chat
+          {t(
+            "chatbot.chat"
+          )}
         </p>
       </div>
 
@@ -310,11 +307,9 @@ export default function FollowUpScreen({
       <div className="border-t border-border-secondary bg-white p-lg">
         <div className="mb-md flex gap-sm overflow-x-auto pb-xs">
           {quickReplies.map(
-            (reply) => (
+            reply => (
               <button
-                key={
-                  reply
-                }
+                key={reply}
                 type="button"
                 disabled={
                   sending
@@ -326,9 +321,7 @@ export default function FollowUpScreen({
                 }
                 className="whitespace-nowrap rounded-corner-full border border-border-secondary bg-white px-md py-sm text-video-title text-text-secondary transition hover:border-brand-primary hover:text-brand-primary disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {
-                  reply
-                }
+                {reply}
               </button>
             )
           )}
@@ -347,41 +340,48 @@ export default function FollowUpScreen({
             disabled={
               sending
             }
-            onChange={(
-              event
-            ) =>
-              onInputChange(
-                event.target
-                  .value
-              )
+            onChange={
+              event =>
+                onInputChange(
+                  event
+                    .target
+                    .value
+                )
             }
-            onKeyDown={(
-              event
-            ) => {
-              if (
-                event.key ===
-                  "Enter" &&
-                !event.shiftKey &&
-                !sending
-              ) {
-                event.preventDefault();
+            onKeyDown={
+              event => {
+                if (
+                  event.key ===
+                    "Enter" &&
+                  !event
+                    .shiftKey &&
+                  !sending
+                ) {
+                  event
+                    .preventDefault();
 
-                onSend();
+                  onSend();
+                }
               }
-            }}
+            }
             rows={1}
-            placeholder="Ask Phila anything..."
+            placeholder={t(
+              "chatbot.askPlaceholder"
+            )}
             className="max-h-28 min-h-10 flex-1 resize-none rounded-corner-md border border-border-secondary bg-white px-md py-sm text-label-sm text-text-primary outline-none transition focus:border-brand-primary disabled:opacity-60"
           />
 
           <button
             type="submit"
             disabled={
-              !inputValue.trim() ||
+              !inputValue
+                .trim() ||
               sending
             }
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-md bg-brand-primary text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-            aria-label="Send message"
+            aria-label={t(
+              "chatbot.sendMessage"
+            )}
           >
             {sending ? (
               <LoaderCircle
@@ -397,9 +397,9 @@ export default function FollowUpScreen({
         </form>
 
         <p className="mt-sm text-center text-[10px] leading-4 text-text-tertiary">
-          PhilaChatBot provides general health
-          information and does not replace a
-          healthcare professional.
+          {t(
+            "chatbot.followupDisclaimer"
+          )}
         </p>
       </div>
     </>
