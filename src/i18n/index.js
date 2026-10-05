@@ -33,6 +33,10 @@ import {
   patientCompletenessResources,
 } from "./patientCompletenessResources.js";
 
+import {
+  patientFinalOverrides,
+} from "./patientFinalOverrides.js";
+
 function isPlainObject(
   value
 ) {
@@ -252,6 +256,22 @@ const resources =
           deepMerge(
             translation,
             patientCompletenessResources[
+              language
+            ] ??
+              {}
+          );
+
+        /*
+         * Always merge the final reviewed corrections last.
+         *
+         * This prevents older partial language packs from
+         * leaking their inherited English values back into
+         * the patient portal.
+         */
+        translation =
+          deepMerge(
+            translation,
+            patientFinalOverrides[
               language
             ] ??
               {}
