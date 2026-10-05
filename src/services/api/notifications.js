@@ -6,6 +6,10 @@ import {
   translateKnownNotificationMessage,
 } from "../../i18n/patientText.js";
 
+import {
+  translateWeatherUpdateMessage,
+} from "../../i18n/weatherNotificationText.js";
+
 function localizeNotification(
   notification
 ) {
@@ -17,14 +21,41 @@ function localizeNotification(
     return notification;
   }
 
+  const originalMessage =
+    notification.message;
+
+  /*
+   * First handle the newer dynamic weather format:
+   *
+   * Weather update: Gqeberha is currently ...
+   *
+   * This keeps locations, temperatures and forecast times
+   * unchanged while translating the sentence, weather
+   * conditions and health advice.
+   */
+  const weatherMessage =
+    translateWeatherUpdateMessage(
+      originalMessage
+    );
+
+  /*
+   * If it was not a new weather update, pass it through the
+   * existing translator for medication, appointment and older
+   * weather-health-tip notifications.
+   */
+  const translatedMessage =
+    weatherMessage !==
+    originalMessage
+      ? weatherMessage
+      : translateKnownNotificationMessage(
+          originalMessage
+        );
+
   return {
     ...notification,
 
     message:
-      translateKnownNotificationMessage(
-        notification
-          .message
-      ),
+      translatedMessage,
   };
 }
 
