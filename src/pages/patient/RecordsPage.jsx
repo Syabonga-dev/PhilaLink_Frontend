@@ -35,30 +35,39 @@ import {
   getLanguageLocale,
 } from "../../i18n/languages.js";
 
+import {
+  translateProviderRole,
+  translateRecordValue,
+} from "../../i18n/patientText.js";
+
 const filters = [
   {
     value: "all",
     labelKey:
       "records.allRecords",
   },
+
   {
     value:
       "consultation",
     labelKey:
       "records.consultations",
   },
+
   {
     value:
       "laboratory",
     labelKey:
       "records.laboratory",
   },
+
   {
     value:
       "medication",
     labelKey:
       "records.medication",
   },
+
   {
     value:
       "observation",
@@ -89,7 +98,9 @@ function formatDate(
   }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   if (
     Number.isNaN(
@@ -106,9 +117,14 @@ function formatDate(
       .toLocaleDateString(
         locale,
         {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
+          day:
+            "numeric",
+
+          month:
+            "long",
+
+          year:
+            "numeric",
         }
       );
   } catch {
@@ -116,9 +132,14 @@ function formatDate(
       .toLocaleDateString(
         "en-ZA",
         {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
+          day:
+            "numeric",
+
+          month:
+            "long",
+
+          year:
+            "numeric",
         }
       );
   }
@@ -246,13 +267,16 @@ function statusDetails(
       statusValue
     );
 
-  switch (status) {
+  switch (
+    status
+  ) {
     case "available":
       return {
         label:
           t(
             "records.available"
           ),
+
         variant:
           "success",
       };
@@ -263,6 +287,7 @@ function statusDetails(
           t(
             "records.completed"
           ),
+
         variant:
           "success",
       };
@@ -273,6 +298,7 @@ function statusDetails(
           t(
             "records.final"
           ),
+
         variant:
           "success",
       };
@@ -283,6 +309,7 @@ function statusDetails(
           t(
             "records.pending"
           ),
+
         variant:
           "warning",
       };
@@ -293,6 +320,7 @@ function statusDetails(
           t(
             "records.draft"
           ),
+
         variant:
           "warning",
       };
@@ -317,7 +345,9 @@ function LoadingState() {
       {[1, 2, 3].map(
         item => (
           <div
-            key={item}
+            key={
+              item
+            }
             className="animate-pulse rounded-corner-lg border border-border-secondary bg-surface-bg p-lg lg:p-xl"
           >
             <div className="flex gap-md">
@@ -602,7 +632,9 @@ export default function RecordsPage() {
 
           <div className="flex-1">
             <p className="text-label-sm text-text-primary">
-              {error}
+              {
+                error
+              }
             </p>
 
             <button
@@ -714,6 +746,26 @@ export default function RecordsPage() {
                   t
                 );
 
+              const translatedTitle =
+                translateRecordValue(
+                  record.title
+                );
+
+              const translatedType =
+                translateRecordValue(
+                  record.type
+                );
+
+              const translatedCategory =
+                translateRecordValue(
+                  record.category
+                );
+
+              const translatedProvider =
+                translateProviderRole(
+                  record.providerName
+                );
+
               return (
                 <div
                   key={
@@ -748,7 +800,7 @@ export default function RecordsPage() {
                         <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-sm">
                             <h3 className="text-label-sm font-semibold text-text-primary">
-                              {record.title ||
+                              {translatedTitle ||
                                 t(
                                   "records.healthRecord"
                                 )}
@@ -757,7 +809,7 @@ export default function RecordsPage() {
                             {record.type && (
                               <Badge
                                 label={
-                                  record.type
+                                  translatedType
                                 }
                                 variant="default"
                               />
@@ -774,7 +826,7 @@ export default function RecordsPage() {
                           </div>
 
                           <p className="mt-xs text-video-title text-text-secondary">
-                            {record.providerName ||
+                            {translatedProvider ||
                               t(
                                 "records.healthcareProvider"
                               )}
@@ -844,7 +896,7 @@ export default function RecordsPage() {
 
                             <p className="mt-xs text-label-sm text-text-primary">
                               {
-                                record.category
+                                translatedCategory
                               }
                             </p>
                           </div>
