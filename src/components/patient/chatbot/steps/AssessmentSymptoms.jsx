@@ -1,13 +1,26 @@
-import { useState } from "react";
-import { Button } from "../AstraCompat.jsx";
+import {
+  useState,
+} from "react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  Button,
+} from "../AstraCompat.jsx";
+
+import {
+  Activity,
   ArrowLeft,
   ArrowRight,
   Plus,
   X,
-  Activity,
 } from "lucide-react";
+
+import {
+  translateAssessmentValue,
+} from "../../../../i18n/patientText.js";
 
 const commonSymptoms = [
   "Headache",
@@ -32,60 +45,100 @@ export default function AssessmentSymptoms({
   onNext,
   onBack,
 }) {
-  const [customSymptom, setCustomSymptom] =
+  const {
+    t,
+  } =
+    useTranslation();
+
+  const [
+    customSymptom,
+    setCustomSymptom,
+  ] =
     useState("");
 
   const symptoms =
-    assessment.symptoms || [];
+    assessment.symptoms ||
+    [];
 
-  const toggleSymptom = (symptom) => {
-    if (symptoms.includes(symptom)) {
-      onUpdate({
-        symptoms: symptoms.filter(
-          (item) => item !== symptom
-        ),
-      });
+  const toggleSymptom =
+    symptom => {
+      if (
+        symptoms.includes(
+          symptom
+        )
+      ) {
+        onUpdate({
+          symptoms:
+            symptoms.filter(
+              item =>
+                item !==
+                symptom
+            ),
+        });
 
-      return;
-    }
+        return;
+      }
 
-    onUpdate({
-      symptoms: [
-        ...symptoms,
-        symptom,
-      ],
-    });
-  };
-
-  const addCustomSymptom = () => {
-    const value =
-      customSymptom.trim();
-
-    if (!value) {
-      return;
-    }
-
-    const alreadyExists =
-      symptoms.some(
-        (item) =>
-          item.toLowerCase() ===
-          value.toLowerCase()
-      );
-
-    if (!alreadyExists) {
       onUpdate({
         symptoms: [
           ...symptoms,
-          value,
+          symptom,
         ],
       });
-    }
+    };
 
-    setCustomSymptom("");
-  };
+  const addCustomSymptom =
+    () => {
+      const value =
+        customSymptom
+          .trim();
+
+      if (!value) {
+        return;
+      }
+
+      const alreadyExists =
+        symptoms.some(
+          item =>
+            item.toLowerCase() ===
+            value.toLowerCase()
+        );
+
+      if (!alreadyExists) {
+        onUpdate({
+          symptoms: [
+            ...symptoms,
+            value,
+          ],
+        });
+      }
+
+      setCustomSymptom(
+        ""
+      );
+    };
 
   const canContinue =
-    symptoms.length > 0;
+    symptoms.length >
+    0;
+
+  const hasHighRisk =
+    symptoms.some(
+      symptom => {
+        const value =
+          symptom
+            .toLowerCase();
+
+        return (
+          value.includes(
+            "chest pain"
+          ) ||
+          value.includes(
+            "shortness of breath"
+          )
+        );
+      }
+    );
 
   return (
     <div className="flex flex-col gap-xl">
@@ -98,18 +151,21 @@ export default function AssessmentSymptoms({
         </div>
 
         <h2 className="mt-lg text-title text-text-primary">
-          What symptoms are you experiencing?
+          {t(
+            "chatbot.symptomsTitle"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Select all symptoms that apply. You can also add
-          a symptom that is not listed.
+          {t(
+            "chatbot.symptomsDescription"
+          )}
         </p>
       </div>
 
       <div className="flex flex-wrap gap-sm">
         {commonSymptoms.map(
-          (symptom) => {
+          symptom => {
             const selected =
               symptoms.includes(
                 symptom
@@ -117,7 +173,9 @@ export default function AssessmentSymptoms({
 
             return (
               <button
-                key={symptom}
+                key={
+                  symptom
+                }
                 type="button"
                 onClick={() =>
                   toggleSymptom(
@@ -130,7 +188,10 @@ export default function AssessmentSymptoms({
                     : "border-border-secondary bg-surface-bg text-text-secondary hover:border-brand-primary hover:text-text-primary"
                 }`}
               >
-                {symptom}
+                {translateAssessmentValue(
+                  "symptom",
+                  symptom
+                )}
               </button>
             );
           }
@@ -142,56 +203,84 @@ export default function AssessmentSymptoms({
           htmlFor="custom-symptom"
           className="mb-xs block text-video-title font-medium text-text-secondary"
         >
-          Add another symptom
+          {t(
+            "chatbot.addSymptom"
+          )}
         </label>
 
         <div className="flex gap-sm">
           <input
             id="custom-symptom"
             type="text"
-            value={customSymptom}
-            onChange={(event) =>
-              setCustomSymptom(
-                event.target.value
-              )
+            value={
+              customSymptom
             }
-            onKeyDown={(event) => {
-              if (
-                event.key === "Enter"
-              ) {
-                event.preventDefault();
-                addCustomSymptom();
+            onChange={
+              event =>
+                setCustomSymptom(
+                  event
+                    .target
+                    .value
+                )
+            }
+            onKeyDown={
+              event => {
+                if (
+                  event.key ===
+                  "Enter"
+                ) {
+                  event
+                    .preventDefault();
+
+                  addCustomSymptom();
+                }
               }
-            }}
-            placeholder="Type a symptom"
+            }
+            placeholder={t(
+              "chatbot.symptomPlaceholder"
+            )}
             className="min-w-0 flex-1 rounded-corner-md border border-border-secondary bg-surface-bg px-md py-sm text-label-sm text-text-primary outline-none transition placeholder:text-text-tertiary focus:border-brand-primary"
           />
 
           <button
             type="button"
-            onClick={addCustomSymptom}
+            onClick={
+              addCustomSymptom
+            }
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-corner-md bg-brand-primary text-on-brand transition hover:bg-brand-hover"
-            aria-label="Add symptom"
+            aria-label={t(
+              "chatbot.addSymptomAria"
+            )}
           >
-            <Plus size={16} />
+            <Plus
+              size={16}
+            />
           </button>
         </div>
       </div>
 
-      {symptoms.length > 0 && (
+      {symptoms.length >
+        0 && (
         <div>
           <p className="mb-sm text-video-title font-medium text-text-secondary">
-            Selected symptoms
+            {t(
+              "chatbot.selectedSymptoms"
+            )}
           </p>
 
           <div className="flex flex-wrap gap-sm">
             {symptoms.map(
-              (symptom) => (
+              symptom => (
                 <span
-                  key={symptom}
+                  key={
+                    symptom
+                  }
                   className="inline-flex items-center gap-xs rounded-corner-full bg-bg-faint px-md py-sm text-video-title text-text-primary"
                 >
-                  {symptom}
+                  {translateAssessmentValue(
+                    "symptom",
+                    symptom
+                  )}
 
                   <button
                     type="button"
@@ -200,10 +289,21 @@ export default function AssessmentSymptoms({
                         symptom
                       )
                     }
-                    aria-label={`Remove ${symptom}`}
+                    aria-label={t(
+                      "chatbot.removeSymptom",
+                      {
+                        item:
+                          translateAssessmentValue(
+                            "symptom",
+                            symptom
+                          ),
+                      }
+                    )}
                     className="text-text-secondary transition hover:text-danger"
                   >
-                    <X size={12} />
+                    <X
+                      size={12}
+                    />
                   </button>
                 </span>
               )
@@ -212,24 +312,12 @@ export default function AssessmentSymptoms({
         </div>
       )}
 
-      {symptoms.some(
-        (symptom) =>
-          symptom
-            .toLowerCase()
-            .includes(
-              "chest pain"
-            ) ||
-          symptom
-            .toLowerCase()
-            .includes(
-              "shortness of breath"
-            )
-      ) && (
+      {hasHighRisk && (
         <div className="rounded-corner-md border border-danger bg-danger/10 p-md">
           <p className="text-video-title leading-5 text-danger">
-            Some symptoms you selected can be serious.
-            PhilaChatBot will perform an emergency safety
-            check before showing general guidance.
+            {t(
+              "chatbot.seriousSymptoms"
+            )}
           </p>
         </div>
       )}
@@ -238,24 +326,38 @@ export default function AssessmentSymptoms({
         <Button
           variant="subtle"
           iconStart={
-            <ArrowLeft size={15} />
+            <ArrowLeft
+              size={15}
+            />
           }
-          onClick={onBack}
+          onClick={
+            onBack
+          }
           className="flex-1"
         >
-          Back
+          {t(
+            "chatbot.back"
+          )}
         </Button>
 
         <Button
           variant="primary"
           iconEnd={
-            <ArrowRight size={15} />
+            <ArrowRight
+              size={15}
+            />
           }
-          onClick={onNext}
-          disabled={!canContinue}
+          onClick={
+            onNext
+          }
+          disabled={
+            !canContinue
+          }
           className="flex-1"
         >
-          Continue
+          {t(
+            "chatbot.continue"
+          )}
         </Button>
       </div>
     </div>
