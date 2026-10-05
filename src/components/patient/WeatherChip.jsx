@@ -20,6 +20,10 @@ import {
 } from "react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   weatherApi,
 } from "../../services/api/weather.js";
 
@@ -35,10 +39,6 @@ const GPS_COLLECTION_WINDOW_MS =
 const GPS_TARGET_ACCURACY_METRES =
   20;
 
-// =========================================================
-// DAY / NIGHT
-// =========================================================
-
 function isNightTime(
   date
 ) {
@@ -51,17 +51,14 @@ function isNightTime(
   );
 }
 
-// =========================================================
-// WEATHER CONDITION
-// =========================================================
-
 function getWeatherKind(
   description
 ) {
   const value =
     String(
       description || ""
-    ).toLowerCase();
+    )
+      .toLowerCase();
 
   if (
     value.includes(
@@ -137,15 +134,11 @@ function getWeatherKind(
       "cloud"
     )
   ) {
-    return "partly-cloudy";
+    return "partlyCloudy";
   }
 
-  return "cloud";
+  return "cloudy";
 }
-
-// =========================================================
-// WEATHER ICON
-// =========================================================
 
 function WeatherVisual({
   description,
@@ -160,54 +153,51 @@ function WeatherVisual({
   if (
     kind === "clear"
   ) {
-    if (isNight) {
-      return (
+    return isNight
+      ? (
         <Moon
           size={size}
           strokeWidth={2}
           className="shrink-0 text-[#2563eb]"
           aria-hidden="true"
         />
+      )
+      : (
+        <Sun
+          size={size}
+          strokeWidth={2}
+          className="shrink-0 text-[#f59e0b]"
+          aria-hidden="true"
+        />
       );
-    }
-
-    return (
-      <Sun
-        size={size}
-        strokeWidth={2}
-        className="shrink-0 text-[#f59e0b]"
-        aria-hidden="true"
-      />
-    );
   }
 
   if (
     kind ===
-    "partly-cloudy"
+    "partlyCloudy"
   ) {
-    if (isNight) {
-      return (
+    return isNight
+      ? (
         <CloudMoon
           size={size}
           strokeWidth={2}
           className="shrink-0 text-[#2563eb]"
           aria-hidden="true"
         />
+      )
+      : (
+        <CloudSun
+          size={size}
+          strokeWidth={2}
+          className="shrink-0 text-[#f59e0b]"
+          aria-hidden="true"
+        />
       );
-    }
-
-    return (
-      <CloudSun
-        size={size}
-        strokeWidth={2}
-        className="shrink-0 text-[#f59e0b]"
-        aria-hidden="true"
-      />
-    );
   }
 
   if (
-    kind === "overcast"
+    kind ===
+    "overcast"
   ) {
     return (
       <Cloud
@@ -233,7 +223,8 @@ function WeatherVisual({
   }
 
   if (
-    kind === "thunder"
+    kind ===
+    "thunder"
   ) {
     return (
       <CloudLightning
@@ -281,38 +272,6 @@ function WeatherVisual({
   );
 }
 
-// =========================================================
-// DESCRIPTION
-// =========================================================
-
-function formatDescription(
-  description
-) {
-  if (
-    !description
-  ) {
-    return "Weather";
-  }
-
-  return description
-    .split(" ")
-    .filter(Boolean)
-    .map(
-      (
-        word
-      ) =>
-        word
-          .charAt(0)
-          .toUpperCase() +
-        word.slice(1)
-    )
-    .join(" ");
-}
-
-// =========================================================
-// HUMAN-READABLE LOCATION
-// =========================================================
-
 function formatLocationName(
   locationName
 ) {
@@ -330,13 +289,6 @@ function formatLocationName(
     return "";
   }
 
-  /*
-   * Weather providers sometimes return the nearest
-   * observing station instead of a useful city/locality.
-   *
-   * Remove station-style suffixes before displaying
-   * the name to the patient.
-   */
   value =
     value
       .replace(
@@ -365,25 +317,15 @@ function formatLocationName(
       )
       .trim();
 
-  /*
-   * The weather provider may still use the historical
-   * Port Elizabeth place name.
-   *
-   * PhilaLink displays the current city name.
-   */
   if (
     value.toLowerCase() ===
-      "port elizabeth"
+    "port elizabeth"
   ) {
     return "Gqeberha";
   }
 
   return value;
 }
-
-// =========================================================
-// HIGH-ACCURACY POSITION
-// =========================================================
 
 function getBestCurrentPosition() {
   return new Promise(
@@ -396,11 +338,9 @@ function getBestCurrentPosition() {
           "undefined" ||
         !navigator.geolocation
       ) {
-        reject(
-          new Error(
-            "Location services are unavailable."
-          )
-        );
+        reject({
+          code: 0,
+        });
 
         return;
       }
@@ -423,7 +363,8 @@ function getBestCurrentPosition() {
       const cleanup =
         () => {
           if (
-            watchId !== null
+            watchId !==
+            null
           ) {
             navigator
               .geolocation
@@ -433,7 +374,8 @@ function getBestCurrentPosition() {
           }
 
           if (
-            timerId !== null
+            timerId !==
+            null
           ) {
             window
               .clearTimeout(
@@ -444,14 +386,11 @@ function getBestCurrentPosition() {
 
       const finish =
         () => {
-          if (
-            settled
-          ) {
+          if (settled) {
             return;
           }
 
-          settled =
-            true;
+          settled = true;
 
           cleanup();
 
@@ -466,10 +405,9 @@ function getBestCurrentPosition() {
           }
 
           reject(
-            lastError ||
-              new Error(
-                "Your current location could not be determined."
-              )
+            lastError || {
+              code: 2,
+            }
           );
         };
 
@@ -477,9 +415,7 @@ function getBestCurrentPosition() {
         navigator
           .geolocation
           .watchPosition(
-            (
-              position
-            ) => {
+            position => {
               const accuracy =
                 Number(
                   position
@@ -528,16 +464,14 @@ function getBestCurrentPosition() {
               }
             },
 
-            (
-              geoError
-            ) => {
+            geoError => {
               lastError =
                 geoError;
 
               if (
                 geoError.code ===
-                  geoError
-                    .PERMISSION_DENIED
+                geoError
+                  .PERMISSION_DENIED
               ) {
                 finish();
               }
@@ -546,10 +480,7 @@ function getBestCurrentPosition() {
             {
               enableHighAccuracy:
                 true,
-
-              maximumAge:
-                0,
-
+              maximumAge: 0,
               timeout:
                 GPS_COLLECTION_WINDOW_MS,
             }
@@ -565,58 +496,53 @@ function getBestCurrentPosition() {
   );
 }
 
-// =========================================================
-// LOCATION ERROR
-// =========================================================
-
 function getLocationErrorMessage(
-  error
+  error,
+  t
 ) {
-  if (
-    !error
-  ) {
-    return (
-      "Location unavailable."
+  if (!error) {
+    return t(
+      "weather.locationUnavailable"
     );
   }
 
   if (
     error.code === 1
   ) {
-    return (
-      "Precise location access was denied."
+    return t(
+      "weather.preciseLocationDenied"
     );
   }
 
   if (
     error.code === 2
   ) {
-    return (
-      "Your current location could not be determined."
+    return t(
+      "weather.locationUndetermined"
     );
   }
 
   if (
     error.code === 3
   ) {
-    return (
-      "The location request timed out."
+    return t(
+      "weather.locationTimeout"
     );
   }
 
-  return (
-    error.message ||
-    "Location unavailable."
+  return t(
+    "weather.locationUnavailable"
   );
 }
-
-// =========================================================
-// WEATHER CHIP
-// =========================================================
 
 export default function WeatherChip({
   onNotificationCreated,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const [
     weather,
     setWeather,
@@ -658,8 +584,7 @@ export default function WeatherChip({
     setClockTime,
   ] =
     useState(
-      () =>
-        Date.now()
+      () => Date.now()
     );
 
   const lastRefreshRef =
@@ -667,10 +592,6 @@ export default function WeatherChip({
 
   const containerRef =
     useRef(null);
-
-  // =======================================================
-  // WEATHER HEALTH TIP
-  // =======================================================
 
   const generateWeatherTip =
     useCallback(
@@ -706,15 +627,10 @@ export default function WeatherChip({
       ]
     );
 
-  // =======================================================
-  // CLINIC FALLBACK WEATHER
-  // =======================================================
-
   const loadClinicWeather =
     useCallback(
       async ({
-        background =
-          false,
+        background = false,
       } = {}) => {
         const result =
           await weatherApi
@@ -750,15 +666,10 @@ export default function WeatherChip({
       ]
     );
 
-  // =======================================================
-  // CURRENT-LOCATION WEATHER
-  // =======================================================
-
   const loadWeather =
     useCallback(
       async ({
-        background =
-          false,
+        background = false,
       } = {}) => {
         if (
           !background
@@ -769,19 +680,15 @@ export default function WeatherChip({
         }
 
         setError("");
-
         setLocationError("");
 
         const useClinicFallback =
-          async (
-            geoError
-          ) => {
-            if (
-              geoError
-            ) {
+          async geoError => {
+            if (geoError) {
               setLocationError(
                 getLocationErrorMessage(
-                  geoError
+                  geoError,
+                  t
                 )
               );
             }
@@ -810,17 +717,9 @@ export default function WeatherChip({
                 );
 
                 setError(
-                  clinicError
-                    ?.message ||
-                    "Weather unavailable."
-                );
-              }
-            } finally {
-              if (
-                !background
-              ) {
-                setLoading(
-                  false
+                  t(
+                    "weather.unavailable"
+                  )
                 );
               }
             }
@@ -852,9 +751,9 @@ export default function WeatherChip({
               longitude
             )
           ) {
-            throw new Error(
-              "The browser returned invalid location coordinates."
-            );
+            throw {
+              code: 2,
+            };
           }
 
           const result =
@@ -873,19 +772,10 @@ export default function WeatherChip({
           );
 
           setError("");
-
           setLocationError("");
 
           lastRefreshRef.current =
             Date.now();
-
-          if (
-            !background
-          ) {
-            setLoading(
-              false
-            );
-          }
 
           void generateWeatherTip(
             latitude,
@@ -915,12 +805,9 @@ export default function WeatherChip({
       [
         generateWeatherTip,
         loadClinicWeather,
+        t,
       ]
     );
-
-  // =======================================================
-  // INITIAL + PERIODIC WEATHER REFRESH
-  // =======================================================
 
   useEffect(
     () => {
@@ -938,48 +825,10 @@ export default function WeatherChip({
             WEATHER_REFRESH_INTERVAL_MS
           );
 
-      const handleVisibilityChange =
-        () => {
-          if (
-            document
-              .visibilityState !==
-            "visible"
-          ) {
-            return;
-          }
-
-          const elapsed =
-            Date.now() -
-            lastRefreshRef
-              .current;
-
-          if (
-            elapsed >=
-              WEATHER_REFRESH_INTERVAL_MS
-          ) {
-            void loadWeather({
-              background:
-                true,
-            });
-          }
-        };
-
-      document
-        .addEventListener(
-          "visibilitychange",
-          handleVisibilityChange
-        );
-
       return () => {
         window
           .clearInterval(
             intervalId
-          );
-
-        document
-          .removeEventListener(
-            "visibilitychange",
-            handleVisibilityChange
           );
       };
     },
@@ -987,10 +836,6 @@ export default function WeatherChip({
       loadWeather,
     ]
   );
-
-  // =======================================================
-  // CLOCK
-  // =======================================================
 
   useEffect(
     () => {
@@ -1005,44 +850,13 @@ export default function WeatherChip({
             CLOCK_REFRESH_INTERVAL_MS
           );
 
-      const handleVisibilityChange =
-        () => {
-          if (
-            document
-              .visibilityState ===
-            "visible"
-          ) {
-            setClockTime(
-              Date.now()
-            );
-          }
-        };
-
-      document
-        .addEventListener(
-          "visibilitychange",
-          handleVisibilityChange
+      return () =>
+        window.clearInterval(
+          intervalId
         );
-
-      return () => {
-        window
-          .clearInterval(
-            intervalId
-          );
-
-        document
-          .removeEventListener(
-            "visibilitychange",
-            handleVisibilityChange
-          );
-      };
     },
     []
   );
-
-  // =======================================================
-  // CLOSE DETAILS
-  // =======================================================
 
   useEffect(
     () => {
@@ -1053,9 +867,7 @@ export default function WeatherChip({
       }
 
       const handlePointerDown =
-        (
-          event
-        ) => {
+        event => {
           if (
             containerRef.current &&
             !containerRef
@@ -1071,9 +883,7 @@ export default function WeatherChip({
         };
 
       const handleKeyDown =
-        (
-          event
-        ) => {
+        event => {
           if (
             event.key ===
             "Escape"
@@ -1115,18 +925,16 @@ export default function WeatherChip({
     ]
   );
 
-  // =======================================================
-  // LOADING
-  // =======================================================
-
-  if (
-    loading
-  ) {
+  if (loading) {
     return (
       <div
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] sm:w-auto sm:px-3"
-        aria-label="Loading weather"
-        title="Loading weather"
+        aria-label={t(
+          "weather.loading"
+        )}
+        title={t(
+          "weather.loading"
+        )}
       >
         <MapPin
           size={17}
@@ -1134,15 +942,13 @@ export default function WeatherChip({
         />
 
         <span className="ml-2 hidden text-xs sm:inline">
-          Locating...
+          {t(
+            "weather.locating"
+          )}
         </span>
       </div>
     );
   }
-
-  // =======================================================
-  // ERROR
-  // =======================================================
 
   if (
     error ||
@@ -1155,8 +961,12 @@ export default function WeatherChip({
           void loadWeather()
         }
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#64748b] transition hover:bg-[#f8fafc] sm:w-auto sm:px-3"
-        title="Retry weather"
-        aria-label="Weather unavailable. Retry weather."
+        title={t(
+          "weather.retry"
+        )}
+        aria-label={t(
+          "weather.retry"
+        )}
       >
         <Cloud
           size={18}
@@ -1164,15 +974,13 @@ export default function WeatherChip({
         />
 
         <span className="ml-2 hidden text-xs font-medium sm:inline">
-          Weather unavailable
+          {t(
+            "weather.unavailable"
+          )}
         </span>
       </button>
     );
   }
-
-  // =======================================================
-  // DISPLAY VALUES
-  // =======================================================
 
   const isNight =
     isNightTime(
@@ -1196,10 +1004,15 @@ export default function WeatherChip({
         )
       : null;
 
-  const description =
-    formatDescription(
+  const kind =
+    getWeatherKind(
       weather
         .description
+    );
+
+  const description =
+    t(
+      `weather.condition.${kind}`
     );
 
   const providerLocation =
@@ -1208,55 +1021,63 @@ export default function WeatherChip({
         .locationName
     );
 
-  /*
-   * The user asked for only a useful human-readable
-   * city, suburb or locality here.
-   *
-   * No GPS accuracy value is shown.
-   */
   const locationText =
     providerLocation ||
     (
       weatherSource ===
         "current"
-        ? "Current location"
-        : "Assigned clinic area"
+        ? t(
+            "weather.currentLocation"
+          )
+        : t(
+            "weather.assignedClinicArea"
+          )
     );
 
   const title =
     weatherSource ===
       "current"
-      ? `Weather in ${locationText}`
-      : `Clinic-area weather: ${locationText}`;
-
-  // =======================================================
-  // UI
-  // =======================================================
+      ? t(
+          "weather.weatherIn",
+          {
+            location:
+              locationText,
+          }
+        )
+      : t(
+          "weather.clinicAreaWeather",
+          {
+            location:
+              locationText,
+          }
+        );
 
   return (
     <div
       ref={containerRef}
       className="relative"
     >
-      {/* ================================================= */}
-      {/* WEATHER CHIP */}
-      {/* ================================================= */}
-
       <button
         type="button"
         onClick={() =>
           setDetailsOpen(
-            (
-              current
-            ) =>
+            current =>
               !current
           )
         }
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#e2e8f0] bg-white text-[#334155] transition hover:bg-[#f8fafc] sm:w-auto sm:min-w-0 sm:gap-2 sm:px-3"
         title={title}
         aria-label={`${title}. ${description}. ${
-          temperature ?? ""
-        } degrees Celsius.`}
+          temperature !==
+          null
+            ? t(
+                "weather.degreesCelsius",
+                {
+                  temperature,
+                }
+              )
+            : ""
+        }`}
         aria-expanded={
           detailsOpen
         }
@@ -1287,33 +1108,32 @@ export default function WeatherChip({
         {weatherSource ===
           "clinic" && (
           <span className="hidden rounded-full bg-[#f1f5f9] px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-[#64748b] 2xl:inline">
-            Clinic
+            {t(
+              "weather.clinic"
+            )}
           </span>
         )}
       </button>
 
-      {/* ================================================= */}
-      {/* PHONE + TABLET WEATHER DETAILS */}
-      {/* ================================================= */}
-
       {detailsOpen && (
-        <div className="absolute right-0 top-12 z-50 w-[260px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl xl:hidden">
-
-          {/* ============================================= */}
-          {/* HEADER */}
-          {/* ============================================= */}
-
+        <div className="absolute right-0 top-12 z-50 w-[270px] overflow-hidden rounded-2xl border border-[#e2e8f0] bg-white shadow-xl xl:hidden">
           <div className="flex items-start justify-between gap-3 border-b border-[#e2e8f0] px-4 py-3">
             <div>
               <p className="text-xs font-medium uppercase tracking-wide text-[#64748b]">
-                Weather
+                {t(
+                  "weather.weather"
+                )}
               </p>
 
               <p className="mt-0.5 text-sm font-semibold text-[#0f172a]">
                 {weatherSource ===
                 "current"
-                  ? "Current-location weather"
-                  : "Clinic weather"}
+                  ? t(
+                      "weather.currentLocationWeather"
+                    )
+                  : t(
+                      "weather.clinicWeather"
+                    )}
               </p>
             </div>
 
@@ -1325,7 +1145,9 @@ export default function WeatherChip({
                 )
               }
               className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#64748b] transition hover:bg-[#f1f5f9]"
-              aria-label="Close weather details"
+              aria-label={t(
+                "weather.closeDetails"
+              )}
             >
               <X
                 size={15}
@@ -1333,13 +1155,8 @@ export default function WeatherChip({
             </button>
           </div>
 
-          {/* ============================================= */}
-          {/* DETAILS */}
-          {/* ============================================= */}
-
           <div className="p-4">
             <div className="flex items-center gap-3">
-
               <div
                 className={`flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl ${
                   isNight
@@ -1360,7 +1177,6 @@ export default function WeatherChip({
               </div>
 
               <div className="min-w-0">
-
                 {temperature !==
                   null && (
                   <p className="text-2xl font-bold leading-none text-[#0f172a]">
@@ -1388,19 +1204,18 @@ export default function WeatherChip({
 
                   <span className="text-[11px] font-medium text-[#64748b]">
                     {isNight
-                      ? "Night"
-                      : "Day"}
+                      ? t(
+                          "weather.night"
+                        )
+                      : t(
+                          "weather.day"
+                        )}
                   </span>
                 </div>
               </div>
             </div>
 
-            {/* =========================================== */}
-            {/* LOCATION */}
-            {/* =========================================== */}
-
             <div className="mt-4 flex items-start gap-2 rounded-xl bg-[#f8fafc] px-3 py-3">
-
               <MapPin
                 size={15}
                 className="mt-0.5 shrink-0 text-[#2563eb]"
@@ -1408,7 +1223,9 @@ export default function WeatherChip({
 
               <div className="min-w-0">
                 <p className="text-[10px] font-medium uppercase tracking-wide text-[#94a3b8]">
-                  Location
+                  {t(
+                    "weather.location"
+                  )}
                 </p>
 
                 <p className="mt-0.5 text-sm font-semibold text-[#334155]">
@@ -1417,16 +1234,14 @@ export default function WeatherChip({
               </div>
             </div>
 
-            {/* =========================================== */}
-            {/* CLINIC FALLBACK */}
-            {/* =========================================== */}
-
             {locationError &&
               weatherSource ===
                 "clinic" && (
                 <div className="mt-3 rounded-xl bg-[#fff7ed] px-3 py-2.5">
                   <p className="text-[11px] leading-4 text-[#9a3412]">
-                    {locationError}
+                    {
+                      locationError
+                    }
                   </p>
                 </div>
               )}
@@ -1434,7 +1249,9 @@ export default function WeatherChip({
             {weatherSource ===
               "clinic" && (
               <p className="mt-3 text-[11px] leading-4 text-[#64748b]">
-                Your device location was unavailable, so PhilaLink is showing weather for your assigned clinic area.
+                {t(
+                  "weather.deviceLocationFallback"
+                )}
               </p>
             )}
           </div>
