@@ -20,6 +20,10 @@ import {
   dashboardResources,
 } from "./dashboardResources.js";
 
+import {
+  patientPageResources,
+} from "./patientPageResources.js";
+
 function applyDocumentLanguage(
   language
 ) {
@@ -42,9 +46,7 @@ const initialLanguage =
 const resources =
   Object.fromEntries(
     SUPPORTED_LANGUAGE_CODES.map(
-      (
-        language
-      ) => {
+      language => {
         const baseTranslation =
           baseResources[
             language
@@ -62,6 +64,14 @@ const resources =
             DEFAULT_LANGUAGE
           ];
 
+        const pageTranslation =
+          patientPageResources[
+            language
+          ] ??
+          patientPageResources[
+            DEFAULT_LANGUAGE
+          ];
+
         return [
           language,
           {
@@ -70,6 +80,22 @@ const resources =
 
               dashboard:
                 dashboardTranslation,
+
+              medications:
+                pageTranslation
+                  .medications,
+
+              appointments:
+                pageTranslation
+                  .appointments,
+
+              records:
+                pageTranslation
+                  .records,
+
+              clinics:
+                pageTranslation
+                  .clinics,
             },
           },
         ];
@@ -122,9 +148,7 @@ applyDocumentLanguage(
 
 i18n.on(
   "languageChanged",
-  (
-    language
-  ) => {
+  language => {
     const normalized =
       storeLanguage(
         language
