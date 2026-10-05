@@ -1,4 +1,10 @@
-import { Button } from "../AstraCompat.jsx";
+import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  Button,
+} from "../AstraCompat.jsx";
 
 import {
   AlertCircle,
@@ -6,38 +12,71 @@ import {
   WifiOff,
 } from "lucide-react";
 
-const errorMessages = {
-  network: {
-    title: "We couldn't connect to PhilaChatBot",
-    description:
-      "Check your internet connection and try again.",
-    icon: WifiOff,
-  },
-
-  unavailable: {
-    title: "PhilaChatBot is temporarily unavailable",
-    description:
-      "The health assistant could not process your request right now. Please try again shortly.",
-    icon: AlertCircle,
-  },
-
-  missing: {
-    title: "More information is needed",
-    description:
-      "Please review your assessment and provide the missing information before continuing.",
-    icon: AlertCircle,
-  },
-};
-
 export default function ErrorScreen({
   errorType = "network",
   onRetry,
 }) {
-  const error =
-    errorMessages[errorType] ||
-    errorMessages.network;
+  const {
+    t,
+  } =
+    useTranslation();
 
-  const Icon = error.icon;
+  const errorMessages = {
+    network: {
+      title:
+        t(
+          "chatbot.errorNetworkTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.errorNetworkDescription"
+        ),
+
+      icon:
+        WifiOff,
+    },
+
+    unavailable: {
+      title:
+        t(
+          "chatbot.errorUnavailableTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.errorUnavailableDescription"
+        ),
+
+      icon:
+        AlertCircle,
+    },
+
+    missing: {
+      title:
+        t(
+          "chatbot.errorMissingTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.errorMissingDescription"
+        ),
+
+      icon:
+        AlertCircle,
+    },
+  };
+
+  const error =
+    errorMessages[
+      errorType
+    ] ||
+    errorMessages
+      .network;
+
+  const Icon =
+    error.icon;
 
   return (
     <div className="flex flex-col items-center gap-xl py-xl text-center">
@@ -54,24 +93,32 @@ export default function ErrorScreen({
         </h2>
 
         <p className="mt-sm max-w-sm text-label-sm leading-6 text-text-secondary">
-          {error.description}
+          {
+            error.description
+          }
         </p>
       </div>
 
       <Button
         variant="primary"
         iconStart={
-          <RefreshCw size={15} />
+          <RefreshCw
+            size={15}
+          />
         }
-        onClick={onRetry}
+        onClick={
+          onRetry
+        }
       >
-        Try again
+        {t(
+          "chatbot.tryAgain"
+        )}
       </Button>
 
       <p className="text-video-title leading-5 text-text-tertiary">
-        If you are experiencing a medical emergency,
-        contact emergency services instead of waiting for
-        the chatbot.
+        {t(
+          "chatbot.emergencyInstead"
+        )}
       </p>
     </div>
   );
