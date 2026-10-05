@@ -1,4 +1,8 @@
-import { api } from "./client.js";
+import i18n from "../../i18n/index.js";
+
+import {
+  api,
+} from "./client.js";
 
 export const medicationsApi = {
   getMine: () =>
@@ -20,7 +24,9 @@ export const medicationsApi = {
   ) => {
     if (!medicationId) {
       throw new Error(
-        "A medication ID is required."
+        i18n.t(
+          "api.medicationIdRequired"
+        )
       );
     }
 
