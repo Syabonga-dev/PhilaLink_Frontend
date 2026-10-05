@@ -1,23 +1,45 @@
-import { Tooltip } from "./AstraCompat.jsx";
-import { MessageCircle } from "lucide-react";
+import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  MessageCircle,
+} from "lucide-react";
+
+import {
+  Tooltip,
+} from "./AstraCompat.jsx";
 
 export default function FloatingButton({
   onClick,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   return (
     <div className="fixed bottom-4 right-4 z-50 lg:bottom-6 lg:right-6">
       <Tooltip
-        content="Your AI health assistant"
+        content={t(
+          "chatbot.floatingTooltip"
+        )}
         position="right"
       >
         <button
           type="button"
-          onClick={onClick}
+          onClick={
+            onClick
+          }
           className="flex items-center gap-md rounded-corner-full bg-brand-primary px-lg py-md text-on-brand shadow-lg transition-colors hover:bg-brand-hover active:bg-brand-dark focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-primary focus-visible:ring-offset-2"
-          aria-label="Open PhilaChatBot AI health assistant"
+          aria-label={t(
+            "chatbot.openAssistant"
+          )}
         >
           <div className="relative flex-shrink-0">
-            <MessageCircle size={18} />
+            <MessageCircle
+              size={18}
+            />
 
             <span className="absolute -right-0.5 -top-0.5 h-2.5 w-2.5 rounded-corner-full border-2 border-brand-primary bg-success" />
           </div>
