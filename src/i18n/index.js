@@ -29,6 +29,90 @@ import {
   patientPageFixes,
 } from "./patientExperienceResources.js";
 
+import {
+  patientCompletenessResources,
+} from "./patientCompletenessResources.js";
+
+function isPlainObject(
+  value
+) {
+  return (
+    value !== null &&
+    typeof value ===
+      "object" &&
+    !Array.isArray(
+      value
+    )
+  );
+}
+
+function deepMerge(
+  base,
+  override
+) {
+  if (
+    !isPlainObject(
+      base
+    )
+  ) {
+    base = {};
+  }
+
+  if (
+    !isPlainObject(
+      override
+    )
+  ) {
+    return {
+      ...base,
+    };
+  }
+
+  const result = {
+    ...base,
+  };
+
+  Object.entries(
+    override
+  ).forEach(
+    ([
+      key,
+      value,
+    ]) => {
+      if (
+        isPlainObject(
+          value
+        )
+      ) {
+        result[
+          key
+        ] =
+          deepMerge(
+            isPlainObject(
+              result[
+                key
+              ]
+            )
+              ? result[
+                  key
+                ]
+              : {},
+            value
+          );
+
+        return;
+      }
+
+      result[
+        key
+      ] =
+        value;
+    }
+  );
+
+  return result;
+}
+
 function applyDocumentLanguage(
   language
 ) {
@@ -39,10 +123,12 @@ function applyDocumentLanguage(
     return;
   }
 
-  document.documentElement.lang =
-    normalizeLanguage(
-      language
-    );
+  document
+    .documentElement
+    .lang =
+      normalizeLanguage(
+        language
+      );
 }
 
 const initialLanguage =
@@ -85,32 +171,22 @@ const resources =
           ] ??
           {};
 
-        /*
-         * PatientExperienceResources currently contains
-         * complete English and isiZulu coverage for the
-         * newly-localised patient components.
-         *
-         * Other existing language packs continue to use
-         * their current translations and fall back to
-         * English for new namespaces until their linguistic
-         * review is completed.
-         */
         const experienceTranslation =
           patientExperienceResources[
             language
           ]?.translation ??
-          patientExperienceResources[
-            DEFAULT_LANGUAGE
-          ]?.translation ??
           {};
 
-        return [
-          language,
-          {
-            translation: {
-              ...baseTranslation,
-              ...experienceTranslation,
+        let translation =
+          deepMerge(
+            baseTranslation,
+            experienceTranslation
+          );
 
+        translation =
+          deepMerge(
+            translation,
+            {
               dashboard:
                 dashboardTranslation,
 
@@ -169,7 +245,22 @@ const resources =
                   {}
                 ),
               },
-            },
+            }
+          );
+
+        translation =
+          deepMerge(
+            translation,
+            patientCompletenessResources[
+              language
+            ] ??
+              {}
+          );
+
+        return [
+          language,
+          {
+            translation,
           },
         ];
       }
