@@ -38,6 +38,11 @@ import {
   clinicsApi,
 } from "../../services/api/clinics.js";
 
+import {
+  translateFacilityType,
+  translateRouteModifier,
+} from "../../i18n/patientText.js";
+
 const MAX_RADIUS_KM =
   10;
 
@@ -312,8 +317,10 @@ function getClinicOpenState(
     return {
       known:
         false,
+
       open:
         false,
+
       label:
         t(
           "clinics.hoursUnavailable"
@@ -338,8 +345,10 @@ function getClinicOpenState(
     return {
       known:
         false,
+
       open:
         false,
+
       label:
         t(
           "clinics.hoursUnavailable"
@@ -557,6 +566,7 @@ function formatRouteDuration(
     "clinics.hourMinutes",
     {
       hours,
+
       minutes:
         remainingMinutes,
     }
@@ -592,6 +602,17 @@ function getDirectionText(
         " "
       );
 
+  /*
+   * OSRM always returns English modifier values such as
+   * "left", "right", "slight left" and "sharp right".
+   * Translate those before inserting them into the
+   * translated navigation sentence.
+   */
+  const translatedModifier =
+    translateRouteModifier(
+      modifier
+    );
+
   const roadName =
     String(
       step?.name ||
@@ -610,8 +631,8 @@ function getDirectionText(
       : "";
 
   const direction =
-    modifier
-      ? ` ${modifier}`
+    translatedModifier
+      ? ` ${translatedModifier}`
       : "";
 
   if (
@@ -687,10 +708,11 @@ function getDirectionText(
       "clinics.keep",
       {
         direction:
-          modifier ||
+          translatedModifier ||
           t(
             "clinics.ahead"
           ),
+
         road,
       }
     );
@@ -744,10 +766,11 @@ function getDirectionText(
       "clinics.turn",
       {
         direction:
-          modifier ||
+          translatedModifier ||
           t(
             "clinics.ahead"
           ),
+
         road,
       }
     );
@@ -838,6 +861,7 @@ function MapController({
               45,
               45,
             ],
+
             maxZoom:
               16,
           }
@@ -1106,36 +1130,36 @@ export default function NearestClinicsPage() {
 
         return new Promise(
           resolve => {
-            navigator.geolocation
+            navigator
+              .geolocation
               .getCurrentPosition(
                 position => {
-                  const nextLocation =
-                    {
-                      latitude:
-                        position
-                          .coords
-                          .latitude,
+                  const nextLocation = {
+                    latitude:
+                      position
+                        .coords
+                        .latitude,
 
-                      longitude:
-                        position
-                          .coords
-                          .longitude,
+                    longitude:
+                      position
+                        .coords
+                        .longitude,
 
-                      accuracy:
-                        position
-                          .coords
-                          .accuracy,
+                    accuracy:
+                      position
+                        .coords
+                        .accuracy,
 
-                      heading:
-                        position
-                          .coords
-                          .heading,
+                    heading:
+                      position
+                        .coords
+                        .heading,
 
-                      speed:
-                        position
-                          .coords
-                          .speed,
-                    };
+                    speed:
+                      position
+                        .coords
+                        .speed,
+                  };
 
                   setLocation(
                     nextLocation
@@ -1189,7 +1213,6 @@ export default function NearestClinicsPage() {
   useEffect(
     () => {
       void loadClinics();
-
       void requestLocation();
     },
     [
@@ -1209,7 +1232,8 @@ export default function NearestClinicsPage() {
       }
 
       const watchId =
-        navigator.geolocation
+        navigator
+          .geolocation
           .watchPosition(
             position => {
               setLocation({
@@ -1266,7 +1290,8 @@ export default function NearestClinicsPage() {
           );
 
       return () => {
-        navigator.geolocation
+        navigator
+          .geolocation
           .clearWatch(
             watchId
           );
@@ -1295,14 +1320,12 @@ export default function NearestClinicsPage() {
                 false &&
               Number.isFinite(
                 Number(
-                  clinic
-                    .latitude
+                  clinic.latitude
                 )
               ) &&
               Number.isFinite(
                 Number(
-                  clinic
-                    .longitude
+                  clinic.longitude
                 )
               )
           )
@@ -1585,6 +1608,7 @@ export default function NearestClinicsPage() {
                         Number(
                           latitude
                         ),
+
                         Number(
                           longitude
                         ),
@@ -1711,14 +1735,13 @@ export default function NearestClinicsPage() {
             0
           );
 
-          lastRouteOriginRef.current =
-            {
-              latitude:
-                startLatitude,
+          lastRouteOriginRef.current = {
+            latitude:
+              startLatitude,
 
-              longitude:
-                startLongitude,
-            };
+            longitude:
+              startLongitude,
+          };
 
           lastRouteRequestRef.current =
             Date.now();
@@ -2082,7 +2105,9 @@ export default function NearestClinicsPage() {
 
           <div>
             <p className="text-label-sm text-text-primary">
-              {error}
+              {
+                error
+              }
             </p>
 
             <button
@@ -2416,14 +2441,19 @@ export default function NearestClinicsPage() {
                     pathOptions={{
                       color:
                         "#0f766e",
+
                       weight:
                         2,
+
                       opacity:
                         0.65,
+
                       fillColor:
                         "#14b8a6",
+
                       fillOpacity:
                         0.07,
+
                       dashArray:
                         "8 8",
                     }}
@@ -2441,8 +2471,10 @@ export default function NearestClinicsPage() {
                       pathOptions={{
                         color:
                           "#ffffff",
+
                         weight:
                           11,
+
                         opacity:
                           0.95,
                       }}
@@ -2455,8 +2487,10 @@ export default function NearestClinicsPage() {
                       pathOptions={{
                         color:
                           "#2563eb",
+
                         weight:
                           7,
+
                         opacity:
                           0.95,
                       }}
@@ -2536,9 +2570,9 @@ export default function NearestClinicsPage() {
                                   4,
                               }}
                             >
-                              {
+                              {translateFacilityType(
                                 facility.type
-                              }
+                              )}
                             </div>
                           )}
 
@@ -2612,6 +2646,7 @@ export default function NearestClinicsPage() {
                     Number(
                       navigationClinic.latitude
                     ),
+
                     Number(
                       navigationClinic.longitude
                     ),
@@ -2638,9 +2673,9 @@ export default function NearestClinicsPage() {
                               4,
                           }}
                         >
-                          {
+                          {translateFacilityType(
                             navigationClinic.type
-                          }
+                          )}
                         </div>
                       )}
 
@@ -3028,9 +3063,9 @@ export default function NearestClinicsPage() {
 
                       {facility.type && (
                         <p className="mt-xs text-video-title font-medium text-brand-primary">
-                          {
+                          {translateFacilityType(
                             facility.type
-                          }
+                          )}
                         </p>
                       )}
 
@@ -3094,7 +3129,7 @@ export default function NearestClinicsPage() {
                             className="shrink-0 text-brand-primary"
                           />
 
-                          <span className="text-video-title font-medium text-text-primary">
+                          <span className="text-video-title font-medium text-text-secondary">
                             {t(
                               "clinics.kmAway",
                               {
