@@ -1,4 +1,8 @@
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   Activity,
   AlertTriangle,
   MessageCircle,
@@ -6,90 +10,156 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const options = [
-  {
-    title: "Chat with Phila",
-    description:
-      "Ask a health question or talk about your PhilaLink information.",
-    icon: MessageCircle,
-    action: "chat",
-    prompt: "",
-  },
-  {
-    title: "Check my symptoms",
-    description:
-      "Start a guided health assessment.",
-    icon: Activity,
-    action: "assessment",
-    prompt: "",
-  },
-  {
-    title: "My medications",
-    description:
-      "Ask about your medications, their general use, and your remaining supply.",
-    icon: Pill,
-    action: "chat",
-    prompt:
-      "Tell me about the medications recorded in my PhilaLink profile and how much medication supply I have left.",
-  },
-  {
-    title: "My allergies",
-    description:
-      "Ask about allergy information recorded in your profile.",
-    icon: ShieldCheck,
-    action: "chat",
-    prompt:
-      "What allergies are recorded in my PhilaLink profile, and what general information should I keep in mind about them?",
-  },
-  {
-    title: "When should I seek help?",
-    description:
-      "Ask about warning signs and when urgent or emergency care may be needed.",
-    icon: AlertTriangle,
-    action: "chat",
-    prompt:
-      "What warning signs should make someone seek urgent or emergency medical help?",
-  },
-];
-
 export default function QuickStartScreen({
   onStartAssessment,
   onOpenChat,
 }) {
-  const handleClick = (
-    option
-  ) => {
-    if (
-      option.action ===
-      "assessment"
-    ) {
-      onStartAssessment();
-      return;
-    }
+  const {
+    t,
+  } =
+    useTranslation();
 
-    onOpenChat(
-      option.prompt
-    );
-  };
+  const options = [
+    {
+      title:
+        t(
+          "chatbot.quickChatTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.quickChatDescription"
+        ),
+
+      icon:
+        MessageCircle,
+
+      action: "chat",
+
+      prompt: "",
+    },
+
+    {
+      title:
+        t(
+          "chatbot.quickSymptomsTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.quickSymptomsDescription"
+        ),
+
+      icon:
+        Activity,
+
+      action:
+        "assessment",
+
+      prompt: "",
+    },
+
+    {
+      title:
+        t(
+          "chatbot.quickMedicationsTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.quickMedicationsDescription"
+        ),
+
+      icon: Pill,
+
+      action: "chat",
+
+      prompt:
+        t(
+          "chatbot.quickMedicationsPrompt"
+        ),
+    },
+
+    {
+      title:
+        t(
+          "chatbot.quickAllergiesTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.quickAllergiesDescription"
+        ),
+
+      icon:
+        ShieldCheck,
+
+      action: "chat",
+
+      prompt:
+        t(
+          "chatbot.quickAllergiesPrompt"
+        ),
+    },
+
+    {
+      title:
+        t(
+          "chatbot.quickHelpTitle"
+        ),
+
+      description:
+        t(
+          "chatbot.quickHelpDescription"
+        ),
+
+      icon:
+        AlertTriangle,
+
+      action: "chat",
+
+      prompt:
+        t(
+          "chatbot.quickHelpPrompt"
+        ),
+    },
+  ];
+
+  const handleClick =
+    option => {
+      if (
+        option.action ===
+        "assessment"
+      ) {
+        onStartAssessment();
+
+        return;
+      }
+
+      onOpenChat(
+        option.prompt
+      );
+    };
 
   return (
     <div className="flex flex-col gap-lg">
       <div>
         <h2 className="text-title text-text-primary">
-          How can I help?
+          {t(
+            "chatbot.howCanHelp"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Chat freely with
-          Phila or start a
-          guided symptom
-          assessment.
+          {t(
+            "chatbot.quickStartBody"
+          )}
         </p>
       </div>
 
       <div className="grid grid-cols-1 gap-md">
         {options.map(
-          (option) => {
+          option => {
             const Icon =
               option.icon;
 
