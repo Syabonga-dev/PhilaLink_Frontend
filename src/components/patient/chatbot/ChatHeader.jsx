@@ -5,6 +5,10 @@ import {
 } from "react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   IconButton,
   Badge,
   Tooltip,
@@ -25,87 +29,104 @@ export default function ChatHeader({
   onClearHistory,
   sending = false,
 }) {
+  const {
+    t,
+  } =
+    useTranslation();
+
   const [
     menuOpen,
     setMenuOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     isClearing,
     setIsClearing,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     clearError,
     setClearError,
-  ] = useState("");
+  ] =
+    useState("");
 
   const menuRef =
     useRef(null);
 
-  useEffect(() => {
-    if (!menuOpen) {
-      return;
-    }
+  useEffect(
+    () => {
+      if (!menuOpen) {
+        return undefined;
+      }
 
-    const handlePointerDown =
-      (event) => {
-        if (
-          menuRef.current &&
-          !menuRef.current.contains(
-            event.target
-          )
-        ) {
-          setMenuOpen(
-            false
+      const handlePointerDown =
+        event => {
+          if (
+            menuRef.current &&
+            !menuRef
+              .current
+              .contains(
+                event.target
+              )
+          ) {
+            setMenuOpen(
+              false
+            );
+
+            setClearError(
+              ""
+            );
+          }
+        };
+
+      const handleKeyDown =
+        event => {
+          if (
+            event.key ===
+            "Escape"
+          ) {
+            setMenuOpen(
+              false
+            );
+
+            setClearError(
+              ""
+            );
+          }
+        };
+
+      document
+        .addEventListener(
+          "pointerdown",
+          handlePointerDown
+        );
+
+      document
+        .addEventListener(
+          "keydown",
+          handleKeyDown
+        );
+
+      return () => {
+        document
+          .removeEventListener(
+            "pointerdown",
+            handlePointerDown
           );
 
-          setClearError(
-            ""
+        document
+          .removeEventListener(
+            "keydown",
+            handleKeyDown
           );
-        }
       };
-
-    const handleKeyDown =
-      (event) => {
-        if (
-          event.key ===
-          "Escape"
-        ) {
-          setMenuOpen(
-            false
-          );
-
-          setClearError(
-            ""
-          );
-        }
-      };
-
-    document.addEventListener(
-      "pointerdown",
-      handlePointerDown
-    );
-
-    document.addEventListener(
-      "keydown",
-      handleKeyDown
-    );
-
-    return () => {
-      document.removeEventListener(
-        "pointerdown",
-        handlePointerDown
-      );
-
-      document.removeEventListener(
-        "keydown",
-        handleKeyDown
-      );
-    };
-  }, [
-    menuOpen,
-  ]);
+    },
+    [
+      menuOpen,
+    ]
+  );
 
   const handleClearHistory =
     async () => {
@@ -118,7 +139,9 @@ export default function ChatHeader({
 
       const confirmed =
         window.confirm(
-          "Clear this chat history?\n\nThis will start a new PhilaChatBot conversation. Your symptom assessments, medications, allergies, medical conditions, and other PhilaLink profile information will not be deleted."
+          t(
+            "chatbot.clearConfirm"
+          )
         );
 
       if (!confirmed) {
@@ -129,9 +152,7 @@ export default function ChatHeader({
         true
       );
 
-      setClearError(
-        ""
-      );
+      setClearError("");
 
       try {
         await onClearHistory();
@@ -141,31 +162,15 @@ export default function ChatHeader({
         );
       } catch {
         setClearError(
-          "Chat history could not be cleared. Please try again."
+          t(
+            "chatbot.clearError"
+          )
         );
       } finally {
         setIsClearing(
           false
         );
       }
-    };
-
-  const handleMinimize =
-    () => {
-      setMenuOpen(
-        false
-      );
-
-      onMinimize();
-    };
-
-  const handleClose =
-    () => {
-      setMenuOpen(
-        false
-      );
-
-      onClose();
     };
 
   return (
@@ -185,21 +190,26 @@ export default function ChatHeader({
             </span>
 
             <Badge
-              label="Online"
+              label={t(
+                "chatbot.online"
+              )}
               variant="success"
             />
           </div>
 
           <p className="text-video-title text-text-secondary">
-            Your PhilaLink
-            health assistant
+            {t(
+              "chatbot.assistantSubtitle"
+            )}
           </p>
         </div>
       </div>
 
       <div className="flex items-center gap-xs">
         <Tooltip
-          content="Minimize"
+          content={t(
+            "chatbot.minimize"
+          )}
           position="bottom"
         >
           <IconButton
@@ -210,21 +220,27 @@ export default function ChatHeader({
             }
             variant="subtle"
             size="small"
-            onClick={
-              handleMinimize
-            }
-            aria-label="Minimize"
+            onClick={() => {
+              setMenuOpen(
+                false
+              );
+
+              onMinimize();
+            }}
+            aria-label={t(
+              "chatbot.minimize"
+            )}
           />
         </Tooltip>
 
         <div
-          ref={
-            menuRef
-          }
+          ref={menuRef}
           className="relative"
         >
           <Tooltip
-            content="More options"
+            content={t(
+              "chatbot.moreOptions"
+            )}
             position="bottom"
           >
             <IconButton
@@ -237,9 +253,7 @@ export default function ChatHeader({
               size="small"
               onClick={() => {
                 setMenuOpen(
-                  (
-                    previous
-                  ) =>
+                  previous =>
                     !previous
                 );
 
@@ -247,7 +261,9 @@ export default function ChatHeader({
                   ""
                 );
               }}
-              aria-label="More options"
+              aria-label={t(
+                "chatbot.moreOptions"
+              )}
               aria-expanded={
                 menuOpen
               }
@@ -262,14 +278,15 @@ export default function ChatHeader({
             >
               <div className="border-b border-border-secondary px-md py-sm">
                 <p className="text-video-title font-semibold text-text-primary">
-                  Chat options
+                  {t(
+                    "chatbot.chatOptions"
+                  )}
                 </p>
 
                 <p className="mt-xs text-[10px] leading-4 text-text-tertiary">
-                  Manage your
-                  current
-                  PhilaChatBot
-                  conversation.
+                  {t(
+                    "chatbot.chatOptionsDescription"
+                  )}
                 </p>
               </div>
 
@@ -302,18 +319,18 @@ export default function ChatHeader({
                   <div>
                     <p className="text-label-sm font-medium text-danger">
                       {isClearing
-                        ? "Clearing..."
-                        : "Clear chat history"}
+                        ? t(
+                            "chatbot.clearing"
+                          )
+                        : t(
+                            "chatbot.clearHistory"
+                          )}
                     </p>
 
                     <p className="mt-xs text-[10px] leading-4 text-text-tertiary">
-                      Start a new
-                      conversation
-                      without
-                      deleting your
-                      PhilaLink
-                      health
-                      records.
+                      {t(
+                        "chatbot.clearDescription"
+                      )}
                     </p>
                   </div>
                 </button>
@@ -332,11 +349,9 @@ export default function ChatHeader({
               {sending && (
                 <div className="border-t border-border-secondary px-md py-sm">
                   <p className="text-[10px] leading-4 text-text-tertiary">
-                    Wait for the
-                    current response
-                    to finish before
-                    clearing the
-                    conversation.
+                    {t(
+                      "chatbot.waitForResponse"
+                    )}
                   </p>
                 </div>
               )}
@@ -345,7 +360,9 @@ export default function ChatHeader({
         </div>
 
         <Tooltip
-          content="Close"
+          content={t(
+            "chatbot.close"
+          )}
           position="bottom"
         >
           <IconButton
@@ -356,10 +373,16 @@ export default function ChatHeader({
             }
             variant="subtle"
             size="small"
-            onClick={
-              handleClose
-            }
-            aria-label="Close"
+            onClick={() => {
+              setMenuOpen(
+                false
+              );
+
+              onClose();
+            }}
+            aria-label={t(
+              "chatbot.close"
+            )}
           />
         </Tooltip>
       </div>
