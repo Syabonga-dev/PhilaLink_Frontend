@@ -4,42 +4,71 @@ import {
 } from "react";
 
 import {
+  useTranslation,
+} from "react-i18next";
+
+import {
   CheckCircle2,
   LoaderCircle,
   ShieldCheck,
 } from "lucide-react";
 
-const stages = [
-  "Sending your symptoms securely",
-  "Checking for warning signs",
-  "Recording your assessment",
-  "Preparing your triage result",
-];
-
 export default function LoadingScreen() {
+  const {
+    t,
+  } =
+    useTranslation();
+
+  const stages = [
+    t(
+      "chatbot.stageSending"
+    ),
+    t(
+      "chatbot.stageWarningSigns"
+    ),
+    t(
+      "chatbot.stageRecording"
+    ),
+    t(
+      "chatbot.stageResult"
+    ),
+  ];
+
   const [
     currentStage,
     setCurrentStage,
-  ] = useState(0);
+  ] =
+    useState(0);
 
-  useEffect(() => {
-    const interval =
-      setInterval(() => {
-        setCurrentStage(
-          (previous) =>
-            Math.min(
-              previous + 1,
-              stages.length -
-                1
-            )
-        );
-      }, 700);
+  useEffect(
+    () => {
+      const interval =
+        window
+          .setInterval(
+            () => {
+              setCurrentStage(
+                previous =>
+                  Math.min(
+                    previous +
+                      1,
+                    stages.length -
+                      1
+                  )
+              );
+            },
+            700
+          );
 
-    return () =>
-      clearInterval(
-        interval
-      );
-  }, []);
+      return () =>
+        window
+          .clearInterval(
+            interval
+          );
+    },
+    [
+      stages.length,
+    ]
+  );
 
   return (
     <div className="flex flex-col items-center gap-xl py-lg text-center">
@@ -52,16 +81,15 @@ export default function LoadingScreen() {
 
       <div>
         <h2 className="text-title text-text-primary">
-          PhilaLink is
-          assessing your
-          symptoms
+          {t(
+            "chatbot.loadingTitle"
+          )}
         </h2>
 
         <p className="mt-xs text-label-sm leading-6 text-text-secondary">
-          Your assessment
-          is being processed
-          by the PhilaLink
-          backend.
+          {t(
+            "chatbot.loadingDescription"
+          )}
         </p>
       </div>
 
@@ -83,23 +111,19 @@ export default function LoadingScreen() {
               return (
                 <div
                   key={
-                    stage
+                    index
                   }
                   className="flex items-center gap-md"
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center">
                     {completed ? (
                       <CheckCircle2
-                        size={
-                          18
-                        }
+                        size={18}
                         className="text-success"
                       />
                     ) : active ? (
                       <LoaderCircle
-                        size={
-                          18
-                        }
+                        size={18}
                         className="animate-spin text-brand-primary"
                       />
                     ) : (
@@ -131,11 +155,9 @@ export default function LoadingScreen() {
         />
 
         <p className="text-video-title leading-5 text-text-secondary">
-          This assessment
-          provides triage
-          guidance and is
-          not a medical
-          diagnosis.
+          {t(
+            "chatbot.loadingDisclaimer"
+          )}
         </p>
       </div>
     </div>
