@@ -15,8 +15,11 @@ import {
   ToastProvider,
 } from "./components/ui/Toast.jsx";
 
+import LanguagePreferenceSync from "./components/patient/LanguagePreferenceSync.jsx";
+
 import CookieConsent from "./components/privacy/CookieConsent.jsx";
 
+import "./i18n/index.js";
 import "./index.css";
 
 const THEME_STORAGE_KEY =
@@ -61,7 +64,9 @@ ReactDOM.createRoot(
     >
       <ToastProvider>
         <AuthProvider>
-          <App />
+          <LanguagePreferenceSync>
+            <App />
+          </LanguagePreferenceSync>
 
           <CookieConsent />
         </AuthProvider>

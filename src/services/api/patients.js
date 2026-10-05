@@ -144,4 +144,19 @@ export const patientsApi = {
       "/api/patients/me/preferences",
       payload
     ),
+
+  getLanguage: () =>
+    api.get(
+      "/api/patients/me/language"
+    ),
+
+  updateLanguage: (
+    language
+  ) =>
+    api.put(
+      "/api/patients/me/language",
+      {
+        language,
+      }
+    ),
 };
