@@ -4,130 +4,212 @@ import {
   useState,
 } from "react";
 
-import { defaultAssessment } from "./types";
+import {
+  useTranslation,
+} from "react-i18next";
+
+import {
+  defaultAssessment,
+} from "./types";
+
 import FloatingButton from "./FloatingButton";
 import ChatPanel from "./ChatPanel";
 
-import { chatbotApi } from "../../../services/api/chatbot.js";
-import { symptomAssessmentsApi } from "../../../services/api/symptomAssessments.js";
+import {
+  chatbotApi,
+} from "../../../services/api/chatbot.js";
 
-const INITIAL_FOLLOW_UP_MESSAGES =
-  [
+import {
+  symptomAssessmentsApi,
+} from "../../../services/api/symptomAssessments.js";
+
+import {
+  translateKnownServerText,
+} from "../../../i18n/patientText.js";
+
+function createInitialMessages(
+  t
+) {
+  return [
     {
       type: "ai",
-      text: "How can I help you? You can ask about your PhilaLink information or general health information.",
+      initial: true,
+      text:
+        t(
+          "chatbot.initialMessage"
+        ),
     },
   ];
+}
 
 export default function PhilaChatBot() {
+  const {
+    t,
+    i18n,
+  } =
+    useTranslation();
+
   const [
     isOpen,
     setIsOpen,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const [
     step,
     setStep,
-  ] = useState(
-    "welcome"
-  );
+  ] =
+    useState(
+      "welcome"
+    );
 
   const [
     assessment,
     setAssessment,
-  ] = useState(
-    defaultAssessment
-  );
+  ] =
+    useState(
+      defaultAssessment
+    );
 
   const [
     assessmentResult,
     setAssessmentResult,
-  ] = useState(null);
+  ] =
+    useState(null);
 
   const [
     messages,
     setMessages,
-  ] = useState(
-    INITIAL_FOLLOW_UP_MESSAGES
-  );
+  ] =
+    useState(
+      () =>
+        createInitialMessages(
+          t
+        )
+    );
 
   const [
     inputValue,
     setInputValue,
-  ] = useState("");
+  ] =
+    useState("");
 
   const [
     errorType,
     setErrorType,
-  ] = useState(
-    "network"
-  );
+  ] =
+    useState(
+      "network"
+    );
 
   const [
     isSending,
     setIsSending,
-  ] = useState(false);
+  ] =
+    useState(false);
 
   const historyLoaded =
     useRef(false);
 
-  useEffect(() => {
-    if (
-      !isOpen ||
-      historyLoaded.current
-    ) {
-      return;
-    }
-
-    historyLoaded.current =
-      true;
-
-    chatbotApi
-      .getHistory()
-      .then(
-        (history) => {
+  useEffect(
+    () => {
+      setMessages(
+        current => {
           if (
-            !Array.isArray(
-              history?.messages
-            ) ||
-            history.messages
-              .length === 0
+            current.length ===
+              1 &&
+            current[0]
+              ?.initial
           ) {
-            return;
+            return createInitialMessages(
+              t
+            );
           }
 
-          setMessages(
-            history.messages.map(
-              (
-                message
-              ) => ({
-                type:
-                  message.role ===
-                  "user"
-                    ? "user"
-                    : "ai",
-
-                text:
-                  message.content,
-              })
-            )
-          );
+          return current;
         }
-      )
-      .catch(() => {
-        historyLoaded.current =
-          false;
-      });
-  }, [
-    isOpen,
-  ]);
+      );
+    },
+    [
+      i18n.resolvedLanguage,
+      i18n.language,
+      t,
+    ]
+  );
+
+  useEffect(
+    () => {
+      if (
+        !isOpen ||
+        historyLoaded
+          .current
+      ) {
+        return;
+      }
+
+      historyLoaded.current =
+        true;
+
+      chatbotApi
+        .getHistory()
+        .then(
+          history => {
+            if (
+              !Array.isArray(
+                history
+                  ?.messages
+              ) ||
+              history
+                .messages
+                .length ===
+                0
+            ) {
+              return;
+            }
+
+            setMessages(
+              history
+                .messages
+                .map(
+                  message => ({
+                    type:
+                      message
+                        .role ===
+                      "user"
+                        ? "user"
+                        : "ai",
+
+                    text:
+                      message
+                        .role ===
+                      "user"
+                        ? message
+                            .content
+                        : translateKnownServerText(
+                            message
+                              .content
+                          ),
+                  })
+                )
+            );
+          }
+        )
+        .catch(
+          () => {
+            historyLoaded.current =
+              false;
+          }
+        );
+    },
+    [
+      isOpen,
+    ]
+  );
 
   const handleAssessmentChange =
-    (data) => {
+    data => {
       setAssessment(
-        (
-          previous
-        ) => ({
+        previous => ({
           ...previous,
           ...data,
         })
@@ -148,9 +230,7 @@ export default function PhilaChatBot() {
         "network"
       );
 
-      setInputValue(
-        ""
-      );
+      setInputValue("");
 
       setStep(
         "quick-start"
@@ -174,15 +254,16 @@ export default function PhilaChatBot() {
 
   const handleClearHistory =
     async () => {
-      await chatbotApi.clearHistory();
+      await chatbotApi
+        .clearHistory();
 
       setMessages(
-        INITIAL_FOLLOW_UP_MESSAGES
+        createInitialMessages(
+          t
+        )
       );
 
-      setInputValue(
-        ""
-      );
+      setInputValue("");
 
       historyLoaded.current =
         true;
@@ -192,11 +273,14 @@ export default function PhilaChatBot() {
     async () => {
       const symptoms =
         Array.isArray(
-          assessment.symptoms
+          assessment
+            .symptoms
         )
-          ? assessment.symptoms.filter(
-              Boolean
-            )
+          ? assessment
+              .symptoms
+              .filter(
+                Boolean
+              )
           : [];
 
       if (
@@ -216,9 +300,10 @@ export default function PhilaChatBot() {
 
       try {
         const result =
-          await symptomAssessmentsApi.create(
-            assessment
-          );
+          await symptomAssessmentsApi
+            .create(
+              assessment
+            );
 
         setAssessmentResult(
           result
@@ -240,7 +325,8 @@ export default function PhilaChatBot() {
         error
       ) {
         setErrorType(
-          error?.isNetworkError
+          error
+            ?.isNetworkError
             ? "network"
             : "unavailable"
         );
@@ -264,21 +350,16 @@ export default function PhilaChatBot() {
       }
 
       setMessages(
-        (
-          previous
-        ) => [
+        previous => [
           ...previous,
           {
-            type:
-              "user",
+            type: "user",
             text,
           },
         ]
       );
 
-      setInputValue(
-        ""
-      );
+      setInputValue("");
 
       setIsSending(
         true
@@ -286,23 +367,25 @@ export default function PhilaChatBot() {
 
       try {
         const response =
-          await chatbotApi.sendMessage(
-            text
-          );
+          await chatbotApi
+            .sendMessage(
+              text
+            );
 
         setMessages(
-          (
-            previous
-          ) => [
+          previous => [
             ...previous,
             {
-              type:
-                "ai",
+              type: "ai",
 
               text:
-                response
-                  ?.message ||
-                "No response was returned.",
+                translateKnownServerText(
+                  response
+                    ?.message
+                ) ||
+                t(
+                  "chatbot.noResponse"
+                ),
             },
           ]
         );
@@ -310,18 +393,17 @@ export default function PhilaChatBot() {
         error
       ) {
         setMessages(
-          (
-            previous
-          ) => [
+          previous => [
             ...previous,
             {
-              type:
-                "ai",
+              type: "ai",
 
               text:
                 error
                   ?.message ||
-                "I couldn't process that message right now.",
+                t(
+                  "chatbot.processError"
+                ),
             },
           ]
         );
