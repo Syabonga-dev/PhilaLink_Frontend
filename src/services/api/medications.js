@@ -4,11 +4,22 @@ import {
   api,
 } from "./client.js";
 
+import {
+  localizeMedications,
+} from "../../i18n/patientText.js";
+
 export const medicationsApi = {
-  getMine: () =>
-    api.get(
-      "/api/medications/me"
-    ),
+  getMine:
+    async () => {
+      const result =
+        await api.get(
+          "/api/medications/me"
+        );
+
+      return localizeMedications(
+        result
+      );
+    },
 
   getSupply: () =>
     api.get(
@@ -22,7 +33,9 @@ export const medicationsApi = {
       notes = null,
     }
   ) => {
-    if (!medicationId) {
+    if (
+      !medicationId
+    ) {
       throw new Error(
         i18n.t(
           "api.medicationIdRequired"
