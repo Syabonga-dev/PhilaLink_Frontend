@@ -3,6 +3,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 
 import {
@@ -14,17 +15,31 @@ import {
 } from "vitest";
 
 const apiMocks = vi.hoisted(() => ({
-  getMine: vi.fn(),
-  getSupply: vi.fn(),
-  logDose: vi.fn(),
+  getMine:
+    vi.fn(),
+
+  getSupply:
+    vi.fn(),
+
+  logDose:
+    vi.fn(),
 }));
 
-function translate(key, options = {}) {
-  if (options?.count !== undefined) {
+function translate(
+  key,
+  options = {}
+) {
+  if (
+    options?.count !==
+    undefined
+  ) {
     return `${key}:${options.count}`;
   }
 
-  if (options?.date !== undefined) {
+  if (
+    options?.date !==
+    undefined
+  ) {
     return `${key}:${options.date}`;
   }
 
@@ -32,38 +47,62 @@ function translate(key, options = {}) {
 }
 
 /*
- * Keep one stable i18n object for the lifetime of the mocked module.
+ * Keep the i18n object stable between renders.
  *
- * MedicationsPage uses i18n as a useCallback dependency. Returning a new
- * object from useTranslation on every render makes the callback identity
- * change on every render, which causes the loading effect to run again.
+ * This mirrors the real react-i18next instance and prevents
+ * MedicationsPage's loading callbacks from changing identity
+ * unnecessarily during the test.
  */
-vi.mock("react-i18next", () => {
-  const i18n = {
-    language: "en",
-    resolvedLanguage: "en",
-    t: translate,
-  };
+vi.mock(
+  "react-i18next",
+  () => {
+    const i18n = {
+      language:
+        "en",
 
-  return {
-    useTranslation: () => ({
-      t: translate,
-      i18n,
-    }),
-  };
-});
+      resolvedLanguage:
+        "en",
 
-vi.mock("../../i18n/languages.js", () => ({
-  getLanguageLocale: () => "en-ZA",
-}));
+      t:
+        translate,
+    };
 
-vi.mock("../../services/api/medications.js", () => ({
-  medicationsApi: {
-    getMine: apiMocks.getMine,
-    getSupply: apiMocks.getSupply,
-    logDose: apiMocks.logDose,
-  },
-}));
+    return {
+      useTranslation:
+        () => ({
+          t:
+            translate,
+
+          i18n,
+        }),
+    };
+  }
+);
+
+vi.mock(
+  "../../i18n/languages.js",
+  () => ({
+    getLanguageLocale:
+      () =>
+        "en-ZA",
+  })
+);
+
+vi.mock(
+  "../../services/api/medications.js",
+  () => ({
+    medicationsApi: {
+      getMine:
+        apiMocks.getMine,
+
+      getSupply:
+        apiMocks.getSupply,
+
+      logDose:
+        apiMocks.logDose,
+    },
+  })
+);
 
 vi.mock(
   "../../components/patient/chatbot/AstraCompat.jsx",
@@ -73,7 +112,8 @@ vi.mock(
       children,
     }) => (
       <span>
-        {label || children}
+        {label ||
+          children}
       </span>
     ),
 
@@ -81,12 +121,17 @@ vi.mock(
       children,
       onClick,
       disabled,
-      type = "button",
+      type =
+        "button",
     }) => (
       <button
         type={type}
-        onClick={onClick}
-        disabled={disabled}
+        onClick={
+          onClick
+        }
+        disabled={
+          disabled
+        }
       >
         {children}
       </button>
@@ -94,326 +139,532 @@ vi.mock(
   })
 );
 
-import MedicationsPage from "./MedicationsPage.jsx";
+import MedicationsPage
+  from "./MedicationsPage.jsx";
 
-function medicationFixture(overrides = {}) {
+function medicationFixture(
+  overrides = {}
+) {
   return {
-    id: "med-1",
-    name: "Metformin",
-    dosage: "500 mg",
-    form: "Tablet",
-    instructions: "Take with food",
-    unitsPerDose: 1,
-    isActive: true,
-    startDate: "2026-01-01T00:00:00Z",
-    endDate: null,
+    id:
+      "med-1",
+
+    name:
+      "Metformin",
+
+    dosage:
+      "500 mg",
+
+    form:
+      "Tablet",
+
+    instructions:
+      "Take with food",
+
+    unitsPerDose:
+      1,
+
+    isActive:
+      true,
+
+    startDate:
+      "2026-01-01T00:00:00Z",
+
+    endDate:
+      null,
 
     schedules: [
       {
-        id: "schedule-1",
-        timeOfDay: "08:00:00",
-        isActive: true,
+        id:
+          "schedule-1",
+
+        timeOfDay:
+          "08:00:00",
+
+        isActive:
+          true,
       },
+
       {
-        id: "schedule-2",
-        timeOfDay: "20:00:00",
-        isActive: true,
+        id:
+          "schedule-2",
+
+        timeOfDay:
+          "20:00:00",
+
+        isActive:
+          true,
       },
     ],
 
-    logs: [],
+    logs:
+      [],
 
     ...overrides,
   };
 }
 
-function supplyFixture(overrides = {}) {
+function supplyFixture(
+  overrides = {}
+) {
   return {
-    medicationId: "med-1",
-    name: "Metformin",
-    dosage: "500 mg",
-    form: "Tablet",
-    unitsPerDose: 1,
-    dosesPerDay: 2,
-    dispensedQuantity: 60,
-    estimatedRemainingQuantity: 40,
-    daysRemaining: 20,
-    lastCollectedAt: "2026-10-01T08:00:00Z",
-    calculationStatus: "Available",
+    medicationId:
+      "med-1",
+
+    name:
+      "Metformin",
+
+    dosage:
+      "500 mg",
+
+    form:
+      "Tablet",
+
+    unitsPerDose:
+      1,
+
+    dosesPerDay:
+      2,
+
+    dispensedQuantity:
+      60,
+
+    estimatedRemainingQuantity:
+      40,
+
+    daysRemaining:
+      20,
+
+    lastCollectedAt:
+      "2026-10-01T08:00:00Z",
+
+    calculationStatus:
+      "Available",
 
     ...overrides,
   };
 }
 
-describe("Patient MedicationsPage", () => {
-  beforeEach(() => {
-    apiMocks.getMine.mockReset();
-    apiMocks.getSupply.mockReset();
-    apiMocks.logDose.mockReset();
+/*
+ * The medication card is the expandable button in the
+ * Active Medications section.
+ *
+ * The same medication name also appears in today's scheduled
+ * doses, so role-based lookup is more precise than findByText.
+ */
+async function findMedicationCard() {
+  return screen.findByRole(
+    "button",
+    {
+      name:
+        /Metformin.*500 mg/i,
+    }
+  );
+}
 
-    apiMocks.getMine.mockResolvedValue([
-      medicationFixture(),
-    ]);
+describe(
+  "Patient MedicationsPage",
+  () => {
+    beforeEach(() => {
+      apiMocks
+        .getMine
+        .mockReset();
 
-    apiMocks.getSupply.mockResolvedValue([
-      supplyFixture(),
-    ]);
+      apiMocks
+        .getSupply
+        .mockReset();
 
-    apiMocks.logDose.mockResolvedValue({
-      success: true,
+      apiMocks
+        .logDose
+        .mockReset();
+
+      apiMocks
+        .getMine
+        .mockResolvedValue([
+          medicationFixture(),
+        ]);
+
+      apiMocks
+        .getSupply
+        .mockResolvedValue([
+          supplyFixture(),
+        ]);
+
+      apiMocks
+        .logDose
+        .mockResolvedValue({
+          success:
+            true,
+        });
+
+      vi.spyOn(
+        console,
+        "error"
+      )
+        .mockImplementation(
+          () => {}
+        );
     });
 
-    vi.spyOn(
-      console,
-      "error"
-    ).mockImplementation(() => {});
-  });
-
-  it(
-    "loads medications and supply information",
-    async () => {
-      render(<MedicationsPage />);
-
-      expect(
-        await screen.findByText(
-          "Metformin"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        apiMocks.getMine
-      ).toHaveBeenCalled();
-
-      expect(
-        apiMocks.getSupply
-      ).toHaveBeenCalled();
-
-      expect(
-        screen.getByText(
-          "500 mg"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText(
-          "medications.active"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText(
-          "medications.daysRemaining:20"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText(
-          "medications.markAsTaken"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText(
-          "medications.skipDose"
-        )
-      ).toBeInTheDocument();
-    }
-  );
-
-  it(
-    "shows the empty state when the patient has no medications",
-    async () => {
-      apiMocks.getMine.mockResolvedValue([]);
-      apiMocks.getSupply.mockResolvedValue([]);
-
-      render(<MedicationsPage />);
-
-      expect(
-        await screen.findByText(
-          "medications.noMedicationsTitle"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText(
-          "medications.noMedicationsBody"
-        )
-      ).toBeInTheDocument();
-    }
-  );
-
-  it(
-    "shows medication loading errors returned by the API",
-    async () => {
-      apiMocks.getMine.mockRejectedValue(
-        new Error(
-          "Medication service unavailable"
-        )
-      );
-
-      render(<MedicationsPage />);
-
-      expect(
-        await screen.findByText(
-          "Medication service unavailable"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.queryByText(
-          "Metformin"
-        )
-      ).not.toBeInTheDocument();
-    }
-  );
-
-  it(
-    "keeps medication records visible when only supply loading fails",
-    async () => {
-      apiMocks.getSupply.mockRejectedValue(
-        new Error(
-          "Supply temporarily unavailable"
-        )
-      );
-
-      render(<MedicationsPage />);
-
-      expect(
-        await screen.findByText(
-          "Metformin"
-        )
-      ).toBeInTheDocument();
-
-      expect(
-        screen.getByText(
-          "Supply temporarily unavailable"
-        )
-      ).toBeInTheDocument();
-    }
-  );
-
-  it(
-    "logs a medication dose as taken",
-    async () => {
-      render(<MedicationsPage />);
-
-      const takenButton =
-        await screen.findByRole(
-          "button",
-          {
-            name:
-              "medications.markAsTaken",
-          }
+    it(
+      "loads medications and supply information",
+      async () => {
+        render(
+          <MedicationsPage />
         );
 
-      fireEvent.click(
-        takenButton
-      );
+        const medicationCard =
+          await findMedicationCard();
 
-      await waitFor(() => {
         expect(
-          apiMocks.logDose
-        ).toHaveBeenCalledWith(
-          "med-1",
-          {
-            taken: true,
-            notes: null,
-          }
-        );
-      });
+          medicationCard
+        ).toBeInTheDocument();
 
-      await waitFor(() => {
         expect(
-          apiMocks
-            .getMine
-            .mock
-            .calls
-            .length
-        ).toBeGreaterThanOrEqual(
-          2
-        );
-      });
-    }
-  );
+          apiMocks.getMine
+        ).toHaveBeenCalled();
 
-  it(
-    "logs a medication dose as skipped",
-    async () => {
-      render(<MedicationsPage />);
-
-      const skipButton =
-        await screen.findByRole(
-          "button",
-          {
-            name:
-              "medications.skipDose",
-          }
-        );
-
-      fireEvent.click(
-        skipButton
-      );
-
-      await waitFor(() => {
         expect(
-          apiMocks.logDose
-        ).toHaveBeenCalledWith(
-          "med-1",
-          {
-            taken: false,
-            notes: null,
-          }
+          apiMocks.getSupply
+        ).toHaveBeenCalled();
+
+        /*
+         * Scope these checks to the actual active medication
+         * card because the schedule also renders the medication
+         * name and dosage.
+         */
+        expect(
+          within(
+            medicationCard
+          ).getByText(
+            "500 mg"
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          within(
+            medicationCard
+          ).getByText(
+            "medications.active"
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          within(
+            medicationCard
+          ).getByText(
+            "medications.daysRemaining:20"
+          )
+        ).toBeInTheDocument();
+
+        /*
+         * Dose actions live inside the expanded card.
+         */
+        fireEvent.click(
+          medicationCard
         );
-      });
-    }
-  );
 
-  it(
-    "shows completed-dose state when all scheduled doses have already been taken today",
-    async () => {
-      const now =
-        new Date().toISOString();
-
-      apiMocks.getMine.mockResolvedValue([
-        medicationFixture({
-          logs: [
+        expect(
+          await screen.findByRole(
+            "button",
             {
-              id: "log-1",
-              taken: true,
-              takenAt: now,
-            },
+              name:
+                "medications.markAsTaken",
+            }
+          )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByRole(
+            "button",
             {
-              id: "log-2",
-              taken: true,
-              takenAt: now,
-            },
-          ],
-        }),
-      ]);
+              name:
+                "medications.skipDose",
+            }
+          )
+        ).toBeInTheDocument();
+      }
+    );
 
-      render(<MedicationsPage />);
+    it(
+      "shows the empty state when the patient has no medications",
+      async () => {
+        apiMocks
+          .getMine
+          .mockResolvedValue(
+            []
+          );
 
-      expect(
-        await screen.findByText(
-          "Metformin"
-        )
-      ).toBeInTheDocument();
+        apiMocks
+          .getSupply
+          .mockResolvedValue(
+            []
+          );
 
-      expect(
-        screen.getByText(
-          "medications.todaysDosesComplete"
-        )
-      ).toBeInTheDocument();
+        render(
+          <MedicationsPage />
+        );
 
-      expect(
-        screen.getByRole(
-          "button",
-          {
-            name:
-              "medications.todaysDosesComplete",
-          }
-        )
-      ).toBeDisabled();
-    }
-  );
-});
+        expect(
+          await screen
+            .findByText(
+              "medications.noMedicationsTitle"
+            )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByText(
+            "medications.noMedicationsBody"
+          )
+        ).toBeInTheDocument();
+      }
+    );
+
+    it(
+      "shows medication loading errors returned by the API",
+      async () => {
+        apiMocks
+          .getMine
+          .mockRejectedValue(
+            new Error(
+              "Medication service unavailable"
+            )
+          );
+
+        render(
+          <MedicationsPage />
+        );
+
+        expect(
+          await screen
+            .findByText(
+              "Medication service unavailable"
+            )
+        ).toBeInTheDocument();
+
+        expect(
+          screen.queryByRole(
+            "button",
+            {
+              name:
+                /Metformin/i,
+            }
+          )
+        ).not
+          .toBeInTheDocument();
+      }
+    );
+
+    it(
+      "keeps medication records visible when only supply loading fails",
+      async () => {
+        apiMocks
+          .getSupply
+          .mockRejectedValue(
+            new Error(
+              "Supply temporarily unavailable"
+            )
+          );
+
+        render(
+          <MedicationsPage />
+        );
+
+        expect(
+          await findMedicationCard()
+        ).toBeInTheDocument();
+
+        expect(
+          screen.getByText(
+            "Supply temporarily unavailable"
+          )
+        ).toBeInTheDocument();
+      }
+    );
+
+    it(
+      "logs a medication dose as taken",
+      async () => {
+        render(
+          <MedicationsPage />
+        );
+
+        const medicationCard =
+          await findMedicationCard();
+
+        fireEvent.click(
+          medicationCard
+        );
+
+        const takenButton =
+          await screen
+            .findByRole(
+              "button",
+              {
+                name:
+                  "medications.markAsTaken",
+              }
+            );
+
+        fireEvent.click(
+          takenButton
+        );
+
+        await waitFor(() => {
+          expect(
+            apiMocks.logDose
+          ).toHaveBeenCalledWith(
+            "med-1",
+            {
+              taken:
+                true,
+
+              notes:
+                null,
+            }
+          );
+        });
+
+        /*
+         * A successful log refreshes both medication and
+         * supply information.
+         */
+        await waitFor(() => {
+          expect(
+            apiMocks
+              .getMine
+              .mock
+              .calls
+              .length
+          ).toBeGreaterThanOrEqual(
+            2
+          );
+        });
+      }
+    );
+
+    it(
+      "logs a medication dose as skipped",
+      async () => {
+        render(
+          <MedicationsPage />
+        );
+
+        const medicationCard =
+          await findMedicationCard();
+
+        fireEvent.click(
+          medicationCard
+        );
+
+        const skipButton =
+          await screen
+            .findByRole(
+              "button",
+              {
+                name:
+                  "medications.skipDose",
+              }
+            );
+
+        fireEvent.click(
+          skipButton
+        );
+
+        await waitFor(() => {
+          expect(
+            apiMocks.logDose
+          ).toHaveBeenCalledWith(
+            "med-1",
+            {
+              taken:
+                false,
+
+              notes:
+                null,
+            }
+          );
+        });
+      }
+    );
+
+    it(
+      "shows completed-dose state when all scheduled doses have already been taken today",
+      async () => {
+        const now =
+          new Date()
+            .toISOString();
+
+        apiMocks
+          .getMine
+          .mockResolvedValue([
+            medicationFixture({
+              logs: [
+                {
+                  id:
+                    "log-1",
+
+                  taken:
+                    true,
+
+                  takenAt:
+                    now,
+                },
+
+                {
+                  id:
+                    "log-2",
+
+                  taken:
+                    true,
+
+                  takenAt:
+                    now,
+                },
+              ],
+            }),
+          ]);
+
+        render(
+          <MedicationsPage />
+        );
+
+        const medicationCard =
+          await findMedicationCard();
+
+        expect(
+          medicationCard
+        ).toBeInTheDocument();
+
+        /*
+         * The collapsed card displays the completion badge.
+         */
+        expect(
+          within(
+            medicationCard
+          ).getByText(
+            "medications.todaysDosesComplete"
+          )
+        ).toBeInTheDocument();
+
+        fireEvent.click(
+          medicationCard
+        );
+
+        /*
+         * Once expanded, the primary dose action is disabled
+         * because today's scheduled doses are already complete.
+         */
+        expect(
+          await screen.findByRole(
+            "button",
+            {
+              name:
+                "medications.todaysDosesComplete",
+            }
+          )
+        ).toBeDisabled();
+      }
+    );
+  }
+);
