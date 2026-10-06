@@ -16,113 +16,76 @@ import {
   vi,
 } from "vitest";
 
-const apiMocks =
-  vi.hoisted(() => ({
-    getDashboard:
-      vi.fn(),
+const apiMocks = vi.hoisted(() => ({
+  getDashboard: vi.fn(),
+  getAssignedWorker: vi.fn(),
+  getSupply: vi.fn(),
+}));
 
-    getAssignedWorker:
-      vi.fn(),
-
-    getSupply:
-      vi.fn(),
-  }));
-
-function translate(
-  key,
-  options = {}
-) {
-  if (
-    options?.name !==
-    undefined
-  ) {
+function translate(key, options = {}) {
+  if (options?.name !== undefined) {
     return `${key}:${options.name}`;
   }
 
-  if (
-    options?.count !==
-    undefined
-  ) {
+  if (options?.count !== undefined) {
     return `${key}:${options.count}`;
   }
 
-  if (
-    options?.date !==
-    undefined
-  ) {
+  if (options?.date !== undefined) {
     return `${key}:${options.date}`;
   }
 
-  if (
-    options?.time !==
-    undefined
-  ) {
+  if (options?.time !== undefined) {
     return `${key}:${options.time}`;
   }
 
   return key;
 }
 
-vi.mock(
-  "react-i18next",
-  () => ({
-    useTranslation:
-      () => ({
-        t:
-          translate,
+/*
+ * DashboardPage uses i18n in the dependency lists of its loading callbacks.
+ * The object therefore has to remain stable between renders, like the real
+ * react-i18next i18n instance does.
+ */
+vi.mock("react-i18next", () => {
+  const i18n = {
+    language: "en",
+    resolvedLanguage: "en",
+    t: translate,
+  };
 
-        i18n: {
-          language:
-            "en",
+  return {
+    useTranslation: () => ({
+      t: translate,
+      i18n,
+    }),
+  };
+});
 
-          resolvedLanguage:
-            "en",
+vi.mock("../../i18n/languages.js", () => ({
+  getLanguageLocale: () => "en-ZA",
+}));
 
-          t:
-            translate,
-        },
-      }),
-  })
-);
+vi.mock("../../services/api/patients.js", () => ({
+  patientsApi: {
+    getDashboard:
+      apiMocks.getDashboard,
+  },
+}));
 
-vi.mock(
-  "../../i18n/languages.js",
-  () => ({
-    getLanguageLocale:
-      () =>
-        "en-ZA",
-  })
-);
+vi.mock("../../services/api/proxies.js", () => ({
+  proxiesApi: {
+    getMyAssignedWorker:
+      apiMocks.getAssignedWorker,
+  },
+}));
 
-vi.mock(
-  "../../services/api/patients.js",
-  () => ({
-    patientsApi: {
-      getDashboard:
-        apiMocks.getDashboard,
-    },
-  })
-);
-
-vi.mock(
-  "../../services/api/proxies.js",
-  () => ({
-    proxiesApi: {
-      getMyAssignedWorker:
-        apiMocks.getAssignedWorker,
-    },
-  })
-);
-
-vi.mock(
-  "../../services/api/medications.js",
-  () => ({
-    medicationsApi: {
-      getSupply:
-        apiMocks.getSupply,
-    },
-  })
-);
+vi.mock("../../services/api/medications.js", () => ({
+  medicationsApi: {
+    getSupply:
+      apiMocks.getSupply,
+  },
+}));
 
 vi.mock(
   "../../components/patient/chatbot/AstraCompat.jsx",
@@ -131,12 +94,8 @@ vi.mock(
       name,
       fallback,
     }) => (
-      <div
-        data-testid="avatar"
-      >
-        {name ||
-          fallback ||
-          "avatar"}
+      <div data-testid="avatar">
+        {name || fallback || "avatar"}
       </div>
     ),
 
@@ -145,8 +104,7 @@ vi.mock(
       children,
     }) => (
       <span>
-        {label ||
-          children}
+        {label || children}
       </span>
     ),
 
@@ -154,17 +112,12 @@ vi.mock(
       children,
       onClick,
       disabled,
-      type =
-        "button",
+      type = "button",
     }) => (
       <button
         type={type}
-        onClick={
-          onClick
-        }
-        disabled={
-          disabled
-        }
+        onClick={onClick}
+        disabled={disabled}
       >
         {children}
       </button>
@@ -172,8 +125,7 @@ vi.mock(
   })
 );
 
-import DashboardPage
-  from "./DashboardPage.jsx";
+import DashboardPage from "./DashboardPage.jsx";
 
 function renderPage() {
   return render(
@@ -183,348 +135,250 @@ function renderPage() {
   );
 }
 
-function dashboardFixture(
-  overrides = {}
-) {
+function dashboardFixture(overrides = {}) {
   return {
-    fullName:
-      "Thabiso Patient",
-
-    patientNumber:
-      "PAT-001",
-
-    isProfileComplete:
-      true,
-
-    unreadNotifications:
-      2,
-
-    nextCollection:
-      null,
+    fullName: "Thabiso Patient",
+    patientNumber: "PAT-001",
+    isProfileComplete: true,
+    unreadNotifications: 2,
+    nextCollection: null,
 
     medications: [
       {
-        id:
-          "med-1",
-
-        name:
-          "Metformin",
-
-        dosage:
-          "500 mg",
-
-        form:
-          "Tablet",
-
-        instructions:
-          "Take with food",
-
-        nextDoseAt:
-          null,
+        id: "med-1",
+        name: "Metformin",
+        dosage: "500 mg",
+        form: "Tablet",
+        instructions: "Take with food",
+        nextDoseAt: null,
       },
     ],
 
-    upcomingAppointments:
-      [],
-
-    healthMetrics:
-      [],
+    upcomingAppointments: [],
+    healthMetrics: [],
 
     clinic: {
-      id:
-        "clinic-1",
-
-      name:
-        "Dora Nginza Hospital",
-
-      address:
-        "Spondo Street",
-
-      phoneNumber:
-        "0410000000",
-
-      email:
-        "clinic@philalink.test",
-
-      openingTime:
-        "08:00:00",
-
-      closingTime:
-        "17:00:00",
+      id: "clinic-1",
+      name: "Dora Nginza Hospital",
+      address: "Spondo Street",
+      phoneNumber: "0410000000",
+      email: "clinic@philalink.test",
+      openingTime: "08:00:00",
+      closingTime: "17:00:00",
     },
 
     ...overrides,
   };
 }
 
-function supplyFixture(
-  overrides = {}
-) {
+function supplyFixture(overrides = {}) {
   return {
-    medicationId:
-      "med-1",
-
-    name:
-      "Metformin",
-
-    dosage:
-      "500 mg",
-
-    form:
-      "Tablet",
-
-    unitsPerDose:
-      1,
-
-    dosesPerDay:
-      2,
-
-    dispensedQuantity:
-      30,
-
-    estimatedRemainingQuantity:
-      24,
-
-    daysRemaining:
-      12,
-
+    medicationId: "med-1",
+    name: "Metformin",
+    dosage: "500 mg",
+    form: "Tablet",
+    unitsPerDose: 1,
+    dosesPerDay: 2,
+    dispensedQuantity: 30,
+    estimatedRemainingQuantity: 24,
+    daysRemaining: 12,
     lastCollectedAt:
       "2026-10-01T08:00:00Z",
-
-    calculationStatus:
-      "Available",
+    calculationStatus: "Available",
 
     ...overrides,
   };
 }
 
-describe(
-  "Patient DashboardPage",
-  () => {
-    beforeEach(() => {
-      apiMocks
-        .getDashboard
-        .mockReset();
+describe("Patient DashboardPage", () => {
+  beforeEach(() => {
+    apiMocks.getDashboard.mockReset();
+    apiMocks.getAssignedWorker.mockReset();
+    apiMocks.getSupply.mockReset();
 
-      apiMocks
-        .getAssignedWorker
-        .mockReset();
+    apiMocks.getDashboard.mockResolvedValue(
+      dashboardFixture()
+    );
 
-      apiMocks
-        .getSupply
-        .mockReset();
+    apiMocks.getAssignedWorker.mockResolvedValue(
+      null
+    );
 
-      apiMocks
-        .getDashboard
-        .mockResolvedValue(
-          dashboardFixture()
-        );
+    apiMocks.getSupply.mockResolvedValue([
+      supplyFixture(),
+    ]);
 
-      apiMocks
-        .getAssignedWorker
-        .mockResolvedValue(
-          null
-        );
+    vi.spyOn(
+      console,
+      "error"
+    ).mockImplementation(() => {});
+  });
 
-      apiMocks
-        .getSupply
-        .mockResolvedValue([
-          supplyFixture(),
-        ]);
+  it(
+    "loads patient dashboard data from the live API services",
+    async () => {
+      renderPage();
 
-      vi.spyOn(
-        console,
-        "error"
-      )
-        .mockImplementation(
-          () => {}
-        );
-    });
-
-    it(
-      "loads patient dashboard data from the live API services",
-      async () => {
-        renderPage();
-
-        await waitFor(() => {
-          expect(
-            apiMocks
-              .getDashboard
-          ).toHaveBeenCalledTimes(
-            1
-          );
-        });
-
+      await waitFor(() => {
         expect(
-          apiMocks
-            .getAssignedWorker
+          apiMocks.getDashboard
         ).toHaveBeenCalledTimes(
           1
         );
+      });
 
-        expect(
-          apiMocks
-            .getSupply
-        ).toHaveBeenCalledTimes(
-          1
-        );
+      expect(
+        apiMocks.getAssignedWorker
+      ).toHaveBeenCalledTimes(
+        1
+      );
 
-        expect(
-          await screen
-            .findByText(
-              "Metformin"
-            )
-        ).toBeInTheDocument();
+      expect(
+        apiMocks.getSupply
+      ).toHaveBeenCalledTimes(
+        1
+      );
 
-        expect(
-          screen.getByText(
-            "Dora Nginza Hospital"
-          )
-        ).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          "Metformin"
+        )
+      ).toBeInTheDocument();
 
-        expect(
-          screen.getByText(
-            "PAT-001"
-          )
-        ).toBeInTheDocument();
-      }
-    );
+      expect(
+        screen.getByText(
+          "Dora Nginza Hospital"
+        )
+      ).toBeInTheDocument();
 
-    it(
-      "shows medication supply days returned by the backend",
-      async () => {
-        renderPage();
+      expect(
+        screen.getByText(
+          "PAT-001"
+        )
+      ).toBeInTheDocument();
+    }
+  );
 
-        expect(
-          await screen
-            .findByText(
-              "Metformin"
-            )
-        ).toBeInTheDocument();
+  it(
+    "shows medication supply days returned by the backend",
+    async () => {
+      renderPage();
 
-        await waitFor(() => {
-          expect(
-            screen.getByText(
-              "dashboard.daysRemaining:12"
-            )
-          ).toBeInTheDocument();
-        });
+      expect(
+        await screen.findByText(
+          "Metformin"
+        )
+      ).toBeInTheDocument();
 
+      await waitFor(() => {
         expect(
           screen.getByText(
-            "dashboard.unitsLeft:24"
+            "dashboard.daysRemaining:12"
           )
         ).toBeInTheDocument();
-      }
-    );
+      });
 
-    it(
-      "shows low-supply state when only a few days remain",
-      async () => {
-        apiMocks
-          .getSupply
-          .mockResolvedValue([
-            supplyFixture({
-              estimatedRemainingQuantity:
-                4,
+      expect(
+        screen.getByText(
+          "dashboard.unitsLeft:24"
+        )
+      ).toBeInTheDocument();
+    }
+  );
 
-              daysRemaining:
-                2,
-            }),
-          ]);
+  it(
+    "shows low-supply state when only a few days remain",
+    async () => {
+      apiMocks.getSupply.mockResolvedValue([
+        supplyFixture({
+          estimatedRemainingQuantity: 4,
+          daysRemaining: 2,
+        }),
+      ]);
 
-        renderPage();
+      renderPage();
 
-        expect(
-          await screen
-            .findByText(
-              "Metformin"
-            )
-        ).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          "Metformin"
+        )
+      ).toBeInTheDocument();
 
-        await waitFor(() => {
-          expect(
-            screen.getByText(
-              "dashboard.daysRemaining:2"
-            )
-          ).toBeInTheDocument();
-        });
-
+      await waitFor(() => {
         expect(
           screen.getByText(
-            "dashboard.supplyLow"
+            "dashboard.daysRemaining:2"
           )
         ).toBeInTheDocument();
-      }
-    );
+      });
 
-    it(
-      "keeps the dashboard usable when medication supply temporarily fails",
-      async () => {
-        apiMocks
-          .getSupply
-          .mockRejectedValue(
-            new Error(
-              "Supply service unavailable"
-            )
-          );
+      expect(
+        screen.getByText(
+          "dashboard.supplyLow"
+        )
+      ).toBeInTheDocument();
+    }
+  );
 
-        renderPage();
+  it(
+    "keeps the dashboard usable when medication supply temporarily fails",
+    async () => {
+      apiMocks.getSupply.mockRejectedValue(
+        new Error(
+          "Supply service unavailable"
+        )
+      );
 
-        expect(
-          await screen
-            .findByText(
-              "Metformin"
-            )
-        ).toBeInTheDocument();
+      renderPage();
 
-        expect(
-          screen.getByText(
-            "Supply service unavailable"
-          )
-        ).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          "Metformin"
+        )
+      ).toBeInTheDocument();
 
-        expect(
-          screen.getByText(
-            "dashboard.trySupplyAgain"
-          )
-        ).toBeInTheDocument();
-      }
-    );
+      expect(
+        screen.getByText(
+          "Supply service unavailable"
+        )
+      ).toBeInTheDocument();
 
-    it(
-      "shows the dashboard error state when the main dashboard request fails",
-      async () => {
-        apiMocks
-          .getDashboard
-          .mockRejectedValue(
-            new Error(
-              "Dashboard service unavailable"
-            )
-          );
+      expect(
+        screen.getByText(
+          "dashboard.trySupplyAgain"
+        )
+      ).toBeInTheDocument();
+    }
+  );
 
-        renderPage();
+  it(
+    "shows the dashboard error state when the main dashboard request fails",
+    async () => {
+      apiMocks.getDashboard.mockRejectedValue(
+        new Error(
+          "Dashboard service unavailable"
+        )
+      );
 
-        expect(
-          await screen
-            .findByText(
-              "dashboard.loadErrorTitle"
-            )
-        ).toBeInTheDocument();
+      renderPage();
 
-        expect(
-          screen.getByText(
-            "Dashboard service unavailable"
-          )
-        ).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          "dashboard.loadErrorTitle"
+        )
+      ).toBeInTheDocument();
 
-        expect(
-          screen.queryByText(
-            "Metformin"
-          )
-        ).not
-          .toBeInTheDocument();
-      }
-    );
-  }
-);
+      expect(
+        screen.getByText(
+          "Dashboard service unavailable"
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        screen.queryByText(
+          "Metformin"
+        )
+      ).not.toBeInTheDocument();
+    }
+  );
+});

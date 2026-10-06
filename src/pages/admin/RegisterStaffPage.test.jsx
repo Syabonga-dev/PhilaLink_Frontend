@@ -13,78 +13,53 @@ import {
   vi,
 } from "vitest";
 
-const mocks =
-  vi.hoisted(() => {
-    class MockApiError
-      extends Error {
-      constructor(
-        message,
-        {
-          status,
-          errors,
-        } = {}
-      ) {
-        super(message);
+const mocks = vi.hoisted(() => {
+  class MockApiError extends Error {
+    constructor(
+      message,
+      {
+        status,
+        errors,
+      } = {}
+    ) {
+      super(message);
 
-        this.name =
-          "ApiError";
-
-        this.status =
-          status;
-
-        this.errors =
-          errors ??
-          null;
-      }
+      this.name = "ApiError";
+      this.status = status;
+      this.errors =
+        errors ?? null;
     }
+  }
 
-    return {
-      getMe:
-        vi.fn(),
+  return {
+    getMe: vi.fn(),
+    registerNurse: vi.fn(),
+    registerProxy: vi.fn(),
+    resendInvitation: vi.fn(),
+    ApiError: MockApiError,
+  };
+});
 
-      registerNurse:
-        vi.fn(),
+vi.mock("../../services/api/admin.js", () => ({
+  adminApi: {
+    getMe:
+      mocks.getMe,
 
-      registerProxy:
-        vi.fn(),
+    registerNurse:
+      mocks.registerNurse,
 
-      resendInvitation:
-        vi.fn(),
+    registerProxy:
+      mocks.registerProxy,
 
-      ApiError:
-        MockApiError,
-    };
-  });
+    resendInvitation:
+      mocks.resendInvitation,
+  },
+}));
 
-vi.mock(
-  "../../services/api/admin.js",
-  () => ({
-    adminApi: {
-      getMe:
-        mocks.getMe,
-
-      registerNurse:
-        mocks
-          .registerNurse,
-
-      registerProxy:
-        mocks
-          .registerProxy,
-
-      resendInvitation:
-        mocks
-          .resendInvitation,
-    },
-  })
-);
-
-vi.mock(
-  "../../services/api/client.js",
-  () => ({
-    ApiError:
-      mocks.ApiError,
-  })
-);
+vi.mock("../../services/api/client.js", () => ({
+  ApiError:
+    mocks.ApiError,
+}));
 
 import RegisterStaffPage
   from "./RegisterStaffPage.jsx";
@@ -106,17 +81,10 @@ function changeField(
 }
 
 function fillSharedFields({
-  fullName =
-    "Staff Member",
-
-  idNumber =
-    "9001015000000",
-
-  phoneNumber =
-    "0712345678",
-
-  email =
-    "staff@philalink.test",
+  fullName = "Staff Member",
+  idNumber = "9001015000000",
+  phoneNumber = "0712345678",
+  email = "staff@philalink.test",
 } = {}) {
   changeField(
     "Full name",
@@ -211,361 +179,299 @@ function fillNurseFields() {
   );
 }
 
-describe(
-  "RegisterStaffPage",
-  () => {
-    beforeEach(() => {
-      mocks.getMe
-        .mockReset();
+describe("RegisterStaffPage", () => {
+  beforeEach(() => {
+    mocks.getMe.mockReset();
+    mocks.registerNurse.mockReset();
+    mocks.registerProxy.mockReset();
+    mocks.resendInvitation.mockReset();
 
-      mocks.registerNurse
-        .mockReset();
-
-      mocks.registerProxy
-        .mockReset();
-
-      mocks
-        .resendInvitation
-        .mockReset();
-
-      mocks.getMe
-        .mockResolvedValue({
-          userId:
-            "admin-1",
-
-          fullName:
-            "Clinic Admin",
-
-          clinicId:
-            "clinic-1",
-
-          clinicName:
-            "Dora Nginza Hospital",
-        });
+    mocks.getMe.mockResolvedValue({
+      userId: "admin-1",
+      fullName: "Clinic Admin",
+      clinicId: "clinic-1",
+      clinicName:
+        "Dora Nginza Hospital",
     });
+  });
 
-    it(
-      "loads the ClinicAdmin assignment before allowing staff registration",
-      async () => {
-        render(
-          <RegisterStaffPage />
-        );
+  it(
+    "loads the ClinicAdmin assignment before allowing staff registration",
+    async () => {
+      render(
+        <RegisterStaffPage />
+      );
 
+      expect(
+        await screen.findByText(
+          "Register staff"
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        mocks.getMe
+      ).toHaveBeenCalledTimes(
+        1
+      );
+
+      expect(
+        screen.getByText(
+          /Assigned clinic:\s*Dora Nginza Hospital/
+        )
+      ).toBeInTheDocument();
+    }
+  );
+
+  it(
+    "registers a Nurse inside the authenticated ClinicAdmin clinic",
+    async () => {
+      mocks.registerNurse.mockResolvedValue({
+        userId:
+          "nurse-user-1",
+        fullName:
+          "Nurse One",
+        role:
+          "Nurse",
+        clinicId:
+          "clinic-1",
+        clinicName:
+          "Dora Nginza Hospital",
+        email:
+          "nurse@philalink.test",
+        emailSent:
+          true,
+        message:
+          "Invitation sent.",
+      });
+
+      render(
+        <RegisterStaffPage />
+      );
+
+      await screen.findByText(
+        "Register staff"
+      );
+
+      fillSharedFields({
+        fullName:
+          "Nurse One",
+        email:
+          "nurse@philalink.test",
+      });
+
+      fillNurseFields();
+
+      fireEvent.click(
+        screen.getByRole(
+          "button",
+          {
+            name:
+              "Register Nurse",
+          }
+        )
+      );
+
+      await waitFor(() => {
         expect(
-          await screen
-            .findByText(
-              "Register staff"
-            )
-        ).toBeInTheDocument();
-
-        expect(
-          mocks.getMe
-        ).toHaveBeenCalledTimes(
-          1
-        );
-
-        expect(
-          screen.getByText(
-            /Dora Nginza Hospital/
-          )
-        ).toBeInTheDocument();
-      }
-    );
-
-    it(
-      "registers a Nurse inside the authenticated ClinicAdmin clinic",
-      async () => {
-        mocks
-          .registerNurse
-          .mockResolvedValue({
-            userId:
-              "nurse-user-1",
-
+          mocks.registerNurse
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
             fullName:
               "Nurse One",
-
-            role:
-              "Nurse",
-
-            clinicId:
-              "clinic-1",
-
-            clinicName:
-              "Dora Nginza Hospital",
-
             email:
               "nurse@philalink.test",
-
-            emailSent:
-              true,
-
-            message:
-              "Invitation sent.",
-          });
-
-        render(
-          <RegisterStaffPage />
-        );
-
-        await screen.findByText(
-          "Register staff"
-        );
-
-        fillSharedFields({
-          fullName:
-            "Nurse One",
-
-          email:
-            "nurse@philalink.test",
-        });
-
-        fillNurseFields();
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Register Nurse",
-            }
-          )
-        );
-
-        await waitFor(() => {
-          expect(
-            mocks
-              .registerNurse
-          ).toHaveBeenCalledWith(
-            expect.objectContaining({
-              fullName:
-                "Nurse One",
-
-              email:
-                "nurse@philalink.test",
-
-              clinicId:
-                "clinic-1",
-
-              employeeNumber:
-                "EMP-001",
-
-              registrationNumber:
-                "SANC-001",
-
-              qualification:
-                "Professional Nurse",
-
-              employmentDate:
-                "2026-01-01",
-            })
-          );
-        });
-
-        expect(
-          await screen
-            .findByText(
-              "Account created"
-            )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.getByText(
-            "Invitation sent."
-          )
-        ).toBeInTheDocument();
-      }
-    );
-
-    it(
-      "registers a Proxy in the ClinicAdmin clinic",
-      async () => {
-        mocks
-          .registerProxy
-          .mockResolvedValue({
-            userId:
-              "proxy-user-1",
-
-            fullName:
-              "Proxy One",
-
-            role:
-              "Proxy",
-
             clinicId:
               "clinic-1",
+            employeeNumber:
+              "EMP-001",
+            registrationNumber:
+              "SANC-001",
+            qualification:
+              "Professional Nurse",
+            employmentDate:
+              "2026-01-01",
+          })
+        );
+      });
 
-            clinicName:
-              "Dora Nginza Hospital",
+      expect(
+        await screen.findByText(
+          "Account created"
+        )
+      ).toBeInTheDocument();
 
+      expect(
+        screen.getByText(
+          "Invitation sent."
+        )
+      ).toBeInTheDocument();
+    }
+  );
+
+  it(
+    "registers a Proxy in the ClinicAdmin clinic",
+    async () => {
+      mocks.registerProxy.mockResolvedValue({
+        userId:
+          "proxy-user-1",
+        fullName:
+          "Proxy One",
+        role:
+          "Proxy",
+        clinicId:
+          "clinic-1",
+        clinicName:
+          "Dora Nginza Hospital",
+        email:
+          "proxy@philalink.test",
+        emailSent:
+          true,
+        message:
+          "Proxy invitation sent.",
+      });
+
+      render(
+        <RegisterStaffPage />
+      );
+
+      await screen.findByText(
+        "Register staff"
+      );
+
+      fireEvent.click(
+        screen.getByRole(
+          "button",
+          {
+            name:
+              "Proxy",
+          }
+        )
+      );
+
+      fillSharedFields({
+        fullName:
+          "Proxy One",
+        idNumber:
+          "9102025000000",
+        phoneNumber:
+          "0734567890",
+        email:
+          "proxy@philalink.test",
+      });
+
+      fireEvent.click(
+        screen.getByRole(
+          "button",
+          {
+            name:
+              "Register Proxy",
+          }
+        )
+      );
+
+      await waitFor(() => {
+        expect(
+          mocks.registerProxy
+        ).toHaveBeenCalledWith(
+          expect.objectContaining({
+            fullName:
+              "Proxy One",
             email:
               "proxy@philalink.test",
-
-            emailSent:
-              true,
-
-            message:
-              "Proxy invitation sent.",
-          });
-
-        render(
-          <RegisterStaffPage />
-        );
-
-        await screen.findByText(
-          "Register staff"
-        );
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Proxy",
-            }
-          )
-        );
-
-        fillSharedFields({
-          fullName:
-            "Proxy One",
-
-          idNumber:
-            "9102025000000",
-
-          phoneNumber:
-            "0734567890",
-
-          email:
-            "proxy@philalink.test",
-        });
-
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Register Proxy",
-            }
-          )
-        );
-
-        await waitFor(() => {
-          expect(
-            mocks
-              .registerProxy
-          ).toHaveBeenCalledWith(
-            expect.objectContaining({
-              fullName:
-                "Proxy One",
-
-              email:
-                "proxy@philalink.test",
-
-              clinicId:
-                "clinic-1",
-            })
-          );
-        });
-
-        expect(
-          await screen
-            .findByText(
-              "Account created"
-            )
-        ).toBeInTheDocument();
-      }
-    );
-
-    it(
-      "blocks registration when the ClinicAdmin has no clinic assignment",
-      async () => {
-        mocks.getMe
-          .mockResolvedValue({
-            userId:
-              "admin-1",
-
             clinicId:
-              null,
-
-            clinicName:
-              null,
-          });
-
-        render(
-          <RegisterStaffPage />
+              "clinic-1",
+          })
         );
+      });
 
-        expect(
-          await screen
-            .findByText(
-              "Your Clinic Administrator account does not have an assigned clinic."
-            )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.queryByText(
-            "Register Nurse"
-          )
-        ).not
-          .toBeInTheDocument();
-      }
-    );
-
-    it(
-      "maps backend validation errors back to the registration form",
-      async () => {
-        mocks
-          .registerNurse
-          .mockRejectedValue(
-            new mocks.ApiError(
-              "Registration validation failed.",
-              {
-                status:
-                  400,
-
-                errors: {
-                  EmployeeNumber: [
-                    "Employee number already exists.",
-                  ],
-                },
-              }
-            )
-          );
-
-        render(
-          <RegisterStaffPage />
-        );
-
+      expect(
         await screen.findByText(
-          "Register staff"
-        );
+          "Account created"
+        )
+      ).toBeInTheDocument();
+    }
+  );
 
-        fillSharedFields();
-        fillNurseFields();
+  it(
+    "blocks registration when the ClinicAdmin has no clinic assignment",
+    async () => {
+      mocks.getMe.mockResolvedValue({
+        userId:
+          "admin-1",
+        clinicId:
+          null,
+        clinicName:
+          null,
+      });
 
-        fireEvent.click(
-          screen.getByRole(
-            "button",
-            {
-              name:
-                "Register Nurse",
-            }
-          )
-        );
+      render(
+        <RegisterStaffPage />
+      );
 
-        expect(
-          await screen
-            .findByText(
-              "Employee number already exists."
-            )
-        ).toBeInTheDocument();
+      expect(
+        await screen.findByText(
+          "Your Clinic Administrator account does not have an assigned clinic."
+        )
+      ).toBeInTheDocument();
 
-        expect(
-          screen.getByText(
-            "Registration validation failed."
-          )
-        ).toBeInTheDocument();
-      }
-    );
-  }
-);
+      expect(
+        screen.queryByText(
+          "Register Nurse"
+        )
+      ).not.toBeInTheDocument();
+    }
+  );
+
+  it(
+    "maps backend validation errors back to the registration form",
+    async () => {
+      mocks.registerNurse.mockRejectedValue(
+        new mocks.ApiError(
+          "Registration validation failed.",
+          {
+            status: 400,
+
+            errors: {
+              EmployeeNumber: [
+                "Employee number already exists.",
+              ],
+            },
+          }
+        )
+      );
+
+      render(
+        <RegisterStaffPage />
+      );
+
+      await screen.findByText(
+        "Register staff"
+      );
+
+      fillSharedFields();
+      fillNurseFields();
+
+      fireEvent.click(
+        screen.getByRole(
+          "button",
+          {
+            name:
+              "Register Nurse",
+          }
+        )
+      );
+
+      expect(
+        await screen.findByText(
+          "Employee number already exists."
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        screen.getByText(
+          "Registration validation failed."
+        )
+      ).toBeInTheDocument();
+    }
+  );
+});

@@ -19,219 +19,117 @@ import {
   vi,
 } from "vitest";
 
-const apiMocks =
-  vi.hoisted(() => ({
+const apiMocks = vi.hoisted(() => ({
+  getPatientCare: vi.fn(),
+  getClinicProxies: vi.fn(),
+  getClinicStock: vi.fn(),
+  getMe: vi.fn(),
+  deleteAllergy: vi.fn(),
+  archiveCondition: vi.fn(),
+  removeProxy: vi.fn(),
+  getMedicationLogs: vi.fn(),
+  createHealthMetric: vi.fn(),
+  createAllergy: vi.fn(),
+  updateAllergy: vi.fn(),
+  createCondition: vi.fn(),
+  updateCondition: vi.fn(),
+  createMedication: vi.fn(),
+  addMedicationSchedule: vi.fn(),
+  scheduleCollection: vi.fn(),
+  assignProxy: vi.fn(),
+}));
+
+vi.mock("../../services/api/nurses.js", () => ({
+  nursesApi: {
     getPatientCare:
-      vi.fn(),
+      apiMocks.getPatientCare,
 
     getClinicProxies:
-      vi.fn(),
+      apiMocks.getClinicProxies,
 
     getClinicStock:
-      vi.fn(),
+      apiMocks.getClinicStock,
 
     getMe:
-      vi.fn(),
+      apiMocks.getMe,
 
     deleteAllergy:
-      vi.fn(),
+      apiMocks.deleteAllergy,
 
     archiveCondition:
-      vi.fn(),
+      apiMocks.archiveCondition,
 
     removeProxy:
-      vi.fn(),
+      apiMocks.removeProxy,
 
     getMedicationLogs:
-      vi.fn(),
+      apiMocks.getMedicationLogs,
 
     createHealthMetric:
-      vi.fn(),
+      apiMocks.createHealthMetric,
 
     createAllergy:
-      vi.fn(),
+      apiMocks.createAllergy,
 
     updateAllergy:
-      vi.fn(),
+      apiMocks.updateAllergy,
 
     createCondition:
-      vi.fn(),
+      apiMocks.createCondition,
 
     updateCondition:
-      vi.fn(),
+      apiMocks.updateCondition,
 
     createMedication:
-      vi.fn(),
+      apiMocks.createMedication,
 
     addMedicationSchedule:
-      vi.fn(),
+      apiMocks.addMedicationSchedule,
 
     scheduleCollection:
-      vi.fn(),
+      apiMocks.scheduleCollection,
 
     assignProxy:
-      vi.fn(),
-  }));
-
-vi.mock(
-  "../../services/api/nurses.js",
-  () => ({
-    nursesApi: {
-      getPatientCare:
-        apiMocks
-          .getPatientCare,
-
-      getClinicProxies:
-        apiMocks
-          .getClinicProxies,
-
-      getClinicStock:
-        apiMocks
-          .getClinicStock,
-
-      getMe:
-        apiMocks.getMe,
-
-      deleteAllergy:
-        apiMocks
-          .deleteAllergy,
-
-      archiveCondition:
-        apiMocks
-          .archiveCondition,
-
-      removeProxy:
-        apiMocks
-          .removeProxy,
-
-      getMedicationLogs:
-        apiMocks
-          .getMedicationLogs,
-
-      createHealthMetric:
-        apiMocks
-          .createHealthMetric,
-
-      createAllergy:
-        apiMocks
-          .createAllergy,
-
-      updateAllergy:
-        apiMocks
-          .updateAllergy,
-
-      createCondition:
-        apiMocks
-          .createCondition,
-
-      updateCondition:
-        apiMocks
-          .updateCondition,
-
-      createMedication:
-        apiMocks
-          .createMedication,
-
-      addMedicationSchedule:
-        apiMocks
-          .addMedicationSchedule,
-
-      scheduleCollection:
-        apiMocks
-          .scheduleCollection,
-
-      assignProxy:
-        apiMocks
-          .assignProxy,
-    },
-  })
-);
+      apiMocks.assignProxy,
+  },
+}));
 
 import NursePatientCarePage
   from "./NursePatientCarePage.jsx";
 
-function patientFixture(
-  overrides = {}
-) {
+function patientFixture(overrides = {}) {
   return {
-    id:
-      "patient-1",
-
-    fullName:
-      "Patient One",
-
-    patientNumber:
-      "PHL-001",
-
-    clinicName:
-      "Dora Nginza Hospital",
-
-    idNumber:
-      "9001015000000",
-
-    dateOfBirth:
-      "1990-01-01",
-
-    gender:
-      "Female",
-
-    phoneNumber:
-      "0712345678",
-
-    email:
-      "patient@philalink.test",
-
-    addressLine1:
-      "1 Main Road",
-
-    addressLine2:
-      null,
-
-    suburb:
-      "Central",
-
-    city:
-      "Gqeberha",
-
-    province:
-      "Eastern Cape",
-
-    postalCode:
-      "6001",
+    id: "patient-1",
+    fullName: "Patient One",
+    patientNumber: "PHL-001",
+    clinicName: "Dora Nginza Hospital",
+    idNumber: "9001015000000",
+    dateOfBirth: "1990-01-01",
+    gender: "Female",
+    phoneNumber: "0712345678",
+    email: "patient@philalink.test",
+    addressLine1: "1 Main Road",
+    addressLine2: null,
+    suburb: "Central",
+    city: "Gqeberha",
+    province: "Eastern Cape",
+    postalCode: "6001",
 
     allergies: [
       {
-        id:
-          "allergy-1",
-
-        name:
-          "Penicillin",
-
-        reaction:
-          "Rash",
-
-        severity:
-          "Moderate",
+        id: "allergy-1",
+        name: "Penicillin",
+        reaction: "Rash",
+        severity: "Moderate",
       },
     ],
 
-    conditions:
-      [],
-
-    medications:
-      [],
-
-    proxies:
-      [],
-
-    healthMetrics:
-      [],
-
-    collections:
-      [],
-
-    appointments:
-      [],
+    conditions: [],
+    medications: [],
+    proxies: [],
+    healthMetrics: [],
+    collections: [],
+    appointments: [],
 
     ...overrides,
   };
@@ -256,269 +154,232 @@ function renderPage() {
   );
 }
 
-describe(
-  "NursePatientCarePage",
-  () => {
-    beforeEach(() => {
-      Object.values(
-        apiMocks
-      ).forEach(
-        mock =>
-          mock.mockReset()
-      );
-
+describe("NursePatientCarePage", () => {
+  beforeEach(() => {
+    Object.values(
       apiMocks
-        .getPatientCare
-        .mockResolvedValue(
-          patientFixture()
-        );
+    ).forEach(
+      mock =>
+        mock.mockReset()
+    );
 
-      apiMocks
-        .getClinicProxies
-        .mockResolvedValue(
-          []
-        );
+    apiMocks.getPatientCare.mockResolvedValue(
+      patientFixture()
+    );
 
-      apiMocks
-        .getClinicStock
-        .mockResolvedValue(
-          []
-        );
+    apiMocks.getClinicProxies.mockResolvedValue(
+      []
+    );
 
-      apiMocks.getMe
-        .mockResolvedValue({
-          id:
-            "nurse-1",
+    apiMocks.getClinicStock.mockResolvedValue(
+      []
+    );
 
-          fullName:
-            "Nurse One",
-
-          clinicId:
-            "clinic-1",
-        });
-
-      apiMocks
-        .deleteAllergy
-        .mockResolvedValue(
-          null
-        );
-
-      vi.spyOn(
-        console,
-        "error"
-      )
-        .mockImplementation(
-          () => {}
-        );
+    apiMocks.getMe.mockResolvedValue({
+      id: "nurse-1",
+      fullName: "Nurse One",
+      clinicId: "clinic-1",
     });
 
-    it(
-      "loads the patient care record within the route patient scope",
-      async () => {
-        renderPage();
+    apiMocks.deleteAllergy.mockResolvedValue(
+      null
+    );
 
+    vi.spyOn(
+      console,
+      "error"
+    ).mockImplementation(() => {});
+  });
+
+  it(
+    "loads the patient care record within the route patient scope",
+    async () => {
+      renderPage();
+
+      expect(
+        await screen.findByText(
+          "Patient One"
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        apiMocks.getPatientCare
+      ).toHaveBeenCalledWith(
+        "patient-1"
+      );
+
+      expect(
+        apiMocks.getClinicProxies
+      ).toHaveBeenCalledTimes(
+        1
+      );
+
+      expect(
+        apiMocks.getClinicStock
+      ).toHaveBeenCalledTimes(
+        1
+      );
+
+      expect(
+        apiMocks.getMe
+      ).toHaveBeenCalledTimes(
+        1
+      );
+
+      expect(
+        screen.getByText(
+          /PHL-001/
+        )
+      ).toBeInTheDocument();
+
+      /*
+       * Patient number and clinic name are rendered together:
+       * "PHL-001 · Dora Nginza Hospital".
+       */
+      expect(
+        screen.getByText(
+          /Dora Nginza Hospital/
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        screen.getByText(
+          "Penicillin"
+        )
+      ).toBeInTheDocument();
+    }
+  );
+
+  it(
+    "keeps the patient record available when optional clinic context calls fail",
+    async () => {
+      apiMocks.getClinicProxies.mockRejectedValue(
+        new Error(
+          "Proxy lookup unavailable"
+        )
+      );
+
+      apiMocks.getClinicStock.mockRejectedValue(
+        new Error(
+          "Stock lookup unavailable"
+        )
+      );
+
+      renderPage();
+
+      expect(
+        await screen.findByText(
+          "Patient One"
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        screen.getByText(
+          "Patient information"
+        )
+      ).toBeInTheDocument();
+    }
+  );
+
+  it(
+    "shows the protected patient-load error instead of a care record",
+    async () => {
+      apiMocks.getPatientCare.mockRejectedValue(
+        new Error(
+          "Patient is outside your clinic scope."
+        )
+      );
+
+      renderPage();
+
+      expect(
+        await screen.findByText(
+          "Patient is outside your clinic scope."
+        )
+      ).toBeInTheDocument();
+
+      expect(
+        screen.queryByText(
+          "Patient One"
+        )
+      ).not.toBeInTheDocument();
+    }
+  );
+
+  it(
+    "removes an allergy through the nurse API and refreshes the record",
+    async () => {
+      vi.spyOn(
+        window,
+        "confirm"
+      ).mockReturnValue(
+        true
+      );
+
+      renderPage();
+
+      const removeButton =
+        await screen.findByTitle(
+          "Remove allergy"
+        );
+
+      fireEvent.click(
+        removeButton
+      );
+
+      await waitFor(() => {
         expect(
-          await screen
-            .findByText(
-              "Patient One"
-            )
-        ).toBeInTheDocument();
+          apiMocks.deleteAllergy
+        ).toHaveBeenCalledWith(
+          "patient-1",
+          "allergy-1"
+        );
+      });
 
+      expect(
+        await screen.findByText(
+          "Allergy removed."
+        )
+      ).toBeInTheDocument();
+
+      await waitFor(() => {
         expect(
           apiMocks
             .getPatientCare
-        ).toHaveBeenCalledWith(
-          "patient-1"
+            .mock
+            .calls
+            .length
+        ).toBeGreaterThanOrEqual(
+          2
+        );
+      });
+    }
+  );
+
+  it(
+    "does not remove an allergy when the nurse cancels confirmation",
+    async () => {
+      vi.spyOn(
+        window,
+        "confirm"
+      ).mockReturnValue(
+        false
+      );
+
+      renderPage();
+
+      const removeButton =
+        await screen.findByTitle(
+          "Remove allergy"
         );
 
-        expect(
-          apiMocks
-            .getClinicProxies
-        ).toHaveBeenCalledTimes(
-          1
-        );
+      fireEvent.click(
+        removeButton
+      );
 
-        expect(
-          apiMocks
-            .getClinicStock
-        ).toHaveBeenCalledTimes(
-          1
-        );
-
-        expect(
-          apiMocks.getMe
-        ).toHaveBeenCalledTimes(
-          1
-        );
-
-        expect(
-          screen.getByText(
-            /PHL-001/
-          )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.getByText(
-            "Dora Nginza Hospital"
-          )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.getByText(
-            "Penicillin"
-          )
-        ).toBeInTheDocument();
-      }
-    );
-
-    it(
-      "keeps the patient record available when optional clinic context calls fail",
-      async () => {
-        apiMocks
-          .getClinicProxies
-          .mockRejectedValue(
-            new Error(
-              "Proxy lookup unavailable"
-            )
-          );
-
-        apiMocks
-          .getClinicStock
-          .mockRejectedValue(
-            new Error(
-              "Stock lookup unavailable"
-            )
-          );
-
-        renderPage();
-
-        expect(
-          await screen
-            .findByText(
-              "Patient One"
-            )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.getByText(
-            "Patient information"
-          )
-        ).toBeInTheDocument();
-      }
-    );
-
-    it(
-      "shows the protected patient-load error instead of a care record",
-      async () => {
-        apiMocks
-          .getPatientCare
-          .mockRejectedValue(
-            new Error(
-              "Patient is outside your clinic scope."
-            )
-          );
-
-        renderPage();
-
-        expect(
-          await screen
-            .findByText(
-              "Patient is outside your clinic scope."
-            )
-        ).toBeInTheDocument();
-
-        expect(
-          screen.queryByText(
-            "Patient One"
-          )
-        ).not
-          .toBeInTheDocument();
-      }
-    );
-
-    it(
-      "removes an allergy through the nurse API and refreshes the record",
-      async () => {
-        vi.spyOn(
-          window,
-          "confirm"
-        )
-          .mockReturnValue(
-            true
-          );
-
-        renderPage();
-
-        const removeButton =
-          await screen
-            .findByTitle(
-              "Remove allergy"
-            );
-
-        fireEvent.click(
-          removeButton
-        );
-
-        await waitFor(() => {
-          expect(
-            apiMocks
-              .deleteAllergy
-          ).toHaveBeenCalledWith(
-            "patient-1",
-            "allergy-1"
-          );
-        });
-
-        expect(
-          await screen
-            .findByText(
-              "Allergy removed."
-            )
-        ).toBeInTheDocument();
-
-        await waitFor(() => {
-          expect(
-            apiMocks
-              .getPatientCare
-              .mock
-              .calls
-              .length
-          ).toBeGreaterThanOrEqual(
-            2
-          );
-        });
-      }
-    );
-
-    it(
-      "does not remove an allergy when the nurse cancels confirmation",
-      async () => {
-        vi.spyOn(
-          window,
-          "confirm"
-        )
-          .mockReturnValue(
-            false
-          );
-
-        renderPage();
-
-        const removeButton =
-          await screen
-            .findByTitle(
-              "Remove allergy"
-            );
-
-        fireEvent.click(
-          removeButton
-        );
-
-        expect(
-          apiMocks
-            .deleteAllergy
-        ).not
-          .toHaveBeenCalled();
-      }
-    );
-  }
-);
+      expect(
+        apiMocks.deleteAllergy
+      ).not.toHaveBeenCalled();
+    }
+  );
+});
