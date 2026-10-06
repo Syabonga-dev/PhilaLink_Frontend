@@ -57,8 +57,8 @@ jobs:
           node --version
           npm --version
 
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
+      - name: Install locked dependencies
+        run: npm ci --no-audit --no-fund
 
       - name: Reject browser-exposed secret environment variables
         shell: bash
@@ -108,8 +108,8 @@ jobs:
           )
           PY
 
-      - name: Audit production npm dependencies
-        run: npm audit --omit=dev --audit-level=high
+      - name: Audit all npm dependencies
+        run: npm audit --audit-level=low
 
       - name: Run ESLint
         run: npm run lint
