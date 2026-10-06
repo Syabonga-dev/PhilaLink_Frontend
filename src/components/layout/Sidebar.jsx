@@ -62,8 +62,37 @@ const ADMIN_NAV = [
   },
 ];
 
+/*
+ * SuperAdmin navigation is deliberately defined separately
+ * from ClinicAdmin navigation.
+ *
+ * A SuperAdmin can:
+ * - review the system overview
+ * - manage system-wide accounts
+ * - review audit activity
+ * - manage clinics
+ * - create ClinicAdmin accounts
+ *
+ * A SuperAdmin must NOT see the ClinicAdmin-only
+ * "Register Staff" workflow used to create Nurses and Proxies.
+ */
 const SUPER_ADMIN_NAV = [
-  ...ADMIN_NAV,
+  {
+    to: "/admin",
+    label: "Overview",
+    icon: "space_dashboard",
+    end: true,
+  },
+  {
+    to: "/admin/staff",
+    label: "Manage Staff",
+    icon: "badge",
+  },
+  {
+    to: "/admin/audit",
+    label: "Audit Log",
+    icon: "history",
+  },
   {
     to: "/admin/clinics",
     label: "Manage Clinics",
