@@ -320,11 +320,6 @@ describe(
           1
         );
 
-        /*
-         * Dashboard renders medication name and dosage
-         * together in the same element:
-         * "Metformin 500 mg".
-         */
         expect(
           await screen.findByText(
             /Metformin\s+500 mg/
@@ -337,9 +332,13 @@ describe(
           )
         ).toBeInTheDocument();
 
+        /*
+         * Patient number is rendered inside a line that
+         * also contains its translated label.
+         */
         expect(
           screen.getByText(
-            "PAT-001"
+            /PAT-001/
           )
         ).toBeInTheDocument();
       }

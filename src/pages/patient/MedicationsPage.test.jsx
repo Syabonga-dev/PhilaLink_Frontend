@@ -328,11 +328,6 @@ describe(
           apiMocks.getSupply
         ).toHaveBeenCalled();
 
-        /*
-         * Scope these checks to the actual active medication
-         * card because the schedule also renders the medication
-         * name and dosage.
-         */
         expect(
           within(
             medicationCard
@@ -357,9 +352,6 @@ describe(
           )
         ).toBeInTheDocument();
 
-        /*
-         * Dose actions live inside the expanded card.
-         */
         fireEvent.click(
           medicationCard
         );
@@ -470,13 +462,38 @@ describe(
           <MedicationsPage />
         );
 
-        expect(
-          await findMedicationCard()
-        ).toBeInTheDocument();
+        const medicationCard =
+          await findMedicationCard();
 
         expect(
-          screen.getByText(
+          medicationCard
+        ).toBeInTheDocument();
+
+        /*
+         * Supply-error detail is intentionally shown inside
+         * the expandable medication details.
+         */
+        fireEvent.click(
+          medicationCard
+        );
+
+        expect(
+          await screen.findByText(
             "Supply temporarily unavailable"
+          )
+        ).toBeInTheDocument();
+
+        /*
+         * The medication record itself remains visible despite
+         * the independent supply request failing.
+         */
+        expect(
+          screen.getByRole(
+            "button",
+            {
+              name:
+                /Metformin.*500 mg/i,
+            }
           )
         ).toBeInTheDocument();
       }
@@ -525,10 +542,6 @@ describe(
           );
         });
 
-        /*
-         * A successful log refreshes both medication and
-         * supply information.
-         */
         await waitFor(() => {
           expect(
             apiMocks
@@ -636,9 +649,6 @@ describe(
           medicationCard
         ).toBeInTheDocument();
 
-        /*
-         * The collapsed card displays the completion badge.
-         */
         expect(
           within(
             medicationCard
@@ -651,10 +661,6 @@ describe(
           medicationCard
         );
 
-        /*
-         * Once expanded, the primary dose action is disabled
-         * because today's scheduled doses are already complete.
-         */
         expect(
           await screen.findByRole(
             "button",
