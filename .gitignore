@@ -1,8 +1,17 @@
-node_modules
-dist
-.env
-.env.local
-*.log
-.DS_Store
-.env.example
+node_modules/
+dist/
 
+# Runtime environment files
+.env
+.env.*
+
+# Safe public example configuration
+!.env.example
+
+# Logs
+*.log
+
+# OS/editor
+.DS_Store
+.vscode/
+.idea/

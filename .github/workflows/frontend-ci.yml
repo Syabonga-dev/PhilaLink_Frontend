@@ -30,6 +30,23 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Reject tracked runtime environment files
+        shell: bash
+        run: |
+          tracked_env_files="$(
+            git ls-files |
+            grep -E '(^|/)\.env($|\.)' |
+            grep -v '\.env\.example$' || true
+          )"
+
+          if [ -n "$tracked_env_files" ]; then
+            echo "Runtime environment files must not be committed:"
+            echo "$tracked_env_files"
+            exit 1
+          fi
+
+          echo "No tracked runtime environment files detected."
+
       - name: Install Node.js
         uses: actions/setup-node@v4
         with:
@@ -42,6 +59,57 @@ jobs:
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+
+      - name: Reject browser-exposed secret environment variables
+        shell: bash
+        run: |
+          python3 <<'PY'
+          from pathlib import Path
+          import re
+          import sys
+
+          pattern = re.compile(
+              r"import\.meta\.env\s*\.\s*"
+              r"(VITE_[A-Z0-9_]*(?:KEY|SECRET|PASSWORD|PRIVATE|TOKEN)[A-Z0-9_]*)",
+              re.IGNORECASE | re.MULTILINE,
+          )
+
+          violations = []
+
+          for path in Path("src").rglob("*"):
+              if not path.is_file():
+                  continue
+
+              if path.suffix.lower() not in {".js", ".jsx", ".ts", ".tsx"}:
+                  continue
+
+              text = path.read_text(
+                  encoding="utf-8",
+                  errors="ignore",
+              )
+
+              for match in pattern.finditer(text):
+                  violations.append(
+                      f"{path}: {match.group(1)}"
+                  )
+
+          if violations:
+              print(
+                  "Secret-looking VITE_ variables would be exposed to the browser:"
+              )
+
+              for violation in violations:
+                  print(violation)
+
+              sys.exit(1)
+
+          print(
+              "No browser-exposed secret environment variables detected."
+          )
+          PY
+
+      - name: Audit production npm dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Run ESLint
         run: npm run lint
