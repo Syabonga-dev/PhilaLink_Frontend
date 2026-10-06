@@ -41,54 +41,13 @@ jobs:
           npm --version
 
       - name: Install dependencies
-        id: install
         run: npm install --no-audit --no-fund
 
       - name: Run ESLint
-        id: lint
-        if: steps.install.outcome == 'success'
-        continue-on-error: true
         run: npm run lint
 
       - name: Run Vitest
-        id: test
-        if: steps.install.outcome == 'success'
-        continue-on-error: true
         run: npm run test -- --reporter=verbose
 
       - name: Build production frontend
-        id: build
-        if: steps.install.outcome == 'success'
-        continue-on-error: true
         run: npm run build
-
-      - name: Enforce frontend quality gate
-        if: always()
-        shell: bash
-        run: |
-          echo "Install: ${{ steps.install.outcome }}"
-          echo "Lint:    ${{ steps.lint.outcome }}"
-          echo "Tests:   ${{ steps.test.outcome }}"
-          echo "Build:   ${{ steps.build.outcome }}"
-
-          if [ "${{ steps.install.outcome }}" != "success" ]; then
-            echo "Dependency installation failed."
-            exit 1
-          fi
-
-          if [ "${{ steps.lint.outcome }}" != "success" ]; then
-            echo "ESLint failed."
-            exit 1
-          fi
-
-          if [ "${{ steps.test.outcome }}" != "success" ]; then
-            echo "Vitest failed."
-            exit 1
-          fi
-
-          if [ "${{ steps.build.outcome }}" != "success" ]; then
-            echo "Production build failed."
-            exit 1
-          fi
-
-          echo "All frontend quality checks passed."
