@@ -304,9 +304,6 @@ const HEALTH_METRIC_KEYS = {
 
   spo2:
     "oxygenSaturation",
-
-  "spo2":
-    "oxygenSaturation",
 };
 
 export function translateHealthMetricType(

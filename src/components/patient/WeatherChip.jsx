@@ -765,7 +765,7 @@ export default function WeatherChip({
           ""
         );
 
-        const useClinicFallback =
+        const loadClinicFallback =
           async geoError => {
             if (
               geoError
@@ -883,7 +883,7 @@ export default function WeatherChip({
             locationWeatherError
           );
 
-          await useClinicFallback(
+          await loadClinicFallback(
             locationWeatherError
           );
         } finally {
