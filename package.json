@@ -12,8 +12,6 @@
     "test:watch": "vitest"
   },
   "dependencies": {
-    "@figma/astraui": "^1.0.0",
-    "@figma/astraui-kit": "^0.1.3",
     "i18next": "^26.4.2",
     "leaflet": "^1.9.4",
     "lint": "^1.2.2",
