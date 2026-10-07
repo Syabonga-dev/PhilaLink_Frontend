@@ -17,37 +17,6 @@ body {
     sans-serif;
 }
 
-/*
- * The Nurse/Proxy and Admin shells share the same 252px fixed sidebar.
- * iOS browsers can report a layout viewport taller than the visible
- * viewport, which previously pushed the account footer and sign-out
- * button below the screen. Constrain those sidebars to the dynamic
- * viewport and keep only the navigation area scrollable.
- */
-@supports (height: 100dvh) {
-  aside[class~="fixed"][class~="inset-y-0"][class~="w-[252px]"] {
-    top: 0;
-    bottom: auto;
-    height: 100dvh;
-    min-height: 100dvh;
-    max-height: 100dvh;
-    overflow: hidden;
-  }
-
-  aside[class~="fixed"][class~="inset-y-0"][class~="w-[252px]"] > nav {
-    min-height: 0;
-    overflow-y: auto;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  aside[class~="fixed"][class~="inset-y-0"][class~="w-[252px]"] > div:last-child {
-    flex-shrink: 0;
-    padding-bottom: max(1rem, env(safe-area-inset-bottom));
-    background: #ffffff;
-  }
-}
-
 .material-symbols-outlined {
   font-variation-settings:
     "FILL" 0,
