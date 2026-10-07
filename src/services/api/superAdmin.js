@@ -43,6 +43,71 @@ function buildQuery(
   return params;
 }
 
+function normalizeReportFilters(
+  filters = {}
+) {
+  return {
+    ...filters,
+
+    clinicId:
+      filters.clinicId &&
+      filters.clinicId !==
+        "All"
+        ? filters.clinicId
+        : null,
+
+    search:
+      filters.search
+        ?.trim() ||
+      null,
+
+    status:
+      filters.status ===
+        "All" ||
+      !filters.status
+        ? null
+        : filters.status,
+
+    role:
+      filters.role ===
+        "All" ||
+      !filters.role
+        ? null
+        : filters.role,
+
+    provider:
+      filters.provider ===
+        "All" ||
+      !filters.provider
+        ? null
+        : filters.provider,
+
+    appointmentType:
+      filters
+        .appointmentType ===
+        "All" ||
+      !filters
+        .appointmentType
+        ? null
+        : filters
+            .appointmentType,
+
+    mode:
+      filters.mode ===
+        "All" ||
+      !filters.mode
+        ? null
+        : filters.mode,
+
+    medication:
+      filters.medication ===
+        "All" ||
+      !filters.medication
+        ? null
+        : filters.medication,
+  };
+}
+
 function fileNameFromResponse(
   response,
   fallbackName
@@ -155,15 +220,50 @@ async function throwDownloadError(
       "";
 
     if (
-      contentType.includes(
-        "application/json"
-      )
+      contentType
+        .toLowerCase()
+        .includes(
+          "json"
+        )
     ) {
       const data =
         await response.json();
 
+      const validationErrors =
+        data?.errors &&
+        typeof data.errors ===
+          "object"
+          ? Object.entries(
+              data.errors
+            )
+              .filter(
+                ([
+                  key,
+                ]) =>
+                  key !==
+                  "request"
+              )
+              .flatMap(
+                ([
+                  ,
+                  values,
+                ]) =>
+                  Array.isArray(
+                    values
+                  )
+                    ? values
+                    : [
+                        values,
+                      ]
+              )
+              .filter(
+                Boolean
+              )
+          : [];
+
       message =
         data?.message ||
+        validationErrors[0] ||
         data?.title ||
         message;
     } else {
@@ -476,13 +576,16 @@ export const superAdminApi = {
 
       return saveDownload(
         response,
-        `PhilaLink-${filters?.reportType || "system-report"}.xlsx`
+        `PhilaLink-${
+          filters?.reportType ||
+          "system-report"
+        }.xlsx`
       );
     },
 
   downloadSecurePdf:
     async (
-      filters,
+      filters = {},
       password
     ) => {
       if (
@@ -494,6 +597,20 @@ export const superAdminApi = {
           "A PDF password of at least 8 characters is required."
         );
       }
+
+      if (
+        password.length >
+        128
+      ) {
+        throw new ApiError(
+          "The PDF password cannot exceed 128 characters."
+        );
+      }
+
+      const normalizedFilters =
+        normalizeReportFilters(
+          filters
+        );
 
       const logoJpegBase64 =
         await buildLogoJpegBase64();
@@ -507,8 +624,11 @@ export const superAdminApi = {
 
             body:
               JSON.stringify({
-                filters,
+                filters:
+                  normalizedFilters,
+
                 password,
+
                 logoJpegBase64,
               }),
           }
@@ -516,7 +636,10 @@ export const superAdminApi = {
 
       return saveDownload(
         response,
-        `PhilaLink-${filters?.reportType || "system-report"}-protected.pdf`
+        `PhilaLink-${
+          filters?.reportType ||
+          "system-report"
+        }-protected.pdf`
       );
     },
 };
