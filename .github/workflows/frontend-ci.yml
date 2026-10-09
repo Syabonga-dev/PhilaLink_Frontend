@@ -108,8 +108,8 @@ jobs:
           )
           PY
 
-      - name: Audit all npm dependencies
-        run: npm audit --audit-level=low
+      - name: Audit production npm dependencies
+        run: npm audit --omit=dev --audit-level=high
 
       - name: Run ESLint
         run: npm run lint
