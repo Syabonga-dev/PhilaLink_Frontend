@@ -1,56 +1,100 @@
 .register-page {
   position: relative;
+
   min-height: 100vh;
   min-height: 100dvh;
+
+  box-sizing: border-box;
+
+  /*
+   * NavigationBar is fixed and 72px tall.
+   * Keep registration below it on every viewport.
+   */
+  padding-top: 72px;
+
   overflow-x: hidden;
+  overflow-y: auto;
+
   background: #073b3b;
 }
 
 .register-background {
   position: absolute;
+
   inset: -20px;
+
   background-image: url("/PillShelf.jpg");
   background-size: cover;
   background-position: center;
+
   filter: blur(4px);
+
   transform: scale(1.03);
+
   opacity: 0.8;
+
+  pointer-events: none;
 }
 
 .register-overlay {
   position: absolute;
+
   inset: 0;
+
   background: rgba(7, 59, 59, 0.48);
+
+  pointer-events: none;
 }
 
 .register-content {
   position: relative;
+
   z-index: 2;
+
   display: flex;
+
+  align-items: center;
   justify-content: center;
+
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
+
+  min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - 72px);
+
+  box-sizing: border-box;
+
   padding: 38px 20px;
 }
 
 .register-card {
   width: min(560px, 100%);
-  align-self: center;
+
   padding: 38px 40px;
+
   border: 1px solid rgba(255, 255, 255, 0.25);
+
   border-radius: 24px;
+
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+
+  box-shadow:
+    0 30px 80px
+    rgba(0, 0, 0, 0.3);
+
   backdrop-filter: blur(12px);
 }
 
 .register-brand {
   display: flex;
+
   align-items: center;
+
   gap: 10px;
+
   margin-bottom: 28px;
+
   color: #073b3b;
+
   font-size: 1.35rem;
   font-weight: 800;
 }
@@ -58,6 +102,7 @@
 .register-brand img {
   width: 38px;
   height: 38px;
+
   object-fit: contain;
 }
 
@@ -71,64 +116,89 @@
 
 .register-eyebrow {
   margin: 0 0 8px;
+
   color: #006b6b;
+
   font-size: 0.68rem;
   font-weight: 800;
+
   letter-spacing: 0.14em;
 }
 
 .register-heading h1 {
   margin: 0;
+
   color: #102020;
+
   font-size: 2.25rem;
   line-height: 1.05;
+
   font-weight: 800;
+
   letter-spacing: -0.04em;
 }
 
 .register-heading > p:last-child {
   max-width: 470px;
+
   margin: 10px 0 0;
+
   color: #647575;
+
   font-size: 0.88rem;
   line-height: 1.6;
 }
 
+
 /* =====================================================
    PROGRESS
-   ===================================================== */
+===================================================== */
 
 .register-progress {
   display: flex;
+
   align-items: flex-start;
+
   margin-bottom: 26px;
 }
 
 .progress-step {
   display: flex;
+
   flex-direction: column;
+
   align-items: center;
+
   min-width: 76px;
+
   color: #9aa7a7;
 }
 
 .progress-step span {
   display: flex;
+
   align-items: center;
   justify-content: center;
+
   width: 30px;
   height: 30px;
+
   border-radius: 50%;
+
   background: #e8eded;
+
   color: #8a9797;
+
   font-size: 0.72rem;
   font-weight: 800;
 }
 
 .progress-step p {
   margin: 6px 0 0;
+
   font-size: 0.65rem;
   font-weight: 600;
+
   white-space: nowrap;
 }
 
@@ -138,63 +208,89 @@
 
 .progress-step.active span {
   background: #006b6b;
+
   color: #ffffff;
 }
 
 .progress-line {
   height: 1px;
+
   flex: 1;
+
   margin: 15px 8px 0;
+
   background: #d7dfdf;
 }
 
+
 /* =====================================================
    FORM
-   ===================================================== */
+===================================================== */
 
 .register-form {
   display: flex;
+
   flex-direction: column;
+
   gap: 16px;
 }
 
 .register-passwords {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
   gap: 16px;
 }
 
+
 /* =====================================================
    PASSWORD REQUIREMENTS
-   ===================================================== */
+===================================================== */
 
 .password-requirements {
   padding: 14px 16px;
+
   border: 1px solid #dbe7e5;
+
   border-radius: 12px;
+
   background: #f8fbfa;
 }
 
 .password-requirements-title {
   margin: 0 0 10px;
+
   color: #3d4949;
+
   font-size: 0.76rem;
   font-weight: 700;
 }
 
 .password-requirements-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+
+  grid-template-columns:
+    1fr
+    1fr;
+
   gap: 7px 14px;
 }
 
 .password-requirement {
   display: flex;
+
   align-items: center;
+
   gap: 7px;
+
   color: #718080;
+
   font-size: 0.72rem;
   line-height: 1.4;
+
   transition:
     color 0.2s ease,
     opacity 0.2s ease;
@@ -202,18 +298,24 @@
 
 .password-requirement-icon {
   display: inline-flex;
+
   flex: 0 0 auto;
+
   align-items: center;
   justify-content: center;
+
   width: 18px;
   height: 18px;
+
   color: #8c9998;
+
   font-size: 0.9rem;
   font-weight: 800;
 }
 
 .password-requirement.met {
   color: #006b6b;
+
   font-weight: 700;
 }
 
@@ -222,34 +324,46 @@
   color: #006b6b;
 }
 
+
 /* =====================================================
    SUBMIT
-   ===================================================== */
+===================================================== */
 
 .register-submit {
   width: 100%;
+
   min-height: 48px;
+
   margin-top: 4px;
+
   border-radius: 10px;
 }
 
+
 /* =====================================================
    FOOTER
-   ===================================================== */
+===================================================== */
 
 .register-login {
   display: flex;
+
   justify-content: center;
   align-items: center;
+
   gap: 5px;
+
   margin-top: 22px;
+
   color: #718080;
+
   font-size: 0.78rem;
 }
 
 .register-login a {
   color: #006b6b;
+
   font-weight: 800;
+
   text-decoration: none;
 }
 
@@ -258,27 +372,43 @@
 }
 
 .register-note {
-  margin: 18px auto 0;
   max-width: 400px;
+
+  margin:
+    18px
+    auto
+    0;
+
   color: #8a9696;
+
   font-size: 0.68rem;
   line-height: 1.5;
+
   text-align: center;
 }
 
-/* =====================================================
-   TABLET / SMALL SCREEN
-   ===================================================== */
 
-@media (max-width: 600px) {
+/* =====================================================
+   TABLET
+===================================================== */
+
+@media (max-width: 1023px) {
   .register-content {
     align-items: flex-start;
-    padding: 24px 16px 40px;
+
+    padding:
+      24px
+      16px
+      40px;
   }
 
   .register-card {
-    align-self: flex-start;
-    padding: 30px 26px;
+    width: min(560px, 100%);
+
+    padding:
+      30px
+      26px;
+
     border-radius: 20px;
   }
 
@@ -297,7 +427,14 @@
   .register-progress {
     margin-bottom: 22px;
   }
+}
 
+
+/* =====================================================
+   SMALL SCREEN
+===================================================== */
+
+@media (max-width: 600px) {
   .progress-step {
     min-width: 62px;
   }
@@ -313,25 +450,33 @@
 
   .password-requirements-grid {
     grid-template-columns: 1fr;
+
     gap: 7px;
   }
 }
 
+
 /* =====================================================
    PHONE
-   ===================================================== */
+===================================================== */
 
 @media (max-width: 480px) {
   .register-content {
-    padding: 20px 12px 36px;
+    padding:
+      20px
+      12px
+      36px;
   }
 
   .register-card {
-    padding: 26px 20px;
+    padding:
+      26px
+      20px;
   }
 
   .register-passwords {
     grid-template-columns: 1fr;
+
     gap: 16px;
   }
 
@@ -352,10 +497,23 @@
   }
 
   .password-requirements {
-    padding: 13px 14px;
+    padding:
+      13px
+      14px;
   }
 
   .password-requirement {
     font-size: 0.7rem;
+  }
+}
+
+
+/* =====================================================
+   SHORT SCREEN / LANDSCAPE
+===================================================== */
+
+@media (max-height: 700px) {
+  .register-content {
+    align-items: flex-start;
   }
 }
