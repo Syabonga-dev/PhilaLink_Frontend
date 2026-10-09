@@ -6,6 +6,13 @@
 
   box-sizing: border-box;
 
+  /*
+   * NavigationBar is fixed and 72px tall.
+   * Always reserve its space so auth content
+   * can never render underneath it.
+   */
+  padding-top: 72px;
+
   overflow-x: hidden;
   overflow-y: auto;
 
@@ -73,8 +80,12 @@
 
   width: 100%;
 
-  min-height: 100vh;
-  min-height: 100dvh;
+  /*
+   * Fill the viewport area below the fixed navbar,
+   * rather than centering against the full viewport.
+   */
+  min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - 72px);
 
   box-sizing: border-box;
 
@@ -416,24 +427,12 @@
 
 
 /* =========================================================
-   MOBILE
-
-   Navbar is 72px tall.
-
-   Reserve the navbar space on mobile only,
-   then add a separate 24px gap before the card.
+   TABLET / MOBILE
 ========================================================= */
 
-@media (max-width: 768px) {
-  .login-page {
-    padding-top: 72px;
-  }
-
+@media (max-width: 1023px) {
   .login-content {
     align-items: flex-start;
-
-    min-height: calc(100vh - 72px);
-    min-height: calc(100dvh - 72px);
 
     padding:
       24px
@@ -442,7 +441,7 @@
   }
 
   .login-card {
-    width: 100%;
+    width: min(430px, 100%);
 
     padding:
       32px
@@ -508,10 +507,10 @@
 
 
 /* =========================================================
-   SHORT MOBILE / LANDSCAPE
+   SHORT SCREEN / LANDSCAPE
 ========================================================= */
 
-@media (max-height: 700px) and (max-width: 900px) {
+@media (max-height: 700px) {
   .login-content {
     align-items: flex-start;
   }
