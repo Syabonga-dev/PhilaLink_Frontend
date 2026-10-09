@@ -328,22 +328,14 @@ export default function AdminAppLayout() {
     setProfile,
   ] = useState(null);
 
-  /*
-   * iOS Safari can report a layout viewport
-   * larger than the actually visible area when
-   * the browser toolbar is visible.
-   *
-   * visualViewport gives us the real usable
-   * viewport height.
-   */
   const [
-    visibleViewport,
-    setVisibleViewport,
-  ] = useState({
-    height: null,
-    offsetTop: 0,
-  });
+    viewportHeight,
+    setViewportHeight,
+  ] = useState(null);
 
+  /*
+   * Load the current administrator profile.
+   */
   useEffect(() => {
     let active = true;
 
@@ -373,6 +365,10 @@ export default function AdminAppLayout() {
     };
   }, []);
 
+  /*
+   * Close the mobile drawer whenever
+   * navigation changes.
+   */
   useEffect(() => {
     setMobileOpen(
       false
@@ -382,8 +378,8 @@ export default function AdminAppLayout() {
   ]);
 
   /*
-   * Prevent the page behind the mobile
-   * navigation drawer from scrolling.
+   * Prevent the page behind the drawer
+   * from scrolling while the drawer is open.
    */
   useEffect(() => {
     if (!mobileOpen) {
@@ -391,15 +387,18 @@ export default function AdminAppLayout() {
     }
 
     const previousOverflow =
-      document.body.style
+      document.body
+        .style
         .overflow;
 
-    document.body.style
+    document.body
+      .style
       .overflow =
       "hidden";
 
     return () => {
-      document.body.style
+      document.body
+        .style
         .overflow =
         previousOverflow;
     };
@@ -408,84 +407,82 @@ export default function AdminAppLayout() {
   ]);
 
   /*
-   * Keep the sidebar matched to the actual
-   * visible browser viewport.
+   * Track only the ACTUAL visible viewport height.
    *
-   * This handles:
-   * - iPhone Safari bottom toolbar
-   * - Safari address bar expansion/collapse
-   * - portrait/landscape changes
-   * - browser viewport resizing
+   * Important:
+   * Do NOT apply visualViewport.offsetTop to a fixed
+   * element. Fixed elements are already positioned
+   * inside the browser's visible viewport on these
+   * mobile browsers.
+   *
+   * Adding offsetTop as well can move the bottom of
+   * the sidebar beneath the browser controls.
    */
   useEffect(() => {
-    function updateVisibleViewport() {
+    function updateViewportHeight() {
       const viewport =
         window.visualViewport;
 
       const height =
         viewport?.height ||
-        window.innerHeight;
+        window.innerHeight ||
+        document.documentElement
+          .clientHeight;
 
-      const offsetTop =
-        viewport?.offsetTop ||
-        0;
-
-      setVisibleViewport({
-        height:
-          Math.round(
+      setViewportHeight(
+        Math.max(
+          1,
+          Math.floor(
             height
-          ),
-        offsetTop:
-          Math.round(
-            offsetTop
-          ),
-      });
+          )
+        )
+      );
     }
 
-    updateVisibleViewport();
+    updateViewportHeight();
 
     const viewport =
       window.visualViewport;
 
     viewport?.addEventListener(
       "resize",
-      updateVisibleViewport
+      updateViewportHeight
     );
 
     viewport?.addEventListener(
       "scroll",
-      updateVisibleViewport
+      updateViewportHeight
     );
 
     window.addEventListener(
       "resize",
-      updateVisibleViewport
+      updateViewportHeight
     );
 
     window.addEventListener(
       "orientationchange",
-      updateVisibleViewport
+      updateViewportHeight
     );
 
     return () => {
       viewport?.removeEventListener(
         "resize",
-        updateVisibleViewport
+        updateViewportHeight
       );
 
       viewport?.removeEventListener(
         "scroll",
-        updateVisibleViewport
+        updateViewportHeight
       );
 
       window.removeEventListener(
         "resize",
-        updateVisibleViewport
+        updateViewportHeight
       );
 
       window.removeEventListener(
         "orientationchange",
-        updateVisibleViewport
+        updateViewportHeight
       );
     };
   }, []);
@@ -518,6 +515,7 @@ export default function AdminAppLayout() {
           {
             label:
               "Clinic operations",
+
             items:
               CLINIC_ADMIN_NAV
                 .slice(
@@ -525,9 +523,11 @@ export default function AdminAppLayout() {
                   3
                 ),
           },
+
           {
             label:
               "Workforce",
+
             items:
               CLINIC_ADMIN_NAV
                 .slice(
@@ -535,9 +535,11 @@ export default function AdminAppLayout() {
                   5
                 ),
           },
+
           {
             label:
               "Governance",
+
             items:
               CLINIC_ADMIN_NAV
                 .slice(
@@ -551,20 +553,40 @@ export default function AdminAppLayout() {
       ]
     );
 
-  const sidebarStyle = {
-    height:
-      visibleViewport.height
-        ? `${visibleViewport.height}px`
-        : "100svh",
+  /*
+   * Fall back to svh before JavaScript has measured
+   * the viewport. Once measured, use the actual
+   * visible pixel height.
+   */
+  const sidebarStyle =
+    viewportHeight
+      ? {
+          height:
+            `${viewportHeight}px`,
 
-    top:
-      visibleViewport.offsetTop
-        ? `${visibleViewport.offsetTop}px`
-        : "0px",
-  };
+          maxHeight:
+            `${viewportHeight}px`,
+
+          gridTemplateRows:
+            "76px auto minmax(0, 1fr) auto",
+        }
+      : {
+          height:
+            "100svh",
+
+          maxHeight:
+            "100svh",
+
+          gridTemplateRows:
+            "76px auto minmax(0, 1fr) auto",
+        };
 
   return (
     <div className="min-h-screen bg-[#f4f6f5] text-slate-950">
+      {/* ============================================= */}
+      {/* MOBILE BACKDROP                               */}
+      {/* ============================================= */}
+
       {mobileOpen ? (
         <button
           type="button"
@@ -578,8 +600,12 @@ export default function AdminAppLayout() {
         />
       ) : null}
 
+      {/* ============================================= */}
+      {/* SIDEBAR                                       */}
+      {/* ============================================= */}
+
       <aside
-        className={`fixed left-0 z-50 flex w-[252px] flex-col overflow-hidden border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 top-0 z-50 grid w-[252px] overflow-hidden border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
           mobileOpen
             ? "translate-x-0"
             : "-translate-x-full"
@@ -588,11 +614,11 @@ export default function AdminAppLayout() {
           sidebarStyle
         }
       >
-        {/* ============================================= */}
-        {/* BRAND                                         */}
-        {/* ============================================= */}
+        {/* =========================================== */}
+        {/* BRAND                                       */}
+        {/* =========================================== */}
 
-        <div className="flex h-[76px] shrink-0 items-center border-b border-slate-200 px-5">
+        <div className="flex h-[76px] min-h-0 items-center border-b border-slate-200 px-5">
           <NavLink
             to="/admin"
             onClick={() =>
@@ -623,11 +649,11 @@ export default function AdminAppLayout() {
           </NavLink>
         </div>
 
-        {/* ============================================= */}
-        {/* WORKING CONTEXT                               */}
-        {/* ============================================= */}
+        {/* =========================================== */}
+        {/* WORKING CONTEXT                             */}
+        {/* =========================================== */}
 
-        <div className="shrink-0 border-b border-slate-200 px-5 py-4">
+        <div className="min-h-0 border-b border-slate-200 px-5 py-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
             Working context
           </p>
@@ -644,38 +670,50 @@ export default function AdminAppLayout() {
           </p>
         </div>
 
-        {/* ============================================= */}
-        {/* SCROLLABLE NAVIGATION                         */}
-        {/* ============================================= */}
+        {/* =========================================== */}
+        {/* SCROLLABLE NAVIGATION                       */}
+        {/* =========================================== */}
 
-        <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-3 py-5">
-          {sections.map(
-            section => (
-              <NavSection
-                key={
-                  section.label
-                }
-                label={
-                  section.label
-                }
-                items={
-                  section.items
-                }
-                onNavigate={() =>
-                  setMobileOpen(
-                    false
-                  )
-                }
-              />
-            )
-          )}
+        <nav className="min-h-0 overflow-y-auto overscroll-contain px-3 py-5">
+          <div className="space-y-6">
+            {sections.map(
+              section => (
+                <NavSection
+                  key={
+                    section.label
+                  }
+                  label={
+                    section.label
+                  }
+                  items={
+                    section.items
+                  }
+                  onNavigate={() =>
+                    setMobileOpen(
+                      false
+                    )
+                  }
+                />
+              )
+            )}
+          </div>
         </nav>
 
-        {/* ============================================= */}
-        {/* ACCOUNT + LOGOUT                              */}
-        {/* ============================================= */}
+        {/* =========================================== */}
+        {/* PROFILE + LOGOUT                            */}
+        {/* =========================================== */}
 
-        <div className="shrink-0 border-t border-slate-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        <div
+          className="
+            min-h-0
+            border-t
+            border-slate-200
+            bg-white
+            px-4
+            pt-3
+            pb-[calc(0.75rem+env(safe-area-inset-bottom))]
+          "
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-slate-900 text-xs font-semibold text-white">
               {initials(
@@ -705,19 +743,19 @@ export default function AdminAppLayout() {
               }
               title="Sign out"
               aria-label="Sign out"
-              className="flex h-8 w-8 shrink-0 items-center justify-center border border-slate-200 text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+              className="flex h-9 w-9 shrink-0 items-center justify-center border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
             >
               <LogOut
-                size={15}
+                size={16}
               />
             </button>
           </div>
         </div>
       </aside>
 
-      {/* =============================================== */}
-      {/* PAGE CONTENT                                    */}
-      {/* =============================================== */}
+      {/* ============================================= */}
+      {/* CONTENT                                       */}
+      {/* ============================================= */}
 
       <div className="lg:pl-[252px]">
         <header className="sticky top-0 z-30 flex h-[64px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
@@ -778,9 +816,9 @@ export default function AdminAppLayout() {
         </main>
       </div>
 
-      {/* =============================================== */}
-      {/* MOBILE CLOSE BUTTON                             */}
-      {/* =============================================== */}
+      {/* ============================================= */}
+      {/* MOBILE CLOSE BUTTON                           */}
+      {/* ============================================= */}
 
       {mobileOpen ? (
         <button
