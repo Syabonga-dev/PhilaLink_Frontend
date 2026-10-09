@@ -122,7 +122,9 @@ const SUPER_ADMIN_SECTIONS = [
 ];
 
 function initials(value) {
-  const words = String(value || "")
+  const words = String(
+    value || ""
+  )
     .trim()
     .split(/\s+/)
     .filter(Boolean);
@@ -144,8 +146,12 @@ function pageTitle(
   pathname,
   role
 ) {
-  if (pathname === "/admin") {
-    return role === "SuperAdmin"
+  if (
+    pathname ===
+    "/admin"
+  ) {
+    return role ===
+      "SuperAdmin"
       ? "Overview"
       : "Analytics";
   }
@@ -195,7 +201,8 @@ function pageTitle(
       "/admin/staff"
     )
   ) {
-    return role === "SuperAdmin"
+    return role ===
+      "SuperAdmin"
       ? "Accounts"
       : "Staff";
   }
@@ -247,51 +254,55 @@ function NavSection({
       </p>
 
       <div className="mt-2 space-y-1">
-        {items.map(item => {
-          const Icon =
-            item.icon;
+        {items.map(
+          item => {
+            const Icon =
+              item.icon;
 
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={
-                onNavigate
-              }
-              className={({
-                isActive,
-              }) =>
-                `group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition ${
-                  isActive
-                    ? "bg-[#e9f6f3] text-[#0f766e]"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`
-              }
-            >
-              {({
-                isActive,
-              }) => (
-                <>
-                  {isActive ? (
-                    <span className="absolute inset-y-0 left-0 w-[3px] bg-[#0f766e]" />
-                  ) : null}
+            return (
+              <NavLink
+                key={item.to}
+                to={item.to}
+                end={item.end}
+                onClick={
+                  onNavigate
+                }
+                className={({
+                  isActive,
+                }) =>
+                  `group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-[#e9f6f3] text-[#0f766e]"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`
+                }
+              >
+                {({
+                  isActive,
+                }) => (
+                  <>
+                    {isActive ? (
+                      <span className="absolute inset-y-0 left-0 w-[3px] bg-[#0f766e]" />
+                    ) : null}
 
-                  <Icon
-                    size={17}
-                    strokeWidth={
-                      1.8
-                    }
-                  />
+                    <Icon
+                      size={17}
+                      strokeWidth={
+                        1.8
+                      }
+                    />
 
-                  <span className="truncate">
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+                    <span className="truncate">
+                      {
+                        item.label
+                      }
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            );
+          }
+        )}
       </div>
     </div>
   );
@@ -317,25 +328,45 @@ export default function AdminAppLayout() {
     setProfile,
   ] = useState(null);
 
+  /*
+   * iOS Safari can report a layout viewport
+   * larger than the actually visible area when
+   * the browser toolbar is visible.
+   *
+   * visualViewport gives us the real usable
+   * viewport height.
+   */
+  const [
+    visibleViewport,
+    setVisibleViewport,
+  ] = useState({
+    height: null,
+    offsetTop: 0,
+  });
+
   useEffect(() => {
     let active = true;
 
     adminApi
       .getMe()
-      .then(result => {
-        if (active) {
-          setProfile(
-            result
-          );
+      .then(
+        result => {
+          if (active) {
+            setProfile(
+              result
+            );
+          }
         }
-      })
-      .catch(() => {
-        if (active) {
-          setProfile(
-            null
-          );
+      )
+      .catch(
+        () => {
+          if (active) {
+            setProfile(
+              null
+            );
+          }
         }
-      });
+      );
 
     return () => {
       active = false;
@@ -352,8 +383,7 @@ export default function AdminAppLayout() {
 
   /*
    * Prevent the page behind the mobile
-   * sidebar from scrolling while the
-   * navigation drawer is open.
+   * navigation drawer from scrolling.
    */
   useEffect(() => {
     if (!mobileOpen) {
@@ -377,6 +407,89 @@ export default function AdminAppLayout() {
     mobileOpen,
   ]);
 
+  /*
+   * Keep the sidebar matched to the actual
+   * visible browser viewport.
+   *
+   * This handles:
+   * - iPhone Safari bottom toolbar
+   * - Safari address bar expansion/collapse
+   * - portrait/landscape changes
+   * - browser viewport resizing
+   */
+  useEffect(() => {
+    function updateVisibleViewport() {
+      const viewport =
+        window.visualViewport;
+
+      const height =
+        viewport?.height ||
+        window.innerHeight;
+
+      const offsetTop =
+        viewport?.offsetTop ||
+        0;
+
+      setVisibleViewport({
+        height:
+          Math.round(
+            height
+          ),
+        offsetTop:
+          Math.round(
+            offsetTop
+          ),
+      });
+    }
+
+    updateVisibleViewport();
+
+    const viewport =
+      window.visualViewport;
+
+    viewport?.addEventListener(
+      "resize",
+      updateVisibleViewport
+    );
+
+    viewport?.addEventListener(
+      "scroll",
+      updateVisibleViewport
+    );
+
+    window.addEventListener(
+      "resize",
+      updateVisibleViewport
+    );
+
+    window.addEventListener(
+      "orientationchange",
+      updateVisibleViewport
+    );
+
+    return () => {
+      viewport?.removeEventListener(
+        "resize",
+        updateVisibleViewport
+      );
+
+      viewport?.removeEventListener(
+        "scroll",
+        updateVisibleViewport
+      );
+
+      window.removeEventListener(
+        "resize",
+        updateVisibleViewport
+      );
+
+      window.removeEventListener(
+        "orientationchange",
+        updateVisibleViewport
+      );
+    };
+  }, []);
+
   const displayName =
     user?.fullName ||
     user?.name ||
@@ -384,51 +497,71 @@ export default function AdminAppLayout() {
     "Administrator";
 
   const contextName =
-    role === "ClinicAdmin"
-      ? profile?.clinicName ||
+    role ===
+    "ClinicAdmin"
+      ? profile
+          ?.clinicName ||
         "Assigned clinic"
       : "PhilaLink administration";
 
   const sections =
-    useMemo(() => {
-      if (
-        role ===
-        "SuperAdmin"
-      ) {
-        return SUPER_ADMIN_SECTIONS;
-      }
+    useMemo(
+      () => {
+        if (
+          role ===
+          "SuperAdmin"
+        ) {
+          return SUPER_ADMIN_SECTIONS;
+        }
 
-      return [
-        {
-          label:
-            "Clinic operations",
-          items:
-            CLINIC_ADMIN_NAV.slice(
-              0,
-              3
-            ),
-        },
-        {
-          label:
-            "Workforce",
-          items:
-            CLINIC_ADMIN_NAV.slice(
-              3,
-              5
-            ),
-        },
-        {
-          label:
-            "Governance",
-          items:
-            CLINIC_ADMIN_NAV.slice(
-              5
-            ),
-        },
-      ];
-    }, [
-      role,
-    ]);
+        return [
+          {
+            label:
+              "Clinic operations",
+            items:
+              CLINIC_ADMIN_NAV
+                .slice(
+                  0,
+                  3
+                ),
+          },
+          {
+            label:
+              "Workforce",
+            items:
+              CLINIC_ADMIN_NAV
+                .slice(
+                  3,
+                  5
+                ),
+          },
+          {
+            label:
+              "Governance",
+            items:
+              CLINIC_ADMIN_NAV
+                .slice(
+                  5
+                ),
+          },
+        ];
+      },
+      [
+        role,
+      ]
+    );
+
+  const sidebarStyle = {
+    height:
+      visibleViewport.height
+        ? `${visibleViewport.height}px`
+        : "100svh",
+
+    top:
+      visibleViewport.offsetTop
+        ? `${visibleViewport.offsetTop}px`
+        : "0px",
+  };
 
   return (
     <div className="min-h-screen bg-[#f4f6f5] text-slate-950">
@@ -445,22 +578,20 @@ export default function AdminAppLayout() {
         />
       ) : null}
 
-      {/*
-       * Keep inset-y-0 as the 100vh fallback,
-       * while 100dvh follows the actual visible
-       * mobile browser viewport.
-       *
-       * overflow-hidden keeps scrolling confined
-       * to the nav section instead of allowing
-       * the profile/logout footer to move away.
-       */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex h-[100dvh] w-[252px] flex-col overflow-hidden border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed left-0 z-50 flex w-[252px] flex-col overflow-hidden border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
           mobileOpen
             ? "translate-x-0"
             : "-translate-x-full"
         }`}
+        style={
+          sidebarStyle
+        }
       >
+        {/* ============================================= */}
+        {/* BRAND                                         */}
+        {/* ============================================= */}
+
         <div className="flex h-[76px] shrink-0 items-center border-b border-slate-200 px-5">
           <NavLink
             to="/admin"
@@ -474,7 +605,7 @@ export default function AdminAppLayout() {
             <img
               src="/logo2.png"
               alt="PhilaLink"
-              className="h-9 w-9 object-contain"
+              className="h-9 w-9 shrink-0 object-contain"
             />
 
             <div className="min-w-0">
@@ -491,6 +622,10 @@ export default function AdminAppLayout() {
             </div>
           </NavLink>
         </div>
+
+        {/* ============================================= */}
+        {/* WORKING CONTEXT                               */}
+        {/* ============================================= */}
 
         <div className="shrink-0 border-b border-slate-200 px-5 py-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
@@ -509,11 +644,10 @@ export default function AdminAppLayout() {
           </p>
         </div>
 
-        {/*
-         * This is the only part of the sidebar
-         * that should scroll when vertical space
-         * becomes limited.
-         */}
+        {/* ============================================= */}
+        {/* SCROLLABLE NAVIGATION                         */}
+        {/* ============================================= */}
+
         <nav className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-3 py-5">
           {sections.map(
             section => (
@@ -537,13 +671,11 @@ export default function AdminAppLayout() {
           )}
         </nav>
 
-        {/*
-         * Never allow the account/logout footer
-         * to shrink out of the visible viewport.
-         * The safe-area padding also protects it
-         * from the iPhone home indicator.
-         */}
-        <div className="shrink-0 border-t border-slate-200 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+        {/* ============================================= */}
+        {/* ACCOUNT + LOGOUT                              */}
+        {/* ============================================= */}
+
+        <div className="shrink-0 border-t border-slate-200 bg-white p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-slate-900 text-xs font-semibold text-white">
               {initials(
@@ -553,7 +685,9 @@ export default function AdminAppLayout() {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-slate-900">
-                {displayName}
+                {
+                  displayName
+                }
               </p>
 
               <p className="truncate text-[10px] text-slate-500">
@@ -580,6 +714,10 @@ export default function AdminAppLayout() {
           </div>
         </div>
       </aside>
+
+      {/* =============================================== */}
+      {/* PAGE CONTENT                                    */}
+      {/* =============================================== */}
 
       <div className="lg:pl-[252px]">
         <header className="sticky top-0 z-30 flex h-[64px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
@@ -614,7 +752,9 @@ export default function AdminAppLayout() {
           <div className="hidden items-center gap-3 sm:flex">
             <div className="text-right">
               <p className="max-w-[220px] truncate text-xs font-medium text-slate-800">
-                {displayName}
+                {
+                  displayName
+                }
               </p>
 
               <p className="text-[10px] text-slate-400">
@@ -637,6 +777,10 @@ export default function AdminAppLayout() {
           <Outlet />
         </main>
       </div>
+
+      {/* =============================================== */}
+      {/* MOBILE CLOSE BUTTON                             */}
+      {/* =============================================== */}
 
       {mobileOpen ? (
         <button
