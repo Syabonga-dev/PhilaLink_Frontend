@@ -1,361 +1,517 @@
-.register-page {
+.login-page {
   position: relative;
+
   min-height: 100vh;
   min-height: 100dvh;
+
+  box-sizing: border-box;
+
+  /*
+   * NavigationBar is fixed and 72px tall.
+   * Always reserve its space so auth content
+   * can never render underneath it.
+   */
+  padding-top: 72px;
+
   overflow-x: hidden;
+  overflow-y: auto;
+
   background: #073b3b;
 }
 
-.register-background {
+#invalid-id {
+  display: block;
+
+  margin-top: -10px;
+
+  color: #dc2626;
+
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
+
+/* =========================================================
+   BACKGROUND
+========================================================= */
+
+.login-background {
   position: absolute;
+
   inset: -20px;
+
   background-image: url("/PillShelf.jpg");
   background-size: cover;
   background-position: center;
-  filter: blur(4px);
+
+  filter: blur(1px);
+
   transform: scale(1.03);
+
   opacity: 0.8;
+
+  pointer-events: none;
 }
 
-.register-overlay {
+.login-overlay {
   position: absolute;
+
   inset: 0;
+
   background: rgba(7, 59, 59, 0.48);
+
+  pointer-events: none;
 }
 
-.register-content {
+
+/* =========================================================
+   CONTENT
+========================================================= */
+
+.login-content {
   position: relative;
+
   z-index: 2;
+
   display: flex;
+
+  align-items: center;
   justify-content: center;
+
   width: 100%;
-  min-height: 100vh;
-  min-height: 100dvh;
-  padding: 38px 20px;
+
+  /*
+   * Fill the viewport area below the fixed navbar,
+   * rather than centering against the full viewport.
+   */
+  min-height: calc(100vh - 72px);
+  min-height: calc(100dvh - 72px);
+
+  box-sizing: border-box;
+
+  padding: 40px 20px;
 }
 
-.register-card {
-  width: min(560px, 100%);
-  align-self: center;
-  padding: 38px 40px;
+
+/* =========================================================
+   CARD
+========================================================= */
+
+.login-card {
+  width: min(430px, 100%);
+
+  padding: 42px 40px;
+
   border: 1px solid rgba(255, 255, 255, 0.25);
+
   border-radius: 24px;
+
   background: rgba(255, 255, 255, 0.95);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.3);
+
+  box-shadow:
+    0 30px 80px
+    rgba(0, 0, 0, 0.3);
+
   backdrop-filter: blur(12px);
 }
 
-.register-brand {
+
+/* =========================================================
+   BRAND
+========================================================= */
+
+.login-brand {
   display: flex;
+
   align-items: center;
+
   gap: 10px;
-  margin-bottom: 28px;
+
+  margin-bottom: 36px;
+
   color: #073b3b;
+
   font-size: 1.35rem;
   font-weight: 800;
 }
 
-.register-brand img {
+.login-brand img {
   width: 38px;
   height: 38px;
+
   object-fit: contain;
 }
 
-.register-brand span {
+.login-brand span {
   color: #006b6b;
 }
 
-.register-heading {
-  margin-bottom: 24px;
+
+/* =========================================================
+   HEADING
+========================================================= */
+
+.login-heading {
+  margin-bottom: 28px;
 }
 
-.register-eyebrow {
+.login-eyebrow {
   margin: 0 0 8px;
+
   color: #006b6b;
+
   font-size: 0.68rem;
   font-weight: 800;
+
   letter-spacing: 0.14em;
 }
 
-.register-heading h1 {
+.login-heading h1 {
   margin: 0;
+
   color: #102020;
-  font-size: 2.25rem;
+
+  font-size: 2.35rem;
   line-height: 1.05;
+
   font-weight: 800;
+
   letter-spacing: -0.04em;
 }
 
-.register-heading > p:last-child {
-  max-width: 470px;
+.login-heading > p:last-child {
+  max-width: 340px;
+
   margin: 10px 0 0;
+
   color: #647575;
+
   font-size: 0.88rem;
   line-height: 1.6;
 }
 
-/* =====================================================
-   PROGRESS
-   ===================================================== */
 
-.register-progress {
-  display: flex;
-  align-items: flex-start;
-  margin-bottom: 26px;
-}
-
-.progress-step {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  min-width: 76px;
-  color: #9aa7a7;
-}
-
-.progress-step span {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: #e8eded;
-  color: #8a9797;
-  font-size: 0.72rem;
-  font-weight: 800;
-}
-
-.progress-step p {
-  margin: 6px 0 0;
-  font-size: 0.65rem;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.progress-step.active {
-  color: #006b6b;
-}
-
-.progress-step.active span {
-  background: #006b6b;
-  color: #ffffff;
-}
-
-.progress-line {
-  height: 1px;
-  flex: 1;
-  margin: 15px 8px 0;
-  background: #d7dfdf;
-}
-
-/* =====================================================
+/* =========================================================
    FORM
-   ===================================================== */
+========================================================= */
 
-.register-form {
+.login-form {
   display: flex;
+
   flex-direction: column;
-  gap: 16px;
+
+  gap: 17px;
 }
 
-.register-passwords {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
-}
-
-/* =====================================================
-   PASSWORD REQUIREMENTS
-   ===================================================== */
-
-.password-requirements {
-  padding: 14px 16px;
-  border: 1px solid #dbe7e5;
-  border-radius: 12px;
-  background: #f8fbfa;
-}
-
-.password-requirements-title {
-  margin: 0 0 10px;
-  color: #3d4949;
-  font-size: 0.76rem;
-  font-weight: 700;
-}
-
-.password-requirements-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 7px 14px;
-}
-
-.password-requirement {
+.login-options {
   display: flex;
+
   align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  margin-top: 1px;
+
+  font-size: 0.75rem;
+}
+
+.login-options label {
+  display: flex;
+
+  align-items: center;
+
   gap: 7px;
-  color: #718080;
-  font-size: 0.72rem;
-  line-height: 1.4;
-  transition:
-    color 0.2s ease,
-    opacity 0.2s ease;
+
+  color: #617171;
+
+  cursor: pointer;
 }
 
-.password-requirement-icon {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  color: #8c9998;
-  font-size: 0.9rem;
-  font-weight: 800;
+.login-options input {
+  width: 15px;
+  height: 15px;
+
+  accent-color: #006b6b;
+
+  cursor: pointer;
 }
 
-.password-requirement.met {
+.forgot-password {
+  padding: 0;
+
+  border: 0;
+
+  background: transparent;
+
   color: #006b6b;
+
+  font-family: inherit;
+  font-size: 0.75rem;
   font-weight: 700;
+
+  cursor: pointer;
 }
 
-.password-requirement.met
-.password-requirement-icon {
-  color: #006b6b;
-}
-
-/* =====================================================
-   SUBMIT
-   ===================================================== */
-
-.register-submit {
-  width: 100%;
-  min-height: 48px;
-  margin-top: 4px;
-  border-radius: 10px;
-}
-
-/* =====================================================
-   FOOTER
-   ===================================================== */
-
-.register-login {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 5px;
-  margin-top: 22px;
-  color: #718080;
-  font-size: 0.78rem;
-}
-
-.register-login a {
-  color: #006b6b;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.register-login a:hover {
+.forgot-password:hover {
   text-decoration: underline;
 }
 
-.register-note {
-  margin: 18px auto 0;
-  max-width: 400px;
-  color: #8a9696;
-  font-size: 0.68rem;
-  line-height: 1.5;
-  text-align: center;
+
+/* =========================================================
+   SUBMIT
+========================================================= */
+
+.login-submit {
+  width: 100%;
+
+  min-height: 48px;
+
+  margin-top: 4px;
+
+  border-radius: 10px;
 }
 
-/* =====================================================
-   TABLET / SMALL SCREEN
-   ===================================================== */
 
-@media (max-width: 600px) {
-  .register-content {
+/* =========================================================
+   GOOGLE OAUTH
+========================================================= */
+
+.login-divider {
+  display: flex;
+
+  align-items: center;
+
+  gap: 12px;
+
+  margin: 22px 0 18px;
+
+  color: #94a3a3;
+
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: "";
+
+  flex: 1;
+
+  height: 1px;
+
+  background: #dce5e5;
+}
+
+.login-divider span {
+  flex: 0 0 auto;
+}
+
+.login-google {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 11px;
+
+  width: 100%;
+  min-height: 48px;
+
+  padding: 10px 16px;
+
+  border: 1px solid #ccd9d7;
+
+  border-radius: 10px;
+
+  background: #ffffff;
+
+  color: #253535;
+
+  font-family: inherit;
+  font-size: 0.87rem;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    border-color 160ms ease,
+    background 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms ease;
+}
+
+.login-google:hover:not(:disabled) {
+  border-color: #9db9b4;
+
+  background: #f8fbfa;
+
+  box-shadow:
+    0 4px 12px
+    rgba(7, 59, 59, 0.08);
+}
+
+.login-google:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.login-google:focus-visible {
+  outline: none;
+
+  box-shadow:
+    0 0 0 3px
+    rgba(0, 107, 107, 0.18);
+}
+
+.login-google:disabled {
+  opacity: 0.65;
+
+  cursor: not-allowed;
+}
+
+.login-google svg {
+  flex: 0 0 auto;
+}
+
+.login-google-spinner {
+  width: 19px;
+  height: 19px;
+
+  border: 2px solid #d7e4e1;
+  border-top-color: #006b6b;
+
+  border-radius: 50%;
+
+  animation:
+    login-google-spin
+    700ms linear infinite;
+}
+
+@keyframes login-google-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+
+/* =========================================================
+   REGISTER
+========================================================= */
+
+.login-register {
+  display: flex;
+
+  align-items: center;
+  justify-content: center;
+
+  gap: 5px;
+
+  margin-top: 25px;
+
+  color: #718080;
+
+  font-size: 0.78rem;
+}
+
+.login-register a {
+  color: #006b6b;
+
+  font-weight: 800;
+
+  text-decoration: none;
+}
+
+.login-register a:hover {
+  text-decoration: underline;
+}
+
+
+/* =========================================================
+   TABLET / MOBILE
+========================================================= */
+
+@media (max-width: 1023px) {
+  .login-content {
     align-items: flex-start;
-    padding: 24px 16px 40px;
+
+    padding:
+      24px
+      16px
+      28px;
   }
 
-  .register-card {
-    align-self: flex-start;
-    padding: 30px 26px;
+  .login-card {
+    width: min(430px, 100%);
+
+    padding:
+      32px
+      26px;
+
     border-radius: 20px;
   }
 
-  .register-brand {
+  .login-brand {
+    margin-bottom: 28px;
+  }
+
+  .login-heading {
     margin-bottom: 24px;
   }
 
-  .register-heading {
-    margin-bottom: 22px;
+  .login-heading h1 {
+    font-size: 2.05rem;
   }
 
-  .register-heading h1 {
-    font-size: 2rem;
-  }
-
-  .register-progress {
-    margin-bottom: 22px;
-  }
-
-  .progress-step {
-    min-width: 62px;
-  }
-
-  .progress-step p {
-    font-size: 0.58rem;
-  }
-
-  .progress-line {
-    margin-left: 5px;
-    margin-right: 5px;
-  }
-
-  .password-requirements-grid {
-    grid-template-columns: 1fr;
-    gap: 7px;
+  .login-form {
+    gap: 15px;
   }
 }
 
-/* =====================================================
-   PHONE
-   ===================================================== */
 
-@media (max-width: 480px) {
-  .register-content {
-    padding: 20px 12px 36px;
+/* =========================================================
+   SMALL MOBILE
+========================================================= */
+
+@media (max-width: 400px) {
+  .login-content {
+    padding:
+      20px
+      12px
+      24px;
   }
 
-  .register-card {
-    padding: 26px 20px;
+  .login-card {
+    padding:
+      28px
+      20px;
+
+    border-radius: 18px;
   }
 
-  .register-passwords {
-    grid-template-columns: 1fr;
-    gap: 16px;
+  .login-brand {
+    margin-bottom: 24px;
   }
 
-  .register-heading h1 {
+  .login-heading h1 {
     font-size: 1.85rem;
   }
 
-  .register-progress {
-    width: 100%;
+  .login-options {
+    flex-wrap: wrap;
   }
 
-  .progress-step {
-    min-width: 55px;
+  .login-register {
+    margin-top: 22px;
   }
+}
 
-  .progress-step p {
-    font-size: 0.55rem;
-  }
 
-  .password-requirements {
-    padding: 13px 14px;
-  }
+/* =========================================================
+   SHORT SCREEN / LANDSCAPE
+========================================================= */
 
-  .password-requirement {
-    font-size: 0.7rem;
+@media (max-height: 700px) {
+  .login-content {
+    align-items: flex-start;
   }
 }
