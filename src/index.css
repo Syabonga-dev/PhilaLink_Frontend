@@ -1,7 +1,8 @@
 @import "./styles/patient-figma-entry.css";
-@import "tailwindcss";
 
-@config "../tailwind.config.js";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 html,
 body,
@@ -10,11 +11,7 @@ body,
 }
 
 body {
-  font-family:
-    "Inter",
-    ui-sans-serif,
-    system-ui,
-    sans-serif;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
 }
 
 .material-symbols-outlined {
@@ -46,54 +43,33 @@ body {
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform:
-      translateY(6px);
+    transform: translateY(6px);
   }
 
   to {
     opacity: 1;
-    transform:
-      translateY(0);
+    transform: translateY(0);
   }
 }
 
 .animate-fade-in {
-  animation:
-    fadeIn
-    0.22s
-    ease-out
-    forwards;
+  animation: fadeIn 0.22s ease-out forwards;
 }
 
 @keyframes pulseRing {
   0%,
   100% {
     box-shadow:
-      0 0 0 0
-      rgba(
-        0,
-        106,
-        106,
-        0.35
-      );
+      0 0 0 0 rgba(0, 106, 106, 0.35);
   }
 
   70% {
     box-shadow:
-      0 0 0 10px
-      rgba(
-        0,
-        106,
-        106,
-        0
-      );
+      0 0 0 10px rgba(0, 106, 106, 0);
   }
 }
 
 .animate-pulse-ring {
   animation:
-    pulseRing
-    2.4s
-    ease-in-out
-    infinite;
+    pulseRing 2.4s ease-in-out infinite;
 }
