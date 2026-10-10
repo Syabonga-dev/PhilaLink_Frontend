@@ -308,7 +308,7 @@ export default function FollowUpScreen({
                   />
 
                   <span className="text-label-sm text-text-secondary">
-                    Working...
+                    Thinking...
                   </span>
                 </div>
               </div>
