@@ -18,6 +18,10 @@ import {
   UserRound,
 } from "lucide-react";
 
+import {
+  ThinkingOrb,
+} from "thinking-orbs";
+
 function AssistantMessage({
   text,
 }) {
@@ -279,19 +283,34 @@ export default function FollowUpScreen({
             }
           )}
 
+          {/* ===============================================
+              PHILANI THINKING / WORKING STATE
+              =============================================== */}
+
           {sending && (
-            <div className="flex gap-sm">
+            <div
+              className="flex gap-sm"
+              role="status"
+              aria-live="polite"
+              aria-label="Philani is thinking"
+            >
               <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-corner-full bg-brand-primary text-white">
                 <Sparkles
                   size={14}
                 />
               </div>
 
-              <div className="rounded-corner-lg bg-bg-faint px-md py-sm text-text-secondary">
-                <LoaderCircle
-                  size={16}
-                  className="animate-spin"
-                />
+              <div className="flex min-h-12 items-center rounded-corner-lg bg-bg-faint px-md py-sm">
+                <div className="flex items-center gap-sm">
+                  <ThinkingOrb
+                    state="working"
+                    size={32}
+                  />
+
+                  <span className="text-label-sm text-text-secondary">
+                    Working...
+                  </span>
+                </div>
               </div>
             </div>
           )}
