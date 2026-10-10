@@ -9,6 +9,7 @@ import {
 
 import {
   CheckCircle2,
+  LoaderCircle,
   ShieldCheck,
 } from "lucide-react";
 
@@ -46,27 +47,23 @@ export default function LoadingScreen() {
   useEffect(
     () => {
       const interval =
-        window
-          .setInterval(
-            () => {
-              setCurrentStage(
-                previous =>
-                  Math.min(
-                    previous +
-                      1,
-                    stages.length -
-                      1
-                  )
-              );
-            },
-            700
-          );
+        window.setInterval(
+          () => {
+            setCurrentStage(
+              previous =>
+                Math.min(
+                  previous + 1,
+                  stages.length - 1
+                )
+            );
+          },
+          700
+        );
 
       return () =>
-        window
-          .clearInterval(
-            interval
-          );
+        window.clearInterval(
+          interval
+        );
     },
     [
       stages.length,
@@ -75,20 +72,15 @@ export default function LoadingScreen() {
 
   return (
     <div className="flex flex-col items-center gap-xl py-lg text-center">
-      {/* ===================================================
-          PHILANI THINKING STATE
-          =================================================== */}
+      {/* ===============================================
+          PHILANI ANALYSIS STATE
+          =============================================== */}
 
       <div
-        className="
-          flex
-          min-h-[84px]
-          items-center
-          justify-center
-        "
+        className="flex min-h-[84px] items-center justify-center"
         role="status"
         aria-live="polite"
-        aria-label="Philani is working"
+        aria-label="Philani is analysing symptoms"
       >
         <ThinkingOrb
           state="working"
@@ -96,9 +88,9 @@ export default function LoadingScreen() {
         />
       </div>
 
-      {/* ===================================================
+      {/* ===============================================
           TITLE
-          =================================================== */}
+          =============================================== */}
 
       <div>
         <h2 className="text-title text-text-primary">
@@ -114,9 +106,9 @@ export default function LoadingScreen() {
         </p>
       </div>
 
-      {/* ===================================================
-          PROCESSING STAGES
-          =================================================== */}
+      {/* ===============================================
+          ANALYSIS STAGES
+          =============================================== */}
 
       <div className="w-full rounded-corner-lg border border-border-secondary bg-white p-lg text-left">
         <div className="flex flex-col gap-md">
@@ -135,9 +127,7 @@ export default function LoadingScreen() {
 
               return (
                 <div
-                  key={
-                    index
-                  }
+                  key={stage}
                   className="flex items-center gap-md"
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center">
@@ -147,9 +137,9 @@ export default function LoadingScreen() {
                         className="text-success"
                       />
                     ) : active ? (
-                      <ThinkingOrb
-                        state="working"
-                        size={22}
+                      <LoaderCircle
+                        size={18}
+                        className="animate-spin text-brand-primary"
                       />
                     ) : (
                       <div className="h-2.5 w-2.5 rounded-corner-full bg-border-secondary" />
@@ -173,9 +163,9 @@ export default function LoadingScreen() {
         </div>
       </div>
 
-      {/* ===================================================
+      {/* ===============================================
           MEDICAL DISCLAIMER
-          =================================================== */}
+          =============================================== */}
 
       <div className="flex items-start gap-sm rounded-corner-md bg-bg-faint p-md text-left">
         <ShieldCheck
