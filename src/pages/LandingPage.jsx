@@ -34,6 +34,14 @@ const services = [
     title: "Medication",
     description:
       "View active medication, dosage information and treatment details linked to your care.",
+    details: [
+      "See medications recorded for your patient profile, including whether treatment is active, upcoming, ended or inactive.",
+      "Review medication names, dosage information and the treatment details connected to each prescription.",
+      "View active medication schedules and the times of day when each recorded dose is expected to be taken.",
+      "Track daily medication activity by recording doses as taken or skipped so treatment progress stays visible.",
+      "PhilaLink estimates remaining medication supply from completed collections, recorded dose size, active schedules and doses already marked as taken.",
+      "Supply information can show estimated days remaining and also explains when a calculation is unavailable because collection, schedule or dose information is missing.",
+    ],
   },
 
   {
@@ -41,6 +49,14 @@ const services = [
     title: "Collections",
     description:
       "See when medication collection is due and keep upcoming collection information easy to find.",
+    details: [
+      "Patients can view their medication collection history and the next scheduled collection linked to their own account.",
+      "Collection records connect the patient, clinic, scheduled collection date, current status and the medication items being prepared or collected.",
+      "Upcoming collection information helps patients see what is due next instead of having to track dates separately.",
+      "Nurses use the collection workflow to schedule and manage medication collections as part of normal clinic operations.",
+      "Trusted proxies can see collection information only for patients who are actively linked to them and within the proxy's authorised clinic scope.",
+      "Completed collections also feed into medication-supply calculations, helping PhilaLink estimate how long a patient's collected medication should last.",
+    ],
   },
 
   {
@@ -48,6 +64,14 @@ const services = [
     title: "Reminders",
     description:
       "Stay informed about appointments, medication collections and important healthcare activity.",
+    details: [
+      "Medication reminders are generated from each active medication schedule when the scheduled dose time is reached.",
+      "PhilaLink avoids repeating a medication reminder when the patient has already recorded a taken or skipped dose around that scheduled time.",
+      "Patients can receive appointment updates when an appointment is created, rescheduled, confirmed, cancelled or otherwise changed.",
+      "Medication and appointment reminder preferences are stored per patient so supported reminder types can be enabled or disabled.",
+      "The notification feed keeps healthcare updates together, supports unread and read states, and allows individual or all notifications to be marked as read.",
+      "Proxy collection reminders are restricted to valid linked patients, and stale reminders are removed when a proxy relationship or clinic scope is no longer valid.",
+    ],
   },
 
   {
@@ -55,6 +79,14 @@ const services = [
     title: "Proxy support",
     description:
       "Connect trusted people who can support medication collection for linked patients.",
+    details: [
+      "A proxy account supports patients through an explicit active patient-proxy relationship rather than receiving general access to clinic records.",
+      "Proxy access is limited to linked patients who are active and belong to the same authorised clinic scope as the proxy.",
+      "The proxy dashboard can show linked patients together with their next medication collection date and current collection status.",
+      "Collection summaries distinguish activity such as due today, tomorrow, upcoming and overdue so support can be prioritised.",
+      "Proxies can search and filter the collection records they are authorised to view, including by linked patient, date range and collection status.",
+      "Requests for patients or collections outside the proxy's authorised relationships are intentionally hidden instead of exposing whether those records exist.",
+    ],
   },
 
   {
@@ -62,6 +94,14 @@ const services = [
     title: "Phila Chat",
     description:
       "Access the PhilaLink assistant for simple healthcare information and support.",
+    details: [
+      "Phila Chat keeps an active patient conversation and stores the messages in that conversation so the patient can return to their chat history.",
+      "Emergency and urgent symptom wording is intercepted before the external AI response and directs the patient toward appropriate professional or emergency care.",
+      "Patients control whether Phila Chat may use information from their stored PhilaLink profile through the profile-access preference.",
+      "When profile access is disabled, stored medications, supply, allergies, conditions, assessments, collection history and old chat history are not sent to the AI provider.",
+      "When access is enabled, the assistant can use relevant stored context such as active medications, schedules, taken-dose logs, allergies, medical conditions and the latest symptom assessment.",
+      "Medication-supply and completed-collection context can also be included so responses can reflect information already recorded in PhilaLink while remaining subject to the patient's privacy setting.",
+    ],
   },
 
   {
@@ -69,6 +109,14 @@ const services = [
     title: "Secure access",
     description:
       "Healthcare information stays organised around verified users and role-based access.",
+    details: [
+      "PhilaLink uses authenticated JWT sessions and separates access across Patient, Proxy, Nurse, ClinicAdmin and SuperAdmin roles.",
+      "Patient self-service endpoints resolve the patient from the authenticated identity so a patient cannot simply request another patient's record by supplying an ID.",
+      "Proxy access is relationship-scoped, while nurses and clinic administrators are restricted to the clinic and responsibilities assigned to their role.",
+      "Administrator-created staff accounts use temporary passwords and must replace them before ordinary protected API access is allowed.",
+      "Patient verification and password recovery use OTP-based flows, while password rules require a stronger combination of length, uppercase, lowercase, number and special character.",
+      "Sensitive validation and authorisation remain enforced by the backend, with important clinical and administrative activity designed to remain auditable.",
+    ],
   },
 ];
 
@@ -330,9 +378,11 @@ export default function LandingPage() {
                 icon: Icon,
                 title,
                 description,
+                details,
               }) => {
                 const isOpen =
-                  openService === title;
+                  openService ===
+                  title;
 
                 const toggleService =
                   () => {
@@ -348,7 +398,13 @@ export default function LandingPage() {
                     key={
                       title
                     }
-                    className="service-row"
+                    className={
+                      `service-row${
+                        isOpen
+                          ? " service-row-open"
+                          : ""
+                      }`
+                    }
                     role="button"
                     tabIndex={0}
                     aria-expanded={
@@ -358,20 +414,18 @@ export default function LandingPage() {
                       toggleService
                     }
                     onKeyDown={
-                      (event) => {
+                      event => {
                         if (
-                          event.key === "Enter" ||
-                          event.key === " "
+                          event.key ===
+                            "Enter" ||
+                          event.key ===
+                            " "
                         ) {
                           event.preventDefault();
                           toggleService();
                         }
                       }
                     }
-                    style={{
-                      cursor:
-                        "pointer",
-                    }}
                   >
                     <div className="service-icon">
                       <Icon
@@ -388,30 +442,46 @@ export default function LandingPage() {
                         }
                       </h3>
 
+                      <p className="service-summary">
+                        {
+                          description
+                        }
+                      </p>
+
                       {isOpen && (
-                        <p>
-                          {
-                            description
-                          }
-                        </p>
+                        <div className="service-details">
+                          {details.map(
+                            (
+                              detail,
+                              index
+                            ) => (
+                              <p
+                                key={
+                                  `${title}-${index}`
+                                }
+                                className="service-detail-line"
+                              >
+                                {
+                                  detail
+                                }
+                              </p>
+                            )
+                          )}
+                        </div>
                       )}
                     </div>
 
                     <ChevronDown
-                      className="service-link-icon"
+                      className={
+                        `service-link-icon${
+                          isOpen
+                            ? " service-link-icon-open"
+                            : ""
+                        }`
+                      }
                       size={
                         19
                       }
-                      style={{
-                        display:
-                          "block",
-                        transform:
-                          isOpen
-                            ? "rotate(180deg)"
-                            : "rotate(0deg)",
-                        transition:
-                          "transform 160ms ease",
-                      }}
                     />
                   </article>
                 );
