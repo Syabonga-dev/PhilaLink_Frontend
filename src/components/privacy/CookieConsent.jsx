@@ -243,7 +243,8 @@ function CookieSettings({
     name => {
       setActiveSection(
         current =>
-          current === name
+          current ===
+          name
             ? null
             : name
       );
@@ -746,7 +747,7 @@ export default function CookieConsent() {
                 true
               );
             }}
-            className="fixed bottom-3 left-3 z-[4500] border-0 bg-white/90 px-2 py-1 text-xs font-medium text-slate-500 underline underline-offset-2 shadow-sm backdrop-blur transition hover:text-[#0f766e]"
+            className="fixed bottom-3 left-3 z-30 border-0 bg-white/90 px-2 py-1 text-xs font-medium text-slate-500 underline underline-offset-2 shadow-sm backdrop-blur transition hover:text-[#0f766e]"
           >
             {t(
               "cookies.settings"

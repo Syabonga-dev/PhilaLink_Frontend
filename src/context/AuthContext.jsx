@@ -42,6 +42,10 @@ export function AuthProvider({
   const hasBootstrapped =
     useRef(false);
 
+  // =====================================================
+  // GLOBAL 401 HANDLING
+  // =====================================================
+
   useEffect(() => {
     registerUnauthorizedHandler(
       () => {
@@ -62,6 +66,10 @@ export function AuthProvider({
       }
     );
   }, [navigate]);
+
+  // =====================================================
+  // SESSION BOOTSTRAP
+  // =====================================================
 
   useEffect(() => {
     if (
@@ -98,6 +106,10 @@ export function AuthProvider({
         );
 
         try {
+          /*
+           * /api/auth/me is protected by live JWT
+           * TokenVersion validation.
+           */
           const currentUser =
             await authApi.getMe();
 
@@ -114,11 +126,9 @@ export function AuthProvider({
           );
         } catch (error) {
           /*
-           * A 401 means the token is no longer valid.
-           * apiFetch already clears the session and invokes
-           * the unauthorized handler, but keep this branch
-           * explicit so authentication behaviour remains
-           * predictable.
+           * A 401 means the JWT is expired, revoked,
+           * invalid, or no longer matches the user's
+           * current security state.
            */
           if (
             error instanceof
@@ -139,13 +149,11 @@ export function AuthProvider({
 
           /*
            * Do not destroy a valid-looking local session
-           * just because Render is waking up, the network
-           * is temporarily unavailable, or the API returns
-           * a transient server error.
+           * just because Render is waking up or the
+           * network/backend temporarily fails.
            *
-           * Protected API endpoints still validate the JWT.
-           * If the token really is expired, the first 401
-           * response will clear the session normally.
+           * The next successful protected request will
+           * still perform live JWT validation.
            */
           if (cachedUser) {
             setUser(
@@ -159,12 +167,6 @@ export function AuthProvider({
             return;
           }
 
-          /*
-           * There is a token but no cached user information.
-           * Without a confirmed user we cannot safely build
-           * an authenticated UI, but we also avoid deleting
-           * the token because the failure may be temporary.
-           */
           setUser(null);
 
           setStatus(
@@ -175,6 +177,10 @@ export function AuthProvider({
 
     bootstrap();
   }, []);
+
+  // =====================================================
+  // LOGIN
+  // =====================================================
 
   const login =
     useCallback(
@@ -233,8 +239,8 @@ export function AuthProvider({
         );
 
         /*
-         * Remove any previous session before accepting
-         * the new token returned by the backend.
+         * Remove any previous PhilaLink session before
+         * accepting the new Google-authenticated JWT.
          */
         tokenStore.clear();
 
@@ -243,11 +249,6 @@ export function AuthProvider({
         });
 
         try {
-          /*
-           * Do not trust user information from the browser
-           * redirect. Ask the authenticated backend for the
-           * current PhilaLink user instead.
-           */
           const currentUser =
             await authApi.getMe();
 
@@ -279,14 +280,24 @@ export function AuthProvider({
       []
     );
 
+  // =====================================================
+  // CHANGE PASSWORD
+  // =====================================================
+
   const changePassword =
     useCallback(
       async (payload) => {
         const data =
-          await authApi.changePassword(
-            payload
-          );
+          await authApi
+            .changePassword(
+              payload
+            );
 
+        /*
+         * Password change increments TokenVersion.
+         * The backend returns a fresh JWT containing the
+         * new TokenVersion.
+         */
         tokenStore.setSession({
           token:
             data.token,
@@ -308,6 +319,10 @@ export function AuthProvider({
       []
     );
 
+  // =====================================================
+  // PATIENT REGISTRATION
+  // =====================================================
+
   const registerPatient =
     useCallback(
       async (payload) =>
@@ -316,6 +331,10 @@ export function AuthProvider({
         ),
       []
     );
+
+  // =====================================================
+  // PHONE / ACCOUNT VERIFICATION
+  // =====================================================
 
   const verifyPhone =
     useCallback(
@@ -330,23 +349,57 @@ export function AuthProvider({
       []
     );
 
+  // =====================================================
+  // LOGOUT
+  // =====================================================
+
+  /*
+   * Logout now performs real server-side revocation.
+   *
+   * The backend increments TokenVersion, meaning every
+   * currently issued JWT for this account becomes invalid.
+   *
+   * Local cleanup still runs if the API cannot be reached
+   * or the JWT was already expired/revoked.
+   */
   const logout =
-    useCallback(() => {
-      tokenStore.clear();
+    useCallback(
+      async () => {
+        const token =
+          tokenStore.getToken();
 
-      setUser(null);
+        try {
+          if (token) {
+            await authApi.logout();
+          }
+        } catch {
+          /*
+           * Never trap a user in the application simply
+           * because the logout request failed.
+           */
+        } finally {
+          tokenStore.clear();
 
-      setStatus(
-        "unauthenticated"
-      );
+          setUser(null);
 
-      navigate(
-        "/login",
-        {
-          replace: true,
+          setStatus(
+            "unauthenticated"
+          );
+
+          navigate(
+            "/login",
+            {
+              replace: true,
+            }
+          );
         }
-      );
-    }, [navigate]);
+      },
+      [navigate]
+    );
+
+  // =====================================================
+  // LOCAL USER UPDATE
+  // =====================================================
 
   const updateUser =
     useCallback(
@@ -361,6 +414,10 @@ export function AuthProvider({
       },
       []
     );
+
+  // =====================================================
+  // CONTEXT VALUE
+  // =====================================================
 
   const value = {
     user,
@@ -393,6 +450,7 @@ export function AuthProvider({
     changePassword,
 
     registerPatient,
+
     verifyPhone,
 
     setUser:

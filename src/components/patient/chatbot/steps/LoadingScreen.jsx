@@ -13,6 +13,10 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
+import {
+  ThinkingOrb,
+} from "thinking-orbs";
+
 export default function LoadingScreen() {
   const {
     t,
@@ -43,27 +47,23 @@ export default function LoadingScreen() {
   useEffect(
     () => {
       const interval =
-        window
-          .setInterval(
-            () => {
-              setCurrentStage(
-                previous =>
-                  Math.min(
-                    previous +
-                      1,
-                    stages.length -
-                      1
-                  )
-              );
-            },
-            700
-          );
+        window.setInterval(
+          () => {
+            setCurrentStage(
+              previous =>
+                Math.min(
+                  previous + 1,
+                  stages.length - 1
+                )
+            );
+          },
+          700
+        );
 
       return () =>
-        window
-          .clearInterval(
-            interval
-          );
+        window.clearInterval(
+          interval
+        );
     },
     [
       stages.length,
@@ -72,12 +72,25 @@ export default function LoadingScreen() {
 
   return (
     <div className="flex flex-col items-center gap-xl py-lg text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-corner-full bg-brand-tertiary">
-        <LoaderCircle
-          size={28}
-          className="animate-spin text-brand-primary"
+      {/* ===============================================
+          PHILANI ANALYSIS STATE
+          =============================================== */}
+
+      <div
+        className="flex min-h-[84px] items-center justify-center"
+        role="status"
+        aria-live="polite"
+        aria-label="Philani is analysing symptoms"
+      >
+        <ThinkingOrb
+          state="working"
+          size={64}
         />
       </div>
+
+      {/* ===============================================
+          TITLE
+          =============================================== */}
 
       <div>
         <h2 className="text-title text-text-primary">
@@ -92,6 +105,10 @@ export default function LoadingScreen() {
           )}
         </p>
       </div>
+
+      {/* ===============================================
+          ANALYSIS STAGES
+          =============================================== */}
 
       <div className="w-full rounded-corner-lg border border-border-secondary bg-white p-lg text-left">
         <div className="flex flex-col gap-md">
@@ -110,9 +127,7 @@ export default function LoadingScreen() {
 
               return (
                 <div
-                  key={
-                    index
-                  }
+                  key={stage}
                   className="flex items-center gap-md"
                 >
                   <div className="flex h-7 w-7 shrink-0 items-center justify-center">
@@ -147,6 +162,10 @@ export default function LoadingScreen() {
           )}
         </div>
       </div>
+
+      {/* ===============================================
+          MEDICAL DISCLAIMER
+          =============================================== */}
 
       <div className="flex items-start gap-sm rounded-corner-md bg-bg-faint p-md text-left">
         <ShieldCheck
