@@ -13,7 +13,6 @@ import {
   Bell,
   Building2,
   CalendarDays,
-  ChevronDown,
   MessageCircle,
   PhoneCall,
   Pill,
@@ -447,31 +446,9 @@ export default function LandingPage() {
                           description
                         }
                       </p>
-
-                      {isOpen && (
-                        <div className="service-details">
-                          {details.map(
-                            (
-                              detail,
-                              index
-                            ) => (
-                              <p
-                                key={
-                                  `${title}-${index}`
-                                }
-                                className="service-detail-line"
-                              >
-                                {
-                                  detail
-                                }
-                              </p>
-                            )
-                          )}
-                        </div>
-                      )}
                     </div>
 
-                    <ChevronDown
+                    <ArrowUpRight
                       className={
                         `service-link-icon${
                           isOpen
@@ -483,6 +460,28 @@ export default function LandingPage() {
                         19
                       }
                     />
+
+                    {isOpen && (
+                      <div className="service-details">
+                        {details.map(
+                          (
+                            detail,
+                            index
+                          ) => (
+                            <p
+                              key={
+                                `${title}-${index}`
+                              }
+                              className="service-detail-line"
+                            >
+                              {
+                                detail
+                              }
+                            </p>
+                          )
+                        )}
+                      </div>
+                    )}
                   </article>
                 );
               }
