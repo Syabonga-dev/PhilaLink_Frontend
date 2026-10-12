@@ -1,5 +1,6 @@
 import {
   useEffect,
+  useState,
 } from "react";
 
 import {
@@ -12,6 +13,7 @@ import {
   Bell,
   Building2,
   CalendarDays,
+  ChevronDown,
   MessageCircle,
   PhoneCall,
   Pill,
@@ -122,6 +124,11 @@ const healthTips = [
 export default function LandingPage() {
   const location =
     useLocation();
+
+  const [
+    openService,
+    setOpenService,
+  ] = useState(null);
 
 
   useEffect(() => {
@@ -323,43 +330,92 @@ export default function LandingPage() {
                 icon: Icon,
                 title,
                 description,
-              }) => (
-                <article
-                  key={
-                    title
-                  }
-                  className="service-row"
-                >
-                  <div className="service-icon">
-                    <Icon
-                      size={
-                        22
-                      }
-                    />
-                  </div>
+              }) => {
+                const isOpen =
+                  openService === title;
 
-                  <div className="service-content">
-                    <h3>
-                      {
-                        title
-                      }
-                    </h3>
+                const toggleService =
+                  () => {
+                    setOpenService(
+                      isOpen
+                        ? null
+                        : title
+                    );
+                  };
 
-                    <p>
-                      {
-                        description
-                      }
-                    </p>
-                  </div>
-
-                  <ArrowUpRight
-                    className="service-link-icon"
-                    size={
-                      19
+                return (
+                  <article
+                    key={
+                      title
                     }
-                  />
-                </article>
-              )
+                    className="service-row"
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={
+                      isOpen
+                    }
+                    onClick={
+                      toggleService
+                    }
+                    onKeyDown={
+                      (event) => {
+                        if (
+                          event.key === "Enter" ||
+                          event.key === " "
+                        ) {
+                          event.preventDefault();
+                          toggleService();
+                        }
+                      }
+                    }
+                    style={{
+                      cursor:
+                        "pointer",
+                    }}
+                  >
+                    <div className="service-icon">
+                      <Icon
+                        size={
+                          22
+                        }
+                      />
+                    </div>
+
+                    <div className="service-content">
+                      <h3>
+                        {
+                          title
+                        }
+                      </h3>
+
+                      {isOpen && (
+                        <p>
+                          {
+                            description
+                          }
+                        </p>
+                      )}
+                    </div>
+
+                    <ChevronDown
+                      className="service-link-icon"
+                      size={
+                        19
+                      }
+                      style={{
+                        display:
+                          "block",
+                        transform:
+                          isOpen
+                            ? "rotate(180deg)"
+                            : "rotate(0deg)",
+                        transition:
+                          "transform 160ms ease",
+                      }}
+                    />
+                  </article>
+                );
+              }
             )}
           </div>
         </div>
