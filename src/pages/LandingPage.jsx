@@ -269,329 +269,478 @@ export default function LandingPage() {
       </section>
 
 
-      <section
-        id="about"
-        className="landing-intro"
-      >
-        <div className="section-container landing-intro-grid">
-          <div>
-            <span className="section-kicker">
-              PHILALINK
-            </span>
+      <main className="landing-clean-main">
 
-            <h2>
-              Healthcare information
-              should be easy to follow.
-            </h2>
-          </div>
+        <section
+          id="about"
+          className="clean-section"
+        >
+          <div className="section-container">
+            <div className="clean-section-header">
+              <div>
+                <span className="section-kicker">
+                  PHILALINK
+                </span>
 
-          <div className="landing-intro-copy">
-            <p>
-              PhilaLink brings patients,
-              healthcare workers and trusted
-              medication proxies together
-              through one connected digital
-              platform.
-            </p>
+                <h2>
+                  Healthcare information,
+                  organised around the patient.
+                </h2>
+              </div>
 
-            <p>
-              The goal is simple: make the
-              everyday parts of healthcare
-              easier to understand, track
-              and act on.
-            </p>
-          </div>
-        </div>
-      </section>
-
-
-      <section className="journey-section">
-        <div className="section-container">
-          <div className="journey-grid">
-            {journeyItems.map(
-              ({
-                number,
-                title,
-                description,
-              }) => (
-                <article
-                  key={
-                    number
-                  }
-                  className="journey-item"
-                >
-                  <span className="journey-number">
-                    {
-                      number
-                    }
-                  </span>
-
-                  <h3>
-                    {
-                      title
-                    }
-                  </h3>
-
-                  <p>
-                    {
-                      description
-                    }
-                  </p>
-                </article>
-              )
-            )}
-          </div>
-        </div>
-      </section>
-
-
-      <section
-        id="services"
-        className="services-section"
-      >
-        <div className="section-container">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">
-                WHAT PHILALINK DOES
-              </span>
-
-              <h2>
-                The important parts of
-                care, in one place.
-              </h2>
+              <p>
+                PhilaLink connects medication,
+                collections, appointments,
+                clinic activity and trusted
+                support through one clear
+                digital healthcare experience.
+              </p>
             </div>
 
-            <p>
-              PhilaLink keeps essential
-              treatment and support
-              information connected around
-              the patient.
-            </p>
+            <div className="clean-overview-grid">
+              <article className="clean-panel clean-overview-main">
+                <div className="clean-panel-header">
+                  <div>
+                    <span className="clean-panel-label">
+                      PLATFORM OVERVIEW
+                    </span>
+
+                    <h3>
+                      A simpler way to keep everyday
+                      healthcare activity visible.
+                    </h3>
+                  </div>
+                </div>
+
+                <div className="clean-panel-body clean-copy-stack">
+                  <p>
+                    Patients should not have to keep
+                    medication details, collection dates,
+                    appointments and support arrangements
+                    in separate places.
+                  </p>
+
+                  <p>
+                    PhilaLink brings those everyday parts
+                    of care together so the next action is
+                    easier to understand, track and act on.
+                  </p>
+                </div>
+              </article>
+
+              <div className="clean-overview-list">
+                <article className="clean-overview-row">
+                  <div className="clean-icon-box">
+                    <Users size={18} />
+                  </div>
+
+                  <div>
+                    <span>
+                      Patient centred
+                    </span>
+
+                    <p>
+                      Treatment information stays organised
+                      around the authenticated patient.
+                    </p>
+                  </div>
+                </article>
+
+                <article className="clean-overview-row">
+                  <div className="clean-icon-box">
+                    <Building2 size={18} />
+                  </div>
+
+                  <div>
+                    <span>
+                      Clinic connected
+                    </span>
+
+                    <p>
+                      Nurses and clinic teams work within
+                      their assigned care and clinic scope.
+                    </p>
+                  </div>
+                </article>
+
+                <article className="clean-overview-row">
+                  <div className="clean-icon-box">
+                    <ShieldCheck size={18} />
+                  </div>
+
+                  <div>
+                    <span>
+                      Role protected
+                    </span>
+
+                    <p>
+                      Access is separated across patients,
+                      proxies, nurses and administrators.
+                    </p>
+                  </div>
+                </article>
+              </div>
+            </div>
           </div>
+        </section>
 
 
-          <div className="services-list">
-            {services.map(
-              ({
-                icon: Icon,
-                title,
-                description,
-                details,
-              }) => {
-                const isOpen =
-                  openService ===
-                  title;
+        <section className="clean-section clean-section-muted clean-journey-section">
+          <div className="section-container">
+            <div className="clean-section-header clean-section-header-compact">
+              <div>
+                <span className="section-kicker">
+                  HOW IT FITS TOGETHER
+                </span>
 
-                const toggleService =
-                  () => {
-                    setOpenService(
-                      isOpen
-                        ? null
-                        : title
-                    );
-                  };
+                <h2>
+                  A clearer healthcare journey.
+                </h2>
+              </div>
 
-                return (
+              <p>
+                The platform keeps the important next
+                steps visible without adding more
+                complexity for the patient.
+              </p>
+            </div>
+
+            <div className="clean-strip">
+              {journeyItems.map(
+                ({
+                  number,
+                  title,
+                  description,
+                }) => (
                   <article
-                    key={
-                      title
-                    }
-                    className={
-                      `service-row${
-                        isOpen
-                          ? " service-row-open"
-                          : ""
-                      }`
-                    }
-                    role="button"
-                    tabIndex={0}
-                    aria-expanded={
-                      isOpen
-                    }
-                    onClick={
-                      toggleService
-                    }
-                    onKeyDown={
-                      event => {
-                        if (
-                          event.key ===
-                            "Enter" ||
-                          event.key ===
-                            " "
-                        ) {
-                          event.preventDefault();
-                          toggleService();
-                        }
-                      }
-                    }
+                    key={number}
+                    className="clean-strip-item"
                   >
-                    <div className="service-icon">
-                      <Icon
-                        size={
-                          22
-                        }
-                      />
-                    </div>
+                    <span className="clean-strip-number">
+                      {number}
+                    </span>
 
-                    <div className="service-content">
+                    <div>
                       <h3>
-                        {
-                          title
-                        }
+                        {title}
                       </h3>
 
-                      <p className="service-summary">
-                        {
-                          description
-                        }
+                      <p>
+                        {description}
                       </p>
                     </div>
-
-                    <ArrowUpRight
-                      className={
-                        `service-link-icon${
-                          isOpen
-                            ? " service-link-icon-open"
-                            : ""
-                        }`
-                      }
-                      size={
-                        19
-                      }
-                    />
-
-                    {isOpen && (
-                      <div className="service-details">
-                        {details.map(
-                          (
-                            detail,
-                            index
-                          ) => (
-                            <p
-                              key={
-                                `${title}-${index}`
-                              }
-                              className="service-detail-line"
-                            >
-                              {
-                                detail
-                              }
-                            </p>
-                          )
-                        )}
-                      </div>
-                    )}
                   </article>
-                );
-              }
-            )}
+                )
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
 
-      <section
-        id="health-tips"
-        className="access-section"
-      >
-        <div className="section-container">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">
-                HEALTH TIPS
-              </span>
+        <section
+          id="services"
+          className="clean-section"
+        >
+          <div className="section-container">
+            <div className="clean-section-header">
+              <div>
+                <span className="section-kicker">
+                  WHAT PHILALINK DOES
+                </span>
 
-              <h2>
-                Small habits can make
-                healthcare easier to manage.
-              </h2>
+                <h2>
+                  Core care tools,
+                  presented clearly.
+                </h2>
+              </div>
+
+              <p>
+                Each part of the platform focuses on a
+                practical healthcare task and stays
+                connected to the same patient journey.
+              </p>
             </div>
 
-            <p>
-              Simple reminders that can help
-              you stay organised and more
-              informed about your healthcare.
-            </p>
-          </div>
+            <div className="clean-panel clean-services-panel">
+              <div className="clean-services-head">
+                <span>
+                  Service
+                </span>
 
+                <span>
+                  Purpose
+                </span>
 
-          <div className="journey-grid">
-            {healthTips.map(
-              ({
-                number,
-                title,
-                description,
-              }) => (
-                <article
-                  key={
-                    number
+                <span>
+                  Details
+                </span>
+              </div>
+
+              <div className="clean-services-list">
+                {services.map(
+                  ({
+                    icon: Icon,
+                    title,
+                    description,
+                    details,
+                  }) => {
+                    const isOpen =
+                      openService ===
+                      title;
+
+                    const toggleService =
+                      () => {
+                        setOpenService(
+                          isOpen
+                            ? null
+                            : title
+                        );
+                      };
+
+                    return (
+                      <article
+                        key={title}
+                        className={
+                          `clean-service-row${
+                            isOpen
+                              ? " clean-service-row-open"
+                              : ""
+                          }`
+                        }
+                      >
+                        <button
+                          type="button"
+                          className="clean-service-trigger"
+                          aria-expanded={isOpen}
+                          onClick={toggleService}
+                        >
+                          <div className="clean-service-title">
+                            <div className="clean-icon-box">
+                              <Icon size={18} />
+                            </div>
+
+                            <h3>
+                              {title}
+                            </h3>
+                          </div>
+
+                          <p>
+                            {description}
+                          </p>
+
+                          <div className="clean-service-action">
+                            <span>
+                              {isOpen
+                                ? "Hide"
+                                : "View"}
+                            </span>
+
+                            <ArrowUpRight
+                              size={16}
+                              className={
+                                isOpen
+                                  ? "clean-service-arrow clean-service-arrow-open"
+                                  : "clean-service-arrow"
+                              }
+                            />
+                          </div>
+                        </button>
+
+                        {isOpen ? (
+                          <div className="clean-service-details">
+                            <div className="clean-service-details-label">
+                              Service details
+                            </div>
+
+                            <div className="clean-service-details-grid">
+                              {details.map(
+                                (
+                                  detail,
+                                  index
+                                ) => (
+                                  <div
+                                    key={
+                                      `${title}-${index}`
+                                    }
+                                    className="clean-detail-row"
+                                  >
+                                    <span>
+                                      {
+                                        String(
+                                          index + 1
+                                        ).padStart(
+                                          2,
+                                          "0"
+                                        )
+                                      }
+                                    </span>
+
+                                    <p>
+                                      {detail}
+                                    </p>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        ) : null}
+                      </article>
+                    );
                   }
-                  className="journey-item"
-                >
-                  <span className="journey-number">
-                    {
-                      number
-                    }
-                  </span>
-
-                  <h3>
-                    {
-                      title
-                    }
-                  </h3>
-
-                  <p>
-                    {
-                      description
-                    }
-                  </p>
-                </article>
-              )
-            )}
+                )}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
 
-      <section className="access-section">
-        <div className="section-container">
-          <div className="section-header">
-            <div>
-              <span className="section-kicker">
-                BUILT AROUND THE PATIENT
-              </span>
+        <section
+          id="health-tips"
+          className="clean-section clean-section-muted"
+        >
+          <div className="section-container">
+            <div className="clean-section-header">
+              <div>
+                <span className="section-kicker">
+                  HEALTH TIPS
+                </span>
 
-              <h2>
-                One healthcare journey.
-                One connected view.
-              </h2>
+                <h2>
+                  Small habits,
+                  easier healthcare routines.
+                </h2>
+              </div>
+
+              <p>
+                Simple reminders that support better
+                organisation around medication,
+                collections and everyday care.
+              </p>
             </div>
 
-            <p>
-              Medication, collections,
-              appointments and the people
-              supporting treatment can all
-              be understood through one
-              connected platform.
-            </p>
+            <div className="clean-tip-grid">
+              {healthTips.map(
+                ({
+                  number,
+                  title,
+                  description,
+                }) => (
+                  <article
+                    key={number}
+                    className="clean-panel clean-tip-card"
+                  >
+                    <div className="clean-tip-top">
+                      <span className="clean-tip-number">
+                        {number}
+                      </span>
+
+                      <Pill size={17} />
+                    </div>
+
+                    <h3>
+                      {title}
+                    </h3>
+
+                    <p>
+                      {description}
+                    </p>
+                  </article>
+                )
+              )}
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+
+
+        <section className="clean-section clean-access-section">
+          <div className="section-container">
+            <div className="clean-panel clean-access-panel">
+              <div className="clean-access-copy">
+                <span className="section-kicker">
+                  BUILT AROUND THE PATIENT
+                </span>
+
+                <h2>
+                  One healthcare journey.
+                  One connected view.
+                </h2>
+
+                <p>
+                  Medication, collections,
+                  appointments and trusted support
+                  can all be understood through the
+                  same secure PhilaLink account.
+                </p>
+
+                <div className="clean-access-actions">
+                  <Link
+                    to="/register"
+                    className="clean-primary-action"
+                  >
+                    Create account
+
+                    <ArrowUpRight size={15} />
+                  </Link>
+
+                  <Link
+                    to="/login"
+                    className="clean-secondary-action"
+                  >
+                    Sign in
+                  </Link>
+                </div>
+              </div>
+
+              <div className="clean-access-list">
+                <div>
+                  <Pill size={17} />
+
+                  <span>
+                    Medication
+                  </span>
+                </div>
+
+                <div>
+                  <CalendarDays size={17} />
+
+                  <span>
+                    Collections
+                  </span>
+                </div>
+
+                <div>
+                  <Bell size={17} />
+
+                  <span>
+                    Reminders
+                  </span>
+                </div>
+
+                <div>
+                  <MessageCircle size={17} />
+
+                  <span>
+                    Phila Chat
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
 
 
       <footer
         id="contacts"
-        className="landing-footer"
+        className="landing-footer clean-footer"
       >
         <div className="section-container">
-          <div className="footer-main">
-            <div className="footer-brand">
+          <div className="clean-footer-main">
+            <div className="clean-footer-brand">
               <Link
                 to="/"
-                onClick={
-                  scrollToTop
-                }
+                onClick={scrollToTop}
                 className="footer-logo"
                 aria-label="Go to PhilaLink home"
               >
@@ -602,7 +751,6 @@ export default function LandingPage() {
 
                 <span>
                   Phila
-
                   <strong>
                     Link
                   </strong>
@@ -611,18 +759,17 @@ export default function LandingPage() {
 
               <p>
                 Connecting patients,
-                healthcare workers and
-                trusted proxies through
-                simpler digital healthcare.
+                healthcare workers and trusted
+                proxies through simpler digital
+                healthcare.
               </p>
             </div>
 
-
-            <div className="footer-columns">
+            <div className="clean-footer-directory">
               <div>
-                <h4>
+                <span className="clean-footer-heading">
                   Platform
-                </h4>
+                </span>
 
                 <a href="#home">
                   Home
@@ -639,24 +786,19 @@ export default function LandingPage() {
                 <a href="#health-tips">
                   Health Tips
                 </a>
-
-                <a href="#contacts">
-                  Contacts
-                </a>
               </div>
 
-
               <div>
-                <h4>
+                <span className="clean-footer-heading">
                   Access
-                </h4>
+                </span>
 
                 <Link to="/register">
                   Create account
                 </Link>
 
                 <Link to="/login">
-                  Log in
+                  Sign in
                 </Link>
 
                 <Link to="/forgot-password">
@@ -664,23 +806,18 @@ export default function LandingPage() {
                 </Link>
               </div>
 
-
               <div>
-                <h4>
+                <span className="clean-footer-heading">
                   Support
-                </h4>
+                </span>
 
-                <div className="footer-support">
-                  <PhoneCall
-                    size={
-                      17
-                    }
-                  />
+                <div className="clean-footer-support">
+                  <PhoneCall size={16} />
 
                   <div>
-                    <span>
+                    <small>
                       Emergency
-                    </span>
+                    </small>
 
                     <strong>
                       112
@@ -688,17 +825,13 @@ export default function LandingPage() {
                   </div>
                 </div>
 
-                <div className="footer-support">
-                  <Building2
-                    size={
-                      17
-                    }
-                  />
+                <div className="clean-footer-support">
+                  <Building2 size={16} />
 
                   <div>
-                    <span>
+                    <small>
                       Platform
-                    </span>
+                    </small>
 
                     <strong>
                       PhilaLink
@@ -709,8 +842,7 @@ export default function LandingPage() {
             </div>
           </div>
 
-
-          <div className="footer-bottom">
+          <div className="clean-footer-bottom">
             <span>
               © 2026 PhilaLink.
               All rights reserved.
@@ -718,19 +850,13 @@ export default function LandingPage() {
 
             <button
               type="button"
-              onClick={
-                scrollToTop
-              }
+              onClick={scrollToTop}
               className="back-to-top"
               aria-label="Back to top"
             >
               Back to top
 
-              <ArrowUpRight
-                size={
-                  15
-                }
-              />
+              <ArrowUpRight size={15} />
             </button>
           </div>
         </div>
