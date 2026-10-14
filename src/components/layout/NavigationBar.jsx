@@ -200,7 +200,7 @@ export default function NavigationPage() {
       {/* DESKTOP NAVBAR */}
       {/* ================================================= */}
 
-      <div className="mx-auto hidden h-[72px] w-full max-w-[1440px] grid-cols-[1fr_auto_1fr] items-center px-6 lg:grid lg:px-12">
+      <div className="hidden h-[72px] w-full grid-cols-[1fr_auto_1fr] items-center px-4 lg:grid lg:px-6 xl:px-8">
 
         {/* ============================= */}
         {/* LEFT — BRAND */}
