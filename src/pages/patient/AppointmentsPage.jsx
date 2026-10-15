@@ -31,34 +31,37 @@ import {
   getLanguageLocale,
 } from "../../i18n/languages.js";
 
+const BOOKING_WINDOW_DAYS = 14;
+
+const SOUTH_AFRICA_TIME_ZONE =
+  "Africa/Johannesburg";
+
+const SOUTH_AFRICA_UTC_OFFSET =
+  "+02:00";
+
 const APPOINTMENT_TYPES = [
   {
-    value:
-      "Routine Checkup",
+    value: "Routine Checkup",
     labelKey:
       "appointments.routineCheckup",
   },
   {
-    value:
-      "General Consultation",
+    value: "General Consultation",
     labelKey:
       "appointments.generalConsultation",
   },
   {
-    value:
-      "Medication Review",
+    value: "Medication Review",
     labelKey:
       "appointments.medicationReview",
   },
   {
-    value:
-      "Chronic Care Follow-up",
+    value: "Chronic Care Follow-up",
     labelKey:
       "appointments.chronicFollowup",
   },
   {
-    value:
-      "Follow-up Visit",
+    value: "Follow-up Visit",
     labelKey:
       "appointments.followupVisit",
   },
@@ -69,8 +72,7 @@ const APPOINTMENT_TYPES = [
       "appointments.symptoms",
   },
   {
-    value:
-      "Other",
+    value: "Other",
     labelKey:
       "appointments.other",
   },
@@ -89,9 +91,7 @@ const PROVIDER_TYPES = [
   },
 ];
 
-function parseDate(
-  value
-) {
+function parseDate(value) {
   if (!value) {
     return null;
   }
@@ -112,9 +112,7 @@ function formatDate(
   t
 ) {
   const date =
-    parseDate(
-      value
-    );
+    parseDate(value);
 
   if (!date) {
     return t(
@@ -123,27 +121,29 @@ function formatDate(
   }
 
   try {
-    return date
-      .toLocaleDateString(
-        locale,
-        {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }
-      );
+    return date.toLocaleDateString(
+      locale,
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone:
+          SOUTH_AFRICA_TIME_ZONE,
+      }
+    );
   } catch {
-    return date
-      .toLocaleDateString(
-        "en-ZA",
-        {
-          weekday: "long",
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        }
-      );
+    return date.toLocaleDateString(
+      "en-ZA",
+      {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+        timeZone:
+          SOUTH_AFRICA_TIME_ZONE,
+      }
+    );
   }
 }
 
@@ -153,52 +153,41 @@ function formatTimeRange(
   locale
 ) {
   const start =
-    parseDate(
-      scheduledAt
-    );
+    parseDate(scheduledAt);
 
   if (!start) {
     return "—";
   }
 
   const duration =
-    Number(
-      durationMinutes
-    ) >
-    0
-      ? Number(
-          durationMinutes
-        )
+    Number(durationMinutes) > 0
+      ? Number(durationMinutes)
       : 0;
 
   const options = {
-    hour:
-      "2-digit",
-    minute:
-      "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone:
+      SOUTH_AFRICA_TIME_ZONE,
   };
 
   let startText;
 
   try {
     startText =
-      start
-        .toLocaleTimeString(
-          locale,
-          options
-        );
+      start.toLocaleTimeString(
+        locale,
+        options
+      );
   } catch {
     startText =
-      start
-        .toLocaleTimeString(
-          "en-ZA",
-          options
-        );
+      start.toLocaleTimeString(
+        "en-ZA",
+        options
+      );
   }
 
-  if (
-    !duration
-  ) {
+  if (!duration) {
     return startText;
   }
 
@@ -214,21 +203,167 @@ function formatTimeRange(
 
   try {
     endText =
-      end
-        .toLocaleTimeString(
-          locale,
-          options
-        );
+      end.toLocaleTimeString(
+        locale,
+        options
+      );
   } catch {
     endText =
-      end
-        .toLocaleTimeString(
-          "en-ZA",
-          options
-        );
+      end.toLocaleTimeString(
+        "en-ZA",
+        options
+      );
   }
 
   return `${startText} – ${endText}`;
+}
+
+function getSouthAfricaParts(
+  date
+) {
+  const formatter =
+    new Intl.DateTimeFormat(
+      "en-CA",
+      {
+        timeZone:
+          SOUTH_AFRICA_TIME_ZONE,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23",
+      }
+    );
+
+  const parts =
+    Object.fromEntries(
+      formatter
+        .formatToParts(date)
+        .filter(
+          part =>
+            part.type !==
+            "literal"
+        )
+        .map(
+          part => [
+            part.type,
+            part.value,
+          ]
+        )
+    );
+
+  return parts;
+}
+
+function toSouthAfricaDateTimeInput(
+  date
+) {
+  const parts =
+    getSouthAfricaParts(date);
+
+  return (
+    `${parts.year}-${parts.month}-${parts.day}` +
+    `T${parts.hour}:${parts.minute}`
+  );
+}
+
+function addDaysToDateString(
+  dateString,
+  days
+) {
+  const [
+    year,
+    month,
+    day,
+  ] =
+    dateString
+      .split("-")
+      .map(Number);
+
+  const date =
+    new Date(
+      Date.UTC(
+        year,
+        month - 1,
+        day + days
+      )
+    );
+
+  const resultYear =
+    date.getUTCFullYear();
+
+  const resultMonth =
+    String(
+      date.getUTCMonth() + 1
+    ).padStart(
+      2,
+      "0"
+    );
+
+  const resultDay =
+    String(
+      date.getUTCDate()
+    ).padStart(
+      2,
+      "0"
+    );
+
+  return `${resultYear}-${resultMonth}-${resultDay}`;
+}
+
+function getBookingWindow() {
+  const now =
+    new Date();
+
+  const minimum =
+    toSouthAfricaDateTimeInput(
+      now
+    );
+
+  const today =
+    minimum.slice(
+      0,
+      10
+    );
+
+  const maximumDate =
+    addDaysToDateString(
+      today,
+      BOOKING_WINDOW_DAYS
+    );
+
+  return {
+    minimum,
+    maximum:
+      `${maximumDate}T23:59`,
+    today,
+    maximumDate,
+  };
+}
+
+function parseSouthAfricaDateTimeInput(
+  value
+) {
+  if (!value) {
+    return null;
+  }
+
+  const withSeconds =
+    value.length === 16
+      ? `${value}:00`
+      : value;
+
+  const date =
+    new Date(
+      `${withSeconds}${SOUTH_AFRICA_UTC_OFFSET}`
+    );
+
+  return Number.isNaN(
+    date.getTime()
+  )
+    ? null
+    : date;
 }
 
 function toLocalDateTimeInput(
@@ -236,19 +371,13 @@ function toLocalDateTimeInput(
 ) {
   const date =
     value
-      ? new Date(
-          value
-        )
-      : new Date();
-
-  if (
-    !value
-  ) {
-    date.setMinutes(
-      date.getMinutes() +
-        60
-    );
-  }
+      ? new Date(value)
+      : new Date(
+          Date.now() +
+            60 *
+              60 *
+              1000
+        );
 
   if (
     Number.isNaN(
@@ -258,26 +387,102 @@ function toLocalDateTimeInput(
     return "";
   }
 
-  const offset =
+  return toSouthAfricaDateTimeInput(
     date
-      .getTimezoneOffset();
-
-  return new Date(
-    date.getTime() -
-      offset *
-        60 *
-        1000
-  )
-    .toISOString()
-    .slice(
-      0,
-      16
-    );
+  );
 }
 
-function normaliseStatus(
+function getBookingWindowIssue(
   value
 ) {
+  const selected =
+    parseSouthAfricaDateTimeInput(
+      value
+    );
+
+  if (!selected) {
+    return "invalid";
+  }
+
+  const {
+    today,
+    maximumDate,
+  } =
+    getBookingWindow();
+
+  const selectedDate =
+    value.slice(
+      0,
+      10
+    );
+
+  if (
+    selectedDate < today
+  ) {
+    return "pastDate";
+  }
+
+  if (
+    selectedDate === today &&
+    selected.getTime() <=
+      Date.now()
+  ) {
+    return "pastTime";
+  }
+
+  if (
+    selectedDate >
+    maximumDate
+  ) {
+    return "tooFar";
+  }
+
+  return null;
+}
+
+function formatBookingWindowDate(
+  dateString,
+  locale
+) {
+  const date =
+    new Date(
+      `${dateString}T12:00:00${SOUTH_AFRICA_UTC_OFFSET}`
+    );
+
+  if (
+    Number.isNaN(
+      date.getTime()
+    )
+  ) {
+    return dateString;
+  }
+
+  try {
+    return date.toLocaleDateString(
+      locale,
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone:
+          SOUTH_AFRICA_TIME_ZONE,
+      }
+    );
+  } catch {
+    return date.toLocaleDateString(
+      "en-ZA",
+      {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+        timeZone:
+          SOUTH_AFRICA_TIME_ZONE,
+      }
+    );
+  }
+}
+
+function normaliseStatus(value) {
   return String(
     value ?? ""
   )
@@ -301,17 +506,14 @@ function isPastAppointment(
       "missed",
       "noshow",
       "no-show",
-    ].includes(
-      status
-    )
+    ].includes(status)
   ) {
     return true;
   }
 
   const date =
     parseDate(
-      appointment
-        ?.scheduledAt
+      appointment?.scheduledAt
     );
 
   return Boolean(
@@ -337,9 +539,7 @@ function canChange(
       "missed",
       "noshow",
       "no-show",
-    ].includes(
-      status
-    ) &&
+    ].includes(status) &&
     !isPastAppointment(
       appointment
     )
@@ -354,29 +554,22 @@ function requestedProviderFromNotes(
   }
 
   const match =
-    String(
-      notes
-    ).match(
+    String(notes).match(
       /^Requested provider:\s*(.+)$/im
     );
 
   return (
-    match?.[1]
-      ?.trim() ||
+    match?.[1]?.trim() ||
     ""
   );
 }
 
-function displayNotes(
-  notes
-) {
+function displayNotes(notes) {
   if (!notes) {
     return "";
   }
 
-  return String(
-    notes
-  )
+  return String(notes)
     .replace(
       /^Requested provider:\s*.+(?:\r?\n){0,2}/i,
       ""
@@ -389,9 +582,7 @@ function statusLabel(
   t
 ) {
   switch (
-    normaliseStatus(
-      value
-    )
+    normaliseStatus(value)
   ) {
     case "confirmed":
       return t(
@@ -445,41 +636,40 @@ function StatusBadge({
     useTranslation();
 
   const status =
-    normaliseStatus(
-      value
-    );
+    normaliseStatus(value);
 
   let classes =
     "bg-slate-100 text-slate-600";
 
   if (
-    status ===
-      "confirmed" ||
-    status ===
-      "completed"
+    status === "confirmed" ||
+    status === "completed"
   ) {
     classes =
       "bg-emerald-50 text-emerald-700";
   } else if (
-    status ===
-    "pending"
+    status === "pending"
   ) {
     classes =
       "bg-amber-50 text-amber-700";
   } else if (
-    status ===
-      "cancelled" ||
-    status ===
-      "canceled"
+    status === "cancelled" ||
+    status === "canceled"
   ) {
     classes =
       "bg-red-50 text-red-700";
   } else if (
-    status ===
-    "rescheduled"
+    status === "rescheduled"
   ) {
     classes =
       "bg-teal-50 text-teal-700";
+  } else if (
+    status === "missed" ||
+    status === "noshow" ||
+    status === "no-show"
+  ) {
+    classes =
+      "bg-orange-50 text-orange-700";
   }
 
   return (
@@ -508,8 +698,7 @@ function AppointmentCard({
 
   const telehealth =
     String(
-      appointment.mode ??
-        ""
+      appointment.mode ?? ""
     )
       .trim()
       .toLowerCase() ===
@@ -521,10 +710,8 @@ function AppointmentCard({
     );
 
   const providerName =
-    appointment
-      ?.providerName ||
-    appointment
-      ?.nurseName ||
+    appointment?.providerName ||
+    appointment?.nurseName ||
     requestedProviderFromNotes(
       appointment?.notes
     ) ||
@@ -706,8 +893,15 @@ function BookingModal({
 }) {
   const {
     t,
+    i18n,
   } =
     useTranslation();
+
+  const locale =
+    getLanguageLocale(
+      i18n.resolvedLanguage ||
+        i18n.language
+    );
 
   const [
     scheduledAt,
@@ -773,9 +967,7 @@ function BookingModal({
 
   useEffect(
     () => {
-      if (
-        !open
-      ) {
+      if (!open) {
         return;
       }
 
@@ -805,13 +997,9 @@ function BookingModal({
         "InPerson"
       );
 
-      setNotes(
-        ""
-      );
+      setNotes("");
 
-      setSubmitError(
-        ""
-      );
+      setSubmitError("");
     },
     [
       open,
@@ -819,32 +1007,54 @@ function BookingModal({
     ]
   );
 
-  if (
-    !open
-  ) {
+  if (!open) {
     return null;
   }
+
+  const bookingWindow =
+    getBookingWindow();
 
   async function handleSubmit(
     event
   ) {
     event.preventDefault();
 
-    const parsedDate =
-      new Date(
+    const issue =
+      getBookingWindowIssue(
         scheduledAt
       );
 
     if (
-      Number.isNaN(
-        parsedDate.getTime()
-      ) ||
-      parsedDate.getTime() <=
-        Date.now()
+      issue === "invalid"
     ) {
       setSubmitError(
         t(
           "appointments.futureDateRequired"
+        )
+      );
+
+      return;
+    }
+
+    if (
+      issue === "pastTime"
+    ) {
+      setSubmitError(
+        t(
+          "appointments.pastTimeError"
+        )
+      );
+
+      return;
+    }
+
+    if (
+      issue === "pastDate" ||
+      issue === "tooFar"
+    ) {
+      setSubmitError(
+        t(
+          "appointments.bookingWindowError"
         )
       );
 
@@ -863,31 +1073,40 @@ function BookingModal({
       return;
     }
 
+    const appointmentDate =
+      parseSouthAfricaDateTimeInput(
+        scheduledAt
+      );
+
+    if (
+      !appointmentDate
+    ) {
+      setSubmitError(
+        t(
+          "appointments.futureDateRequired"
+        )
+      );
+
+      return;
+    }
+
     const persistedNotes =
       [
         `Requested provider: ${providerType}`,
         notes.trim(),
       ]
-        .filter(
-          Boolean
-        )
-        .join(
-          "\n\n"
-        );
+        .filter(Boolean)
+        .join("\n\n");
 
     try {
-      setSubmitting(
-        true
-      );
+      setSubmitting(true);
 
-      setSubmitError(
-        ""
-      );
+      setSubmitError("");
 
       await appointmentsApi
         .book({
           scheduledAt:
-            parsedDate
+            appointmentDate
               .toISOString(),
 
           durationMinutes:
@@ -922,9 +1141,7 @@ function BookingModal({
           )
       );
     } finally {
-      setSubmitting(
-        false
-      );
+      setSubmitting(false);
     }
   }
 
@@ -986,16 +1203,18 @@ function BookingModal({
             onChange={
               setType
             }
-            options={APPOINTMENT_TYPES.map(
-              item => ({
-                value:
-                  item.value,
-                label:
-                  t(
-                    item.labelKey
-                  ),
-              })
-            )}
+            options={
+              APPOINTMENT_TYPES.map(
+                item => ({
+                  value:
+                    item.value,
+                  label:
+                    t(
+                      item.labelKey
+                    ),
+                })
+              )
+            }
           />
 
           <SelectField
@@ -1008,16 +1227,18 @@ function BookingModal({
             onChange={
               setProviderType
             }
-            options={PROVIDER_TYPES.map(
-              item => ({
-                value:
-                  item.value,
-                label:
-                  t(
-                    item.labelKey
-                  ),
-              })
-            )}
+            options={
+              PROVIDER_TYPES.map(
+                item => ({
+                  value:
+                    item.value,
+                  label:
+                    t(
+                      item.labelKey
+                    ),
+                })
+              )
+            }
           />
 
           <Field
@@ -1031,6 +1252,28 @@ function BookingModal({
             onChange={
               setScheduledAt
             }
+            min={
+              bookingWindow.minimum
+            }
+            max={
+              bookingWindow.maximum
+            }
+            helpText={t(
+              "appointments.bookingWindowHint",
+              {
+                startDate:
+                  formatBookingWindowDate(
+                    bookingWindow.today,
+                    locale
+                  ),
+
+                endDate:
+                  formatBookingWindowDate(
+                    bookingWindow.maximumDate,
+                    locale
+                  ),
+              }
+            )}
             required
           />
 
@@ -1062,6 +1305,7 @@ function BookingModal({
                 {
                   value:
                     "InPerson",
+
                   label:
                     t(
                       "appointments.inPerson"
@@ -1070,6 +1314,7 @@ function BookingModal({
                 {
                   value:
                     "Telehealth",
+
                   label:
                     t(
                       "appointments.telehealth"
@@ -1152,8 +1397,15 @@ function RescheduleModal({
 }) {
   const {
     t,
+    i18n,
   } =
     useTranslation();
+
+  const locale =
+    getLanguageLocale(
+      i18n.resolvedLanguage ||
+        i18n.language
+    );
 
   const [
     scheduledAt,
@@ -1184,9 +1436,7 @@ function RescheduleModal({
           )
         );
 
-        setError(
-          ""
-        );
+        setError("");
       }
     },
     [
@@ -1200,22 +1450,21 @@ function RescheduleModal({
     return null;
   }
 
+  const bookingWindow =
+    getBookingWindow();
+
   async function submit(
     event
   ) {
     event.preventDefault();
 
-    const date =
-      new Date(
+    const issue =
+      getBookingWindowIssue(
         scheduledAt
       );
 
     if (
-      Number.isNaN(
-        date.getTime()
-      ) ||
-      date.getTime() <=
-        Date.now()
+      issue === "invalid"
     ) {
       setError(
         t(
@@ -1226,22 +1475,57 @@ function RescheduleModal({
       return;
     }
 
-    try {
-      setSubmitting(
-        true
+    if (
+      issue === "pastTime"
+    ) {
+      setError(
+        t(
+          "appointments.pastTimeError"
+        )
       );
 
+      return;
+    }
+
+    if (
+      issue === "pastDate" ||
+      issue === "tooFar"
+    ) {
       setError(
-        ""
+        t(
+          "appointments.rescheduleWindowError"
+        )
       );
+
+      return;
+    }
+
+    const date =
+      parseSouthAfricaDateTimeInput(
+        scheduledAt
+      );
+
+    if (!date) {
+      setError(
+        t(
+          "appointments.futureRescheduleRequired"
+        )
+      );
+
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      setError("");
 
       await appointmentsApi
         .reschedule(
           appointment.id,
           {
             scheduledAt:
-              date
-                .toISOString(),
+              date.toISOString(),
           }
         );
 
@@ -1258,9 +1542,7 @@ function RescheduleModal({
           )
       );
     } finally {
-      setSubmitting(
-        false
-      );
+      setSubmitting(false);
     }
   }
 
@@ -1296,6 +1578,28 @@ function RescheduleModal({
           onChange={
             setScheduledAt
           }
+          min={
+            bookingWindow.minimum
+          }
+          max={
+            bookingWindow.maximum
+          }
+          helpText={t(
+            "appointments.bookingWindowHint",
+            {
+              startDate:
+                formatBookingWindowDate(
+                  bookingWindow.today,
+                  locale
+                ),
+
+              endDate:
+                formatBookingWindowDate(
+                  bookingWindow.maximumDate,
+                  locale
+                ),
+            }
+          )}
           required
         />
 
@@ -1341,21 +1645,15 @@ function CancelModal({
   ] =
     useState("");
 
-  if (
-    !appointment
-  ) {
+  if (!appointment) {
     return null;
   }
 
   async function cancel() {
     try {
-      setSubmitting(
-        true
-      );
+      setSubmitting(true);
 
-      setError(
-        ""
-      );
+      setError("");
 
       await appointmentsApi
         .cancel(
@@ -1375,9 +1673,7 @@ function CancelModal({
           )
       );
     } finally {
-      setSubmitting(
-        false
-      );
+      setSubmitting(false);
     }
   }
 
@@ -1518,13 +1814,9 @@ export default function AppointmentsPage() {
     useCallback(
       async () => {
         try {
-          setLoading(
-            true
-          );
+          setLoading(true);
 
-          setError(
-            ""
-          );
+          setError("");
 
           const result =
             await appointmentsApi
@@ -1547,13 +1839,9 @@ export default function AppointmentsPage() {
               )
           );
 
-          setAppointments(
-            []
-          );
+          setAppointments([]);
         } finally {
-          setLoading(
-            false
-          );
+          setLoading(false);
         }
       },
       [
@@ -1588,15 +1876,13 @@ export default function AppointmentsPage() {
               (
                 parseDate(
                   a.scheduledAt
-                )
-                  ?.getTime() ||
+                )?.getTime() ||
                 0
               ) -
               (
                 parseDate(
                   b.scheduledAt
-                )
-                  ?.getTime() ||
+                )?.getTime() ||
                 0
               )
           ),
@@ -1623,15 +1909,13 @@ export default function AppointmentsPage() {
               (
                 parseDate(
                   b.scheduledAt
-                )
-                  ?.getTime() ||
+                )?.getTime() ||
                 0
               ) -
               (
                 parseDate(
                   a.scheduledAt
-                )
-                  ?.getTime() ||
+                )?.getTime() ||
                 0
               )
           ),
@@ -1641,8 +1925,7 @@ export default function AppointmentsPage() {
     );
 
   const visible =
-    tab ===
-    "upcoming"
+    tab === "upcoming"
       ? upcoming
       : past;
 
@@ -1765,7 +2048,9 @@ export default function AppointmentsPage() {
             {[1, 2, 3].map(
               item => (
                 <div
-                  key={item}
+                  key={
+                    item
+                  }
                   className="h-40 animate-pulse rounded-2xl border border-slate-200 bg-white"
                 />
               )
@@ -1972,6 +2257,9 @@ function Field({
   onChange,
   type = "text",
   required = false,
+  min,
+  max,
+  helpText,
 }) {
   return (
     <label className="block">
@@ -1989,15 +2277,26 @@ function Field({
         required={
           required
         }
+        min={
+          min
+        }
+        max={
+          max
+        }
         onChange={
           event =>
             onChange(
-              event.target
-                .value
+              event.target.value
             )
         }
         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
       />
+
+      {helpText && (
+        <span className="mt-1.5 block text-xs text-slate-500">
+          {helpText}
+        </span>
+      )}
     </label>
   );
 }
@@ -2025,8 +2324,7 @@ function TextArea({
         onChange={
           event =>
             onChange(
-              event.target
-                .value
+              event.target.value
             )
         }
         className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
@@ -2054,8 +2352,7 @@ function SelectField({
         onChange={
           event =>
             onChange(
-              event.target
-                .value
+              event.target.value
             )
         }
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
