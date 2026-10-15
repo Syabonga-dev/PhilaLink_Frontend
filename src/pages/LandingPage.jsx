@@ -22,7 +22,7 @@ import {
 
 import NavigationPage from "../components/layout/NavigationBar.jsx";
 
-import heroImage from "../assets/landing-hero-preview.jpg";
+import heroImage from "../assets/Screenshot_20260918-165155_Chrome.jpg";
 
 import "./LandingPage.css";
 
