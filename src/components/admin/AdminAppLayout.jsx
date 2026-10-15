@@ -122,7 +122,9 @@ const SUPER_ADMIN_SECTIONS = [
 ];
 
 function initials(value) {
-  const words = String(value || "")
+  const words = String(
+    value || ""
+  )
     .trim()
     .split(/\s+/)
     .filter(Boolean);
@@ -144,8 +146,12 @@ function pageTitle(
   pathname,
   role
 ) {
-  if (pathname === "/admin") {
-    return role === "SuperAdmin"
+  if (
+    pathname ===
+    "/admin"
+  ) {
+    return role ===
+      "SuperAdmin"
       ? "Overview"
       : "Analytics";
   }
@@ -195,7 +201,8 @@ function pageTitle(
       "/admin/staff"
     )
   ) {
-    return role === "SuperAdmin"
+    return role ===
+      "SuperAdmin"
       ? "Accounts"
       : "Staff";
   }
@@ -235,81 +242,6 @@ function pageTitle(
   return "Administration";
 }
 
-function useVisibleViewportHeight() {
-  const [
-    height,
-    setHeight,
-  ] = useState(null);
-
-  useEffect(() => {
-    function update() {
-      const measured =
-        window.visualViewport?.height ||
-        window.innerHeight ||
-        document.documentElement
-          .clientHeight;
-
-      setHeight(
-        Math.max(
-          1,
-          Math.floor(
-            measured
-          )
-        )
-      );
-    }
-
-    update();
-
-    const viewport =
-      window.visualViewport;
-
-    viewport?.addEventListener(
-      "resize",
-      update
-    );
-
-    viewport?.addEventListener(
-      "scroll",
-      update
-    );
-
-    window.addEventListener(
-      "resize",
-      update
-    );
-
-    window.addEventListener(
-      "orientationchange",
-      update
-    );
-
-    return () => {
-      viewport?.removeEventListener(
-        "resize",
-        update
-      );
-
-      viewport?.removeEventListener(
-        "scroll",
-        update
-      );
-
-      window.removeEventListener(
-        "resize",
-        update
-      );
-
-      window.removeEventListener(
-        "orientationchange",
-        update
-      );
-    };
-  }, []);
-
-  return height;
-}
-
 function NavSection({
   label,
   items,
@@ -322,51 +254,63 @@ function NavSection({
       </p>
 
       <div className="mt-2 space-y-1">
-        {items.map(item => {
-          const Icon =
-            item.icon;
+        {items.map(
+          item => {
+            const Icon =
+              item.icon;
 
-          return (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              onClick={
-                onNavigate
-              }
-              className={({
-                isActive,
-              }) =>
-                `group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition ${
-                  isActive
-                    ? "bg-[#e9f6f3] text-[#0f766e]"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-                }`
-              }
-            >
-              {({
-                isActive,
-              }) => (
-                <>
-                  {isActive ? (
-                    <span className="absolute inset-y-0 left-0 w-[3px] bg-[#0f766e]" />
-                  ) : null}
+            return (
+              <NavLink
+                key={
+                  item.to
+                }
+                to={
+                  item.to
+                }
+                end={
+                  item.end
+                }
+                onClick={
+                  onNavigate
+                }
+                className={({
+                  isActive,
+                }) =>
+                  `group relative flex items-center gap-3 px-3 py-2.5 text-sm font-medium transition ${
+                    isActive
+                      ? "bg-[#e9f6f3] text-[#0f766e]"
+                      : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  }`
+                }
+              >
+                {({
+                  isActive,
+                }) => (
+                  <>
+                    {isActive ? (
+                      <span className="absolute inset-y-0 left-0 w-[3px] bg-[#0f766e]" />
+                    ) : null}
 
-                  <Icon
-                    size={17}
-                    strokeWidth={
-                      1.8
-                    }
-                  />
+                    <Icon
+                      size={
+                        17
+                      }
+                      strokeWidth={
+                        1.8
+                      }
+                    />
 
-                  <span className="truncate">
-                    {item.label}
-                  </span>
-                </>
-              )}
-            </NavLink>
-          );
-        })}
+                    <span className="truncate">
+                      {
+                        item.label
+                      }
+                    </span>
+                  </>
+                )}
+              </NavLink>
+            );
+          }
+        )}
       </div>
     </div>
   );
@@ -392,28 +336,33 @@ export default function AdminAppLayout() {
     setProfile,
   ] = useState(null);
 
-  const viewportHeight =
-    useVisibleViewportHeight();
-
   useEffect(() => {
     let active = true;
 
     adminApi
       .getMe()
-      .then(result => {
-        if (active) {
-          setProfile(
-            result
-          );
+      .then(
+        result => {
+          if (
+            active
+          ) {
+            setProfile(
+              result
+            );
+          }
         }
-      })
-      .catch(() => {
-        if (active) {
-          setProfile(
-            null
-          );
+      )
+      .catch(
+        () => {
+          if (
+            active
+          ) {
+            setProfile(
+              null
+            );
+          }
         }
-      });
+      );
 
     return () => {
       active = false;
@@ -429,7 +378,9 @@ export default function AdminAppLayout() {
   ]);
 
   useEffect(() => {
-    if (!mobileOpen) {
+    if (
+      !mobileOpen
+    ) {
       return undefined;
     }
 
@@ -457,7 +408,8 @@ export default function AdminAppLayout() {
     "Administrator";
 
   const contextName =
-    role === "ClinicAdmin"
+    role ===
+    "ClinicAdmin"
       ? profile?.clinicName ||
         "Assigned clinic"
       : "PhilaLink administration";
@@ -503,20 +455,13 @@ export default function AdminAppLayout() {
       role,
     ]);
 
-  const sidebarStyle = {
-    height:
-      viewportHeight
-        ? `${viewportHeight}px`
-        : "100svh",
+  function handleLogout() {
+    setMobileOpen(
+      false
+    );
 
-    maxHeight:
-      viewportHeight
-        ? `${viewportHeight}px`
-        : "100svh",
-
-    gridTemplateRows:
-      "64px auto minmax(0, 1fr) auto",
-  };
+    logout();
+  }
 
   return (
     <div className="min-h-screen bg-[#f4f6f5] text-slate-950">
@@ -534,16 +479,17 @@ export default function AdminAppLayout() {
       ) : null}
 
       <aside
-        className={`fixed left-0 top-0 z-50 grid w-[252px] overflow-hidden border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex h-screen h-[100dvh] max-h-[100dvh] w-[252px] flex-col overflow-hidden border-r border-slate-200 bg-white transition-transform duration-200 lg:translate-x-0 ${
           mobileOpen
             ? "translate-x-0"
             : "-translate-x-full"
         }`}
-        style={
-          sidebarStyle
-        }
       >
-        <div className="flex h-[64px] min-h-0 items-center border-b border-slate-200 px-5">
+        {/* ================================================= */}
+        {/* BRAND                                             */}
+        {/* ================================================= */}
+
+        <div className="flex h-[64px] shrink-0 items-center border-b border-slate-200 px-5">
           <NavLink
             to="/admin"
             onClick={() =>
@@ -574,7 +520,11 @@ export default function AdminAppLayout() {
           </NavLink>
         </div>
 
-        <div className="min-h-0 border-b border-slate-200 px-5 py-4">
+        {/* ================================================= */}
+        {/* WORKING CONTEXT                                   */}
+        {/* ================================================= */}
+
+        <div className="shrink-0 border-b border-slate-200 px-5 py-4">
           <p className="text-[10px] font-medium uppercase tracking-[0.1em] text-slate-400">
             Working context
           </p>
@@ -591,8 +541,13 @@ export default function AdminAppLayout() {
           </p>
         </div>
 
-        <nav className="min-h-0 overflow-y-auto overscroll-contain px-3 py-5">
-          <div className="space-y-6">
+        {/* ================================================= */}
+        {/* NAVIGATION                                        */}
+        {/* Only this section scrolls on short mobile screens */}
+        {/* ================================================= */}
+
+        <nav className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-5">
+          <div className="space-y-6 pb-2">
             {sections.map(
               section => (
                 <NavSection
@@ -616,7 +571,12 @@ export default function AdminAppLayout() {
           </div>
         </nav>
 
-        <div className="min-h-0 border-t border-slate-200 bg-white px-4 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
+        {/* ================================================= */}
+        {/* ACCOUNT + LOGOUT                                  */}
+        {/* Kept outside the scrolling navigation area.       */}
+        {/* ================================================= */}
+
+        <div className="shrink-0 border-t border-slate-200 bg-white px-4 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
           <div className="flex items-center gap-3">
             <div className="flex h-9 w-9 shrink-0 items-center justify-center bg-slate-900 text-xs font-semibold text-white">
               {initials(
@@ -626,7 +586,9 @@ export default function AdminAppLayout() {
 
             <div className="min-w-0 flex-1">
               <p className="truncate text-xs font-semibold text-slate-900">
-                {displayName}
+                {
+                  displayName
+                }
               </p>
 
               <p className="truncate text-[10px] text-slate-500">
@@ -636,23 +598,32 @@ export default function AdminAppLayout() {
                   : "Clinic Administrator"}
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={
-                logout
-              }
-              title="Sign out"
-              aria-label="Sign out"
-              className="flex h-9 w-9 shrink-0 items-center justify-center border border-slate-200 bg-white text-slate-500 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600"
-            >
-              <LogOut
-                size={16}
-              />
-            </button>
           </div>
+
+          <button
+            type="button"
+            onClick={
+              handleLogout
+            }
+            className="mt-3 flex h-10 w-full items-center justify-center gap-2 border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-600 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-100"
+          >
+            <LogOut
+              size={15}
+              strokeWidth={
+                1.9
+              }
+            />
+
+            <span>
+              Log out
+            </span>
+          </button>
         </div>
       </aside>
+
+      {/* =================================================== */}
+      {/* MAIN APPLICATION                                    */}
+      {/* =================================================== */}
 
       <div className="lg:pl-[252px]">
         <header className="sticky top-0 z-30 flex h-[64px] items-center border-b border-slate-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
@@ -667,7 +638,9 @@ export default function AdminAppLayout() {
             aria-label="Open navigation"
           >
             <Menu
-              size={18}
+              size={
+                18
+              }
             />
           </button>
 
@@ -687,7 +660,9 @@ export default function AdminAppLayout() {
           <div className="hidden items-center gap-3 sm:flex">
             <div className="text-right">
               <p className="max-w-[220px] truncate text-xs font-medium text-slate-800">
-                {displayName}
+                {
+                  displayName
+                }
               </p>
 
               <p className="text-[10px] text-slate-400">
@@ -711,6 +686,10 @@ export default function AdminAppLayout() {
         </main>
       </div>
 
+      {/* =================================================== */}
+      {/* MOBILE DRAWER CLOSE BUTTON                          */}
+      {/* =================================================== */}
+
       {mobileOpen ? (
         <button
           type="button"
@@ -720,10 +699,12 @@ export default function AdminAppLayout() {
             )
           }
           aria-label="Close navigation"
-          className="fixed left-[260px] top-3 z-[60] flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-600 shadow lg:hidden"
+          className="fixed left-[260px] top-[max(0.75rem,env(safe-area-inset-top))] z-[60] flex h-9 w-9 items-center justify-center border border-slate-200 bg-white text-slate-600 shadow lg:hidden"
         >
           <X
-            size={17}
+            size={
+              17
+            }
           />
         </button>
       ) : null}
