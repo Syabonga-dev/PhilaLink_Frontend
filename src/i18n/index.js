@@ -41,6 +41,10 @@ import {
   appointmentReasonOverrides,
 } from "./appointmentReasonOverrides.js";
 
+import {
+  appointmentBookingResources,
+} from "./appointmentBookingResources.js";
+
 function isPlainObject(
   value
 ) {
@@ -280,12 +284,10 @@ const resources =
 
         /*
          * Appointment reason translations are intentionally
-         * merged last.
+         * merged after the older patient resources.
          *
-         * Some of the older completeness resources used the
-         * generic "unavailable" text for the default appointment
-         * reason in several languages. These values replace those
-         * placeholders with the actual translated reason.
+         * Some older completeness resources used generic
+         * placeholder text for the default appointment reason.
          */
         translation =
           deepMerge(
@@ -293,6 +295,24 @@ const resources =
             appointmentReasonOverrides[
               language
             ] ??
+              {}
+          );
+
+        /*
+         * Appointment booking-window messages are merged last.
+         *
+         * These translations support the rolling 14-day booking
+         * and rescheduling window used by AppointmentsPage.
+         */
+        translation =
+          deepMerge(
+            translation,
+            appointmentBookingResources[
+              language
+            ] ??
+              appointmentBookingResources[
+                DEFAULT_LANGUAGE
+              ] ??
               {}
           );
 
