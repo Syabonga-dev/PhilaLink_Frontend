@@ -29,141 +29,135 @@ import "./LandingPage.css";
 
 const services = [
   {
+    number: "01",
     icon: Pill,
     title: "Medication",
     description:
-      "View active medication, dosage information and treatment details linked to your care.",
+      "Keep medication, schedules and treatment information together instead of relying on memory or separate notes.",
     details: [
-      "See medications recorded for your patient profile, including whether treatment is active, upcoming, ended or inactive.",
-      "Review medication names, dosage information and the treatment details connected to each prescription.",
-      "View active medication schedules and the times of day when each recorded dose is expected to be taken.",
-      "Track daily medication activity by recording doses as taken or skipped so treatment progress stays visible.",
-      "PhilaLink estimates remaining medication supply from completed collections, recorded dose size, active schedules and doses already marked as taken.",
-      "Supply information can show estimated days remaining and also explains when a calculation is unavailable because collection, schedule or dose information is missing.",
+      "View medications recorded against the patient profile together with dosage and treatment information.",
+      "See active medication schedules and the expected times for recorded doses.",
+      "Record medication activity and use completed collection information to support supply estimates.",
     ],
   },
 
   {
+    number: "02",
     icon: CalendarDays,
     title: "Collections",
     description:
-      "See when medication collection is due and keep upcoming collection information easy to find.",
+      "Know when medication collection is due, what has already been collected and where the next collection fits into care.",
     details: [
-      "Patients can view their medication collection history and the next scheduled collection linked to their own account.",
-      "Collection records connect the patient, clinic, scheduled collection date, current status and the medication items being prepared or collected.",
-      "Upcoming collection information helps patients see what is due next instead of having to track dates separately.",
-      "Nurses use the collection workflow to schedule and manage medication collections as part of normal clinic operations.",
-      "Trusted proxies can see collection information only for patients who are actively linked to them and within the proxy's authorised clinic scope.",
-      "Completed collections also feed into medication-supply calculations, helping PhilaLink estimate how long a patient's collected medication should last.",
+      "Patients can review collection history and the next scheduled medication collection linked to their account.",
+      "Collection records connect the patient, clinic, scheduled date, current status and medication being collected.",
+      "Nurses manage medication collection activity through the clinic workflow.",
     ],
   },
 
   {
+    number: "03",
     icon: Bell,
     title: "Reminders",
     description:
-      "Stay informed about appointments, medication collections and important healthcare activity.",
+      "Bring medication, appointment and collection updates into one notification flow.",
     details: [
-      "Medication reminders are generated from each active medication schedule when the scheduled dose time is reached.",
-      "PhilaLink avoids repeating a medication reminder when the patient has already recorded a taken or skipped dose around that scheduled time.",
-      "Patients can receive appointment updates when an appointment is created, rescheduled, confirmed, cancelled or otherwise changed.",
-      "Medication and appointment reminder preferences are stored per patient so supported reminder types can be enabled or disabled.",
-      "The notification feed keeps healthcare updates together, supports unread and read states, and allows individual or all notifications to be marked as read.",
-      "Proxy collection reminders are restricted to valid linked patients, and stale reminders are removed when a proxy relationship or clinic scope is no longer valid.",
+      "Medication reminders are generated from active medication schedules.",
+      "Appointment changes can surface through the patient's notification experience.",
+      "Notification records support unread and read states so important healthcare activity remains visible.",
     ],
   },
 
   {
+    number: "04",
     icon: Users,
     title: "Proxy support",
     description:
-      "Connect trusted people who can support medication collection for linked patients.",
+      "Give a trusted caregiver the information they need without opening unrelated patient information.",
     details: [
-      "A proxy account supports patients through an explicit active patient-proxy relationship rather than receiving general access to clinic records.",
-      "Proxy access is limited to linked patients who are active and belong to the same authorised clinic scope as the proxy.",
-      "The proxy dashboard can show linked patients together with their next medication collection date and current collection status.",
-      "Collection summaries distinguish activity such as due today, tomorrow, upcoming and overdue so support can be prioritised.",
-      "Proxies can search and filter the collection records they are authorised to view, including by linked patient, date range and collection status.",
-      "Requests for patients or collections outside the proxy's authorised relationships are intentionally hidden instead of exposing whether those records exist.",
+      "Proxy access depends on an active patient-proxy relationship rather than general access to patient records.",
+      "Linked patients and their collection information are limited to the proxy's authorised scope.",
+      "The proxy experience helps caregivers keep track of upcoming and overdue collection activity.",
     ],
   },
 
   {
+    number: "05",
     icon: MessageCircle,
     title: "Phila Chat",
     description:
-      "Access the PhilaLink assistant for simple healthcare information and support.",
+      "Ask for healthcare information while keeping patient context and privacy choices inside the PhilaLink experience.",
     details: [
-      "Phila Chat keeps an active patient conversation and stores the messages in that conversation so the patient can return to their chat history.",
-      "Emergency and urgent symptom wording is intercepted before the external AI response and directs the patient toward appropriate professional or emergency care.",
-      "Patients control whether Phila Chat may use information from their stored PhilaLink profile through the profile-access preference.",
-      "When profile access is disabled, stored medications, supply, allergies, conditions, assessments, collection history and old chat history are not sent to the AI provider.",
-      "When access is enabled, the assistant can use relevant stored context such as active medications, schedules, taken-dose logs, allergies, medical conditions and the latest symptom assessment.",
-      "Medication-supply and completed-collection context can also be included so responses can reflect information already recorded in PhilaLink while remaining subject to the patient's privacy setting.",
+      "Patients can return to an active conversation and previously stored conversation messages.",
+      "Urgent symptom wording is intercepted before ordinary assistant responses and directs the patient toward appropriate care.",
+      "Patients control whether stored PhilaLink profile information may be used as assistant context.",
     ],
   },
 
   {
+    number: "06",
     icon: ShieldCheck,
     title: "Secure access",
     description:
-      "Healthcare information stays organised around verified users and role-based access.",
+      "Keep patient, proxy, nurse and administrative responsibilities separated by authenticated role.",
     details: [
-      "PhilaLink uses authenticated JWT sessions and separates access across Patient, Proxy, Nurse, ClinicAdmin and SuperAdmin roles.",
-      "Patient self-service endpoints resolve the patient from the authenticated identity so a patient cannot simply request another patient's record by supplying an ID.",
-      "Proxy access is relationship-scoped, while nurses and clinic administrators are restricted to the clinic and responsibilities assigned to their role.",
-      "Administrator-created staff accounts use temporary passwords and must replace them before ordinary protected API access is allowed.",
-      "Patient verification and password recovery use OTP-based flows, while password rules require a stronger combination of length, uppercase, lowercase, number and special character.",
-      "Sensitive validation and authorisation remain enforced by the backend, with important clinical and administrative activity designed to remain auditable.",
+      "PhilaLink separates access across Patient, Proxy, Nurse, ClinicAdmin and SuperAdmin roles.",
+      "Patient self-service resolves records from the authenticated account rather than accepting arbitrary patient identifiers.",
+      "Clinic and relationship scope continues to be enforced by backend authorisation.",
     ],
   },
 ];
 
 
-const journeyItems = [
+const careRoles = [
   {
-    number: "01",
-    title: "Know your medication",
+    role: "Patient",
     description:
-      "See your medication and treatment information in one clear place.",
+      "Medication, appointments, records, collection information, reminders and personal healthcare activity.",
   },
 
   {
-    number: "02",
-    title: "Know what is next",
+    role: "Proxy",
     description:
-      "Keep track of your next medication collection and upcoming appointments.",
+      "Purpose-specific access to linked patients and the collection information needed to support them.",
   },
 
   {
-    number: "03",
-    title: "Stay supported",
+    role: "Nurse",
     description:
-      "Stay connected to clinics, healthcare workers and trusted medication proxies.",
+      "Clinic patients, appointments, medication collections and day-to-day care workflows.",
+  },
+
+  {
+    role: "Clinic administrator",
+    description:
+      "Clinic staff, inventory, reports, analytics and audit information within an assigned facility.",
+  },
+
+  {
+    role: "System administrator",
+    description:
+      "Cross-clinic oversight, accounts, facilities, analytics, reports and platform governance.",
   },
 ];
 
 
 const healthTips = [
   {
-    number: "01",
     title: "Take medication as directed",
     description:
-      "Follow the dosage and timing provided by your healthcare professional, and ask for guidance whenever instructions are unclear.",
+      "Follow the dosage and timing provided by your healthcare professional. Ask a healthcare worker when treatment instructions are unclear.",
   },
 
   {
-    number: "02",
-    title: "Plan ahead for collections",
+    title: "Plan before collection day",
     description:
-      "Keep track of your next collection date so you have enough time to arrange transport or proxy support when needed.",
+      "Check your next collection date early enough to arrange transport or authorised proxy support when you need it.",
   },
 
   {
-    number: "03",
-    title: "Keep your care information current",
+    title: "Keep your information current",
     description:
-      "Make sure important treatment, appointment and contact information stays up to date so your healthcare journey is easier to follow.",
+      "Accurate contact, treatment and appointment information makes it easier to keep your healthcare activity organised.",
   },
 ];
 
@@ -235,6 +229,10 @@ export default function LandingPage() {
       <NavigationPage />
 
 
+      {/* ================================================= */}
+      {/* HERO — UNCHANGED                                 */}
+      {/* ================================================= */}
+
       <section
         id="home"
         className="landing-hero"
@@ -269,113 +267,174 @@ export default function LandingPage() {
       </section>
 
 
-      <main className="landing-clean-main">
+      <main className="landing-main">
+
+        {/* ================================================= */}
+        {/* ABOUT                                             */}
+        {/* ================================================= */}
 
         <section
           id="about"
-          className="clean-section"
+          className="landing-story"
         >
           <div className="section-container">
-            <div className="clean-section-header">
-              <div>
+            <div className="story-grid">
+              <div className="story-heading">
                 <span className="section-kicker">
-                  PHILALINK
+                  Why PhilaLink
                 </span>
 
                 <h2>
-                  Healthcare information,
-                  organised around the patient.
+                  Healthcare is already
+                  complicated enough.
+                  Keeping track of it
+                  should not be.
                 </h2>
               </div>
 
-              <p>
-                PhilaLink connects medication,
-                collections, appointments,
-                clinic activity and trusted
-                support through one clear
-                digital healthcare experience.
-              </p>
+              <div className="story-copy">
+                <p className="story-lead">
+                  Medication details,
+                  collection dates,
+                  appointments and caregiver
+                  support often belong to the
+                  same healthcare journey,
+                  even when they are managed
+                  in different places.
+                </p>
+
+                <p>
+                  PhilaLink brings those
+                  everyday activities into
+                  one role-based system so
+                  patients can understand
+                  what is happening now,
+                  what comes next and who
+                  is involved.
+                </p>
+              </div>
             </div>
 
-            <div className="clean-overview-grid">
-              <article className="clean-panel clean-overview-main">
-                <div className="clean-panel-header">
-                  <div>
-                    <span className="clean-panel-label">
-                      PLATFORM OVERVIEW
-                    </span>
+            <div className="story-statement">
+              <p>
+                The goal is not to add
+                another healthcare screen.
+              </p>
 
+              <strong>
+                It is to make the next
+                healthcare action easier
+                to understand.
+              </strong>
+            </div>
+          </div>
+        </section>
+
+
+        {/* ================================================= */}
+        {/* CARE JOURNEY                                      */}
+        {/* ================================================= */}
+
+        <section className="journey-editorial">
+          <div className="section-container">
+            <div className="journey-editorial-grid">
+              <div className="journey-editorial-intro">
+                <span className="section-kicker">
+                  The everyday journey
+                </span>
+
+                <h2>
+                  From today's medication
+                  to the next clinic visit.
+                </h2>
+
+                <p>
+                  PhilaLink is organised
+                  around the sequence of
+                  things people actually
+                  need to keep track of.
+                </p>
+              </div>
+
+              <div className="journey-editorial-list">
+                <article>
+                  <span>
+                    Check
+                  </span>
+
+                  <div>
                     <h3>
-                      A simpler way to keep everyday
-                      healthcare activity visible.
+                      See what needs attention.
                     </h3>
-                  </div>
-                </div>
-
-                <div className="clean-panel-body clean-copy-stack">
-                  <p>
-                    Patients should not have to keep
-                    medication details, collection dates,
-                    appointments and support arrangements
-                    in separate places.
-                  </p>
-
-                  <p>
-                    PhilaLink brings those everyday parts
-                    of care together so the next action is
-                    easier to understand, track and act on.
-                  </p>
-                </div>
-              </article>
-
-              <div className="clean-overview-list">
-                <article className="clean-overview-row">
-                  <div className="clean-icon-box">
-                    <Users size={18} />
-                  </div>
-
-                  <div>
-                    <span>
-                      Patient centred
-                    </span>
 
                     <p>
-                      Treatment information stays organised
-                      around the authenticated patient.
+                      Review medication,
+                      scheduled doses,
+                      appointments and upcoming
+                      collection information
+                      from the same patient
+                      experience.
                     </p>
                   </div>
                 </article>
 
-                <article className="clean-overview-row">
-                  <div className="clean-icon-box">
-                    <Building2 size={18} />
-                  </div>
+                <article>
+                  <span>
+                    Act
+                  </span>
 
                   <div>
-                    <span>
-                      Clinic connected
-                    </span>
+                    <h3>
+                      Record what happened.
+                    </h3>
 
                     <p>
-                      Nurses and clinic teams work within
-                      their assigned care and clinic scope.
+                      Medication activity,
+                      appointments and
+                      collection workflows
+                      remain connected to the
+                      healthcare record they
+                      belong to.
                     </p>
                   </div>
                 </article>
 
-                <article className="clean-overview-row">
-                  <div className="clean-icon-box">
-                    <ShieldCheck size={18} />
-                  </div>
+                <article>
+                  <span>
+                    Support
+                  </span>
 
                   <div>
-                    <span>
-                      Role protected
-                    </span>
+                    <h3>
+                      Bring in the right person.
+                    </h3>
 
                     <p>
-                      Access is separated across patients,
-                      proxies, nurses and administrators.
+                      A trusted proxy can
+                      support a linked patient
+                      without being given
+                      unrestricted access to
+                      unrelated information.
+                    </p>
+                  </div>
+                </article>
+
+                <article>
+                  <span>
+                    Follow
+                  </span>
+
+                  <div>
+                    <h3>
+                      Know what comes next.
+                    </h3>
+
+                    <p>
+                      Notifications,
+                      collection dates and
+                      appointment information
+                      keep upcoming healthcare
+                      activity visible.
                     </p>
                   </div>
                 </article>
@@ -385,50 +444,177 @@ export default function LandingPage() {
         </section>
 
 
-        <section className="clean-section clean-section-muted clean-journey-section">
-          <div className="section-container">
-            <div className="clean-section-header clean-section-header-compact">
-              <div>
-                <span className="section-kicker">
-                  HOW IT FITS TOGETHER
-                </span>
+        {/* ================================================= */}
+        {/* SERVICES                                          */}
+        {/* ================================================= */}
 
+        <section
+          id="services"
+          className="landing-services"
+        >
+          <div className="section-container">
+            <div className="services-editorial-header">
+              <span className="section-kicker">
+                What you can do
+              </span>
+
+              <div>
                 <h2>
-                  A clearer healthcare journey.
+                  The useful parts,
+                  without the clutter.
                 </h2>
+
+                <p>
+                  Each capability has a
+                  practical place in the
+                  healthcare journey.
+                  Open any item for more
+                  detail.
+                </p>
               </div>
+            </div>
+
+            <div className="service-index">
+              {services.map(
+                ({
+                  number,
+                  icon: Icon,
+                  title,
+                  description,
+                  details,
+                }) => {
+                  const isOpen =
+                    openService ===
+                    title;
+
+                  return (
+                    <article
+                      key={title}
+                      className={
+                        isOpen
+                          ? "service-index-item service-index-item-open"
+                          : "service-index-item"
+                      }
+                    >
+                      <button
+                        type="button"
+                        className="service-index-trigger"
+                        aria-expanded={
+                          isOpen
+                        }
+                        onClick={() =>
+                          setOpenService(
+                            isOpen
+                              ? null
+                              : title
+                          )
+                        }
+                      >
+                        <span className="service-index-number">
+                          {number}
+                        </span>
+
+                        <span className="service-index-icon">
+                          <Icon
+                            size={19}
+                            strokeWidth={1.7}
+                          />
+                        </span>
+
+                        <span className="service-index-name">
+                          {title}
+                        </span>
+
+                        <span className="service-index-summary">
+                          {description}
+                        </span>
+
+                        <span className="service-index-action">
+                          {isOpen
+                            ? "Close"
+                            : "Explore"}
+
+                          <ArrowUpRight
+                            size={16}
+                          />
+                        </span>
+                      </button>
+
+                      {isOpen ? (
+                        <div className="service-index-details">
+                          <div className="service-index-details-spacer" />
+
+                          <div className="service-index-details-copy">
+                            {details.map(
+                              detail => (
+                                <p
+                                  key={
+                                    detail
+                                  }
+                                >
+                                  {detail}
+                                </p>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                }
+              )}
+            </div>
+          </div>
+        </section>
+
+
+        {/* ================================================= */}
+        {/* ROLE-BASED CARE                                   */}
+        {/* ================================================= */}
+
+        <section className="care-network">
+          <div className="section-container">
+            <div className="care-network-heading">
+              <span className="section-kicker section-kicker-light">
+                One connected platform
+              </span>
+
+              <h2>
+                Different people need
+                different views of care.
+              </h2>
 
               <p>
-                The platform keeps the important next
-                steps visible without adding more
-                complexity for the patient.
+                PhilaLink does not give
+                every user the same
+                dashboard. Access follows
+                the role and responsibility
+                of the person who signed in.
               </p>
             </div>
 
-            <div className="clean-strip">
-              {journeyItems.map(
+            <div className="care-role-list">
+              {careRoles.map(
                 ({
-                  number,
-                  title,
+                  role,
                   description,
                 }) => (
                   <article
-                    key={number}
-                    className="clean-strip-item"
+                    key={role}
+                    className="care-role-row"
                   >
-                    <span className="clean-strip-number">
-                      {number}
-                    </span>
+                    <h3>
+                      {role}
+                    </h3>
 
-                    <div>
-                      <h3>
-                        {title}
-                      </h3>
+                    <p>
+                      {description}
+                    </p>
 
-                      <p>
-                        {description}
-                      </p>
-                    </div>
+                    <ArrowUpRight
+                      size={17}
+                      strokeWidth={1.6}
+                    />
                   </article>
                 )
               )}
@@ -437,206 +623,36 @@ export default function LandingPage() {
         </section>
 
 
-        <section
-          id="services"
-          className="clean-section"
-        >
-          <div className="section-container">
-            <div className="clean-section-header">
-              <div>
-                <span className="section-kicker">
-                  WHAT PHILALINK DOES
-                </span>
-
-                <h2>
-                  Core care tools,
-                  presented clearly.
-                </h2>
-              </div>
-
-              <p>
-                Each part of the platform focuses on a
-                practical healthcare task and stays
-                connected to the same patient journey.
-              </p>
-            </div>
-
-            <div className="clean-panel clean-services-panel">
-              <div className="clean-services-head">
-                <span>
-                  Service
-                </span>
-
-                <span>
-                  Purpose
-                </span>
-
-                <span>
-                  Details
-                </span>
-              </div>
-
-              <div className="clean-services-list">
-                {services.map(
-                  ({
-                    icon: Icon,
-                    title,
-                    description,
-                    details,
-                  }) => {
-                    const isOpen =
-                      openService ===
-                      title;
-
-                    const toggleService =
-                      () => {
-                        setOpenService(
-                          isOpen
-                            ? null
-                            : title
-                        );
-                      };
-
-                    return (
-                      <article
-                        key={title}
-                        className={
-                          `clean-service-row${
-                            isOpen
-                              ? " clean-service-row-open"
-                              : ""
-                          }`
-                        }
-                      >
-                        <button
-                          type="button"
-                          className="clean-service-trigger"
-                          aria-expanded={isOpen}
-                          onClick={toggleService}
-                        >
-                          <div className="clean-service-title">
-                            <div className="clean-icon-box">
-                              <Icon size={18} />
-                            </div>
-
-                            <h3>
-                              {title}
-                            </h3>
-                          </div>
-
-                          <p>
-                            {description}
-                          </p>
-
-                          <div className="clean-service-action">
-                            <span>
-                              {isOpen
-                                ? "Hide"
-                                : "View"}
-                            </span>
-
-                            <ArrowUpRight
-                              size={16}
-                              className={
-                                isOpen
-                                  ? "clean-service-arrow clean-service-arrow-open"
-                                  : "clean-service-arrow"
-                              }
-                            />
-                          </div>
-                        </button>
-
-                        {isOpen ? (
-                          <div className="clean-service-details">
-                            <div className="clean-service-details-label">
-                              Service details
-                            </div>
-
-                            <div className="clean-service-details-grid">
-                              {details.map(
-                                (
-                                  detail,
-                                  index
-                                ) => (
-                                  <div
-                                    key={
-                                      `${title}-${index}`
-                                    }
-                                    className="clean-detail-row"
-                                  >
-                                    <span>
-                                      {
-                                        String(
-                                          index + 1
-                                        ).padStart(
-                                          2,
-                                          "0"
-                                        )
-                                      }
-                                    </span>
-
-                                    <p>
-                                      {detail}
-                                    </p>
-                                  </div>
-                                )
-                              )}
-                            </div>
-                          </div>
-                        ) : null}
-                      </article>
-                    );
-                  }
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-
+        {/* ================================================= */}
+        {/* HEALTH TIPS                                       */}
+        {/* ================================================= */}
 
         <section
           id="health-tips"
-          className="clean-section clean-section-muted"
+          className="health-notes"
         >
           <div className="section-container">
-            <div className="clean-section-header">
-              <div>
-                <span className="section-kicker">
-                  HEALTH TIPS
-                </span>
+            <div className="health-notes-heading">
+              <span className="section-kicker">
+                Health tips
+              </span>
 
-                <h2>
-                  Small habits,
-                  easier healthcare routines.
-                </h2>
-              </div>
-
-              <p>
-                Simple reminders that support better
-                organisation around medication,
-                collections and everyday care.
-              </p>
+              <h2>
+                A few things worth
+                keeping in mind.
+              </h2>
             </div>
 
-            <div className="clean-tip-grid">
+            <div className="health-notes-list">
               {healthTips.map(
                 ({
-                  number,
                   title,
                   description,
                 }) => (
                   <article
-                    key={number}
-                    className="clean-panel clean-tip-card"
+                    key={title}
+                    className="health-note"
                   >
-                    <div className="clean-tip-top">
-                      <span className="clean-tip-number">
-                        {number}
-                      </span>
-
-                      <Pill size={17} />
-                    </div>
-
                     <h3>
                       {title}
                     </h3>
@@ -648,81 +664,55 @@ export default function LandingPage() {
                 )
               )}
             </div>
+
+            <p className="health-note-disclaimer">
+              PhilaLink supports healthcare
+              organisation and access to
+              information. It does not replace
+              advice from a qualified doctor,
+              nurse, pharmacist or other
+              healthcare professional.
+            </p>
           </div>
         </section>
 
 
-        <section className="clean-section clean-access-section">
+        {/* ================================================= */}
+        {/* SIMPLE ACCESS                                     */}
+        {/* ================================================= */}
+
+        <section className="landing-entry">
           <div className="section-container">
-            <div className="clean-panel clean-access-panel">
-              <div className="clean-access-copy">
-                <span className="section-kicker">
-                  BUILT AROUND THE PATIENT
+            <div className="landing-entry-row">
+              <div>
+                <span>
+                  Ready to use PhilaLink?
                 </span>
 
-                <h2>
-                  One healthcare journey.
-                  One connected view.
-                </h2>
-
                 <p>
-                  Medication, collections,
-                  appointments and trusted support
-                  can all be understood through the
-                  same secure PhilaLink account.
+                  Create a patient account
+                  or sign in to continue.
                 </p>
-
-                <div className="clean-access-actions">
-                  <Link
-                    to="/register"
-                    className="clean-primary-action"
-                  >
-                    Create account
-
-                    <ArrowUpRight size={15} />
-                  </Link>
-
-                  <Link
-                    to="/login"
-                    className="clean-secondary-action"
-                  >
-                    Sign in
-                  </Link>
-                </div>
               </div>
 
-              <div className="clean-access-list">
-                <div>
-                  <Pill size={17} />
+              <div className="landing-entry-actions">
+                <Link
+                  to="/register"
+                  className="landing-entry-primary"
+                >
+                  Create account
 
-                  <span>
-                    Medication
-                  </span>
-                </div>
+                  <ArrowUpRight
+                    size={15}
+                  />
+                </Link>
 
-                <div>
-                  <CalendarDays size={17} />
-
-                  <span>
-                    Collections
-                  </span>
-                </div>
-
-                <div>
-                  <Bell size={17} />
-
-                  <span>
-                    Reminders
-                  </span>
-                </div>
-
-                <div>
-                  <MessageCircle size={17} />
-
-                  <span>
-                    Phila Chat
-                  </span>
-                </div>
+                <Link
+                  to="/login"
+                  className="landing-entry-secondary"
+                >
+                  Sign in
+                </Link>
               </div>
             </div>
           </div>
@@ -730,6 +720,10 @@ export default function LandingPage() {
 
       </main>
 
+
+      {/* ================================================= */}
+      {/* FOOTER — UNCHANGED                                */}
+      {/* ================================================= */}
 
       <footer
         id="contacts"
