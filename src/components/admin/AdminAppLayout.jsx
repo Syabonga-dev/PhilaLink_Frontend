@@ -242,6 +242,87 @@ function pageTitle(
   return "Administration";
 }
 
+
+/* ========================================================= */
+/* TABLET / MOBILE VISIBLE VIEWPORT                           */
+/* ========================================================= */
+
+function useVisibleViewportHeight() {
+  const [
+    height,
+    setHeight,
+  ] = useState(null);
+
+  useEffect(() => {
+    function update() {
+      const measured =
+        window.visualViewport
+          ?.height ||
+        window.innerHeight ||
+        document.documentElement
+          .clientHeight;
+
+      setHeight(
+        Math.max(
+          1,
+          Math.floor(
+            measured
+          )
+        )
+      );
+    }
+
+    update();
+
+    const viewport =
+      window.visualViewport;
+
+    viewport?.addEventListener(
+      "resize",
+      update
+    );
+
+    viewport?.addEventListener(
+      "scroll",
+      update
+    );
+
+    window.addEventListener(
+      "resize",
+      update
+    );
+
+    window.addEventListener(
+      "orientationchange",
+      update
+    );
+
+    return () => {
+      viewport?.removeEventListener(
+        "resize",
+        update
+      );
+
+      viewport?.removeEventListener(
+        "scroll",
+        update
+      );
+
+      window.removeEventListener(
+        "resize",
+        update
+      );
+
+      window.removeEventListener(
+        "orientationchange",
+        update
+      );
+    };
+  }, []);
+
+  return height;
+}
+
 function NavSection({
   label,
   items,
@@ -335,6 +416,9 @@ export default function AdminAppLayout() {
     profile,
     setProfile,
   ] = useState(null);
+
+  const viewportHeight =
+    useVisibleViewportHeight();
 
   useEffect(() => {
     let active = true;
@@ -455,6 +539,17 @@ export default function AdminAppLayout() {
       role,
     ]);
 
+  const sidebarStyle =
+    mobileOpen &&
+    viewportHeight
+      ? {
+          height:
+            `${viewportHeight}px`,
+          maxHeight:
+            `${viewportHeight}px`,
+        }
+      : undefined;
+
   function handleLogout() {
     setMobileOpen(
       false
@@ -484,6 +579,9 @@ export default function AdminAppLayout() {
             ? "translate-x-0"
             : "-translate-x-full"
         }`}
+        style={
+          sidebarStyle
+        }
       >
         {/* ================================================= */}
         {/* BRAND                                             */}
