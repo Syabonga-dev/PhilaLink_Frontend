@@ -739,6 +739,9 @@ function statusLabel(
       );
 
     case "cancelled":
+      return t(
+        "appointments.cancelled"
+      );
 
     case "canceled":
       return t(
@@ -751,8 +754,14 @@ function statusLabel(
       );
 
     case "missed":
+      return t(
+        "appointments.missed"
+      );
 
     case "noshow":
+      return t(
+        "appointments.missed"
+      );
 
     case "no-show":
       return t(
