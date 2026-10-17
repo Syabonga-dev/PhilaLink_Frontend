@@ -203,6 +203,22 @@
   gap: 17px;
 }
 
+
+/* =========================================================
+   PASSWORD REVEAL
+   Hide browser-native eye because PhilaLink already
+   renders its own password visibility button.
+========================================================= */
+
+.login-page input[type="password"]::-ms-reveal,
+.login-page input[type="password"]::-ms-clear {
+  display: none;
+
+  width: 0;
+  height: 0;
+}
+
+
 .login-options {
   display: flex;
 
