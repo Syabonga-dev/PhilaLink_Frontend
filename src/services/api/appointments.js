@@ -9,29 +9,9 @@ import {
   localizeAppointments,
 } from "../../i18n/patientText.js";
 
-/*
- * Keep one canonical value in the database for the system's
- * default appointment reason.
- *
- * The patient sees the translated value, but future bookings
- * using the untouched default are stored in English internally.
- * This means changing the interface language later does not
- * permanently lock that system-generated reason to the language
- * selected when the appointment was created.
- */
 const CANONICAL_DEFAULT_REASON =
   "Routine patient checkup";
 
-/*
- * These are system-generated equivalents of the same default
- * reason.
- *
- * They are recognised so that appointments created before the
- * canonical-storage change can still switch language correctly.
- *
- * Anything outside this list is treated as genuine free text and
- * is never translated automatically.
- */
 const SYSTEM_DEFAULT_REASONS = [
   "Routine patient checkup",
 
@@ -55,6 +35,12 @@ const SYSTEM_DEFAULT_REASONS = [
 
   "Ukuhlolwa okuvamileko kwesiguli",
 ];
+
+const DEFAULT_PAGE_SIZE =
+  20;
+
+const COMPATIBILITY_PAGE_SIZE =
+  100;
 
 function normalizeReason(
   value
@@ -98,12 +84,6 @@ function isSystemDefaultReason(
   );
 }
 
-/*
- * Converts only the PhilaLink-generated default reason.
- *
- * Custom reasons written by patients or staff are returned
- * unchanged.
- */
 function localizeSystemReason(
   appointment
 ) {
@@ -160,13 +140,121 @@ function localizeAppointmentList(
     : [];
 }
 
-/*
- * When the booking form still contains the translated system
- * default, convert it to the canonical database value before
- * sending it to the backend.
- *
- * If the patient edited the reason, their text is preserved.
- */
+function normalizePositiveInteger(
+  value,
+  fallback
+) {
+  const parsed =
+    Number.parseInt(
+      value,
+      10
+    );
+
+  return Number.isFinite(
+    parsed
+  ) &&
+    parsed > 0
+    ? parsed
+    : fallback;
+}
+
+function normalizeView(
+  value
+) {
+  const normalized =
+    String(
+      value ?? "all"
+    )
+      .trim()
+      .toLowerCase();
+
+  return [
+    "all",
+    "upcoming",
+    "past",
+  ].includes(
+    normalized
+  )
+    ? normalized
+    : "all";
+}
+
+function normalizePagedResult(
+  result,
+  fallbackPage,
+  fallbackPageSize
+) {
+  const items =
+    localizeAppointmentList(
+      result?.items
+    );
+
+  const page =
+    normalizePositiveInteger(
+      result?.page,
+      fallbackPage
+    );
+
+  const pageSize =
+    normalizePositiveInteger(
+      result?.pageSize,
+      fallbackPageSize
+    );
+
+  const totalItems =
+    Math.max(
+      0,
+      Number(
+        result?.totalItems ??
+          0
+      ) ||
+        0
+    );
+
+  const calculatedPages =
+    pageSize > 0
+      ? Math.ceil(
+          totalItems /
+            pageSize
+        )
+      : 0;
+
+  const totalPages =
+    Math.max(
+      0,
+      Number(
+        result?.totalPages ??
+          calculatedPages
+      ) ||
+        0
+    );
+
+  return {
+    items,
+
+    page,
+
+    pageSize,
+
+    totalItems,
+
+    totalPages,
+
+    hasPreviousPage:
+      Boolean(
+        result?.hasPreviousPage ??
+          page > 1
+      ),
+
+    hasNextPage:
+      Boolean(
+        result?.hasNextPage ??
+          page <
+            totalPages
+      ),
+  };
+}
+
 function normalizeBookingPayload(
   payload
 ) {
@@ -189,17 +277,83 @@ function normalizeBookingPayload(
   return next;
 }
 
+async function fetchMinePage({
+  view = "all",
+  page = 1,
+  pageSize =
+    DEFAULT_PAGE_SIZE,
+} = {}) {
+  const normalizedPage =
+    normalizePositiveInteger(
+      page,
+      1
+    );
+
+  const normalizedPageSize =
+    normalizePositiveInteger(
+      pageSize,
+      DEFAULT_PAGE_SIZE
+    );
+
+  const params =
+    new URLSearchParams({
+      view:
+        normalizeView(
+          view
+        ),
+
+      page:
+        String(
+          normalizedPage
+        ),
+
+      pageSize:
+        String(
+          normalizedPageSize
+        ),
+    });
+
+  const result =
+    await api.get(
+      `/api/appointments/me?${params.toString()}`
+    );
+
+  return normalizePagedResult(
+    result,
+    normalizedPage,
+    normalizedPageSize
+  );
+}
+
 export const appointmentsApi = {
+  /*
+   * Backwards-compatible method used by the current
+   * AppointmentsPage.
+   *
+   * It is deliberately capped at the backend maximum rather
+   * than downloading an unbounded appointment history.
+   *
+   * AppointmentsPage will switch to getMinePage() when the
+   * pagination controls are added.
+   */
   getMine: async () => {
     const result =
-      await api.get(
-        "/api/appointments/me"
-      );
+      await fetchMinePage({
+        view:
+          "all",
 
-    return localizeAppointmentList(
-      result
-    );
+        page:
+          1,
+
+        pageSize:
+          COMPATIBILITY_PAGE_SIZE,
+      });
+
+    return result.items;
   },
+
+  getMinePage:
+    fetchMinePage,
 
   book: async payload => {
     const result =
