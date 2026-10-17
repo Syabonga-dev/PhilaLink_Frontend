@@ -1,7 +1,6 @@
 import {
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from "react";
 
@@ -12,6 +11,8 @@ import {
 import {
   AlertCircle,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
   Clock,
   MapPin,
   Pencil,
@@ -31,7 +32,11 @@ import {
   getLanguageLocale,
 } from "../../i18n/languages.js";
 
-const BOOKING_WINDOW_DAYS = 14;
+const BOOKING_WINDOW_DAYS =
+  14;
+
+const PAGE_SIZE =
+  20;
 
 const SOUTH_AFRICA_TIME_ZONE =
   "Africa/Johannesburg";
@@ -41,38 +46,51 @@ const SOUTH_AFRICA_UTC_OFFSET =
 
 const APPOINTMENT_TYPES = [
   {
-    value: "Routine Checkup",
+    value:
+      "Routine Checkup",
+
     labelKey:
       "appointments.routineCheckup",
   },
   {
-    value: "General Consultation",
+    value:
+      "General Consultation",
+
     labelKey:
       "appointments.generalConsultation",
   },
   {
-    value: "Medication Review",
+    value:
+      "Medication Review",
+
     labelKey:
       "appointments.medicationReview",
   },
   {
-    value: "Chronic Care Follow-up",
+    value:
+      "Chronic Care Follow-up",
+
     labelKey:
       "appointments.chronicFollowup",
   },
   {
-    value: "Follow-up Visit",
+    value:
+      "Follow-up Visit",
+
     labelKey:
       "appointments.followupVisit",
   },
   {
     value:
       "Symptoms / Feeling Unwell",
+
     labelKey:
       "appointments.symptoms",
   },
   {
-    value: "Other",
+    value:
+      "Other",
+
     labelKey:
       "appointments.other",
   },
@@ -80,24 +98,47 @@ const APPOINTMENT_TYPES = [
 
 const PROVIDER_TYPES = [
   {
-    value: "Nurse",
+    value:
+      "Nurse",
+
     labelKey:
       "appointments.nurse",
   },
   {
-    value: "Doctor",
+    value:
+      "Doctor",
+
     labelKey:
       "appointments.doctor",
   },
 ];
 
-function parseDate(value) {
+function createEmptyPage() {
+  return {
+    items: [],
+    page: 1,
+    pageSize:
+      PAGE_SIZE,
+    totalItems: 0,
+    totalPages: 0,
+    hasPreviousPage:
+      false,
+    hasNextPage:
+      false,
+  };
+}
+
+function parseDate(
+  value
+) {
   if (!value) {
     return null;
   }
 
   const date =
-    new Date(value);
+    new Date(
+      value
+    );
 
   return Number.isNaN(
     date.getTime()
@@ -112,7 +153,9 @@ function formatDate(
   t
 ) {
   const date =
-    parseDate(value);
+    parseDate(
+      value
+    );
 
   if (!date) {
     return t(
@@ -121,29 +164,47 @@ function formatDate(
   }
 
   try {
-    return date.toLocaleDateString(
-      locale,
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone:
-          SOUTH_AFRICA_TIME_ZONE,
-      }
-    );
+    return date
+      .toLocaleDateString(
+        locale,
+        {
+          weekday:
+            "long",
+
+          day:
+            "numeric",
+
+          month:
+            "long",
+
+          year:
+            "numeric",
+
+          timeZone:
+            SOUTH_AFRICA_TIME_ZONE,
+        }
+      );
   } catch {
-    return date.toLocaleDateString(
-      "en-ZA",
-      {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        timeZone:
-          SOUTH_AFRICA_TIME_ZONE,
-      }
-    );
+    return date
+      .toLocaleDateString(
+        "en-ZA",
+        {
+          weekday:
+            "long",
+
+          day:
+            "numeric",
+
+          month:
+            "long",
+
+          year:
+            "numeric",
+
+          timeZone:
+            SOUTH_AFRICA_TIME_ZONE,
+        }
+      );
   }
 }
 
@@ -153,20 +214,30 @@ function formatTimeRange(
   locale
 ) {
   const start =
-    parseDate(scheduledAt);
+    parseDate(
+      scheduledAt
+    );
 
   if (!start) {
     return "—";
   }
 
   const duration =
-    Number(durationMinutes) > 0
-      ? Number(durationMinutes)
+    Number(
+      durationMinutes
+    ) > 0
+      ? Number(
+          durationMinutes
+        )
       : 0;
 
   const options = {
-    hour: "2-digit",
-    minute: "2-digit",
+    hour:
+      "2-digit",
+
+    minute:
+      "2-digit",
+
     timeZone:
       SOUTH_AFRICA_TIME_ZONE,
   };
@@ -175,16 +246,18 @@ function formatTimeRange(
 
   try {
     startText =
-      start.toLocaleTimeString(
-        locale,
-        options
-      );
+      start
+        .toLocaleTimeString(
+          locale,
+          options
+        );
   } catch {
     startText =
-      start.toLocaleTimeString(
-        "en-ZA",
-        options
-      );
+      start
+        .toLocaleTimeString(
+          "en-ZA",
+          options
+        );
   }
 
   if (!duration) {
@@ -203,16 +276,18 @@ function formatTimeRange(
 
   try {
     endText =
-      end.toLocaleTimeString(
-        locale,
-        options
-      );
+      end
+        .toLocaleTimeString(
+          locale,
+          options
+        );
   } catch {
     endText =
-      end.toLocaleTimeString(
-        "en-ZA",
-        options
-      );
+      end
+        .toLocaleTimeString(
+          "en-ZA",
+          options
+        );
   }
 
   return `${startText} – ${endText}`;
@@ -222,24 +297,39 @@ function getSouthAfricaParts(
   date
 ) {
   const formatter =
-    new Intl.DateTimeFormat(
-      "en-CA",
-      {
-        timeZone:
-          SOUTH_AFRICA_TIME_ZONE,
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
-        hourCycle: "h23",
-      }
-    );
+    new Intl
+      .DateTimeFormat(
+        "en-CA",
+        {
+          timeZone:
+            SOUTH_AFRICA_TIME_ZONE,
+
+          year:
+            "numeric",
+
+          month:
+            "2-digit",
+
+          day:
+            "2-digit",
+
+          hour:
+            "2-digit",
+
+          minute:
+            "2-digit",
+
+          hourCycle:
+            "h23",
+        }
+      );
 
   const parts =
     Object.fromEntries(
       formatter
-        .formatToParts(date)
+        .formatToParts(
+          date
+        )
         .filter(
           part =>
             part.type !==
@@ -260,7 +350,9 @@ function toSouthAfricaDateTimeInput(
   date
 ) {
   const parts =
-    getSouthAfricaParts(date);
+    getSouthAfricaParts(
+      date
+    );
 
   return (
     `${parts.year}-${parts.month}-${parts.day}` +
@@ -279,7 +371,9 @@ function addDaysToDateString(
   ] =
     dateString
       .split("-")
-      .map(Number);
+      .map(
+        Number
+      );
 
   const date =
     new Date(
@@ -291,11 +385,14 @@ function addDaysToDateString(
     );
 
   const resultYear =
-    date.getUTCFullYear();
+    date
+      .getUTCFullYear();
 
   const resultMonth =
     String(
-      date.getUTCMonth() + 1
+      date
+        .getUTCMonth() +
+        1
     ).padStart(
       2,
       "0"
@@ -303,7 +400,8 @@ function addDaysToDateString(
 
   const resultDay =
     String(
-      date.getUTCDate()
+      date
+        .getUTCDate()
     ).padStart(
       2,
       "0"
@@ -335,9 +433,12 @@ function getBookingWindow() {
 
   return {
     minimum,
+
     maximum:
       `${maximumDate}T23:59`,
+
     today,
+
     maximumDate,
   };
 }
@@ -350,7 +451,8 @@ function parseSouthAfricaDateTimeInput(
   }
 
   const withSeconds =
-    value.length === 16
+    value.length ===
+      16
       ? `${value}:00`
       : value;
 
@@ -371,7 +473,9 @@ function toLocalDateTimeInput(
 ) {
   const date =
     value
-      ? new Date(value)
+      ? new Date(
+          value
+        )
       : new Date(
           Date.now() +
             60 *
@@ -417,13 +521,15 @@ function getBookingWindowIssue(
     );
 
   if (
-    selectedDate < today
+    selectedDate <
+    today
   ) {
     return "pastDate";
   }
 
   if (
-    selectedDate === today &&
+    selectedDate ===
+      today &&
     selected.getTime() <=
       Date.now()
   ) {
@@ -458,33 +564,50 @@ function formatBookingWindowDate(
   }
 
   try {
-    return date.toLocaleDateString(
-      locale,
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        timeZone:
-          SOUTH_AFRICA_TIME_ZONE,
-      }
-    );
+    return date
+      .toLocaleDateString(
+        locale,
+        {
+          day:
+            "numeric",
+
+          month:
+            "short",
+
+          year:
+            "numeric",
+
+          timeZone:
+            SOUTH_AFRICA_TIME_ZONE,
+        }
+      );
   } catch {
-    return date.toLocaleDateString(
-      "en-ZA",
-      {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-        timeZone:
-          SOUTH_AFRICA_TIME_ZONE,
-      }
-    );
+    return date
+      .toLocaleDateString(
+        "en-ZA",
+        {
+          day:
+            "numeric",
+
+          month:
+            "short",
+
+          year:
+            "numeric",
+
+          timeZone:
+            SOUTH_AFRICA_TIME_ZONE,
+        }
+      );
   }
 }
 
-function normaliseStatus(value) {
+function normaliseStatus(
+  value
+) {
   return String(
-    value ?? ""
+    value ??
+      ""
   )
     .trim()
     .toLowerCase();
@@ -495,7 +618,8 @@ function isPastAppointment(
 ) {
   const status =
     normaliseStatus(
-      appointment?.status
+      appointment
+        ?.status
     );
 
   if (
@@ -506,14 +630,17 @@ function isPastAppointment(
       "missed",
       "noshow",
       "no-show",
-    ].includes(status)
+    ].includes(
+      status
+    )
   ) {
     return true;
   }
 
   const date =
     parseDate(
-      appointment?.scheduledAt
+      appointment
+        ?.scheduledAt
     );
 
   return Boolean(
@@ -528,7 +655,8 @@ function canChange(
 ) {
   const status =
     normaliseStatus(
-      appointment?.status
+      appointment
+        ?.status
     );
 
   return (
@@ -539,7 +667,9 @@ function canChange(
       "missed",
       "noshow",
       "no-show",
-    ].includes(status) &&
+    ].includes(
+      status
+    ) &&
     !isPastAppointment(
       appointment
     )
@@ -554,22 +684,29 @@ function requestedProviderFromNotes(
   }
 
   const match =
-    String(notes).match(
+    String(
+      notes
+    ).match(
       /^Requested provider:\s*(.+)$/im
     );
 
   return (
-    match?.[1]?.trim() ||
+    match?.[1]
+      ?.trim() ||
     ""
   );
 }
 
-function displayNotes(notes) {
+function displayNotes(
+  notes
+) {
   if (!notes) {
     return "";
   }
 
-  return String(notes)
+  return String(
+    notes
+  )
     .replace(
       /^Requested provider:\s*.+(?:\r?\n){0,2}/i,
       ""
@@ -582,7 +719,9 @@ function statusLabel(
   t
 ) {
   switch (
-    normaliseStatus(value)
+    normaliseStatus(
+      value
+    )
   ) {
     case "confirmed":
       return t(
@@ -600,6 +739,10 @@ function statusLabel(
       );
 
     case "cancelled":
+      return t(
+        "appointments.cancelled"
+      );
+
     case "canceled":
       return t(
         "appointments.cancelled"
@@ -611,7 +754,15 @@ function statusLabel(
       );
 
     case "missed":
+      return t(
+        "appointments.missed"
+      );
+
     case "noshow":
+      return t(
+        "appointments.missed"
+      );
+
     case "no-show":
       return t(
         "appointments.missed"
@@ -636,37 +787,48 @@ function StatusBadge({
     useTranslation();
 
   const status =
-    normaliseStatus(value);
+    normaliseStatus(
+      value
+    );
 
   let classes =
     "bg-slate-100 text-slate-600";
 
   if (
-    status === "confirmed" ||
-    status === "completed"
+    status ===
+      "confirmed" ||
+    status ===
+      "completed"
   ) {
     classes =
       "bg-emerald-50 text-emerald-700";
   } else if (
-    status === "pending"
+    status ===
+    "pending"
   ) {
     classes =
       "bg-amber-50 text-amber-700";
   } else if (
-    status === "cancelled" ||
-    status === "canceled"
+    status ===
+      "cancelled" ||
+    status ===
+      "canceled"
   ) {
     classes =
       "bg-red-50 text-red-700";
   } else if (
-    status === "rescheduled"
+    status ===
+    "rescheduled"
   ) {
     classes =
       "bg-teal-50 text-teal-700";
   } else if (
-    status === "missed" ||
-    status === "noshow" ||
-    status === "no-show"
+    status ===
+      "missed" ||
+    status ===
+      "noshow" ||
+    status ===
+      "no-show"
   ) {
     classes =
       "bg-orange-50 text-orange-700";
@@ -698,7 +860,8 @@ function AppointmentCard({
 
   const telehealth =
     String(
-      appointment.mode ?? ""
+      appointment.mode ??
+        ""
     )
       .trim()
       .toLowerCase() ===
@@ -710,10 +873,13 @@ function AppointmentCard({
     );
 
   const providerName =
-    appointment?.providerName ||
-    appointment?.nurseName ||
+    appointment
+      ?.providerName ||
+    appointment
+      ?.nurseName ||
     requestedProviderFromNotes(
-      appointment?.notes
+      appointment
+        ?.notes
     ) ||
     t(
       "appointments.clinicProvider"
@@ -732,16 +898,19 @@ function AppointmentCard({
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <h3 className="text-base font-semibold text-slate-950">
-                {appointment.type ||
+                {appointment
+                  .type ||
                   t(
                     "appointments.appointment"
                   )}
               </h3>
 
-              {appointment.reason && (
+              {appointment
+                .reason && (
                 <p className="mt-1 text-sm text-slate-500">
                   {
-                    appointment.reason
+                    appointment
+                      .reason
                   }
                 </p>
               )}
@@ -749,7 +918,8 @@ function AppointmentCard({
 
             <StatusBadge
               value={
-                appointment.status
+                appointment
+                  .status
               }
             />
           </div>
@@ -757,13 +927,16 @@ function AppointmentCard({
           <div className="mt-4 grid gap-3 text-sm text-slate-600 sm:grid-cols-2">
             <div className="flex items-center gap-2">
               <Calendar
-                size={15}
+                size={
+                  15
+                }
                 className="text-[#0f766e]"
               />
 
               <span>
                 {formatDate(
-                  appointment.scheduledAt,
+                  appointment
+                    .scheduledAt,
                   locale,
                   t
                 )}
@@ -772,14 +945,18 @@ function AppointmentCard({
 
             <div className="flex items-center gap-2">
               <Clock
-                size={15}
+                size={
+                  15
+                }
                 className="text-[#0f766e]"
               />
 
               <span>
                 {formatTimeRange(
-                  appointment.scheduledAt,
-                  appointment.durationMinutes,
+                  appointment
+                    .scheduledAt,
+                  appointment
+                    .durationMinutes,
                   locale
                 )}
               </span>
@@ -788,12 +965,16 @@ function AppointmentCard({
             <div className="flex items-center gap-2">
               {telehealth ? (
                 <Video
-                  size={15}
+                  size={
+                    15
+                  }
                   className="text-[#0f766e]"
                 />
               ) : (
                 <MapPin
-                  size={15}
+                  size={
+                    15
+                  }
                   className="text-[#0f766e]"
                 />
               )}
@@ -803,7 +984,8 @@ function AppointmentCard({
                   ? t(
                       "appointments.telehealth"
                     )
-                  : appointment.clinicName ||
+                  : appointment
+                      .clinicName ||
                     t(
                       "dashboard.myClinic"
                     )}
@@ -812,7 +994,9 @@ function AppointmentCard({
 
             <div className="flex items-center gap-2">
               <Stethoscope
-                size={15}
+                size={
+                  15
+                }
                 className="text-[#0f766e]"
               />
 
@@ -833,7 +1017,9 @@ function AppointmentCard({
               </p>
 
               <p className="mt-1 text-sm text-slate-600">
-                {notes}
+                {
+                  notes
+                }
               </p>
             </div>
           )}
@@ -853,7 +1039,9 @@ function AppointmentCard({
                   className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:border-teal-200 hover:bg-teal-50"
                 >
                   <Pencil
-                    size={14}
+                    size={
+                      14
+                    }
                   />
 
                   {t(
@@ -871,7 +1059,9 @@ function AppointmentCard({
                   className="inline-flex items-center gap-2 rounded-xl border border-red-200 px-3 py-2 text-sm font-semibold text-red-700 hover:bg-red-50"
                 >
                   <Trash2
-                    size={14}
+                    size={
+                      14
+                    }
                   />
 
                   {t(
@@ -899,7 +1089,8 @@ function BookingModal({
 
   const locale =
     getLanguageLocale(
-      i18n.resolvedLanguage ||
+      i18n
+        .resolvedLanguage ||
         i18n.language
     );
 
@@ -915,7 +1106,9 @@ function BookingModal({
     durationMinutes,
     setDurationMinutes,
   ] =
-    useState("30");
+    useState(
+      "30"
+    );
 
   const [
     type,
@@ -937,7 +1130,9 @@ function BookingModal({
     reason,
     setReason,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
   const [
     mode,
@@ -951,19 +1146,25 @@ function BookingModal({
     notes,
     setNotes,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
   const [
     submitting,
     setSubmitting,
   ] =
-    useState(false);
+    useState(
+      false
+    );
 
   const [
     submitError,
     setSubmitError,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
   useEffect(
     () => {
@@ -997,9 +1198,13 @@ function BookingModal({
         "InPerson"
       );
 
-      setNotes("");
+      setNotes(
+        ""
+      );
 
-      setSubmitError("");
+      setSubmitError(
+        ""
+      );
     },
     [
       open,
@@ -1014,10 +1219,13 @@ function BookingModal({
   const bookingWindow =
     getBookingWindow();
 
-  async function handleSubmit(
+  async function
+    handleSubmit(
+      event
+    )
+  {
     event
-  ) {
-    event.preventDefault();
+      .preventDefault();
 
     const issue =
       getBookingWindowIssue(
@@ -1025,7 +1233,8 @@ function BookingModal({
       );
 
     if (
-      issue === "invalid"
+      issue ===
+      "invalid"
     ) {
       setSubmitError(
         t(
@@ -1037,7 +1246,8 @@ function BookingModal({
     }
 
     if (
-      issue === "pastTime"
+      issue ===
+      "pastTime"
     ) {
       setSubmitError(
         t(
@@ -1049,8 +1259,10 @@ function BookingModal({
     }
 
     if (
-      issue === "pastDate" ||
-      issue === "tooFar"
+      issue ===
+        "pastDate" ||
+      issue ===
+        "tooFar"
     ) {
       setSubmitError(
         t(
@@ -1062,7 +1274,8 @@ function BookingModal({
     }
 
     if (
-      !reason.trim()
+      !reason
+        .trim()
     ) {
       setSubmitError(
         t(
@@ -1093,15 +1306,25 @@ function BookingModal({
     const persistedNotes =
       [
         `Requested provider: ${providerType}`,
-        notes.trim(),
+
+        notes
+          .trim(),
       ]
-        .filter(Boolean)
-        .join("\n\n");
+        .filter(
+          Boolean
+        )
+        .join(
+          "\n\n"
+        );
 
     try {
-      setSubmitting(true);
+      setSubmitting(
+        true
+      );
 
-      setSubmitError("");
+      setSubmitError(
+        ""
+      );
 
       await appointmentsApi
         .book({
@@ -1117,7 +1340,8 @@ function BookingModal({
           type,
 
           reason:
-            reason.trim(),
+            reason
+              .trim(),
 
           providerName:
             providerType,
@@ -1141,7 +1365,9 @@ function BookingModal({
           )
       );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false
+      );
     }
   }
 
@@ -1174,7 +1400,9 @@ function BookingModal({
             className="rounded-xl p-2 text-slate-500 hover:bg-slate-100"
           >
             <X
-              size={18}
+              size={
+                18
+              }
             />
           </button>
         </div>
@@ -1204,16 +1432,19 @@ function BookingModal({
               setType
             }
             options={
-              APPOINTMENT_TYPES.map(
-                item => ({
-                  value:
-                    item.value,
-                  label:
-                    t(
-                      item.labelKey
-                    ),
-                })
-              )
+              APPOINTMENT_TYPES
+                .map(
+                  item => ({
+                    value:
+                      item.value,
+
+                    label:
+                      t(
+                        item
+                          .labelKey
+                      ),
+                  })
+                )
             }
           />
 
@@ -1228,16 +1459,19 @@ function BookingModal({
               setProviderType
             }
             options={
-              PROVIDER_TYPES.map(
-                item => ({
-                  value:
-                    item.value,
-                  label:
-                    t(
-                      item.labelKey
-                    ),
-                })
-              )
+              PROVIDER_TYPES
+                .map(
+                  item => ({
+                    value:
+                      item.value,
+
+                    label:
+                      t(
+                        item
+                          .labelKey
+                      ),
+                  })
+                )
             }
           />
 
@@ -1253,23 +1487,27 @@ function BookingModal({
               setScheduledAt
             }
             min={
-              bookingWindow.minimum
+              bookingWindow
+                .minimum
             }
             max={
-              bookingWindow.maximum
+              bookingWindow
+                .maximum
             }
             helpText={t(
               "appointments.bookingWindowHint",
               {
                 startDate:
                   formatBookingWindowDate(
-                    bookingWindow.today,
+                    bookingWindow
+                      .today,
                     locale
                   ),
 
                 endDate:
                   formatBookingWindowDate(
-                    bookingWindow.maximumDate,
+                    bookingWindow
+                      .maximumDate,
                     locale
                   ),
               }
@@ -1403,7 +1641,8 @@ function RescheduleModal({
 
   const locale =
     getLanguageLocale(
-      i18n.resolvedLanguage ||
+      i18n
+        .resolvedLanguage ||
         i18n.language
     );
 
@@ -1411,19 +1650,25 @@ function RescheduleModal({
     scheduledAt,
     setScheduledAt,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
   const [
     submitting,
     setSubmitting,
   ] =
-    useState(false);
+    useState(
+      false
+    );
 
   const [
     error,
     setError,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
   useEffect(
     () => {
@@ -1432,11 +1677,14 @@ function RescheduleModal({
       ) {
         setScheduledAt(
           toLocalDateTimeInput(
-            appointment.scheduledAt
+            appointment
+              .scheduledAt
           )
         );
 
-        setError("");
+        setError(
+          ""
+        );
       }
     },
     [
@@ -1456,7 +1704,8 @@ function RescheduleModal({
   async function submit(
     event
   ) {
-    event.preventDefault();
+    event
+      .preventDefault();
 
     const issue =
       getBookingWindowIssue(
@@ -1464,7 +1713,8 @@ function RescheduleModal({
       );
 
     if (
-      issue === "invalid"
+      issue ===
+      "invalid"
     ) {
       setError(
         t(
@@ -1476,7 +1726,8 @@ function RescheduleModal({
     }
 
     if (
-      issue === "pastTime"
+      issue ===
+      "pastTime"
     ) {
       setError(
         t(
@@ -1488,8 +1739,10 @@ function RescheduleModal({
     }
 
     if (
-      issue === "pastDate" ||
-      issue === "tooFar"
+      issue ===
+        "pastDate" ||
+      issue ===
+        "tooFar"
     ) {
       setError(
         t(
@@ -1516,16 +1769,22 @@ function RescheduleModal({
     }
 
     try {
-      setSubmitting(true);
+      setSubmitting(
+        true
+      );
 
-      setError("");
+      setError(
+        ""
+      );
 
       await appointmentsApi
         .reschedule(
-          appointment.id,
+          appointment
+            .id,
           {
             scheduledAt:
-              date.toISOString(),
+              date
+                .toISOString(),
           }
         );
 
@@ -1536,13 +1795,16 @@ function RescheduleModal({
       saveError
     ) {
       setError(
-        saveError?.message ||
+        saveError
+          ?.message ||
           t(
             "appointments.rescheduleError"
           )
       );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false
+      );
     }
   }
 
@@ -1563,7 +1825,9 @@ function RescheduleModal({
       >
         {error && (
           <ErrorBox>
-            {error}
+            {
+              error
+            }
           </ErrorBox>
         )}
 
@@ -1579,23 +1843,27 @@ function RescheduleModal({
             setScheduledAt
           }
           min={
-            bookingWindow.minimum
+            bookingWindow
+              .minimum
           }
           max={
-            bookingWindow.maximum
+            bookingWindow
+              .maximum
           }
           helpText={t(
             "appointments.bookingWindowHint",
             {
               startDate:
                 formatBookingWindowDate(
-                  bookingWindow.today,
+                  bookingWindow
+                    .today,
                   locale
                 ),
 
               endDate:
                 formatBookingWindowDate(
-                  bookingWindow.maximumDate,
+                  bookingWindow
+                    .maximumDate,
                   locale
                 ),
             }
@@ -1637,27 +1905,38 @@ function CancelModal({
     submitting,
     setSubmitting,
   ] =
-    useState(false);
+    useState(
+      false
+    );
 
   const [
     error,
     setError,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
-  if (!appointment) {
+  if (
+    !appointment
+  ) {
     return null;
   }
 
   async function cancel() {
     try {
-      setSubmitting(true);
+      setSubmitting(
+        true
+      );
 
-      setError("");
+      setError(
+        ""
+      );
 
       await appointmentsApi
         .cancel(
-          appointment.id
+          appointment
+            .id
         );
 
       await onCancelled();
@@ -1667,13 +1946,16 @@ function CancelModal({
       saveError
     ) {
       setError(
-        saveError?.message ||
+        saveError
+          ?.message ||
           t(
             "appointments.cancellationError"
           )
       );
     } finally {
-      setSubmitting(false);
+      setSubmitting(
+        false
+      );
     }
   }
 
@@ -1689,7 +1971,9 @@ function CancelModal({
       <div className="space-y-4">
         {error && (
           <ErrorBox>
-            {error}
+            {
+              error
+            }
           </ErrorBox>
         )}
 
@@ -1698,14 +1982,16 @@ function CancelModal({
             "appointments.cancelQuestion",
             {
               type:
-                appointment.type ||
+                appointment
+                  .type ||
                 t(
                   "appointments.appointment"
                 ),
 
               date:
                 formatDate(
-                  appointment.scheduledAt,
+                  appointment
+                    .scheduledAt,
                   locale,
                   t
                 ),
@@ -1722,7 +2008,7 @@ function CancelModal({
             disabled={
               submitting
             }
-            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+            className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50"
           >
             {t(
               "appointments.keepAppointment"
@@ -1753,6 +2039,156 @@ function CancelModal({
   );
 }
 
+function Pagination({
+  pageData,
+  disabled,
+  label,
+  onPrevious,
+  onNext,
+}) {
+  if (
+    !pageData ||
+    pageData.totalItems <=
+      0
+  ) {
+    return null;
+  }
+
+  const page =
+    Math.max(
+      1,
+      Number(
+        pageData.page
+      ) ||
+        1
+    );
+
+  const pageSize =
+    Math.max(
+      1,
+      Number(
+        pageData.pageSize
+      ) ||
+        PAGE_SIZE
+    );
+
+  const totalItems =
+    Math.max(
+      0,
+      Number(
+        pageData.totalItems
+      ) ||
+        0
+    );
+
+  const totalPages =
+    Math.max(
+      1,
+      Number(
+        pageData.totalPages
+      ) ||
+        1
+    );
+
+  const startItem =
+    (
+      page -
+      1
+    ) *
+      pageSize +
+    1;
+
+  const endItem =
+    Math.min(
+      page *
+        pageSize,
+      totalItems
+    );
+
+  return (
+    <nav
+      className="mt-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between"
+      aria-label={`${label} ${page} / ${totalPages}`}
+    >
+      <div className="text-sm text-slate-500">
+        <span className="font-medium text-slate-700">
+          {
+            startItem
+          }
+          –
+          {
+            endItem
+          }
+        </span>
+
+        {" / "}
+
+        {
+          totalItems
+        }
+      </div>
+
+      <div className="flex items-center justify-between gap-3 sm:justify-end">
+        <button
+          type="button"
+          onClick={
+            onPrevious
+          }
+          disabled={
+            disabled ||
+            !pageData
+              .hasPreviousPage
+          }
+          aria-label={`${label}: ${Math.max(
+            1,
+            page - 1
+          )}`}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-[#0f766e] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronLeft
+            size={
+              17
+            }
+          />
+        </button>
+
+        <span className="min-w-[72px] text-center text-sm font-semibold text-slate-700">
+          {
+            page
+          }
+          {" / "}
+          {
+            totalPages
+          }
+        </span>
+
+        <button
+          type="button"
+          onClick={
+            onNext
+          }
+          disabled={
+            disabled ||
+            !pageData
+              .hasNextPage
+          }
+          aria-label={`${label}: ${Math.min(
+            totalPages,
+            page + 1
+          )}`}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-xl border border-slate-200 text-slate-600 transition hover:border-teal-200 hover:bg-teal-50 hover:text-[#0f766e] disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          <ChevronRight
+            size={
+              17
+            }
+          />
+        </button>
+      </div>
+    </nav>
+  );
+}
+
 export default function AppointmentsPage() {
   const {
     t,
@@ -1762,15 +2198,26 @@ export default function AppointmentsPage() {
 
   const locale =
     getLanguageLocale(
-      i18n.resolvedLanguage ||
+      i18n
+        .resolvedLanguage ||
         i18n.language
     );
 
   const [
-    appointments,
-    setAppointments,
+    upcomingPage,
+    setUpcomingPage,
   ] =
-    useState([]);
+    useState(
+      createEmptyPage
+    );
+
+  const [
+    pastPage,
+    setPastPage,
+  ] =
+    useState(
+      createEmptyPage
+    );
 
   const [
     tab,
@@ -1784,158 +2231,347 @@ export default function AppointmentsPage() {
     loading,
     setLoading,
   ] =
-    useState(true);
+    useState(
+      true
+    );
 
   const [
     error,
     setError,
   ] =
-    useState("");
+    useState(
+      ""
+    );
 
   const [
     bookingOpen,
     setBookingOpen,
   ] =
-    useState(false);
+    useState(
+      false
+    );
 
   const [
     rescheduleAppointment,
     setRescheduleAppointment,
   ] =
-    useState(null);
+    useState(
+      null
+    );
 
   const [
     cancelAppointment,
     setCancelAppointment,
   ] =
-    useState(null);
+    useState(
+      null
+    );
 
-  const loadAppointments =
+  const fetchPage =
+    useCallback(
+      async (
+        view,
+        requestedPage
+      ) => {
+        let result =
+          await appointmentsApi
+            .getMinePage({
+              view,
+
+              page:
+                requestedPage,
+
+              pageSize:
+                PAGE_SIZE,
+            });
+
+        /*
+         * Mutations can move appointments between Upcoming
+         * and Past. If the current page no longer exists,
+         * automatically fall back to the final valid page.
+         */
+        if (
+          result
+            .totalPages >
+            0 &&
+          result.page >
+            result
+              .totalPages
+        ) {
+          result =
+            await appointmentsApi
+              .getMinePage({
+                view,
+
+                page:
+                  result
+                    .totalPages,
+
+                pageSize:
+                  PAGE_SIZE,
+              });
+        }
+
+        if (
+          result
+            .totalItems ===
+          0
+        ) {
+          return {
+            ...result,
+
+            page:
+              1,
+
+            totalPages:
+              0,
+
+            hasPreviousPage:
+              false,
+
+            hasNextPage:
+              false,
+          };
+        }
+
+        return result;
+      },
+      []
+    );
+
+  const loadInitial =
     useCallback(
       async () => {
         try {
-          setLoading(true);
+          setLoading(
+            true
+          );
 
-          setError("");
+          setError(
+            ""
+          );
 
-          const result =
-            await appointmentsApi
-              .getMine();
+          const [
+            upcoming,
+            past,
+          ] =
+            await Promise.all([
+              fetchPage(
+                "upcoming",
+                1
+              ),
 
-          setAppointments(
-            Array.isArray(
-              result
-            )
-              ? result
-              : []
+              fetchPage(
+                "past",
+                1
+              ),
+            ]);
+
+          setUpcomingPage(
+            upcoming
+          );
+
+          setPastPage(
+            past
           );
         } catch (
           loadError
         ) {
           setError(
-            loadError?.message ||
+            loadError
+              ?.message ||
               i18n.t(
                 "appointments.loadError"
               )
           );
 
-          setAppointments([]);
+          setUpcomingPage(
+            createEmptyPage()
+          );
+
+          setPastPage(
+            createEmptyPage()
+          );
         } finally {
-          setLoading(false);
+          setLoading(
+            false
+          );
         }
       },
       [
+        fetchPage,
         i18n,
       ]
     );
 
   useEffect(
     () => {
-      void loadAppointments();
+      void loadInitial();
     },
     [
-      loadAppointments,
+      loadInitial,
     ]
   );
 
-  const upcoming =
-    useMemo(
-      () =>
-        appointments
-          .filter(
-            item =>
-              !isPastAppointment(
-                item
-              )
-          )
-          .sort(
-            (
-              a,
-              b
-            ) =>
-              (
-                parseDate(
-                  a.scheduledAt
-                )?.getTime() ||
-                0
-              ) -
-              (
-                parseDate(
-                  b.scheduledAt
-                )?.getTime() ||
-                0
-              )
+  async function loadBoth(
+    upcomingPageNumber,
+    pastPageNumber
+  ) {
+    try {
+      setLoading(
+        true
+      );
+
+      setError(
+        ""
+      );
+
+      const [
+        upcoming,
+        past,
+      ] =
+        await Promise.all([
+          fetchPage(
+            "upcoming",
+            upcomingPageNumber
           ),
-      [
-        appointments,
-      ]
-    );
 
-  const past =
-    useMemo(
-      () =>
-        appointments
-          .filter(
-            item =>
-              isPastAppointment(
-                item
-              )
-          )
-          .sort(
-            (
-              a,
-              b
-            ) =>
-              (
-                parseDate(
-                  b.scheduledAt
-                )?.getTime() ||
-                0
-              ) -
-              (
-                parseDate(
-                  a.scheduledAt
-                )?.getTime() ||
-                0
-              )
+          fetchPage(
+            "past",
+            pastPageNumber
           ),
-      [
-        appointments,
-      ]
-    );
+        ]);
 
-  const visible =
-    tab === "upcoming"
-      ? upcoming
-      : past;
+      setUpcomingPage(
+        upcoming
+      );
 
-  async function refreshed() {
-    await loadAppointments();
+      setPastPage(
+        past
+      );
 
-    setTab(
-      "upcoming"
+      return true;
+    } catch (
+      loadError
+    ) {
+      setError(
+        loadError
+          ?.message ||
+          i18n.t(
+            "appointments.loadError"
+          )
+      );
+
+      return false;
+    } finally {
+      setLoading(
+        false
+      );
+    }
+  }
+
+  async function
+    loadAppointments()
+  {
+    await loadBoth(
+      upcomingPage.page,
+      pastPage.page
     );
   }
+
+  async function changePage(
+    view,
+    nextPage
+  ) {
+    try {
+      setLoading(
+        true
+      );
+
+      setError(
+        ""
+      );
+
+      const result =
+        await fetchPage(
+          view,
+          nextPage
+        );
+
+      if (
+        view ===
+        "upcoming"
+      ) {
+        setUpcomingPage(
+          result
+        );
+      } else {
+        setPastPage(
+          result
+        );
+      }
+    } catch (
+      loadError
+    ) {
+      setError(
+        loadError
+          ?.message ||
+          i18n.t(
+            "appointments.loadError"
+          )
+      );
+    } finally {
+      setLoading(
+        false
+      );
+    }
+  }
+
+  async function refreshed() {
+    /*
+     * Booking, rescheduling or cancelling can alter counts
+     * and move an appointment between tabs. Refresh both
+     * first pages so metadata stays correct.
+     */
+    const succeeded =
+      await loadBoth(
+        1,
+        1
+      );
+
+    if (
+      succeeded
+    ) {
+      setTab(
+        "upcoming"
+      );
+    }
+  }
+
+  const activePage =
+    tab ===
+      "upcoming"
+      ? upcomingPage
+      : pastPage;
+
+  const visible =
+    Array.isArray(
+      activePage
+        .items
+    )
+      ? activePage
+          .items
+      : [];
+
+  const activeLabel =
+    tab ===
+      "upcoming"
+      ? t(
+          "appointments.upcoming"
+        )
+      : t(
+          "appointments.past"
+        );
 
   return (
     <div className="p-4 md:p-6 lg:p-8">
@@ -1964,10 +2600,17 @@ export default function AppointmentsPage() {
               disabled={
                 loading
               }
-              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50"
+              className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50"
             >
               <RefreshCw
-                size={15}
+                size={
+                  15
+                }
+                className={
+                  loading
+                    ? "animate-spin"
+                    : ""
+                }
               />
 
               {t(
@@ -1985,7 +2628,9 @@ export default function AppointmentsPage() {
               className="inline-flex items-center gap-2 rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white hover:bg-[#115e59]"
             >
               <Plus
-                size={16}
+                size={
+                  16
+                }
               />
 
               {t(
@@ -1997,7 +2642,9 @@ export default function AppointmentsPage() {
 
         {error && (
           <ErrorBox>
-            {error}
+            {
+              error
+            }
           </ErrorBox>
         )}
 
@@ -2017,7 +2664,8 @@ export default function AppointmentsPage() {
               "appointments.upcomingCount",
               {
                 count:
-                  upcoming.length,
+                  upcomingPage
+                    .totalItems,
               }
             )}
           </TabButton>
@@ -2037,7 +2685,8 @@ export default function AppointmentsPage() {
               "appointments.pastCount",
               {
                 count:
-                  past.length,
+                  pastPage
+                    .totalItems,
               }
             )}
           </TabButton>
@@ -2045,7 +2694,11 @@ export default function AppointmentsPage() {
 
         {loading ? (
           <div className="space-y-3">
-            {[1, 2, 3].map(
+            {[
+              1,
+              2,
+              3,
+            ].map(
               item => (
                 <div
                   key={
@@ -2057,37 +2710,70 @@ export default function AppointmentsPage() {
             )}
           </div>
         ) : visible.length ? (
-          <div className="space-y-4">
-            {visible.map(
-              appointment => (
-                <AppointmentCard
-                  key={
-                    appointment.id
-                  }
-                  appointment={
-                    appointment
-                  }
-                  locale={
-                    locale
-                  }
-                  past={
-                    tab ===
-                    "past"
-                  }
-                  onReschedule={
-                    setRescheduleAppointment
-                  }
-                  onCancel={
-                    setCancelAppointment
-                  }
-                />
-              )
-            )}
-          </div>
+          <>
+            <div className="space-y-4">
+              {visible.map(
+                appointment => (
+                  <AppointmentCard
+                    key={
+                      appointment
+                        .id
+                    }
+                    appointment={
+                      appointment
+                    }
+                    locale={
+                      locale
+                    }
+                    past={
+                      tab ===
+                      "past"
+                    }
+                    onReschedule={
+                      setRescheduleAppointment
+                    }
+                    onCancel={
+                      setCancelAppointment
+                    }
+                  />
+                )
+              )}
+            </div>
+
+            <Pagination
+              pageData={
+                activePage
+              }
+              disabled={
+                loading
+              }
+              label={
+                activeLabel
+              }
+              onPrevious={() =>
+                changePage(
+                  tab,
+                  activePage
+                    .page -
+                    1
+                )
+              }
+              onNext={() =>
+                changePage(
+                  tab,
+                  activePage
+                    .page +
+                    1
+                )
+              }
+            />
+          </>
         ) : (
           <div className="rounded-2xl border border-slate-200 bg-white p-10 text-center">
             <Calendar
-              size={28}
+              size={
+                28
+              }
               className="mx-auto text-[#0f766e]"
             />
 
@@ -2187,7 +2873,9 @@ function TabButton({
           : "border-transparent text-slate-500 hover:text-slate-800"
       }`}
     >
-      {children}
+      {
+        children
+      }
     </button>
   );
 }
@@ -2207,7 +2895,9 @@ function SimpleModal({
       <div className="w-full rounded-t-2xl bg-white shadow-xl sm:max-w-lg sm:rounded-2xl">
         <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
           <h2 className="font-semibold text-slate-950">
-            {title}
+            {
+              title
+            }
           </h2>
 
           <button
@@ -2221,13 +2911,17 @@ function SimpleModal({
             className="rounded-lg p-2 text-slate-500 hover:bg-slate-100"
           >
             <X
-              size={18}
+              size={
+                18
+              }
             />
           </button>
         </div>
 
         <div className="p-5">
-          {children}
+          {
+            children
+          }
         </div>
       </div>
     </div>
@@ -2240,12 +2934,16 @@ function ErrorBox({
   return (
     <div className="mb-4 flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 p-3 text-sm text-red-700">
       <AlertCircle
-        size={17}
+        size={
+          17
+        }
         className="mt-0.5 shrink-0"
       />
 
       <span>
-        {children}
+        {
+          children
+        }
       </span>
     </div>
   );
@@ -2264,7 +2962,9 @@ function Field({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
-        {label}
+        {
+          label
+        }
       </span>
 
       <input
@@ -2286,7 +2986,9 @@ function Field({
         onChange={
           event =>
             onChange(
-              event.target.value
+              event
+                .target
+                .value
             )
         }
         className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
@@ -2294,7 +2996,9 @@ function Field({
 
       {helpText && (
         <span className="mt-1.5 block text-xs text-slate-500">
-          {helpText}
+          {
+            helpText
+          }
         </span>
       )}
     </label>
@@ -2310,11 +3014,15 @@ function TextArea({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
-        {label}
+        {
+          label
+        }
       </span>
 
       <textarea
-        rows={3}
+        rows={
+          3
+        }
         value={
           value
         }
@@ -2324,7 +3032,9 @@ function TextArea({
         onChange={
           event =>
             onChange(
-              event.target.value
+              event
+                .target
+                .value
             )
         }
         className="w-full resize-none rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
@@ -2342,7 +3052,9 @@ function SelectField({
   return (
     <label className="block">
       <span className="mb-1.5 block text-sm font-medium text-slate-700">
-        {label}
+        {
+          label
+        }
       </span>
 
       <select
@@ -2352,7 +3064,9 @@ function SelectField({
         onChange={
           event =>
             onChange(
-              event.target.value
+              event
+                .target
+                .value
             )
         }
         className="w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm outline-none focus:border-[#0f766e] focus:ring-2 focus:ring-teal-50"
@@ -2361,14 +3075,17 @@ function SelectField({
           option => (
             <option
               key={
-                option.value
+                option
+                  .value
               }
               value={
-                option.value
+                option
+                  .value
               }
             >
               {
-                option.label
+                option
+                  .label
               }
             </option>
           )
@@ -2399,7 +3116,7 @@ function ModalActions({
         disabled={
           saving
         }
-        className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600"
+        className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 disabled:opacity-50"
       >
         {t(
           "appointments.cancel"
