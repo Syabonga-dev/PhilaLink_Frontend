@@ -1,3 +1,4 @@
+
 import i18n from "../../i18n/index.js";
 
 import {
@@ -21,22 +22,36 @@ export const patientsApi = {
       payload
     ),
 
-  getDashboard:
-    async () => {
-      const result =
-        await api.get(
-          "/api/patients/me/dashboard"
-        );
+  getDashboard: async () => {
+    const result = await api.get(
+      "/api/patients/me/dashboard"
+    );
 
-      return localizeDashboard(
-        result
-      );
-    },
+    return localizeDashboard(result);
+  },
 
-  getRecords: () =>
-    api.get(
-      "/api/patients/me/records"
-    ),
+  getRecords: ({
+    page = 1,
+    pageSize = 20,
+    category = "all",
+    search = "",
+    signal,
+  } = {}) => {
+    const params = new URLSearchParams({
+      page: String(page),
+      pageSize: String(pageSize),
+      category,
+    });
+
+    if (search.trim()) {
+      params.set("search", search.trim());
+    }
+
+    return api.get(
+      `/api/patients/me/records?${params.toString()}`,
+      { signal }
+    );
+  },
 
   getMedications: () =>
     api.get(
@@ -52,32 +67,23 @@ export const patientsApi = {
   ) => {
     if (!medicationId) {
       throw new Error(
-        i18n.t(
-          "api.medicationIdRequired"
-        )
+        i18n.t("api.medicationIdRequired")
       );
     }
 
     return api.post(
       `/api/patients/me/medications/${medicationId}/log`,
-      {
-        taken,
-        notes,
-      }
+      { taken, notes }
     );
   },
 
-  getAppointments:
-    async () => {
-      const result =
-        await api.get(
-          "/api/patients/me/appointments"
-        );
+  getAppointments: async () => {
+    const result = await api.get(
+      "/api/patients/me/appointments"
+    );
 
-      return localizeAppointments(
-        result
-      );
-    },
+    return localizeAppointments(result);
+  },
 
   bookAppointment: payload =>
     api.post(
@@ -91,9 +97,7 @@ export const patientsApi = {
   ) => {
     if (!appointmentId) {
       throw new Error(
-        i18n.t(
-          "api.appointmentIdRequired"
-        )
+        i18n.t("api.appointmentIdRequired")
       );
     }
 
@@ -103,20 +107,17 @@ export const patientsApi = {
     );
   },
 
-  cancelAppointment:
-    appointmentId => {
-      if (!appointmentId) {
-        throw new Error(
-          i18n.t(
-            "api.appointmentIdRequired"
-          )
-        );
-      }
-
-      return api.patch(
-        `/api/patients/me/appointments/${appointmentId}/cancel`
+  cancelAppointment: appointmentId => {
+    if (!appointmentId) {
+      throw new Error(
+        i18n.t("api.appointmentIdRequired")
       );
-    },
+    }
+
+    return api.patch(
+      `/api/patients/me/appointments/${appointmentId}/cancel`
+    );
+  },
 
   getCollections: () =>
     api.get(
@@ -133,20 +134,17 @@ export const patientsApi = {
       "/api/patients/me/notifications"
     ),
 
-  markNotificationRead:
-    notificationId => {
-      if (!notificationId) {
-        throw new Error(
-          i18n.t(
-            "api.notificationIdRequired"
-          )
-        );
-      }
-
-      return api.patch(
-        `/api/patients/me/notifications/${notificationId}/read`
+  markNotificationRead: notificationId => {
+    if (!notificationId) {
+      throw new Error(
+        i18n.t("api.notificationIdRequired")
       );
-    },
+    }
+
+    return api.patch(
+      `/api/patients/me/notifications/${notificationId}/read`
+    );
+  },
 
   getPreferences: () =>
     api.get(
@@ -167,8 +165,6 @@ export const patientsApi = {
   updateLanguage: language =>
     api.put(
       "/api/patients/me/language",
-      {
-        language,
-      }
+      { language }
     ),
 };
