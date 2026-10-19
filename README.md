@@ -1,565 +1,517 @@
-# PhilaLink
+PhilaLink Frontend
+
+PhilaLink is a digital healthcare platform designed to support communication and coordination between patients, healthcare workers, medication proxies, and healthcare administrators. The frontend provides role-specific interfaces for managing healthcare information, appointments, medication-related activities, clinic services, notifications, and administrative operations.
+
+This repository contains the frontend application built with React and Vite.
+
+Table of Contents
+
+- "Overview" (#overview)
+- "Key Features" (#key-features)
+- "User Roles" (#user-roles)
+- "Technology Stack" (#technology-stack)
+- "Project Structure" (#project-structure)
+- "Prerequisites" (#prerequisites)
+- "Getting Started" (#getting-started)
+- "Environment Configuration" (#environment-configuration)
+- "Running the Application" (#running-the-application)
+- "Testing and Code Quality" (#testing-and-code-quality)
+- "Application Routes" (#application-routes)
+- "API Integration" (#api-integration)
+- "Security Considerations" (#security-considerations)
+- "Troubleshooting" (#troubleshooting)
+- "Contributing" (#contributing)
+- "License" (#license)
 
-PhilaLink is a healthcare management platform designed to connect patients, nurses, proxies, clinic administrators, and system administrators through a single digital platform.
-
-This repository contains the **PhilaLink frontend application**, which provides the user interface for accessing the platform's healthcare management features.
-
----
-
-## Overview
-
-The PhilaLink frontend provides role-based dashboards and features for different types of users.
-
-The main user areas include:
-
-* **Patient** — accesses personal healthcare information, medication tools, reminders, healthcare facilities, and patient-focused services.
-* **Nurse** — manages assigned patients, medication collections, and related healthcare activities.
-* **Proxy** — manages patients who are under their care.
-* **Clinic Administrator** — manages clinic-related staff, patients, activity, analytics, and reports.
-* **Administrator** — monitors and manages higher-level platform activities.
-
-Users are automatically directed to the appropriate application area after authentication.
-
----
-
-## Main Features
-
-### Patient
-
-Patients can:
-
-* Create a PhilaLink account.
-* Complete the patient registration process.
-* Verify their cellphone number.
-* Log in securely.
-* View their personal dashboard.
-* View medication information.
-* Track medication supply.
-* Track upcoming medication collection dates.
-* View medication collection information.
-* Use medication reminder features.
-* Access the symptom checker.
-* Find nearby healthcare facilities.
-* View healthcare-related notifications.
-* Manage supported account settings.
-* Access the Philani healthcare assistant.
-
----
-
-### Nurse
-
-Nurses can access features including:
-
-* Nurse dashboard.
-* Patient management.
-* Patient healthcare information.
-* Medication collection management.
-* Collection-related activities.
-* Patient searching and filtering.
-* Audit-related information.
-* Clinic-related workflow features.
-
-The nurse interface is designed around day-to-day patient and medication collection activities.
-
----
-
-### Proxy
-
-Proxies can:
-
-* Access their proxy dashboard.
-* View patients assigned to their care.
-* View relevant patient information.
-* Assist with supported medication and collection-related activities.
-
-Proxy access is limited to information and functionality relevant to patients under their care.
-
----
-
-### Clinic Administrator
-
-Clinic administrators can access clinic-level management features including:
-
-* Clinic dashboard.
-* Clinic statistics.
-* Patient information.
-* Nurse information.
-* Proxy information.
-* Medication collection information.
-* Clinic activity monitoring.
-* Analytics.
-* Report generation.
-
-The Clinic Administrator area provides a centralized interface for monitoring and managing activity within a clinic.
-
----
-
-### Reporting
-
-The frontend includes a reporting interface that allows supported administrative users to generate reports based on selected criteria.
-
-Available reporting areas can include:
-
-* Patients
-* Nurses
-* Proxies
-* Medication collections
-* Medication activity
-* Collection activity
-* Clinic-related statistics
-
-Reports can be filtered using relevant report options and date ranges.
-
-Before generating a report, users can preview the report data in a structured table.
-
-Supported export formats include:
-
-* PDF
-* Excel
-
-The exported reports are designed to provide structured and readable healthcare management information.
-
----
-
-### Analytics
-
-Administrative dashboards include visual summaries and statistics for supported healthcare activities.
-
-Analytics areas can include information relating to:
-
-* Patients
-* Staff
-* Collections
-* Medication activity
-* Clinic performance
-* Operational trends
-
-The frontend presents this information using cards, tables, charts, filters, and summary components.
-
----
-
-## Authentication
-
-PhilaLink uses authenticated user accounts with role-based access.
-
-Patients can register through the public patient registration flow.
-
-Staff accounts such as nurses, proxies, and administrative users are managed through authorized administrative workflows.
-
-After successful authentication, the frontend identifies the user's role and directs them to the appropriate dashboard.
-
----
-
-## Registration Flow
-
-The patient registration process follows a guided multi-step flow.
-
-```text
-Create Patient Account
-        ↓
-Enter Personal Details
-        ↓
-Verify Cellphone Number
-        ↓
-Complete Registration
-        ↓
-Patient Dashboard
-```
-
-The registration interface validates required patient information before registration can continue.
-
----
-
-## User Navigation
-
-### Patient
-
-```text
-Dashboard
-Medications
-Symptom Checker
-Clinic Finder
-Reminders
-Notifications
-```
-
-Additional patient features may be available depending on the current application configuration.
-
----
-
-### Nurse
-
-```text
-Dashboard
-Patients
-Collections
-Audit Log
-```
-
----
-
-### Proxy
-
-```text
-Dashboard
-Patients Under Care
-```
-
----
-
-### Clinic Administrator
-
-```text
-Dashboard
-Patients
-Nurses
-Proxies
-Collections
-Analytics
-Reports
-```
-
----
-
-### Administrator
-
-```text
 Overview
-Staff Management
-Analytics
-System Management
-```
 
-Navigation options may vary depending on the permissions assigned to the authenticated user.
+PhilaLink provides a role-based healthcare portal with dedicated interfaces for patients, nurses, medication proxies, clinic administrators, and system administrators.
 
----
+The frontend communicates with a backend API to retrieve and manage application data. The availability and successful operation of individual features depend on the backend services, database, authentication configuration, and the permissions assigned to the current user.
 
-## Technology Stack
+This repository focuses on the frontend and should not be treated as a complete description of the backend architecture.
+
+Key Features
 
-The PhilaLink frontend is built using:
+Authentication and Account Management
 
-* React
-* Vite
-* React Router
-* JavaScript
-* CSS
-* Tailwind CSS utility classes
-* Material Symbols
+- User registration and account onboarding.
+- Phone verification during registration.
+- Login and password recovery interfaces.
+- Password-change functionality.
+- Google authentication callback handling.
+- Clinic registration and registration confirmation pages.
+- Legal acceptance, privacy policy, and terms-of-use pages.
+- Protected application routes for authenticated users.
 
-The application communicates with the PhilaLink backend through its API integration layer.
+Patient Portal
 
----
+- Patient dashboard with healthcare and appointment information.
+- Medication information and medication-related activity.
+- Appointment booking, viewing, cancellation, and rescheduling interfaces.
+- Access to available healthcare records and summaries.
+- Clinic discovery and location-based navigation functionality.
+- Account settings and preferences.
+- Notifications and unread-notification indicators.
+- A healthcare chatbot with a symptom-assessment workflow.
 
-## Project Structure
+The chatbot and symptom-assessment interfaces are intended to support access to healthcare information. They should not be presented as a replacement for professional medical advice or emergency services.
 
-The frontend is organized into reusable application areas.
+Nurse Portal
 
-```text
-src/
-├── assets/
-├── components/
-│   ├── layout/
-│   ├── ui/
-│   ├── chatbot/
-│   └── other reusable components/
-├── context/
-├── lib/
-├── pages/
-├── routes/
-├── services/
-│   └── api/
-└── application files
-```
+- Nurse dashboard with clinic workload information.
+- Patient listing and patient-specific care interfaces.
+- Appointment management, including review, status updates, and rescheduling.
+- Medication collection management.
+- Account settings.
+- Access to information available within the nurse's assigned clinic scope.
+
+Medication Proxy Portal
 
-The application separates:
+- Proxy dashboard.
+- Access to patients assigned to the proxy account.
+- Patient-related medication collection information.
+- Collection history and related status information.
+- Account settings.
 
-* Reusable UI components
-* Page components
-* Authentication state
-* API communication
-* Navigation
-* Dashboard layouts
-* Shared application utilities
+Access to patient information depends on the proxy assignments and permissions enforced by the application.
 
-This structure helps keep the application maintainable as additional healthcare features are introduced.
+Clinic Administration
 
----
+- Clinic administration dashboard.
+- Staff management.
+- Staff registration and account activation or deactivation workflows, where supported.
+- Clinic medication inventory management.
+- Inventory creation, editing, quantity adjustments, and stock monitoring.
+- Clinic audit-log interface.
+- Clinic-level reporting.
+- Filterable report previews.
+- Excel report exports.
+- Password-protected PDF report exports.
+
+System Administration
+
+- System-wide administrative dashboard.
+- Clinic management.
+- Clinic administrator management.
+- Clinic administrator registration and assignment workflows.
+- System-wide analytics.
+- Clinic-specific analytics filtering.
+- System-level audit activity.
+- System reporting across supported reporting categories.
+- Excel and password-protected PDF exports.
+
+Reporting and Analytics
+
+The frontend includes separate reporting interfaces for clinic administrators and system administrators.
+
+Depending on the selected report type and the data returned by the backend, supported reporting areas include:
+
+- Patients.
+- Appointments.
+- Medication collections.
+- Medication adherence.
+- Medication inventory.
+- Staff.
+- Clinics.
+- Audit activity.
+
+The clinic and system report builders do not necessarily expose identical report categories. Available filters and report contents depend on the selected report and backend implementation.
+
+Report previews and export requests use the applied report parameters. Successful generation of a report requires the corresponding backend endpoint to be available and authorised.
+
+Notifications and User Experience
+
+- Notification listing and unread-status handling.
+- Marking individual notifications as read.
+- Marking notifications as read in bulk.
+- Notification refresh and error handling.
+- Localisation support.
+- Theme and language preference handling where implemented.
+- Reusable interface components.
+- Responsive layout styling.
+
+The precise behaviour of individual notification types depends on the backend and the services that generate them.
+
+User Roles
+
+PhilaLink uses role-restricted frontend routes for different categories of users.
+
+Role| Application area| Main responsibilities
+Patient| "/patient"| View healthcare information, manage appointments, discover clinics, and access available patient services.
+Proxy| "/proxy"| Access assigned patients and medication collection information.
+Nurse| "/nurse"| Review clinic patients, appointments, care information, and medication collections.
+Clinic Administrator| "/admin"| Manage clinic operations, staff, inventory, and clinic reports.
+System Administrator| "/admin"| Manage clinics and clinic administrators, and access system analytics and reporting.
+
+Clinic administrators and system administrators share the "/admin" application area, but access to administrative features is restricted by role.
+
+The actual permissions for data access and changes must also be enforced by the backend. Frontend route restrictions alone are not sufficient security controls.
+
+Technology Stack
+
+The repository uses the following technologies and libraries.
+
+Technology| Purpose
+React| Component-based user interface development.
+Vite| Development server and frontend build tooling.
+JavaScript and JSX| Application logic and component implementation.
+React Router| Client-side navigation and route handling.
+Tailwind CSS| Utility-based styling.
+CSS| Application and component styling.
+Lucide React| Interface icons.
+Recharts| Charts and analytics visualisations.
+Leaflet and React Leaflet| Map-related functionality where used.
+i18next and React i18next| Internationalisation and translation support.
+Material Symbols| Additional interface icons.
+Vitest| Automated testing.
+ESLint| JavaScript and JSX code-quality checks.
+
+The authoritative list of installed dependencies and available npm scripts is maintained in "package.json".
+
+Project Structure
+
+The following is a simplified overview of the source code organisation.
+
+PhilaLink_Frontend/
+├── .github/
+│   └── workflows/
+├── public/
+├── src/
+│   ├── components/
+│   │   ├── account/
+│   │   ├── admin/
+│   │   ├── auth/
+│   │   ├── layout/
+│   │   ├── nurse/
+│   │   ├── operations/
+│   │   ├── patient/
+│   │   │   └── chatbot/
+│   │   ├── privacy/
+│   │   ├── proxy/
+│   │   └── ui/
+│   ├── context/
+│   ├── i18n/
+│   ├── pages/
+│   │   ├── admin/
+│   │   ├── auth/
+│   │   ├── legal/
+│   │   ├── nurse/
+│   │   ├── patient/
+│   │   └── proxy/
+│   ├── routes/
+│   ├── services/
+│   │   └── api/
+│   ├── styles/
+│   ├── test/
+│   ├── App.jsx
+│   └── main.jsx
+├── .env.example
+├── .gitignore
+├── index.html
+├── package.json
+├── package-lock.json
+└── vite.config.js
+
+This diagram is illustrative rather than exhaustive. Individual files and directories may change as the application develops.
+
+Important Directories
+
+- "src/components/" contains reusable interface components and role-specific layouts.
+- "src/components/patient/chatbot/" contains chatbot components and symptom-assessment screens.
+- "src/pages/" contains the application pages grouped by role and function.
+- "src/routes/" contains route-protection and navigation-related logic where implemented.
+- "src/services/api/" contains frontend API clients for backend services.
+- "src/i18n/" contains localisation-related code.
+- "src/context/" contains application context and shared state.
+- "src/styles/" contains styling resources.
+- ".github/workflows/" contains automated GitHub Actions workflows.
+
+Prerequisites
+
+Before running the application, ensure that the following are available:
+
+- Node.js, using a version compatible with the Vite version specified in "package.json".
+- npm, normally installed with Node.js.
+- Git.
+- Access to the PhilaLink backend API for features that require server-side data.
+- The correct backend base URL and any required authentication configuration.
+
+Check the installed versions:
+
+node --version
+npm --version
+git --version
+
+If the repository specifies a particular Node.js version in its configuration, use that version.
+
+Getting Started
+
+1. Clone the Repository
+
+git clone https://github.com/Syabonga-dev/PhilaLink_Frontend.git
+cd PhilaLink_Frontend
+
+2. Install Dependencies
+
+Install the dependencies defined by the project:
 
-## API Integration
-
-The frontend communicates with the PhilaLink backend using dedicated API service modules.
-
-API-related logic is kept separate from page and component code wherever possible.
-
-This separation helps maintain a clear distinction between:
-
-```text
-User Interface
-        ↓
-Frontend Services
-        ↓
-Backend API
-```
-
-Authenticated requests use the currently authenticated user's session information.
-
-Sensitive authentication configuration and credentials are not stored directly in the frontend source code.
-
----
-
-## Dashboard Design
-
-PhilaLink uses role-specific dashboards so that users only see features relevant to their responsibilities.
-
-Dashboard interfaces can include:
-
-* Summary cards
-* Statistics
-* Tables
-* Charts
-* Filters
-* Search controls
-* Status indicators
-* Notifications
-* Report previews
-* Responsive navigation
-
-Different dashboards use the same overall PhilaLink design system while presenting information appropriate to each role.
-
----
-
-## Healthcare Assistant
-
-The frontend includes the **Philani healthcare assistant**.
-
-Philani provides a conversational healthcare interface that can assist users with supported health-related questions and platform interactions.
-
-The chatbot is integrated into the PhilaLink interface while remaining separate from the main dashboard navigation.
-
-Healthcare information provided through the assistant should not be treated as a replacement for professional medical care.
-
----
-
-## Clinic Finder
-
-The Clinic Finder allows patients to discover healthcare facilities through the PhilaLink interface.
-
-The frontend presents facility information through a location-focused interface designed to help patients identify healthcare services that may be available near them.
-
----
-
-## Medication Management
-
-Medication-related features are an important part of the patient experience.
-
-The frontend can display information such as:
-
-* Current medications
-* Medication supply
-* Remaining supply information
-* Upcoming collection dates
-* Collection status
-* Medication reminders
-
-The goal is to help patients understand when medication should be collected and how long their current medication supply is expected to last.
-
----
-
-## Notifications
-
-PhilaLink includes notification-related features for supported healthcare events.
-
-Notifications can be used to present information relating to:
-
-* Medication reminders
-* Collection information
-* Healthcare alerts
-* Application updates
-* Relevant patient activity
-
-Notification presentation is designed to remain accessible across supported device sizes.
-
----
-
-## UI Design
-
-The PhilaLink interface uses a healthcare-focused visual style built around:
-
-* Clean layouts
-* Dashboard cards
-* Structured tables
-* Responsive forms
-* Clear navigation
-* Accessible controls
-* Status indicators
-* Charts
-* Modal interfaces
-* Report previews
-
-Authentication pages use a focused layout designed to keep registration and login simple and easy to understand.
-
----
-
-## Responsive Design
-
-PhilaLink is designed to work across:
-
-* Desktop
-* Tablet
-* Mobile
-
-Navigation, cards, tables, forms, dashboards, and other interface elements adapt to smaller screen sizes.
-
-Responsive behaviour is considered throughout the frontend so that core healthcare features remain usable across supported devices.
-
----
-
-## Getting Started
-
-Clone the frontend repository and open it in your development environment.
-
-Install the project dependencies:
-
-```bash
 npm install
-```
 
-Start the Vite development server:
+For reproducible installations in CI or a clean environment, use:
 
-```bash
+npm ci
+
+Use "npm ci" when the committed lockfile accurately reflects the dependencies in "package.json".
+
+3. Configure Environment Variables
+
+Create a local environment file using the provided example:
+
+cp .env.example .env
+
+On Windows Command Prompt, use:
+
+copy .env.example .env
+
+On Windows PowerShell, use:
+
+Copy-Item .env.example .env
+
+Review the variables in ".env.example" and configure the values required for your environment.
+
+Do not commit personal credentials, access tokens, private keys, or other secrets.
+
+Environment Configuration
+
+The frontend uses the "VITE_API_BASE_URL" environment variable to configure the backend API base URL.
+
+Example:
+
+VITE_API_BASE_URL=http://localhost:5000
+
+The URL above is an example only. Replace it with the actual URL and port used by your backend.
+
+Before starting the application, confirm that:
+
+1. The backend is running.
+2. The configured URL points to the correct backend.
+3. The backend permits requests from the frontend development origin.
+4. The backend authentication mechanism matches the frontend's expectations.
+5. Required API endpoints are available.
+
+Vite exposes variables prefixed with "VITE_" to frontend code. Consequently, these variables must not contain secrets.
+
+Running the Application
+
+Start the Development Server
+
 npm run dev
-```
 
-Create a production build using:
+Vite will print the local development URL in the terminal. Open that URL in your browser.
 
-```bash
+Build for Production
+
 npm run build
-```
 
-The frontend must be configured to communicate with a valid PhilaLink backend environment.
+The production build is normally generated in the "dist/" directory.
 
-Environment-specific configuration should be kept outside the committed source code where appropriate.
+Preview the Production Build
 
----
+npm run preview
 
-## Development
+Use the URL printed by Vite to inspect the production build locally.
 
-When developing new frontend features, keep the application separated into:
+The preview command is intended for local verification, not as a replacement for a production hosting environment.
 
-* UI components
-* Pages
-* API services
-* Authentication and context logic
-* Layout components
-* Routing
-* Shared utilities
+Testing and Code Quality
 
-Existing reusable components should be preferred over creating duplicate components.
+The repository contains automated tests for selected components and pages.
 
-New features should also follow the existing PhilaLink design language and role-based access structure.
+Run the available scripts defined in "package.json".
 
----
+Run Tests
 
-## Frontend Security
+npm run test
 
-PhilaLink handles healthcare-related information, so the frontend is designed with authenticated and role-based access in mind.
+Run the Linter
 
-Frontend security practices include:
+npm run lint
 
-* Authenticated application areas
-* Role-based navigation
-* Protected routes
-* Secure handling of authentication state
-* Server-side validation through the backend
-* Avoiding sensitive configuration in source control
-* Limiting functionality according to user permissions
+Run the Production Build
 
-The frontend should never be treated as the final security boundary.
+npm run build
 
-Authorization and sensitive validation must remain enforced by the backend.
+A successful production build does not guarantee that every feature works end to end. Where applicable, also test authentication, role-specific navigation, API integration, report exports, and error states against a running backend.
 
----
+The repository includes a GitHub Actions workflow for automated checks. Consult the workflow files under ".github/workflows/" for the exact checks executed during CI.
 
-## Current Application Areas
+Application Routes
 
-| Area | Status |
-| --- | --- |
-| Patient registration | Implemented |
-| Patient phone verification | Implemented |
-| Login | Implemented |
-| Role-based navigation | Implemented |
-| Patient dashboard | Implemented |
-| Patient medication interface | Implemented |
-| Medication tracking | Implemented |
-| Medication reminders | Implemented |
-| Symptom checker | Implemented |
-| Clinic finder | Implemented |
-| Healthcare notifications | Implemented |
-| Philani healthcare assistant | Implemented |
-| Nurse dashboard | Implemented |
-| Nurse patient management | Implemented |
-| Nurse collection management | Implemented |
-| Proxy dashboard | Implemented |
-| Patients under proxy care | Implemented |
-| Clinic Administrator dashboard | Implemented |
-| Clinic staff management interface | Implemented |
-| Clinic analytics | Implemented |
-| Report Builder | Implemented |
-| Report preview tables | Implemented |
-| PDF report export | Implemented |
-| Excel report export | Implemented |
-| Responsive authentication pages | Implemented |
-| Responsive dashboard layouts | Implemented |
+The main frontend route groups are organised as follows.
 
----
+Route| Description
+"/"| Public landing page.
+"/login"| Login page.
+"/register"| User registration.
+"/register/verify"| Phone verification.
+"/register/clinic"| Clinic registration.
+"/register/success"| Registration confirmation.
+"/forgot-password"| Password recovery.
+"/auth/google/callback"| Google authentication callback.
+"/privacy-policy"| Privacy policy.
+"/terms-of-use"| Terms of use.
+"/change-password"| Password-change flow for eligible authenticated users.
+"/legal-acceptance"| Legal acceptance flow.
+"/patient"| Patient dashboard and patient services.
+"/patient/medications"| Patient medication information.
+"/patient/appointments"| Patient appointment management.
+"/patient/records"| Patient healthcare records.
+"/patient/clinics"| Clinic discovery and navigation.
+"/patient/settings"| Patient settings.
+"/proxy"| Proxy dashboard.
+"/proxy/patients"| Patients assigned to a proxy.
+"/proxy/collections"| Proxy medication collections.
+"/proxy/settings"| Proxy settings.
+"/nurse"| Nurse dashboard.
+"/nurse/patients"| Nurse patient list.
+"/nurse/patients/:patientId"| Patient-specific nurse care page.
+"/nurse/appointments"| Nurse appointment management.
+"/nurse/collections"| Medication collection management.
+"/nurse/settings"| Nurse settings.
+"/admin"| Administrative dashboard.
+"/admin/staff"| Staff management.
+"/admin/audit"| Administrative audit log.
+"/admin/register-staff"| Clinic staff registration.
+"/admin/inventory"| Clinic medication inventory.
+"/admin/reports"| Clinic reporting.
+"/admin/analytics"| System analytics.
+"/admin/system-reports"| System-wide reporting.
+"/admin/clinics"| Clinic management.
+"/admin/clinic-admins"| Clinic administrator management.
+"/admin/register-clinic-admin"| Clinic administrator registration.
 
-## Development Principles
+Nested routes are shown in their full URL form for readability. Actual availability depends on the authenticated user's role and the route protection configured in the application.
 
-PhilaLink frontend development follows several core principles.
+This list reflects the routes registered in the frontend and should be updated when routes are added, removed, or renamed. A component file existing in the repository does not automatically make it a reachable application route.
 
-### Role-Based Design
+API Integration
 
-Each user should only see the tools and navigation relevant to their role.
+The frontend uses dedicated API service modules to communicate with backend endpoints.
 
-### Reusable Components
+Examples include:
 
-Shared application functionality should be implemented using reusable components whenever possible.
+- "src/services/api/auth.js" for authentication-related requests.
+- "src/services/api/appointments.js" for appointment operations.
+- "src/services/api/medications.js" for medication-related requests.
+- "src/services/api/clinics.js" for clinic-related functionality.
+- "src/services/api/notifications.js" for notifications.
+- "src/services/api/clinicAdmin.js" for clinic administration, analytics, inventory, and reporting.
+- "src/services/api/superAdmin.js" for system administration, analytics, and reporting.
+- "src/services/api/chatbot.js" for chatbot requests.
+- "src/services/api/symptomAssessments.js" for symptom-assessment requests.
 
-### API Separation
+The precise endpoints and request/response formats are defined in the relevant service modules.
 
-Backend communication should remain inside dedicated service modules instead of being duplicated throughout page components.
+Backend Dependency
 
-### Responsive Interfaces
+The frontend depends on backend services for operations such as:
 
-Features should remain usable on desktop, tablet, and mobile devices.
+- Authentication and account management.
+- Retrieving and updating healthcare information.
+- Appointment management.
+- Medication and collection data.
+- Clinic and staff management.
+- Analytics and reporting.
+- Audit activity.
+- Notification delivery and status changes.
 
-### Consistent Design
+If an API endpoint is unavailable, misconfigured, or rejects a request, the corresponding frontend feature may fail or display an error.
 
-New pages and components should follow the existing PhilaLink visual language.
+For complete functionality, run the frontend alongside the compatible backend and any required supporting services.
 
-### Secure Configuration
+Security Considerations
 
-Sensitive values, credentials, secrets, internal system details, and production configuration should never be committed to the frontend repository.
+PhilaLink handles healthcare-related information, so security and privacy must be considered throughout development and deployment.
 
----
+The frontend includes protected routes and role-based navigation. These controls improve the user experience and prevent users from navigating directly to interfaces intended for other roles.
 
-## Project Goal
+However, frontend restrictions are not a substitute for server-side authorisation.
 
-The goal of the PhilaLink frontend is to provide a clear and accessible healthcare management interface for patients, caregivers, healthcare workers, and administrators.
+Important considerations include:
 
-The frontend is designed around:
+- Enforce authentication and permissions on the backend for every protected operation.
+- Validate and authorise access to patient records and other sensitive data on the server.
+- Protect authentication tokens and review the security implications of browser-side token storage.
+- Never include private credentials or secrets in frontend environment variables.
+- Use HTTPS in production.
+- Configure appropriate cross-origin resource sharing (CORS) policies.
+- Avoid logging sensitive patient information or authentication credentials.
+- Review dependencies for known vulnerabilities.
+- Follow applicable healthcare privacy and data-protection requirements.
+- Use synthetic or appropriately de-identified information for development and testing.
 
-* Simple healthcare management
-* Role-based functionality
-* Accessible information
-* Medication collection tracking
-* Patient support
-* Responsive design
-* Secure access
-* Clear healthcare workflows
+The presence of frontend security controls does not, by itself, establish that the complete system has passed a security audit.
 
----
+Troubleshooting
 
-## PhilaLink
+The frontend cannot connect to the backend
 
-**Connecting patients, caregivers, nurses, clinics, and healthcare management through one digital platform.**
+- Check that the backend is running.
+- Confirm that "VITE_API_BASE_URL" points to the correct address.
+- Inspect browser developer tools for network errors.
+- Verify that the backend permits requests from the frontend origin.
+- Confirm that the relevant endpoint exists and accepts the request.
+
+The application displays authentication errors
+
+- Confirm that the backend authentication service is available.
+- Check whether the session or token has expired.
+- Verify that the account has the correct role.
+- Inspect the browser console and network responses without exposing credentials or sensitive information.
+
+Dependencies fail to install
+
+- Confirm that the installed Node.js version is compatible with the project.
+- Check that "package.json" and "package-lock.json" are present and consistent.
+- Try "npm ci" in a clean checkout when appropriate.
+- Review the npm error output before deleting or regenerating dependency files.
+
+Tests or builds fail
+
+- Run "npm run lint", "npm run test", and "npm run build" separately.
+- Review the first relevant error in the terminal output.
+- Check for missing environment configuration and incompatible dependencies.
+- Ensure that changes preserve the existing test expectations where those expectations remain valid.
+
+Contributing
+
+Contributions should preserve the existing architecture, security boundaries, and coding conventions.
+
+Suggested workflow:
+
+1. Fork the repository or create a feature branch.
+2. Make a focused change.
+3. Run the relevant tests and lint checks.
+4. Run a production build.
+5. Review the changed files for accidental secrets and unrelated modifications.
+6. Open a pull request describing the change, its motivation, and the verification performed.
+
+Example branch workflow:
+
+git checkout -b docs/update-readme
+git add README.md
+git commit -m "docs: update frontend README"
+git push -u origin docs/update-readme
+
+Create a pull request from the pushed branch and describe the changes clearly.
+
+License
+
+Refer to the repository's license file, if present, for the applicable licensing terms. If no license has been specified, contact the repository owner before redistributing the project or using it under assumed open-source terms.
+
+Project Status
+
+This README describes the frontend structure and capabilities visible in the repository. Feature availability, production readiness, and end-to-end correctness should be confirmed against the corresponding backend services and a running application.
+
+Update this document whenever application routes, dependencies, environment variables, reporting categories, or supported features change.
