@@ -8,8 +8,7 @@ import {
 function buildReportQuery(
   filters = {}
 ) {
-  const params =
-    new URLSearchParams();
+  const params = new URLSearchParams();
 
   Object.entries(
     filters
@@ -19,28 +18,41 @@ function buildReportQuery(
       value,
     ]) => {
       if (
-        value ===
-          null ||
-        value ===
-          undefined ||
-        value ===
-          "" ||
-        value ===
-          "All"
+        value === null ||
+        value === undefined ||
+        value === "" ||
+        value === "All"
       ) {
         return;
       }
 
       params.set(
         key,
-        String(
-          value
-        )
+        String(value)
       );
     }
   );
 
   return params;
+}
+
+function normalizeStaffFilters(
+  filters = "All",
+  options = {}
+) {
+  if (
+    typeof filters === "string"
+  ) {
+    return {
+      ...options,
+      role: filters,
+    };
+  }
+
+  return {
+    ...(filters || {}),
+    ...(options || {}),
+  };
 }
 
 function fileNameFromResponse(
@@ -50,18 +62,15 @@ function fileNameFromResponse(
   const disposition =
     response.headers.get(
       "content-disposition"
-    ) ||
-    "";
+    ) || "";
 
-  const utfMatch =
-    disposition.match(
-      /filename\*=UTF-8''([^;]+)/i
-    );
+  const utfMatch = disposition.match(
+    /filename\*=UTF-8''([^;]+)/i
+  );
 
-  const standardMatch =
-    disposition.match(
-      /filename="?([^";]+)"?/i
-    );
+  const standardMatch = disposition.match(
+    /filename="?([^";]+)"?/i
+  );
 
   if (
     utfMatch?.[1]
@@ -88,16 +97,14 @@ async function throwDownloadError(
   response
 ) {
   if (
-    response.status ===
-    401
+    response.status === 401
   ) {
     tokenStore.clear();
 
     throw new ApiError(
       "Your session has expired. Please log in again.",
       {
-        status:
-          401,
+        status: 401,
       }
     );
   }
@@ -109,39 +116,34 @@ async function throwDownloadError(
     const contentType =
       response.headers.get(
         "content-type"
-      ) ||
-      "";
+      ) || "";
 
     if (
       contentType.includes(
         "application/json"
       )
     ) {
-      const data =
-        await response.json();
+      const data = await response.json();
 
       message =
         data?.message ||
         data?.title ||
         message;
     } else {
-      const text =
-        await response.text();
+      const text = await response.text();
 
       if (text) {
-        message =
-          text;
+        message = text;
       }
     }
   } catch {
-    // Keep fallback message.
+    // Keep the fallback message.
   }
 
   throw new ApiError(
     message,
     {
-      status:
-        response.status,
+      status: response.status,
     }
   );
 }
@@ -158,38 +160,29 @@ async function saveDownload(
     );
   }
 
-  const blob =
-    await response.blob();
+  const blob = await response.blob();
 
-  const fileName =
-    fileNameFromResponse(
-      response,
-      fallbackName
-    );
+  const fileName = fileNameFromResponse(
+    response,
+    fallbackName
+  );
 
-  const objectUrl =
-    URL.createObjectURL(
-      blob
-    );
+  const objectUrl = URL.createObjectURL(
+    blob
+  );
 
-  const link =
-    document.createElement(
-      "a"
-    );
+  const link = document.createElement(
+    "a"
+  );
 
-  link.href =
-    objectUrl;
+  link.href = objectUrl;
+  link.download = fileName;
 
-  link.download =
-    fileName;
-
-  document.body
-    .appendChild(
-      link
-    );
+  document.body.appendChild(
+    link
+  );
 
   link.click();
-
   link.remove();
 
   URL.revokeObjectURL(
@@ -203,8 +196,7 @@ async function authenticatedFetch(
   path,
   init = {}
 ) {
-  const token =
-    tokenStore.getToken();
+  const token = tokenStore.getToken();
 
   try {
     return await fetch(
@@ -213,8 +205,7 @@ async function authenticatedFetch(
         ...init,
 
         headers: {
-          Accept:
-            "*/*",
+          Accept: "*/*",
 
           ...(init.body
             ? {
@@ -230,8 +221,7 @@ async function authenticatedFetch(
               }
             : {}),
 
-          ...(init.headers ||
-            {}),
+          ...(init.headers || {}),
         },
       }
     );
@@ -239,8 +229,7 @@ async function authenticatedFetch(
     throw new ApiError(
       "Can't reach the PhilaLink server.",
       {
-        isNetworkError:
-          true,
+        isNetworkError: true,
       }
     );
   }
@@ -250,14 +239,12 @@ async function downloadFile(
   url,
   fallbackName
 ) {
-  const response =
-    await authenticatedFetch(
-      url,
-      {
-        method:
-          "GET",
-      }
-    );
+  const response = await authenticatedFetch(
+    url,
+    {
+      method: "GET",
+    }
+  );
 
   return saveDownload(
     response,
@@ -267,56 +254,42 @@ async function downloadFile(
 
 async function buildLogoJpegBase64() {
   try {
-    const image =
-      new Image();
+    const image = new Image();
 
-    image.decoding =
-      "async";
+    image.decoding = "async";
 
-    const loaded =
-      new Promise(
-        (
-          resolve,
-          reject
-        ) => {
-          image.onload =
-            resolve;
+    const loaded = new Promise(
+      (
+        resolve,
+        reject
+      ) => {
+        image.onload = resolve;
+        image.onerror = reject;
+      }
+    );
 
-          image.onerror =
-            reject;
-        }
-      );
-
-    image.src =
-      "/logo2.png";
+    image.src = "/logo2.png";
 
     await loaded;
 
-    const size =
-      220;
+    const size = 220;
 
-    const canvas =
-      document.createElement(
-        "canvas"
-      );
+    const canvas = document.createElement(
+      "canvas"
+    );
 
-    canvas.width =
-      size;
+    canvas.width = size;
+    canvas.height = size;
 
-    canvas.height =
-      size;
-
-    const context =
-      canvas.getContext(
-        "2d"
-      );
+    const context = canvas.getContext(
+      "2d"
+    );
 
     if (!context) {
       return null;
     }
 
-    context.fillStyle =
-      "#ffffff";
+    context.fillStyle = "#ffffff";
 
     context.fillRect(
       0,
@@ -325,49 +298,32 @@ async function buildLogoJpegBase64() {
       size
     );
 
-    const ratio =
-      Math.min(
-        size /
-          image.naturalWidth,
-        size /
-          image.naturalHeight
-      );
+    const ratio = Math.min(
+      size / image.naturalWidth,
+      size / image.naturalHeight
+    );
 
-    const width =
-      Math.max(
-        1,
-        Math.round(
-          image.naturalWidth *
-            ratio
-        )
-      );
-
-    const height =
-      Math.max(
-        1,
-        Math.round(
-          image.naturalHeight *
-            ratio
-        )
-      );
-
-    const x =
+    const width = Math.max(
+      1,
       Math.round(
-        (
-          size -
-          width
-        ) /
-          2
-      );
+        image.naturalWidth * ratio
+      )
+    );
 
-    const y =
+    const height = Math.max(
+      1,
       Math.round(
-        (
-          size -
-          height
-        ) /
-          2
-      );
+        image.naturalHeight * ratio
+      )
+    );
+
+    const x = Math.round(
+      (size - width) / 2
+    );
+
+    const y = Math.round(
+      (size - height) / 2
+    );
 
     context.drawImage(
       image,
@@ -377,23 +333,15 @@ async function buildLogoJpegBase64() {
       height
     );
 
-    const dataUrl =
-      canvas.toDataURL(
-        "image/jpeg",
-        0.9
-      );
+    const dataUrl = canvas.toDataURL(
+      "image/jpeg",
+      0.9
+    );
 
-    const comma =
-      dataUrl.indexOf(
-        ","
-      );
+    const comma = dataUrl.indexOf(",");
 
-    return comma >=
-      0
-      ? dataUrl.slice(
-          comma +
-            1
-        )
+    return comma >= 0
+      ? dataUrl.slice(comma + 1)
       : null;
   } catch {
     return null;
@@ -419,19 +367,67 @@ export const clinicAdminApi = {
   // =====================================================
 
   getStaff: (
-    role = "All"
+    filters = "All",
+    options = {}
   ) => {
-    const query =
+    const normalized = normalizeStaffFilters(
+      filters,
+      options
+    );
+
+    const params = new URLSearchParams();
+
+    const role = normalized.role || "All";
+
+    const search = String(
+      normalized.search || ""
+    ).trim();
+
+    const page = Math.max(
+      1,
+      Number(normalized.page) || 1
+    );
+
+    const pageSize = Math.min(
+      100,
+      Math.max(
+        1,
+        Number(normalized.pageSize) || 20
+      )
+    );
+
+    if (
       role &&
-      role !==
-        "All"
-        ? `?role=${encodeURIComponent(
-            role
-          )}`
-        : "";
+      role !== "All"
+    ) {
+      params.set(
+        "role",
+        role
+      );
+    }
+
+    if (search) {
+      params.set(
+        "search",
+        search
+      );
+    }
+
+    params.set(
+      "page",
+      String(page)
+    );
+
+    params.set(
+      "pageSize",
+      String(pageSize)
+    );
 
     return api.get(
-      `/api/clinic-admin/staff${query}`
+      `/api/clinic-admin/staff-paged?${params.toString()}`,
+      {
+        signal: normalized.signal,
+      }
     );
   },
 
@@ -491,10 +487,9 @@ export const clinicAdminApi = {
   previewReport: (
     filters
   ) => {
-    const query =
-      buildReportQuery(
-        filters
-      );
+    const query = buildReportQuery(
+      filters
+    );
 
     return api.get(
       `/api/clinic-admin/report-builder/preview?${query.toString()}`
@@ -507,31 +502,25 @@ export const clinicAdminApi = {
       format
     ) => {
       const normalizedFormat =
-        format ===
-        "excel"
+        format === "excel"
           ? "xlsx"
           : format;
 
       if (
-        normalizedFormat ===
-        "pdf"
+        normalizedFormat === "pdf"
       ) {
         throw new ApiError(
           "PDF exports must use the secure password-protected export flow."
         );
       }
 
-      const query =
-        buildReportQuery({
-          ...filters,
-
-          format:
-            normalizedFormat,
-        });
+      const query = buildReportQuery({
+        ...filters,
+        format: normalizedFormat,
+      });
 
       const reportType =
-        filters?.reportType ||
-        "report";
+        filters?.reportType || "report";
 
       return downloadFile(
         `/api/clinic-admin/report-builder/export?${query.toString()}`,
@@ -546,8 +535,7 @@ export const clinicAdminApi = {
     ) => {
       if (
         !password ||
-        password.length <
-          8
+        password.length < 8
       ) {
         throw new ApiError(
           "A PDF password of at least 8 characters is required."
@@ -557,21 +545,18 @@ export const clinicAdminApi = {
       const logoJpegBase64 =
         await buildLogoJpegBase64();
 
-      const response =
-        await authenticatedFetch(
-          "/api/clinic-admin/report-builder/export/pdf",
-          {
-            method:
-              "POST",
+      const response = await authenticatedFetch(
+        "/api/clinic-admin/report-builder/export/pdf",
+        {
+          method: "POST",
 
-            body:
-              JSON.stringify({
-                filters,
-                password,
-                logoJpegBase64,
-              }),
-          }
-        );
+          body: JSON.stringify({
+            filters,
+            password,
+            logoJpegBase64,
+          }),
+        }
+      );
 
       return saveDownload(
         response,
@@ -589,21 +574,14 @@ export const clinicAdminApi = {
       rangeDays,
     }) => {
       const normalizedFormat =
-        format ===
-        "excel"
+        format === "excel"
           ? "xlsx"
           : format;
 
-      const query =
-        new URLSearchParams({
-          format:
-            normalizedFormat,
-
-          rangeDays:
-            String(
-              rangeDays
-            ),
-        });
+      const query = new URLSearchParams({
+        format: normalizedFormat,
+        rangeDays: String(rangeDays),
+      });
 
       return downloadFile(
         `/api/clinic-admin/reports/export?${query.toString()}`,
