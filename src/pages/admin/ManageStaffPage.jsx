@@ -51,33 +51,21 @@ import {
 /* HELPERS                                                   */
 /* ========================================================= */
 
-function number(
-  value
-) {
+function number(value) {
   return Number(
-    value ||
-      0
-  ).toLocaleString(
-    "en-ZA"
-  );
+    value || 0
+  ).toLocaleString("en-ZA");
 }
 
-function formatDate(
-  value
-) {
+function formatDate(value) {
   if (!value) {
     return "—";
   }
 
-  const date =
-    new Date(
-      value
-    );
+  const date = new Date(value);
 
   if (
-    Number.isNaN(
-      date.getTime()
-    )
+    Number.isNaN(date.getTime())
   ) {
     return "—";
   }
@@ -85,30 +73,79 @@ function formatDate(
   return date.toLocaleDateString(
     "en-ZA",
     {
-      day:
-        "2-digit",
-
-      month:
-        "short",
-
-      year:
-        "numeric",
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
     }
   );
 }
 
-function accountClinic(
-  row
-) {
+function accountClinic(row) {
   if (
-    row.role ===
-    "SuperAdmin"
+    row.role === "SuperAdmin"
   ) {
     return "System-wide";
   }
 
-  return row.clinicName ||
-    "Unassigned";
+  return row.clinicName || "Unassigned";
+}
+
+function normalizePagedResponse(result) {
+  /*
+   * Keep compatibility with an array response if an older
+   * backend deployment is still running.
+   */
+  if (Array.isArray(result)) {
+    return {
+      items: result,
+      page: 1,
+      pageSize: Math.max(result.length, 1),
+      totalItems: result.length,
+      totalPages: 1,
+      hasPreviousPage: false,
+      hasNextPage: false,
+    };
+  }
+
+  const items = Array.isArray(result?.items)
+    ? result.items
+    : [];
+
+  const page = Math.max(
+    1,
+    Number(result?.page) || 1
+  );
+
+  const pageSize = Math.max(
+    1,
+    Number(result?.pageSize) || 20
+  );
+
+  const totalItems = Math.max(
+    0,
+    Number(result?.totalItems) || 0
+  );
+
+  const totalPages = Math.max(
+    1,
+    Number(
+      result?.totalPages
+    ) || Math.ceil(totalItems / pageSize)
+  );
+
+  return {
+    items,
+    page,
+    pageSize,
+    totalItems,
+    totalPages,
+    hasPreviousPage:
+      Boolean(result?.hasPreviousPage) ||
+      page > 1,
+    hasNextPage:
+      Boolean(result?.hasNextPage) ||
+      page < totalPages,
+  };
 }
 
 /* ========================================================= */
@@ -118,832 +155,572 @@ function accountClinic(
 export default function ManageStaffPage() {
   const {
     role,
-  } =
-    useAuth();
+  } = useAuth();
 
   const isClinicAdmin =
-    role ===
-    "ClinicAdmin";
-
-  const isSuperAdmin =
-    role ===
-    "SuperAdmin";
+    role === "ClinicAdmin";
 
   const [
     filter,
     setFilter,
-  ] =
-    useState(
-      "All"
-    );
+  ] = useState("All");
 
   const [
     search,
     setSearch,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     staff,
     setStaff,
-  ] =
-    useState([]);
+  ] = useState([]);
 
   const [
     loading,
     setLoading,
-  ] =
-    useState(true);
+  ] = useState(true);
 
   const [
     error,
     setError,
-  ] =
-    useState("");
+  ] = useState("");
 
   const [
     pendingId,
     setPendingId,
-  ] =
-    useState(null);
+  ] = useState(null);
+
+  const [
+    page,
+    setPage,
+  ] = useState(1);
+
+  const [
+    pageSize,
+    setPageSize,
+  ] = useState(20);
+
+  const [
+    pageInfo,
+    setPageInfo,
+  ] = useState({
+    page: 1,
+    pageSize: 20,
+    totalItems: 0,
+    totalPages: 1,
+    hasPreviousPage: false,
+    hasNextPage: false,
+  });
 
   /* ======================================================= */
   /* LOAD                                                    */
   /* ======================================================= */
 
-  const load =
-    useCallback(
-      async () => {
-        try {
-          setLoading(
-            true
-          );
+  const load = useCallback(
+    async signal => {
+      try {
+        setLoading(true);
+        setError("");
 
-          setError(
-            ""
-          );
+        const filters = {
+          role: filter,
+          search,
+          page,
+          pageSize,
+          signal,
+        };
 
-          const result =
-            isClinicAdmin
-              ? await clinicAdminApi
-                  .getStaff(
-                    filter
-                  )
-              : await superAdminAccountsApi
-                  .getAccounts(
-                    filter
-                  );
+        const result = isClinicAdmin
+          ? await clinicAdminApi.getStaff(filters)
+          : await superAdminAccountsApi.getAccounts(filters);
 
-          setStaff(
-            Array.isArray(
-              result
-            )
-              ? result
-              : []
-          );
-        } catch (
-          err
-        ) {
-          setError(
-            err?.message ||
-              (
-                isClinicAdmin
-                  ? "Could not load clinic staff accounts."
-                  : "Could not load system accounts."
-              )
-          );
-        } finally {
-          setLoading(
-            false
-          );
+        if (signal?.aborted) {
+          return;
         }
-      },
-      [
-        filter,
-        isClinicAdmin,
-      ]
-    );
 
-  useEffect(
-    () => {
-      void load();
+        const normalized =
+          normalizePagedResponse(result);
+
+        setStaff(normalized.items);
+
+        setPageInfo({
+          page: normalized.page,
+          pageSize: normalized.pageSize,
+          totalItems: normalized.totalItems,
+          totalPages: normalized.totalPages,
+          hasPreviousPage:
+            normalized.hasPreviousPage,
+          hasNextPage:
+            normalized.hasNextPage,
+        });
+
+        /*
+         * If a result reports fewer pages than the current
+         * selection, move back to the last valid page.
+         */
+        if (
+          normalized.totalItems > 0 &&
+          page > normalized.totalPages
+        ) {
+          setPage(normalized.totalPages);
+        }
+      } catch (err) {
+        if (signal?.aborted) {
+          return;
+        }
+
+        setError(
+          err?.message ||
+            (
+              isClinicAdmin
+                ? "Could not load clinic staff accounts."
+                : "Could not load system accounts."
+            )
+        );
+
+        setStaff([]);
+
+        setPageInfo({
+          page,
+          pageSize,
+          totalItems: 0,
+          totalPages: 1,
+          hasPreviousPage: false,
+          hasNextPage: false,
+        });
+      } finally {
+        if (!signal?.aborted) {
+          setLoading(false);
+        }
+      }
     },
     [
-      load,
+      filter,
+      isClinicAdmin,
+      page,
+      pageSize,
+      search,
     ]
   );
 
-  /* ======================================================= */
-  /* SEARCH                                                  */
-  /* ======================================================= */
+  useEffect(
+    () => {
+      const controller = new AbortController();
 
-  const visible =
-    useMemo(
-      () => {
-        const term =
-          search
-            .trim()
-            .toLowerCase();
+      void load(controller.signal);
 
-        if (!term) {
-          return staff;
-        }
-
-        return staff.filter(
-          item =>
-            [
-              item.fullName,
-              item.idNumber,
-              item.email,
-              item.phoneNumber,
-              item.role,
-              item.clinicName,
-            ]
-              .filter(
-                Boolean
-              )
-              .some(
-                value =>
-                  String(
-                    value
-                  )
-                    .toLowerCase()
-                    .includes(
-                      term
-                    )
-              )
-        );
-      },
-      [
-        search,
-        staff,
-      ]
-    );
-
-  /* ======================================================= */
-  /* METRICS                                                 */
-  /* ======================================================= */
-
-  const metrics =
-    useMemo(
-      () => {
-        const active =
-          staff.filter(
-            item =>
-              item.isActive
-          ).length;
-
-        if (
-          isClinicAdmin
-        ) {
-          const nurses =
-            staff.filter(
-              item =>
-                item.role ===
-                "Nurse"
-            ).length;
-
-          const proxies =
-            staff.filter(
-              item =>
-                item.role ===
-                "Proxy"
-            ).length;
-
-          return [
-            {
-              label:
-                "Visible accounts",
-
-              value:
-                number(
-                  staff.length
-                ),
-
-              helper:
-                filter ===
-                "All"
-                  ? "All clinic staff"
-                  : filter,
-
-              icon:
-                Users,
-            },
-
-            {
-              label:
-                "Active accounts",
-
-              value:
-                number(
-                  active
-                ),
-
-              helper:
-                "Currently enabled",
-
-              icon:
-                ShieldCheck,
-            },
-
-            {
-              label:
-                "Nurses",
-
-              value:
-                number(
-                  nurses
-                ),
-
-              helper:
-                "Professional staff",
-
-              icon:
-                Users,
-            },
-
-            {
-              label:
-                "Proxies",
-
-              value:
-                number(
-                  proxies
-                ),
-
-              helper:
-                "Registered proxies",
-
-              icon:
-                Users,
-            },
-          ];
-        }
-
-        const verified =
-          staff.filter(
-            item =>
-              item.isVerified
-          ).length;
-
-        const passwordSetupPending =
-          staff.filter(
-            item =>
-              item.mustChangePassword
-          ).length;
-
-        return [
-          {
-            label:
-              "Visible accounts",
-
-            value:
-              number(
-                staff.length
-              ),
-
-            helper:
-              filter ===
-              "All"
-                ? "System-wide"
-                : filter,
-
-            icon:
-              Users,
-          },
-
-          {
-            label:
-              "Active accounts",
-
-            value:
-              number(
-                active
-              ),
-
-            helper:
-              "Authentication enabled",
-
-            icon:
-              ShieldCheck,
-          },
-
-          {
-            label:
-              "Verified accounts",
-
-            value:
-              number(
-                verified
-              ),
-
-            helper:
-              "Identity/account verified",
-
-            icon:
-              ShieldCheck,
-          },
-
-          {
-            label:
-              "Password setup pending",
-
-            value:
-              number(
-                passwordSetupPending
-              ),
-
-            helper:
-              "Temporary credential active",
-
-            icon:
-              UserPlus,
-          },
-        ];
-      },
-      [
-        filter,
-        isClinicAdmin,
-        staff,
-      ]
-    );
-
-  /* ======================================================= */
-  /* ACTIVATE / DEACTIVATE                                   */
-  /* ======================================================= */
-
-  async function toggle(
-    item
-  ) {
-    try {
-      setPendingId(
-        item.userId
-      );
-
-      setError(
-        ""
-      );
-
-      if (
-        isClinicAdmin
-      ) {
-        if (
-          item.isActive
-        ) {
-          await clinicAdminApi
-            .deactivateStaff(
-              item.userId
-            );
-        } else {
-          await clinicAdminApi
-            .activateStaff(
-              item.userId
-            );
-        }
-      } else if (
-        item.isActive
-      ) {
-        await adminApi
-          .deactivateAccount(
-            item.userId
-          );
-      } else {
-        await adminApi
-          .activateAccount(
-            item.userId
-          );
-      }
-
-      setStaff(
-        current =>
-          current.map(
-            row =>
-              row.userId ===
-              item.userId
-                ? {
-                    ...row,
-
-                    isActive:
-                      !row.isActive,
-                  }
-                : row
-          )
-      );
-    } catch (
-      err
-    ) {
-      setError(
-        err?.message ||
-          "Could not update account."
-      );
-    } finally {
-      setPendingId(
-        null
-      );
-    }
-  }
+      return () => {
+        controller.abort();
+      };
+    },
+    [load]
+  );
 
   /* ======================================================= */
   /* ROLE OPTIONS                                            */
   /* ======================================================= */
 
-  const roleOptions =
-    isClinicAdmin
-      ? [
-          "All",
-          "Nurse",
-          "Proxy",
-        ]
-      : [
-          "All",
-          "Patient",
-          "Nurse",
-          "Proxy",
-          "ClinicAdmin",
-          "SuperAdmin",
-        ];
+  const roleOptions = isClinicAdmin
+    ? [
+        "All",
+        "Nurse",
+        "Proxy",
+      ]
+    : [
+        "All",
+        "Patient",
+        "Nurse",
+        "Proxy",
+        "ClinicAdmin",
+        "SuperAdmin",
+      ];
 
   /* ======================================================= */
-  /* CLINIC ADMIN TABLE                                      */
+  /* METRICS                                                 */
+  /* ======================================================= */
+
+  const metrics = useMemo(
+    () => {
+      const active = staff.filter(
+        item => item.isActive
+      ).length;
+
+      if (isClinicAdmin) {
+        const nurses = staff.filter(
+          item => item.role === "Nurse"
+        ).length;
+
+        const proxies = staff.filter(
+          item => item.role === "Proxy"
+        ).length;
+
+        return [
+          {
+            label: "Accounts on page",
+            value: number(staff.length),
+            helper: `${number(pageInfo.totalItems)} matching staff accounts`,
+            icon: Users,
+          },
+          {
+            label: "Active on page",
+            value: number(active),
+            helper: "Currently enabled",
+            icon: ShieldCheck,
+          },
+          {
+            label: "Nurses on page",
+            value: number(nurses),
+            helper: "Professional staff",
+            icon: Users,
+          },
+          {
+            label: "Proxies on page",
+            value: number(proxies),
+            helper: "Registered proxies",
+            icon: Users,
+          },
+        ];
+      }
+
+      const verified = staff.filter(
+        item => item.isVerified
+      ).length;
+
+      const passwordSetupPending = staff.filter(
+        item => item.mustChangePassword
+      ).length;
+
+      return [
+        {
+          label: "Accounts on page",
+          value: number(staff.length),
+          helper: `${number(pageInfo.totalItems)} matching accounts`,
+          icon: Users,
+        },
+        {
+          label: "Active on page",
+          value: number(active),
+          helper: "Authentication enabled",
+          icon: ShieldCheck,
+        },
+        {
+          label: "Verified on page",
+          value: number(verified),
+          helper: "Identity/account verified",
+          icon: ShieldCheck,
+        },
+        {
+          label: "Password setup pending",
+          value: number(passwordSetupPending),
+          helper: "Temporary credential active",
+          icon: UserPlus,
+        },
+      ];
+    },
+    [
+      isClinicAdmin,
+      pageInfo.totalItems,
+      staff,
+    ]
+  );
+
+  /* ======================================================= */
+  /* ACTIVATE / DEACTIVATE                                   */
+  /* ======================================================= */
+
+  async function toggle(item) {
+    try {
+      setPendingId(item.userId);
+      setError("");
+
+      if (isClinicAdmin) {
+        if (item.isActive) {
+          await clinicAdminApi.deactivateStaff(
+            item.userId
+          );
+        } else {
+          await clinicAdminApi.activateStaff(
+            item.userId
+          );
+        }
+      } else if (item.isActive) {
+        await adminApi.deactivateAccount(
+          item.userId
+        );
+      } else {
+        await adminApi.activateAccount(
+          item.userId
+        );
+      }
+
+      setStaff(current =>
+        current.map(row =>
+          row.userId === item.userId
+            ? {
+                ...row,
+                isActive: !row.isActive,
+              }
+            : row
+        )
+      );
+    } catch (err) {
+      setError(
+        err?.message ||
+          "Could not update account."
+      );
+    } finally {
+      setPendingId(null);
+    }
+  }
+
+  /* ======================================================= */
+  /* TABLE COLUMNS                                           */
   /* ======================================================= */
 
   const clinicAdminColumns = [
     {
-      key:
-        "fullName",
+      key: "fullName",
+      label: "Staff member",
+      render: (value, row) => (
+        <div>
+          <p className="font-semibold text-slate-900">
+            {value || "—"}
+          </p>
 
-      label:
-        "Staff member",
-
-      render:
-        (
-          value,
-          row
-        ) => (
-          <div>
-            <p className="font-semibold text-slate-900">
-              {value ||
-                "—"}
-            </p>
-
-            <p className="mt-0.5 text-[11px] text-slate-400">
-              {row.email ||
-                "No email"}
-            </p>
-          </div>
-        ),
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {row.email || "No email"}
+          </p>
+        </div>
+      ),
     },
-
     {
-      key:
-        "role",
-
-      label:
-        "Role",
-
-      render:
-        value => (
-          <span className="border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-            {value ||
-              "—"}
-          </span>
-        ),
+      key: "role",
+      label: "Role",
+      render: value => (
+        <span className="border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+          {value || "—"}
+        </span>
+      ),
     },
-
     {
-      key:
-        "idNumber",
-
-      label:
-        "ID number",
-
-      render:
-        value => (
-          <span className="font-mono text-[11px]">
-            {value ||
-              "—"}
-          </span>
-        ),
+      key: "idNumber",
+      label: "ID number",
+      render: value => (
+        <span className="font-mono text-[11px]">
+          {value || "—"}
+        </span>
+      ),
     },
-
     {
-      key:
-        "phoneNumber",
-
-      label:
-        "Contact",
-
-      render:
-        value =>
-          value ||
-          "—",
+      key: "phoneNumber",
+      label: "Contact",
+      render: value => value || "—",
     },
-
     {
-      key:
-        "isActive",
-
-      label:
-        "Status",
-
-      render:
-        value => (
-          <StatusBadge
-            value={
-              value
-                ? "Active"
-                : "Inactive"
-            }
-          />
-        ),
+      key: "isActive",
+      label: "Status",
+      render: value => (
+        <StatusBadge
+          value={value ? "Active" : "Inactive"}
+        />
+      ),
     },
-
     {
-      key:
-        "actions",
-
-      label:
-        "Account access",
-
-      render:
-        (
-          _,
-          row
-        ) => (
-          <button
-            type="button"
-            disabled={
-              pendingId ===
-              row.userId
-            }
-            onClick={
-              () =>
-                toggle(
-                  row
-                )
-            }
-            className={`text-[11px] font-medium hover:underline disabled:opacity-50 ${
-              row.isActive
-                ? "text-red-600"
-                : "text-[#0f766e]"
-            }`}
-          >
-            {pendingId ===
-            row.userId
-              ? "Updating…"
-              : row.isActive
-                ? "Deactivate"
-                : "Activate"}
-          </button>
-        ),
+      key: "actions",
+      label: "Account access",
+      render: (_, row) => (
+        <button
+          type="button"
+          disabled={pendingId === row.userId}
+          onClick={() => toggle(row)}
+          className={`text-[11px] font-medium hover:underline disabled:opacity-50 ${
+            row.isActive
+              ? "text-red-600"
+              : "text-[#0f766e]"
+          }`}
+        >
+          {pendingId === row.userId
+            ? "Updating…"
+            : row.isActive
+              ? "Deactivate"
+              : "Activate"}
+        </button>
+      ),
     },
   ];
-
-  /* ======================================================= */
-  /* SUPER ADMIN TABLE                                       */
-  /* ======================================================= */
 
   const superAdminColumns = [
     {
-      key:
-        "fullName",
+      key: "fullName",
+      label: "Account",
+      render: (value, row) => (
+        <div className="min-w-[190px]">
+          <p className="font-semibold text-slate-900">
+            {value || "—"}
+          </p>
 
-      label:
-        "Account",
+          <p className="mt-0.5 text-[11px] text-slate-400">
+            {row.email || "No email"}
+          </p>
+        </div>
+      ),
+    },
+    {
+      key: "role",
+      label: "Role",
+      render: value => (
+        <span className="whitespace-nowrap border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
+          {value || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "clinicName",
+      label: "Clinic / scope",
+      render: (_, row) => (
+        <span
+          className={
+            row.role === "SuperAdmin"
+              ? "font-medium text-[#0f766e]"
+              : row.clinicName
+                ? "text-slate-800"
+                : "text-amber-700"
+          }
+        >
+          {accountClinic(row)}
+        </span>
+      ),
+    },
+    {
+      key: "phoneNumber",
+      label: "Contact",
+      render: value => value || "—",
+    },
+    {
+      key: "idNumber",
+      label: "ID number",
+      render: value => (
+        <span className="whitespace-nowrap font-mono text-[11px] text-slate-600">
+          {value || "—"}
+        </span>
+      ),
+    },
+    {
+      key: "isVerified",
+      label: "Verification",
+      render: value => (
+        <span
+          className={`inline-flex border px-2 py-0.5 text-[10px] font-semibold ${
+            value
+              ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+              : "border-amber-200 bg-amber-50 text-amber-700"
+          }`}
+        >
+          {value ? "Verified" : "Pending"}
+        </span>
+      ),
+    },
+    {
+      key: "mustChangePassword",
+      label: "Onboarding",
+      render: value => {
+        if (!value) {
+          return (
+            <span className="inline-flex border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+              Ready
+            </span>
+          );
+        }
 
-      render:
-        (
-          value,
-          row
-        ) => (
-          <div className="min-w-[190px]">
-            <p className="font-semibold text-slate-900">
-              {value ||
-                "—"}
-            </p>
+        return (
+          <div>
+            <span className="inline-flex border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+              Password setup pending
+            </span>
 
-            <p className="mt-0.5 text-[11px] text-slate-400">
-              {row.email ||
-                "No email"}
+            <p className="mt-1 text-[10px] text-slate-400">
+              First login required
             </p>
           </div>
-        ),
+        );
+      },
     },
-
     {
-      key:
-        "role",
-
-      label:
-        "Role",
-
-      render:
-        value => (
-          <span className="whitespace-nowrap border border-slate-200 bg-slate-50 px-2 py-0.5 text-[11px] font-medium text-slate-700">
-            {value ||
-              "—"}
-          </span>
-        ),
+      key: "createdAt",
+      label: "Created",
+      render: value => (
+        <span className="whitespace-nowrap text-xs text-slate-600">
+          {formatDate(value)}
+        </span>
+      ),
     },
-
     {
-      key:
-        "clinicName",
-
-      label:
-        "Clinic / scope",
-
-      render:
-        (
-          _,
-          row
-        ) => (
-          <span
-            className={
-              row.role ===
-              "SuperAdmin"
-                ? "font-medium text-[#0f766e]"
-                : row.clinicName
-                  ? "text-slate-800"
-                  : "text-amber-700"
-            }
-          >
-            {accountClinic(
-              row
-            )}
-          </span>
-        ),
+      key: "isActive",
+      label: "Access",
+      render: value => (
+        <StatusBadge
+          value={value ? "Active" : "Inactive"}
+        />
+      ),
     },
-
     {
-      key:
-        "phoneNumber",
-
-      label:
-        "Contact",
-
-      render:
-        value =>
-          value ||
-          "—",
-    },
-
-    {
-      key:
-        "idNumber",
-
-      label:
-        "ID number",
-
-      render:
-        value => (
-          <span className="whitespace-nowrap font-mono text-[11px] text-slate-600">
-            {value ||
-              "—"}
-          </span>
-        ),
-    },
-
-    {
-      key:
-        "isVerified",
-
-      label:
-        "Verification",
-
-      render:
-        value => (
-          <span
-            className={`inline-flex border px-2 py-0.5 text-[10px] font-semibold ${
-              value
-                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                : "border-amber-200 bg-amber-50 text-amber-700"
-            }`}
-          >
-            {value
-              ? "Verified"
-              : "Pending"}
-          </span>
-        ),
-    },
-
-    {
-      key:
-        "mustChangePassword",
-
-      label:
-        "Onboarding",
-
-      render:
-        (
-          value,
-          row
-        ) => {
-          if (
-            !value
-          ) {
-            return (
-              <span className="inline-flex border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
-                Ready
-              </span>
-            );
-          }
-
-          return (
-            <div>
-              <span className="inline-flex border border-amber-200 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
-                Password setup pending
-              </span>
-
-              <p className="mt-1 text-[10px] text-slate-400">
-                First login required
-              </p>
-            </div>
-          );
-        },
-    },
-
-    {
-      key:
-        "createdAt",
-
-      label:
-        "Created",
-
-      render:
-        value => (
-          <span className="whitespace-nowrap text-xs text-slate-600">
-            {formatDate(
-              value
-            )}
-          </span>
-        ),
-    },
-
-    {
-      key:
-        "isActive",
-
-      label:
-        "Access",
-
-      render:
-        value => (
-          <StatusBadge
-            value={
-              value
-                ? "Active"
-                : "Inactive"
-            }
-          />
-        ),
-    },
-
-    {
-      key:
-        "actions",
-
-      label:
-        "Action",
-
-      render:
-        (
-          _,
-          row
-        ) => (
-          <button
-            type="button"
-            disabled={
-              pendingId ===
-              row.userId
-            }
-            onClick={
-              () =>
-                toggle(
-                  row
-                )
-            }
-            className={`whitespace-nowrap text-[11px] font-medium hover:underline disabled:opacity-50 ${
-              row.isActive
-                ? "text-red-600"
-                : "text-[#0f766e]"
-            }`}
-          >
-            {pendingId ===
-            row.userId
-              ? "Updating…"
-              : row.isActive
-                ? "Deactivate"
-                : "Activate"}
-          </button>
-        ),
+      key: "actions",
+      label: "Action",
+      render: (_, row) => (
+        <button
+          type="button"
+          disabled={pendingId === row.userId}
+          onClick={() => toggle(row)}
+          className={`whitespace-nowrap text-[11px] font-medium hover:underline disabled:opacity-50 ${
+            row.isActive
+              ? "text-red-600"
+              : "text-[#0f766e]"
+          }`}
+        >
+          {pendingId === row.userId
+            ? "Updating…"
+            : row.isActive
+              ? "Deactivate"
+              : "Activate"}
+        </button>
+      ),
     },
   ];
 
-  const columns =
-    isClinicAdmin
-      ? clinicAdminColumns
-      : superAdminColumns;
+  const columns = isClinicAdmin
+    ? clinicAdminColumns
+    : superAdminColumns;
+
+  /* ======================================================= */
+  /* PAGINATION ACTIONS                                      */
+  /* ======================================================= */
+
+  function changeSearch(value) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  function changeRole(value) {
+    setFilter(value);
+    setPage(1);
+  }
+
+  function changePageSize(value) {
+    const nextSize = Number(value);
+
+    if (
+      !Number.isFinite(nextSize) ||
+      nextSize < 1
+    ) {
+      return;
+    }
+
+    setPageSize(
+      Math.min(100, nextSize)
+    );
+
+    setPage(1);
+  }
 
   /* ======================================================= */
   /* RENDER                                                  */
@@ -951,7 +728,6 @@ export default function ManageStaffPage() {
 
   return (
     <div className="space-y-5">
-
       <PageHeader
         eyebrow={
           isClinicAdmin
@@ -971,12 +747,10 @@ export default function ManageStaffPage() {
         actions={
           <>
             <SecondaryButton
-              onClick={
-                load
-              }
-              disabled={
-                loading
-              }
+              onClick={() => {
+                void load();
+              }}
+              disabled={loading}
             >
               <RefreshCw
                 size={15}
@@ -995,10 +769,7 @@ export default function ManageStaffPage() {
                 to="/admin/register-staff"
                 className="inline-flex h-10 items-center justify-center gap-2 bg-[#0f766e] px-4 text-sm font-medium text-white hover:bg-[#0b655e]"
               >
-                <UserPlus
-                  size={15}
-                />
-
+                <UserPlus size={15} />
                 Register staff
               </Link>
             ) : null}
@@ -1012,11 +783,7 @@ export default function ManageStaffPage() {
         </Notice>
       ) : null}
 
-      <MetricStrip
-        metrics={
-          metrics
-        }
-      />
+      <MetricStrip metrics={metrics} />
 
       <Panel
         title={
@@ -1031,24 +798,16 @@ export default function ManageStaffPage() {
         }
         noPadding
       >
-
-        <div className="grid gap-3 border-b border-slate-200 px-5 py-4 lg:grid-cols-[minmax(260px,1fr)_220px_auto] lg:items-end">
-
+        <div className="grid gap-3 border-b border-slate-200 px-5 py-4 lg:grid-cols-[minmax(260px,1fr)_220px_160px] lg:items-end">
           <div>
             <span className="mb-1.5 block text-[11px] font-medium text-slate-600">
-              Search
+              Search all matching accounts
             </span>
 
             <SearchField
-              value={
-                search
-              }
-              onChange={
-                event =>
-                  setSearch(
-                    event.target
-                      .value
-                  )
+              value={search}
+              onChange={event =>
+                changeSearch(event.target.value)
               }
               placeholder={
                 isClinicAdmin
@@ -1060,32 +819,53 @@ export default function ManageStaffPage() {
 
           <SelectField
             label="Role"
-            value={
-              filter
+            value={filter}
+            onChange={event =>
+              changeRole(event.target.value)
             }
-            onChange={
-              event =>
-                setFilter(
-                  event.target
-                    .value
-                )
-            }
-            options={
-              roleOptions
-            }
+            options={roleOptions}
           />
 
-          <div className="flex h-10 items-center justify-center border border-slate-300 bg-slate-50 px-4 text-xs font-medium text-slate-600">
-            {visible.length.toLocaleString(
-              "en-ZA"
-            )}{" "}
-            result
-            {visible.length ===
-            1
-              ? ""
-              : "s"}
-          </div>
+          <SelectField
+            label="Rows per page"
+            value={String(pageSize)}
+            onChange={event =>
+              changePageSize(event.target.value)
+            }
+            options={[
+              "10",
+              "20",
+              "50",
+              "100",
+            ]}
+          />
+        </div>
 
+        <div className="flex flex-col gap-2 border-b border-slate-200 px-5 py-3 text-xs text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+          <p>
+            Showing{" "}
+            <strong>
+              {pageInfo.totalItems === 0
+                ? 0
+                : ((page - 1) * pageSize) + 1}
+            </strong>
+            {"–"}
+            <strong>
+              {Math.min(
+                page * pageSize,
+                pageInfo.totalItems
+              )}
+            </strong>
+            {" of "}
+            <strong>
+              {number(pageInfo.totalItems)}
+            </strong>
+            {" matching results"}
+          </p>
+
+          <p>
+            Page {page} of {pageInfo.totalPages}
+          </p>
         </div>
 
         {loading ? (
@@ -1095,32 +875,19 @@ export default function ManageStaffPage() {
                 ? "Loading staff…"
                 : "Loading system accounts…"
             }
-            minHeight={
-              320
-            }
+            minHeight={320}
           />
-        ) : visible.length ? (
+        ) : staff.length ? (
           <DataTable
-            columns={
-              columns
-            }
-            rows={
-              visible
-            }
-            rowKey={
-              row =>
-                row.userId
-            }
-            maxHeight={
-              680
-            }
+            columns={columns}
+            rows={staff}
+            rowKey={row => row.userId}
+            maxHeight={680}
           />
         ) : (
           <div className="p-5">
             <EmptyBlock
-              icon={
-                Search
-              }
+              icon={Search}
               title={
                 isClinicAdmin
                   ? "No staff found"
@@ -1135,8 +902,51 @@ export default function ManageStaffPage() {
           </div>
         )}
 
-      </Panel>
+        <div className="flex flex-col gap-3 border-t border-slate-200 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-slate-500">
+            Search and role filters apply across the full result set.
+          </p>
 
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              disabled={
+                loading ||
+                page <= 1 ||
+                !pageInfo.hasPreviousPage
+              }
+              onClick={() =>
+                setPage(current =>
+                  Math.max(1, current - 1)
+                )
+              }
+              className="h-9 border border-slate-300 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Previous
+            </button>
+
+            <button
+              type="button"
+              disabled={
+                loading ||
+                page >= pageInfo.totalPages ||
+                !pageInfo.hasNextPage
+              }
+              onClick={() =>
+                setPage(current =>
+                  Math.min(
+                    pageInfo.totalPages,
+                    current + 1
+                  )
+                )
+              }
+              className="h-9 border border-slate-300 px-3 text-xs font-medium text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      </Panel>
     </div>
   );
 }
