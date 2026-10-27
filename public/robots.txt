@@ -1,0 +1,5 @@
+
+User-agent: *
+Allow: /
+
+Sitemap: https://philalinkmed.vercel.app/sitemap.xml
